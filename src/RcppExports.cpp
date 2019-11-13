@@ -5,25 +5,20 @@
 
 using namespace Rcpp;
 
-// knn_prop_cases
-NumericVector knn_prop_cases(int n_informative_fams, NumericMatrix case_distances, int k, double threshold, NumericVector case_status, NumericVector ones_vec);
-RcppExport SEXP _knnGA_knn_prop_cases(SEXP n_informative_famsSEXP, SEXP case_distancesSEXP, SEXP kSEXP, SEXP thresholdSEXP, SEXP case_statusSEXP, SEXP ones_vecSEXP) {
+// rcpp_manhattan_distance
+NumericMatrix rcpp_manhattan_distance(NumericMatrix mat);
+RcppExport SEXP _knnGA_rcpp_manhattan_distance(SEXP matSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n_informative_fams(n_informative_famsSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type case_distances(case_distancesSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< double >::type threshold(thresholdSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type case_status(case_statusSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type ones_vec(ones_vecSEXP);
-    rcpp_result_gen = Rcpp::wrap(knn_prop_cases(n_informative_fams, case_distances, k, threshold, case_status, ones_vec));
+    Rcpp::traits::input_parameter< NumericMatrix >::type mat(matSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_manhattan_distance(mat));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_knnGA_knn_prop_cases", (DL_FUNC) &_knnGA_knn_prop_cases, 6},
+    {"_knnGA_rcpp_manhattan_distance", (DL_FUNC) &_knnGA_rcpp_manhattan_distance, 1},
     {NULL, NULL, 0}
 };
 
