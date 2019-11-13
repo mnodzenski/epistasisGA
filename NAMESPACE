@@ -2,5 +2,7 @@
 
 export(fitness.score)
 export(fitness.score.cpp)
+export(ga)
+importFrom(Rfast,Dist)
 importFrom(stats,dist)
 useDynLib(knnGA)
