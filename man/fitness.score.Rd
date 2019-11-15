@@ -5,7 +5,7 @@
 \title{A function to generate a fitness score for a subset of snps from a dataset of case genetic markers}
 \usage{
 fitness.score(case.genetic.data, complement.genetic.data, target.snps,
-  k = 10, correct.thresh = 0.9)
+  dist.type, k = 10, correct.thresh = 0.9)
 }
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
@@ -13,6 +13,8 @@ fitness.score(case.genetic.data, complement.genetic.data, target.snps,
 \item{complement.genetic.data}{A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.}
 
 \item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
+
+\item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
 
 \item{k}{A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.}
 
