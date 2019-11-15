@@ -3,6 +3,7 @@
 #' This function takes a subset of snps from an input genetic dataset and returns a fitness score using a k-nearest neighbors approach.
 #'
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
+#' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. See details for more information.
@@ -11,25 +12,24 @@
 #'
 #' @examples
 #'
-#' data(cases)
-#' fitness.score(target.snps = c(1, 4, 7), case.genetic.data = cases)
+#' data(case.sim1)
+#' data(comp.sim1)
+#' fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7))
 #'
-#' @importFrom stats dist
+#' @importFrom Rfast Dist
 #' @export
 
-fitness.score <- function(case.genetic.data, target.snps, k = 10, correct.thresh = 0.9){
+fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, k = 10, correct.thresh = 0.9){
 
-  ### 1. Pick out the target snps from the genetic data ###
+  ### 1. Pick out the target snps from the case genetic data ###
   cases <- case.genetic.data[ , target.snps]
-  rownames(cases) <- rep(1, nrow(cases))
 
-  ### 2. compute matrix of complements to the cases (i.e., the untransmitted allele counts) ###
-  complements <- 2 - cases
-  rownames(complements) <- rep(0, nrow(complements))
+  ### 2.Pick out target snps from the complement genetic data ###
+  complements <- complement.genetic.data[ , target.snps]
 
   ### 3. determine whether families are informative for the set of target.snps ###
-  case.comp.diff <- cases - complements
-  total.different.snps <- apply(case.comp.diff, 1, function(x) sum(x != 0))
+  case.comp.diff <- cases != complements
+  total.different.snps <-rowSums(case.comp.diff)
   informative.families <- total.different.snps != 0
   n.informative.families <- sum(informative.families)
 
@@ -38,56 +38,44 @@ fitness.score <- function(case.genetic.data, target.snps, k = 10, correct.thresh
 
   ### 5. compute pairwise distances among all cases and complements using city block distance ###
   case.comp.data <- rbind(cases[informative.families, ], complements[informative.families, ])
-  distances <- as.matrix(dist(case.comp.data, method = "manhattan"))
+  distances <- Dist(case.comp.data, method = "manhattan")[ , 1:n.informative.families]
+  case.rows <- 1:n.informative.families
+  complement.rows <- (n.informative.families + 1):(n.informative.families*2)
 
   ### 6. find the nearest neighbors and determine percentage of cases among neighbors ###
-  ids <- rownames(cases)
-  prop.neighbor.case.by.id <- sapply(1:n.informative.families, function(x){
 
-    #remove the case itself, and the complement
-    these <- c(x, x + n.informative.families)
-    target.vec <- distances[-these , x]
+  #compute the number of neighbors with within radii of 0, 1, 2
+  zeroes <- distances == 0
+  ones <- distances <= 1
+  twos <- distances <= 2
 
-    #grab the ids of all possible neighbors
-    test.ids <- rownames(distances)[-these]
+  #now split up by radii, and compute the proportion of cases among the neighbors within the radius
+  #start with radius = 0 (note: I'm subtracting 1 because the distances include the chromosome itself)
+  case.zeroes <- colSums(zeroes[case.rows, ]) - 1
+  total.zeroes <- colSums(zeroes) - 1
+  case.comp.zeroes.ratio <- case.zeroes/total.zeroes
 
-    #determine nearest neighbors by radius and compute the percentage of cases among nearest neighbors
-    zeroes <- target.vec == 0
-    ones <- target.vec == 1
-    twos <- target.vec == 2
-    if (sum(zeroes) >= k){
+  #radius <= 1
+  case.ones <- colSums(ones[case.rows, ]) - 1
+  total.ones <- colSums(ones) - 1
+  case.comp.ones.ratio <- case.ones/total.ones
 
-      neighbor.ids <- test.ids[zeroes]
-      case.pct <- sum(neighbor.ids != "0")/length(neighbor.ids)
+  #radius <= 2
+  case.twos <- colSums(twos[case.rows, ]) - 1
+  total.twos <- colSums(twos) - 1
+  case.comp.twos.ratio <- case.twos/total.twos
 
-    } else if (sum(zeroes + ones) >= k){
-
-      neighbor.ids <- test.ids[c(zeroes, ones)]
-      case.pct <- sum(neighbor.ids != "0")/length(neighbor.ids)
-
-    }  else if (sum(zeroes + ones + twos) >= k){
-
-      neighbor.ids <- test.ids[c(zeroes, ones, twos)]
-      case.pct <- sum(neighbor.ids != "0")/length(neighbor.ids)
-
-    } else {
-
-      case.pct <- 0
-
-    }
-
-    #set to zero if less than cutoff threshold
-    if (case.pct < correct.thresh){
-
-      case.pct <- 0
-
-    }
-    return(case.pct)
-
-  })
+  #return a vector where the value is the proportion if there are at least k nearest neighbors and
+  #the proportion of the nearest neighbors is greater than correct.thresh
+  #and zero otherwise
+  final.props <- rep(0, n.informative.families)
+  final.props[total.twos >= k] <- case.comp.twos.ratio[total.twos >= k]
+  final.props[total.ones >= k] <- case.comp.ones.ratio[total.ones >= k]
+  final.props[total.zeroes >= k] <- case.comp.zeroes.ratio[total.zeroes >= k]
+  final.props[final.props < correct.thresh] <- 0
 
   ### 7. compute chromosome fitness scores ###
-  fitness.score <- as.numeric((family.weights %*% prop.neighbor.case.by.id)/sum(family.weights))
+  fitness.score <- as.numeric((family.weights %*% final.props)/sum(family.weights))
   return(fitness.score)
 
 }
