@@ -5,8 +5,9 @@
 \title{A function to run a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.}
 \usage{
 ga(case.genetic.data, complement.genetic.data, n.chromosomes,
-  chromosome.size, generations = 2000, k = 10, correct.thresh = 0.9,
-  gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100)
+  chromosome.size, dist.type, generations = 2000, k = 10,
+  correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6,
+  n.top.chroms = 100)
 }
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
@@ -16,6 +17,8 @@ ga(case.genetic.data, complement.genetic.data, n.chromosomes,
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
 \item{chromosome.size}{The number of snps within each candidate solution.}
+
+\item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 

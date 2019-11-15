@@ -6,6 +6,7 @@
 #' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param chromosome.size The number of snps within each candidate solution.
+#' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. Defaults to 10
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. Defaults to 0.9.
@@ -23,7 +24,7 @@
 #' @importFrom Rfast Dist
 #' @export
 
-ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromosome.size, generations = 2000,
+ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromosome.size, dist.type, generations = 2000,
                k = 10, correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
 
   ### initialize groups of candidate solutions ###
@@ -50,10 +51,10 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
     print(paste("generation", generation))
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
-    fitness.scores <- vapply(1:length(chromosome.list), function(x) {
+    fitness.scores <- sapply(1:length(chromosome.list), function(x) {
 
       print(paste("Chromosome", x))
-      fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], k, correct.thresh)
+      fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, k, correct.thresh)
 
     })
 
