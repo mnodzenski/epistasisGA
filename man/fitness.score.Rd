@@ -4,11 +4,13 @@
 \alias{fitness.score}
 \title{A function to generate a fitness score for a subset of snps from a dataset of case genetic markers}
 \usage{
-fitness.score(case.genetic.data, target.snps, k = 10,
-  correct.thresh = 0.9)
+fitness.score(case.genetic.data, complement.genetic.data, target.snps,
+  k = 10, correct.thresh = 0.9)
 }
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
+
+\item{complement.genetic.data}{A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.}
 
 \item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
 
@@ -24,7 +26,8 @@ This function takes a subset of snps from an input genetic dataset and returns a
 }
 \examples{
 
-data(cases)
-fitness.score(target.snps = c(1, 4, 7), case.genetic.data = cases)
+data(case.sim1)
+data(comp.sim1)
+fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7))
 
 }
