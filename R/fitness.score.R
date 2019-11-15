@@ -5,6 +5,7 @@
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
 #' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
+#' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. See details for more information.
 #'
@@ -19,63 +20,78 @@
 #' @importFrom Rfast Dist
 #' @export
 
-fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, k = 10, correct.thresh = 0.9){
+fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, k = 10, correct.thresh = 0.9){
 
-  ### 1. Pick out the target snps from the case genetic data ###
+  ###  Pick out the target snps from the case genetic data ###
   cases <- case.genetic.data[ , target.snps]
 
-  ### 2.Pick out target snps from the complement genetic data ###
+  ### Pick out target snps from the complement genetic data ###
   complements <- complement.genetic.data[ , target.snps]
 
-  ### 3. determine whether families are informative for the set of target.snps ###
+  ### determine whether families are informative for the set of target.snps ###
   case.comp.diff <- cases != complements
   total.different.snps <-rowSums(case.comp.diff)
   informative.families <- total.different.snps != 0
   n.informative.families <- sum(informative.families)
 
-  ### 4. compute the informativeness weigth of each family (prop to # of different snps between case and complement) ###
-  family.weights <- 2^total.different.snps[informative.families]
+  ### distance computation for the knn approach ###
+  if (dist.type == "knn"){
 
-  ### 5. compute pairwise distances among all cases and complements using city block distance ###
-  case.comp.data <- rbind(cases[informative.families, ], complements[informative.families, ])
-  distances <- Dist(case.comp.data, method = "manhattan")[ , 1:n.informative.families]
-  case.rows <- 1:n.informative.families
-  complement.rows <- (n.informative.families + 1):(n.informative.families*2)
+    ### compute the informativeness weigth of each family (prop to # of different snps between case and complement) ###
+    family.weights <- 2^total.different.snps[informative.families]
 
-  ### 6. find the nearest neighbors and determine percentage of cases among neighbors ###
+    ### compute pairwise distances among all cases and complements using city block distance ###
+    case.comp.data <- rbind(cases[informative.families, ], complements[informative.families, ])
+    distances <- Dist(case.comp.data, method = "manhattan")[ , 1:n.informative.families]
+    case.rows <- 1:n.informative.families
+    complement.rows <- (n.informative.families + 1):(n.informative.families*2)
 
-  #compute the number of neighbors with within radii of 0, 1, 2
-  zeroes <- distances == 0
-  ones <- distances <= 1
-  twos <- distances <= 2
+    ### find the nearest neighbors and determine percentage of cases among neighbors ###
 
-  #now split up by radii, and compute the proportion of cases among the neighbors within the radius
-  #start with radius = 0 (note: I'm subtracting 1 because the distances include the chromosome itself)
-  case.zeroes <- colSums(zeroes[case.rows, ]) - 1
-  total.zeroes <- colSums(zeroes) - 1
-  case.comp.zeroes.ratio <- case.zeroes/total.zeroes
+    #compute the number of neighbors with within radii of 0, 1, 2
+    zeroes <- distances == 0
+    ones <- distances <= 1
+    twos <- distances <= 2
 
-  #radius <= 1
-  case.ones <- colSums(ones[case.rows, ]) - 1
-  total.ones <- colSums(ones) - 1
-  case.comp.ones.ratio <- case.ones/total.ones
+    #now split up by radii, and compute the proportion of cases among the neighbors within the radius
+    #start with radius = 0 (note: I'm subtracting 1 because the distances include the chromosome itself)
+    case.zeroes <- colSums(zeroes[case.rows, ]) - 1
+    total.zeroes <- colSums(zeroes) - 1
+    case.comp.zeroes.ratio <- case.zeroes/total.zeroes
 
-  #radius <= 2
-  case.twos <- colSums(twos[case.rows, ]) - 1
-  total.twos <- colSums(twos) - 1
-  case.comp.twos.ratio <- case.twos/total.twos
+    #radius <= 1
+    case.ones <- colSums(ones[case.rows, ]) - 1
+    total.ones <- colSums(ones) - 1
+    case.comp.ones.ratio <- case.ones/total.ones
 
-  #return a vector where the value is the proportion if there are at least k nearest neighbors and
-  #the proportion of the nearest neighbors is greater than correct.thresh
-  #and zero otherwise
-  final.props <- rep(0, n.informative.families)
-  final.props[total.twos >= k] <- case.comp.twos.ratio[total.twos >= k]
-  final.props[total.ones >= k] <- case.comp.ones.ratio[total.ones >= k]
-  final.props[total.zeroes >= k] <- case.comp.zeroes.ratio[total.zeroes >= k]
-  final.props[final.props < correct.thresh] <- 0
+    #radius <= 2
+    case.twos <- colSums(twos[case.rows, ]) - 1
+    total.twos <- colSums(twos) - 1
+    case.comp.twos.ratio <- case.twos/total.twos
 
-  ### 7. compute chromosome fitness scores ###
-  fitness.score <- as.numeric((family.weights %*% final.props)/sum(family.weights))
+    #return a vector where the value is the proportion if there are at least k nearest neighbors and
+    #the proportion of the nearest neighbors is greater than correct.thresh
+    #and zero otherwise
+    final.props <- rep(0, n.informative.families)
+    final.props[total.twos >= k] <- case.comp.twos.ratio[total.twos >= k]
+    final.props[total.ones >= k] <- case.comp.ones.ratio[total.ones >= k]
+    final.props[total.zeroes >= k] <- case.comp.zeroes.ratio[total.zeroes >= k]
+    final.props[final.props < correct.thresh] <- 0
+
+    ### compute chromosome fitness scores ###
+    fitness.score <- as.numeric((family.weights %*% final.props)/sum(family.weights))
+
+  } else if (dist.type == "paired"){
+
+    case.comp.vec.diff <- cases - complements
+    case.comp.vec.lengths <- sqrt(rowSums(case.comp.vec.diff^2))
+    not.both.zero <- rowSums(!(cases == 0 & complements == 0))
+    family.weights <- not.both.zero + total.different.snps
+    fitness.score <- (family.weights %*% case.comp.vec.lengths)/sum(family.weights)
+
+
+  }
+
   return(fitness.score)
 
 }
