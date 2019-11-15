@@ -87,7 +87,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
     case.comp.vec.lengths <- sqrt(rowSums(case.comp.vec.diff^2))
     not.both.zero <- rowSums(!(cases == 0 & complements == 0))
     family.weights <- not.both.zero + total.different.snps
-    fitness.score <- (family.weights %*% case.comp.vec.lengths)/sum(family.weights)
+    fitness.score <- as.numeric((family.weights %*% case.comp.vec.lengths)/sum(family.weights))
 
 
   }
