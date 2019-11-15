@@ -83,11 +83,14 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
 
   } else if (dist.type == "paired"){
 
+    #get the squared vector length between the cases and complements
     case.comp.vec.diff <- cases - complements
-    case.comp.vec.lengths <- sqrt(rowSums(case.comp.vec.diff^2))
-    not.both.zero <- rowSums(!(cases == 0 & complements == 0))
-    family.weights <- not.both.zero + total.different.snps
-    fitness.score <- as.numeric((family.weights %*% case.comp.vec.lengths)/sum(family.weights))
+    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
+
+    #compute weights = (#of loci where case != comp) + (# of loci where case = comp = 1)
+    both.one <- rowSums(cases == 1 & complements == 1)
+    family.weights <- both.one + total.different.snps
+    fitness.score <- as.numeric((family.weights %*% case.comp.squared.vec.lengths)/sum(family.weights))
 
 
   }
