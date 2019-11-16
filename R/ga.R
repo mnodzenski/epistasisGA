@@ -13,6 +13,7 @@
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
+#' @param run.parallel Indicator of whether the fitness scores should be computed in parallel using bplapply from bioconductor. If FALSE, will use sapply instead. Defaults to F.
 #' @return A list, whose first element is a list of the top 100 scoring chromosomes, and second element is a vector of the corresponding fitness scores.
 #'
 #' @examples
@@ -20,7 +21,7 @@
 #' data(case.sim1)
 #' data(comp.sim1)
 #' ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
-#'  correct.thresh = 0.9, tol = 10^-6)
+#'  correct.thresh = 0.9, tol = 10^-6, run.parallel = T)
 #'
 #' @importFrom Rfast Dist
 #' @importFrom BiocParallel bplapply
@@ -28,7 +29,7 @@
 
 ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromosome.size, dist.type,
                generations = 2000, k = 10, correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6,
-               n.top.chroms = 100){
+               n.top.chroms = 100, run.parallel = F){
 
   ### initialize groups of candidate solutions ###
   chromosome.list <- vector(mode = "list", length = n.chromosomes)
@@ -55,11 +56,23 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
 
-    fitness.scores <- unlist(bplapply(1:length(chromosome.list), function(x) {
+    if (run.parallel){
 
-      fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, k, correct.thresh)
+      fitness.scores <- unlist(bplapply(1:length(chromosome.list), function(x) {
 
-    }))
+        fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, k, correct.thresh)
+
+      }))
+
+    } else {
+
+      fitness.scores <- sapply(1:length(chromosome.list), function(x) {
+
+        fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, k, correct.thresh)
+
+      })
+
+    }
 
     #store the fitness scores and elements (snps) of the chromosomes
     fitness.score.mat[generation, ] <- fitness.scores
