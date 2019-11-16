@@ -4,8 +4,7 @@
 \alias{fitness.score.cpp}
 \title{A function to generate a fitness score for a subset of snps from a dataset of case genetic markers}
 \usage{
-fitness.score.cpp(case.genetic.data, target.snps, k = 10,
-  correct.thresh = 0.9)
+fitness.score.cpp(case.genetic.data, target.snps, k = 10, correct.thresh = 0.9)
 }
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
