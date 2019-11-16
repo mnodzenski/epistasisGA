@@ -15,7 +15,7 @@
 #'
 #' data(case.sim1)
 #' data(comp.sim1)
-#' fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7))
+#' fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7), dist.type = "knn")
 #'
 #' @importFrom Rfast Dist
 #' @export
