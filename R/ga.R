@@ -19,7 +19,8 @@
 #'
 #' data(case.sim1)
 #' data(comp.sim1)
-#' ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10, correct.thresh = 0.9, tol = 10^-6)
+#' ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
+#'  correct.thresh = 0.9, tol = 10^-6)
 #'
 #' @importFrom Rfast Dist
 #' @importFrom BiocParallel bplapply
