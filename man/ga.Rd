@@ -5,9 +5,9 @@
 \title{A function to run a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.}
 \usage{
 ga(case.genetic.data, complement.genetic.data, n.chromosomes,
-  chromosome.size, dist.type, generations = 2000, k = 10,
-  correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6,
-  n.top.chroms = 100)
+  chromosome.size, dist.type, cores = NULL, generations = 2000,
+  k = 10, correct.thresh = 0.9, gen.same.fitness = 500,
+  tol = 10^-6, n.top.chroms = 100)
 }
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
@@ -19,6 +19,8 @@ ga(case.genetic.data, complement.genetic.data, n.chromosomes,
 \item{chromosome.size}{The number of snps within each candidate solution.}
 
 \item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
+
+\item{cores}{An integer indicating the number of cores on which this function can operate. Defaults to one fewer than the total cores on the computer.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 
@@ -42,6 +44,6 @@ This function runs a genetic algorithm on a collection of candidate snp sets, to
 
 data(case.sim1)
 data(comp.sim1)
-ga.res <- ga(case.sim1, comp.sim1, 7, 3, generations = 5, k = 10, correct.thresh = 0.9, tol = 10^-6)
+ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10, correct.thresh = 0.9, tol = 10^-6)
 
 }

@@ -19,13 +19,15 @@
 #'
 #' data(case.sim1)
 #' data(comp.sim1)
-#' ga.res <- ga(case.sim1, comp.sim1, 7, 3, generations = 5, k = 10, correct.thresh = 0.9, tol = 10^-6)
+#' ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10, correct.thresh = 0.9, tol = 10^-6)
 #'
 #' @importFrom Rfast Dist
+#' @importFrom BiocParallel bplapply
 #' @export
 
-ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromosome.size, dist.type, generations = 2000,
-               k = 10, correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
+ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromosome.size, dist.type,
+               generations = 2000, k = 10, correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6,
+               n.top.chroms = 100){
 
   ### initialize groups of candidate solutions ###
   chromosome.list <- vector(mode = "list", length = n.chromosomes)
@@ -51,12 +53,12 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
     print(paste("generation", generation))
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
-    fitness.scores <- sapply(1:length(chromosome.list), function(x) {
 
-      print(paste("Chromosome", x))
+    fitness.scores <- unlist(bplapply(1:length(chromosome.list), function(x) {
+
       fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, k, correct.thresh)
 
-    })
+    }))
 
     #store the fitness scores and elements (snps) of the chromosomes
     fitness.score.mat[generation, ] <- fitness.scores
@@ -69,8 +71,15 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
     top.chromosomes <- chromosome.list[top.chromosome.idx]
 
     #if we have the same chromosome multiple times, just take one of them
-    #and put the duplicates in the pool to be
+    #and put the duplicates in the pool to be resampled
     if (length(unique(top.chromosomes)) == 1){
+
+      top.chromosome <- top.chromosomes[1]
+      duplicate.top.chromosomes <- top.chromosome.idx[-1]
+
+    #if we have everyone with the same score, just choose the first one and
+    #re-sample all other chromosomes
+    } else if (length(unique(top.chromosomes)) == n.chromosomes){
 
       top.chromosome <- top.chromosomes[1]
       duplicate.top.chromosomes <- top.chromosome.idx[-1]
@@ -89,7 +98,7 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
     ### 4. Sample with replacement from the lower scoring chroms ###
     print("Step 4/9")
     sampled.lower.idx <- sample(lower.chromosomes, length(lower.chromosomes),
-                                replace = T, prob = fitness.scores[lower.chromosomes])
+                                replace = T, prob = 1 + fitness.scores[lower.chromosomes])
     sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
 
     ### 5. Determine whether each lower chromosome will be subject to mutation or crossing over ###
