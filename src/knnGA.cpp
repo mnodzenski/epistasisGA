@@ -53,3 +53,8 @@ NumericMatrix rcpp_manhattan_distance(NumericMatrix mat) {
   return rmat;
 }
 
+
+
+
+
+
