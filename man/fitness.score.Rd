@@ -4,8 +4,14 @@
 \alias{fitness.score}
 \title{A function to generate a fitness score for a subset of snps from a dataset of case genetic markers}
 \usage{
-fitness.score(case.genetic.data, complement.genetic.data, target.snps,
-  dist.type, k = 10, correct.thresh = 0.9)
+fitness.score(
+  case.genetic.data,
+  complement.genetic.data,
+  target.snps,
+  dist.type,
+  k = 10,
+  correct.thresh = 0.9
+)
 }
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
