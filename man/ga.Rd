@@ -42,7 +42,7 @@ ga(
 
 \item{n.top.chroms}{The number of top scoring chromosomes, according to fitness score, to return.}
 
-\item{run.parallel}{Indicator of whether the fitness scores should be computed in parallel using bplapply from bioconductor. If FALSE, will use sapply instead. Defaults to F.}
+\item{run.parallel}{Logical indicator of whether the fitness scores should be computed in parallel using bplapply from bioconductor. If FALSE, will use sapply instead. Defaults to FALSE.}
 }
 \value{
 A list, whose first element is a list of the top 100 scoring chromosomes, and second element is a vector of the corresponding fitness scores.
@@ -55,6 +55,6 @@ This function runs a genetic algorithm on a collection of candidate snp sets, to
 data(case.sim1)
 data(comp.sim1)
 ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
- correct.thresh = 0.9, tol = 10^-6, run.parallel = T)
+ correct.thresh = 0.9, tol = 10^-6, run.parallel = TRUE)
 
 }

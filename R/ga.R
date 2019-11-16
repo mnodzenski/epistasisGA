@@ -13,7 +13,7 @@
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
-#' @param run.parallel Indicator of whether the fitness scores should be computed in parallel using bplapply from bioconductor. If FALSE, will use sapply instead. Defaults to F.
+#' @param run.parallel Logical indicator of whether the fitness scores should be computed in parallel using bplapply from bioconductor. If FALSE, will use sapply instead. Defaults to FALSE.
 #' @return A list, whose first element is a list of the top 100 scoring chromosomes, and second element is a vector of the corresponding fitness scores.
 #'
 #' @examples
@@ -21,7 +21,7 @@
 #' data(case.sim1)
 #' data(comp.sim1)
 #' ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
-#'  correct.thresh = 0.9, tol = 10^-6, run.parallel = T)
+#'  correct.thresh = 0.9, tol = 10^-6, run.parallel = TRUE)
 #'
 #' @importFrom Rfast Dist
 #' @importFrom BiocParallel bplapply
