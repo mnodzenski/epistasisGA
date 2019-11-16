@@ -51,6 +51,7 @@ This function runs a genetic algorithm on a collection of candidate snp sets, to
 
 data(case.sim1)
 data(comp.sim1)
-ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10, correct.thresh = 0.9, tol = 10^-6)
+ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
+ correct.thresh = 0.9, tol = 10^-6)
 
 }
