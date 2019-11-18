@@ -86,12 +86,14 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
     #get the squared vector length between the cases and complements
     case.comp.vec.diff <- cases - complements
     case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
+    case.comp.signed.dif <- rowSums(case.comp.vec.diff)
 
     #compute weights = (#of loci where case != comp) + (# of loci where case = comp = 1)
-    both.one <- rowSums(cases == 1 & complements == 1)
-    family.weights <- both.one + total.different.snps
-    fitness.score <- as.numeric((family.weights %*% case.comp.squared.vec.lengths)/sum(family.weights))
+   # both.one <- rowSums(cases == 1 & complements == 1)
+    #family.weights <- both.one + total.different.snps
+   # fitness.score <- as.numeric((family.weights %*% case.comp.squared.vec.lengths)/sum(family.weights))
 
+    fitness.score <- sum(case.comp.signed.dif)/sum(case.comp.squared.vec.lengths)
 
   }
 
