@@ -9,6 +9,7 @@ fitness.score(
   complement.genetic.data,
   target.snps,
   dist.type,
+  parent.af = NULL,
   k = 10,
   correct.thresh = 0.9
 )
@@ -21,6 +22,8 @@ fitness.score(
 \item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
 
 \item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
+
+\item{parent.af}{A numeric vector of the allele frequencies of all snps in the parent population. This must be supplied only if dist.type = 'paired'.}
 
 \item{k}{A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.}
 
