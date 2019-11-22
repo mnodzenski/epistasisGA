@@ -85,12 +85,11 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
     #get the squared vector length between the cases and complements
     dif.vecs <- cases - complements
 
-    #cross products of the differences
-    cross.prods <- apply(dif.vecs, 1, function(x) combn(x, 2, prod))
-    sum.2.cross.prods <- 2*sum(cross.prods)
-
     #sum of squared differences
     sum.sq.diff <- sum(dif.vecs^2)
+
+    case.comp.vec.diff <- cases - complements
+    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
 
     #sum difference vectors and grab squared vector length
     sq.length.sum.dif.vecs <- sum((rowSums(dif.vecs)^2))
