@@ -10,6 +10,7 @@ ga(
   n.chromosomes,
   chromosome.size,
   dist.type,
+  parent.af = NULL,
   generations = 2000,
   k = 10,
   correct.thresh = 0.9,
@@ -29,6 +30,8 @@ ga(
 \item{chromosome.size}{The number of snps within each candidate solution.}
 
 \item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
+
+\item{parent.af}{A numeric vector of the allele frequencies of all snps in the parent population. This must be supplied only if dist.type = 'paired'.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 
