@@ -6,6 +6,8 @@
 #' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
 #' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
+#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals.
+#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. See details for more information.
 #' @return A scalar, the fitness score for the given set of snps.
@@ -19,7 +21,8 @@
 #' @importFrom Rfast Dist
 #' @export
 
-fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, parent.af = NULL, k = 10, correct.thresh = 0.9){
+fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, parent.af = NULL, father.genetic.data = NULL,
+                          mother.genetic.data = NULL, k = 10, correct.thresh = 0.9){
 
   ###  Pick out the target snps from the case genetic data ###
   cases <- case.genetic.data[ , target.snps]
@@ -83,7 +86,12 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
   } else if (dist.type == "paired"){
 
     #get the squared vector length between the cases and complements
-    dif.vecs <- cases - complements
+    case.comp.vec.diff <- cases - complements
+    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
+
+    #get the target snp data for mothers and fathers
+    mothers <- mother.genetic.data[ , target.snps]
+    fathers <- father.genetic.data[ , target.snps]
 
     #sum of squared differences
     sum.sq.diff <- sum(dif.vecs^2)
@@ -97,10 +105,6 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
     #sum difference vectors and grab squared vector length
     sq.length.sum.dif.vecs <- sum((rowSums(dif.vecs)^2))
 
-    #compute weights = (#of loci where case != comp) + (# of loci where case = comp = 1)
-    both.one <- rowSums(cases == 1 & complements == 1)
-    family.weights <- both.one + total.different.snps
-    fitness.score <- sum(family.weights*sq.length.sum.dif.vecs)
 
   }
 
