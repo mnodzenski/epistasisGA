@@ -7,6 +7,8 @@
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
 #' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
 #' @param parent.af A numeric vector of the allele frequencies of all snps in the parent population. This must be supplied only if dist.type = 'paired'.
+#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals.
+#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. See details for more information.
 #'
@@ -21,7 +23,8 @@
 #' @importFrom Rfast Dist
 #' @export
 
-fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, parent.af = NULL, k = 10, correct.thresh = 0.9){
+fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, parent.af = NULL, father.genetic.data = NULL,
+                          mother.genetic.data = NULL, k = 10, correct.thresh = 0.9){
 
   ###  Pick out the target snps from the case genetic data ###
   cases <- case.genetic.data[ , target.snps]
@@ -88,15 +91,28 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
     case.comp.vec.diff <- cases - complements
     case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
 
+    #get the target snp data for mothers and fathers
+    mothers <- mother.genetic.data[ , target.snps]
+    fathers <- father.genetic.data[ , target.snps]
+
+    #also get the squared vector lengths between the mothers and fathers
+    mother.father.vec.diff <- mothers - fathers
+    mother.father.sq.vec.diff <- rowSums(mother.father.vec.diff^2)
+
+    #estimate the null expectation and variance from the mothers and fathers
+    sum.delta.sq.i.est <- var(mother.father.sq.vec.diff)
+    null.variance <- nrow(cases)*sum.delta.sq.i.est
+    null.expectation <- sum(mother.father.sq.vec.diff)
+
     #get the target allele freqs in the parent population
-    alt.parent.freqs <- parent.af[target.snps]
-    ref.parent.freqs <- 1 - alt.parent.freqs
+    # alt.parent.freqs <- parent.af[target.snps]
+    #ref.parent.freqs <- 1 - alt.parent.freqs
 
     #compute null expectation for the vector sum
-    snp.delta.sq.expectations <- 4*(alt.parent.freqs^3)*ref.parent.freqs + 8*(alt.parent.freqs^2)*(ref.parent.freqs^2) + 4*alt.parent.freqs*(ref.parent.freqs^3)
-    null.expectation <- nrow(cases)*sum(snp.delta.sq.expectations)
-    snp.delta.sq.sq.expectations <- 4*(alt.parent.freqs^3)*ref.parent.freqs + 32*(alt.parent.freqs^2)*(ref.parent.freqs^2) + 4*alt.parent.freqs*(ref.parent.freqs^3)
-    null.variance <- nrow(cases)*sum(snp.delta.sq.sq.expectations - (snp.delta.sq.expectations)^2)
+    #snp.delta.sq.expectations <- 4*(alt.parent.freqs^3)*ref.parent.freqs + 8*(alt.parent.freqs^2)*(ref.parent.freqs^2) + 4*alt.parent.freqs*(ref.parent.freqs^3)
+    #null.expectation <- nrow(cases)*sum(snp.delta.sq.expectations)
+    #snp.delta.sq.sq.expectations <- 4*(alt.parent.freqs^3)*ref.parent.freqs + 32*(alt.parent.freqs^2)*(ref.parent.freqs^2) + 4*alt.parent.freqs*(ref.parent.freqs^3)
+    #null.variance <- nrow(cases)*sum(snp.delta.sq.sq.expectations - (snp.delta.sq.expectations)^2)
 
     #standardize the vector sum for the final fitness score
     fitness.score <- (sum(case.comp.squared.vec.lengths) - null.expectation)/sqrt(null.variance)
