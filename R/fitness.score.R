@@ -19,7 +19,7 @@
 #' @importFrom Rfast Dist
 #' @export
 
-fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, k = 10, correct.thresh = 0.9){
+fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, parent.af = NULL, k = 10, correct.thresh = 0.9){
 
   ###  Pick out the target snps from the case genetic data ###
   cases <- case.genetic.data[ , target.snps]
@@ -87,6 +87,9 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
 
     #sum of squared differences
     sum.sq.diff <- sum(dif.vecs^2)
+
+    case.comp.vec.diff <- cases - complements
+    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
 
     case.comp.vec.diff <- cases - complements
     case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
