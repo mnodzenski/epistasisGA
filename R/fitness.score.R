@@ -4,25 +4,28 @@
 #'
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
 #' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
+#' @param case.comp.differences a data from indicating case.genetic.data != complement.genetic.data.
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
 #' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
-#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals.
-#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
+#' @param cases.minus.complements A matrix equal to case.genetic.data - complement.genetic.data. Required if dist.type = 'paired'.
+#' @param case.comp.expected.squared.differences A matrix containing the expected squared difference in allele counts between case and complement under the null hypothesis of no linkage between the snp and disease, conditional on parent genotype.This is automatically computed in the ga function. Required if dist.type = 'paired'.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. See details for more information.
 #' @return A scalar, the fitness score for the given set of snps.
 #'
 #' @examples
 #'
-#' data(case.sim1)
-#' data(comp.sim1)
+#' data(case.newsim1)
+#' data(comp.newsim1)
 #' fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7), dist.type = "knn")
 #'
 #' @importFrom Rfast Dist
 #' @export
 
-fitness.score <- function(case.genetic.data, complement.genetic.data, target.snps, dist.type, parent.af = NULL, father.genetic.data = NULL,
-                          mother.genetic.data = NULL, k = 10, correct.thresh = 0.9){
+fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
+                          target.snps, dist.type, cases.minus.complements = NULL,
+                          case.comp.expected.squared.differences = NULL,
+                          k = 10, correct.thresh = 0.9){
 
   ###  Pick out the target snps from the case genetic data ###
   cases <- case.genetic.data[ , target.snps]
@@ -30,8 +33,10 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
   ### Pick out target snps from the complement genetic data ###
   complements <- complement.genetic.data[ , target.snps]
 
+  ### pick out the differences for the target snps ###
+  case.comp.diff <- case.comp.differences[ , target.snps]
+
   ### determine whether families are informative for the set of target.snps ###
-  case.comp.diff <- cases != complements
   total.different.snps <-rowSums(case.comp.diff)
   informative.families <- total.different.snps != 0
   n.informative.families <- sum(informative.families)
@@ -81,30 +86,24 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, target.snp
     final.props[final.props < correct.thresh] <- 0
 
     ### compute chromosome fitness scores ###
-    fitness.score <- as.numeric((family.weights %*% final.props)/sum(family.weights))
+    fitness.score <- sum(family.weights*final.props)/sum(family.weights)
 
   } else if (dist.type == "paired"){
 
-    #get the squared vector length between the cases and complements
-    case.comp.vec.diff <- cases - complements
-    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
+    #difference vectors between cases and complements
+    dif.vecs <- cases.minus.complements[ , target.snps]
 
-    #get the target snp data for mothers and fathers
-    mothers <- mother.genetic.data[ , target.snps]
-    fathers <- father.genetic.data[ , target.snps]
+    #sum the difference vectors
+    sum.dif.vecs <- sum(dif.vecs)
 
-    #sum of squared differences
-    sum.sq.diff <- sum(dif.vecs^2)
+    #squared vector length of the sum of difference vectors
+    sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
 
-    case.comp.vec.diff <- cases - complements
-    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
+    #expected squared length of the sum of the difference vectors under the null
+    expected.sq.length.sum.dif.vecs <- sum(case.comp.expected.squared.differences[ , target.snps])
 
-    case.comp.vec.diff <- cases - complements
-    case.comp.squared.vec.lengths <- rowSums(case.comp.vec.diff^2)
-
-    #sum difference vectors and grab squared vector length
-    sq.length.sum.dif.vecs <- sum((rowSums(dif.vecs)^2))
-
+    #fitness score as the ratio of the observed to expected squared vector length
+    fitness.score <- sq.length.sum.dif.vecs/expected.sq.length.sum.dif.vecs
 
   }
 
