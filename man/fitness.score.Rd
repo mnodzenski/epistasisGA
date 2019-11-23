@@ -7,8 +7,11 @@
 fitness.score(
   case.genetic.data,
   complement.genetic.data,
+  case.comp.differences,
   target.snps,
   dist.type,
+  cases.minus.complements = NULL,
+  case.comp.expected.squared.differences = NULL,
   k = 10,
   correct.thresh = 0.9
 )
@@ -18,9 +21,15 @@ fitness.score(
 
 \item{complement.genetic.data}{A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.}
 
+\item{case.comp.differences}{a data from indicating case.genetic.data != complement.genetic.data.}
+
 \item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
 
 \item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
+
+\item{cases.minus.complements}{A matrix equal to case.genetic.data - complement.genetic.data. Required if dist.type = 'paired'.}
+
+\item{case.comp.expected.squared.differences}{A matrix containing the expected squared difference in allele counts between case and complement under the null hypothesis of no linkage between the snp and disease, conditional on parent genotype.This is automatically computed in the ga function. Required if dist.type = 'paired'.}
 
 \item{k}{A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.}
 
@@ -34,8 +43,8 @@ This function takes a subset of snps from an input genetic dataset and returns a
 }
 \examples{
 
-data(case.sim1)
-data(comp.sim1)
+data(case.newsim1)
+data(comp.newsim1)
 fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7), dist.type = "knn")
 
 }
