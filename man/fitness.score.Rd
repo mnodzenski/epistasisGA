@@ -43,8 +43,11 @@ This function takes a subset of snps from an input genetic dataset and returns a
 }
 \examples{
 
-data(case.newsim1)
-data(comp.newsim1)
-fitness.score(case.sim1, comp.sim1, target.snps = c(1, 4, 7), dist.type = "knn")
+data(case)
+data(dad)
+data(mom)
+comp <- mom + dad - case
+case.comp.diff <- case != comp
+fitness.score(case, comp, case.comp.diff, target.snps = c(1, 4, 7), dist.type = "knn")
 
 }
