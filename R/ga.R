@@ -3,11 +3,11 @@
 #' This function runs a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.
 #'
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
-#' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
+#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals.
+#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
-#' @param parent.af A numeric vector of the allele frequencies of all snps in the parent population. This must be supplied only if dist.type = 'paired'.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. Defaults to 10
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. Defaults to 0.9.
@@ -19,19 +19,32 @@
 #'
 #' @examples
 #'
-#' data(case.sim1)
-#' data(comp.sim1)
-#' ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
+#' data(case)
+#' data(dad)
+#' data(mom)
+#'
+#' ga.res <- ga(case, dad, mom, 7, 3, dist.type = 'knn', generations = 1, k = 10,
 #'  correct.thresh = 0.9, tol = 10^-6, run.parallel = TRUE)
 #'
 #' @importFrom Rfast Dist
 #' @importFrom BiocParallel bplapply
 #' @export
 
-ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromosome.size, dist.type,
-               parent.af = NULL,
+ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
+               n.chromosomes, chromosome.size, dist.type,
                generations = 2000, k = 10, correct.thresh = 0.9, gen.same.fitness = 500, tol = 10^-6,
                n.top.chroms = 100, run.parallel = F){
+
+  ### Compute the complement data ###
+  complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
+
+  ### Compute matrices of differences between cases and complements ###
+  case.minus.comp <- case.genetic.data - complement.genetic.data
+  case.comp.different <- case.minus.comp != 0
+
+  ### Compute matrix of expected squared difference between case and complement given parent geno ###
+  expected.squared.diffs <- ifelse(mother.genetic.data == 1 & father.genetic.data == 1, 2,
+                                   ifelse(abs(mother.genetic.data - father.genetic.data) == 1, 1, 0))
 
   ### initialize groups of candidate solutions ###
   chromosome.list <- vector(mode = "list", length = n.chromosomes)
@@ -62,7 +75,9 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
 
       fitness.scores <- unlist(bplapply(1:length(chromosome.list), function(x) {
 
-        fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, parent.af, k, correct.thresh)
+        fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
+                      chromosome.list[[x]], dist.type, case.minus.comp, expected.squared.diffs,
+                      k, correct.thresh)
 
       }))
 
@@ -70,7 +85,9 @@ ga <- function(case.genetic.data, complement.genetic.data, n.chromosomes, chromo
 
       fitness.scores <- sapply(1:length(chromosome.list), function(x) {
 
-        fitness.score(case.genetic.data, complement.genetic.data, chromosome.list[[x]], dist.type, parent.af, k, correct.thresh)
+        fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
+                      chromosome.list[[x]], dist.type, case.minus.comp, expected.squared.diffs,
+                      k, correct.thresh)
 
       })
 

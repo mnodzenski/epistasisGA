@@ -6,11 +6,11 @@
 \usage{
 ga(
   case.genetic.data,
-  complement.genetic.data,
+  father.genetic.data,
+  mother.genetic.data,
   n.chromosomes,
   chromosome.size,
   dist.type,
-  parent.af = NULL,
   generations = 2000,
   k = 10,
   correct.thresh = 0.9,
@@ -23,15 +23,15 @@ ga(
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
 
-\item{complement.genetic.data}{A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.}
+\item{father.genetic.data}{The genetic data for the father of the case. Columns are snps, rows are individuals.}
+
+\item{mother.genetic.data}{The genetic data for the mother of the case. Columns are snps, rows are individuals.}
 
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
 \item{chromosome.size}{The number of snps within each candidate solution.}
 
 \item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
-
-\item{parent.af}{A numeric vector of the allele frequencies of all snps in the parent population. This must be supplied only if dist.type = 'paired'.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 
@@ -55,9 +55,11 @@ This function runs a genetic algorithm on a collection of candidate snp sets, to
 }
 \examples{
 
-data(case.sim1)
-data(comp.sim1)
-ga.res <- ga(case.sim1, comp.sim1, 7, 3, dist.type = 'knn', generations = 1, k = 10,
+data(case)
+data(dad)
+data(mom)
+
+ga.res <- ga(case, dad, mom, 7, 3, dist.type = 'knn', generations = 1, k = 10,
  correct.thresh = 0.9, tol = 10^-6, run.parallel = TRUE)
 
 }
