@@ -110,8 +110,12 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
 
   } else if (dist.type == "paired.random.sign"){
 
-    #difference vectors between cases and complements
-    dif.vecs <- cases.minus.complements[ , target.snps]
+    #compute weights
+    both.one <- rowSums(cases == 1 & complements == 1)
+    family.weights <- both.one + total.different.snps
+
+    #weighted difference vectors between cases and complements
+    dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
 
     #sum the difference vectors
     sum.dif.vecs <- colSums(dif.vecs)
