@@ -97,13 +97,30 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     dif.vecs <- cases.minus.complements[ , target.snps]
 
     #sum the difference vectors
-    sum.dif.vecs <- sum(dif.vecs)
+    sum.dif.vecs <- colSums(dif.vecs)
 
     #squared vector length of the sum of difference vectors
     sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
 
     #expected squared length of the sum of the difference vectors under the null
     expected.sq.length.sum.dif.vecs <- sum(case.comp.expected.squared.differences[ , target.snps])
+
+    #fitness score as the ratio of the observed to expected squared vector length
+    fitness.score <- sq.length.sum.dif.vecs/expected.sq.length.sum.dif.vecs
+
+  } else if (dist.type == "paired.random.sign"){
+
+    #difference vectors between cases and complements
+    dif.vecs <- cases.minus.complements[ , target.snps]
+
+    #sum the difference vectors
+    sum.dif.vecs <- colSums(dif.vecs)
+
+    #squared vector length of the sum of difference vectors
+    sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
+
+    #expected squared length of the sum of the difference vectors under the null
+    expected.sq.length.sum.dif.vecs <- sum(dif.vecs^2)
 
     #fitness score as the ratio of the observed to expected squared vector length
     fitness.score <- sq.length.sum.dif.vecs/expected.sq.length.sum.dif.vecs
