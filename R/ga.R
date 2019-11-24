@@ -165,7 +165,7 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
       #check for overlapping snps
       matching.snp.positions <- match(chrom1, chrom2)
       matching.snp.positions <-  matching.snp.positions[!is.na(matching.snp.positions)]
-      not.matching.snp.positions <- setdiff(1:4, match(a,b))
+      not.matching.snp.positions <- setdiff(1:chromosome.size, matching.snp.positions)
 
       #order the second snp, first by the overlapping snps and then randomly afterwards
       chrom2 <- chrom2[c(matching.snp.positions, not.matching.snp.positions)]
