@@ -192,6 +192,18 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
       chrom2.cross <- chrom2
       chrom2.cross[cut.point:chromosome.size] <- chrom1[cut.point:chromosome.size]
 
+      #error checking
+      if(length(chrom1.cross) != chromosome.size){
+
+        stop("Chromosome 1 wrong length")
+      }
+
+      if(length(chrom2.cross) != chromosome.size){
+
+        stop("Chromosome 2 wrong length")
+      }
+
+
       #replace in the chromosome list
       sampled.lower.chromosomes[[cross.over.positions[i]]] <- chrom1.cross
       sampled.lower.chromosomes[[cross.over.positions[i+1]]] <- chrom2.cross
