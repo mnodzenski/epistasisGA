@@ -159,8 +159,16 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
     for (i in cross.over.starts){
 
       #grab pair of chromosomes to cross over
-      chrom1 <- sort(sampled.lower.chromosomes[[cross.over.positions[i]]])
-      chrom2 <- sort(sampled.lower.chromosomes[[cross.over.positions[i+1]]])
+      chrom1 <- sampled.lower.chromosomes[[cross.over.positions[i]]]
+      chrom2 <- sampled.lower.chromosomes[[cross.over.positions[i+1]]]
+
+      #check for overlapping snps
+      matching.snp.positions <- match(chrom1, chrom2)
+      matching.snp.positions <-  matching.snp.positions[!is.na(matching.snp.positions)]
+      not.matching.snp.positions <- setdiff(1:4, match(a,b))
+
+      #order the second snp, first by the overlapping snps and then randomly afterwards
+      chrom2 <- chrom2[c(matching.snp.positions, not.matching.snp.positions)]
 
       #randomly sample a crossing over point, making sure we do not allow duplicate snps
       #and also making sure we don't simply swap chromosomes
