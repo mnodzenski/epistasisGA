@@ -178,12 +178,17 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
 
 
       #check for overlapping snps
-      matching.snp.positions <- match(chrom1, chrom2)
-      matching.snp.positions <-  matching.snp.positions[!is.na(matching.snp.positions)]
-      not.matching.snp.positions <- setdiff(1:chromosome.size, matching.snp.positions)
+      c1.c2.matching.snp.positions <- match(chrom1, chrom2)
+      c1.c2.matching.snp.positions <-  c1.c2.matching.snp.positions[!is.na(c1.c2.matching.snp.positions)]
+      c1.c2.not.matching.snp.positions <- setdiff(1:chromosome.size, c1.c2.matching.snp.positions)
+
+      c2.c1.matching.snp.positions <- match(chrom2, chrom1)
+      c2.c1.matching.snp.positions <-  c2.c1.matching.snp.positions[!is.na(c2.c1.matching.snp.positions)]
+      c2.c1.not.matching.snp.positions <- setdiff(1:chromosome.size, c2.c1.matching.snp.positions)
 
       #order the second snp, first by the overlapping snps and then randomly afterwards
-      chrom2 <- chrom2[c(matching.snp.positions, not.matching.snp.positions)]
+      chrom2 <- chrom2[c(c1.c2.matching.snp.positions, c1.c2.not.matching.snp.positions)]
+      chrom1 <- chrom1[c(c2.c1.matching.snp.positions, c2.c1.not.matching.snp.positions)]
 
       #randomly sample a crossing over point, making sure we do not allow duplicate snps
       #and also making sure we don't simply swap chromosomes
@@ -210,14 +215,13 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
       #error checking
       if(length(chrom1.cross) != chromosome.size){
 
-        stop("Chromosome 1 wrong length")
+        stop("chrom1 wrong length")
       }
 
       if(length(chrom2.cross) != chromosome.size){
 
-        stop("Chromosome 2 wrong length")
+        stop("chrom2 wrong length")
       }
-
 
       #replace in the chromosome list
       sampled.lower.chromosomes[[cross.over.positions[i]]] <- chrom1.cross
