@@ -67,8 +67,6 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
 
   while (generation <= generations & !last.gens.equal){
 
-    if (generation == 7){browser()}
-
     print(paste("generation", generation))
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
@@ -175,7 +173,6 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
         stop("Duplicate elements in chrom2")
 
       }
-
 
       #check for overlapping snps
       c1.c2.matching.snp.positions <- match(chrom1, chrom2)
