@@ -104,7 +104,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     sum.dif.vecs <- colSums(dif.vecs)
 
     #compute variance of the absolute values of the elements of the difference vectors
-    dif.vec.sd <- sd(abs(sum.dif.vecs))
+    #dif.vec.sd <- sd(abs(sum.dif.vecs))
 
     #squared vector length of the sum of difference vectors
     sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
@@ -114,7 +114,8 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
 
     #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
     #1 plus the variance of the absolute value of elements of the vector
-    fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+    #fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+    fitness.score <- sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs)
 
   }
 
