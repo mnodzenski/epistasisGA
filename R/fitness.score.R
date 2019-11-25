@@ -93,8 +93,9 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
   } else if (dist.type == "paired"){
 
     #compute weights
-    both.one <- rowSums(both.one.mat[ , target.snps])
-    family.weights <- both.one + total.different.snps
+    #both.one <- rowSums(both.one.mat[ , target.snps])
+    #family.weights <- both.one + total.different.snps
+    family.weights <- 1
 
     #weighted difference vectors between cases and complements
     dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
@@ -103,7 +104,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     sum.dif.vecs <- colSums(dif.vecs)
 
     #compute variance of the absolute values of the elements of the difference vectors
-    dif.vec.var <- var(abs(sum.dif.vecs))
+    dif.vec.sd <- sd(abs(sum.dif.vecs))
 
     #squared vector length of the sum of difference vectors
     sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
@@ -113,7 +114,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
 
     #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
     #1 plus the variance of the absolute value of elements of the vector
-    fitness.score <- (1/(1 + dif.vec.var))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+    fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
 
   }
 
