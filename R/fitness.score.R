@@ -93,24 +93,10 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
   } else if (dist.type == "paired"){
 
     #compute weights
-    #both.one <- rowSums(both.one.mat[ , target.snps])
-    #family.weights <- both.one + 2*total.different.snps
+    both.one <- rowSums(both.one.mat[ , target.snps])
+    family.weights <- both.one + 2*total.different.snps
 
     #weighted difference vectors between cases and complements
-    #dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
-    unweighted.diff.vecs <- cases.minus.complements[ , target.snps]
-
-    #compute sum to make a guess at risk allele
-    unweighted.diff.vec.sum <- colSums(unweighted.diff.vecs)
-
-    #determine directions
-    unw.diff.vec.sum.sign <- sign(unweighted.diff.vec.sum)
-    pos.delta <- unw.diff.vec.sum.sign > 0
-    neg.delta <- unw.diff.vec.sum.sign < 0
-
-    #compute weights
-    family.weights <- rowSums(complements[ , pos.delta, drop = F] < 2) + rowSums(complements[ , neg.delta, drop = F] > 0) + total.different.snps
-
     dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
 
     #sum the difference vectors
