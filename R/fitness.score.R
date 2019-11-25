@@ -109,7 +109,24 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     neg.delta <- unw.diff.vec.sum.sign < 0
 
     #compute weights
-    family.weights <- rowSums(complements[ , pos.delta] < 2) + rowSums(complements[ , neg.delta] > 0) + total.different.snps
+    if (any(pos.delta) & any(neg.delta)){
+
+      family.weights <- rowSums(complements[ , pos.delta] < 2) + rowSums(complements[ , neg.delta] > 0) + total.different.snps
+
+    } else if (any(pos.delta)){
+
+      family.weights <- rowSums(complements[ , pos.delta] < 2) + total.different.snps
+
+    } else if (any(neg.delta)){
+
+      family.weights <- rowSums(complements[ , neg.delta] > 0) + total.different.snps
+
+    } else {
+
+      family.weights <- total.different.snps
+
+    }
+
     dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
 
     #sum the difference vectors
