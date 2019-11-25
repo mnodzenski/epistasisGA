@@ -8,6 +8,7 @@
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
 #' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
 #' @param cases.minus.complements A matrix equal to case.genetic.data - complement.genetic.data. Required if dist.type = 'paired'.
+#' @param both.one.mat A matrix whose elements indicate whether both the case and control have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).
 #' @param case.comp.expected.squared.differences A matrix containing the expected squared difference in allele counts between case and complement under the null hypothesis of no linkage between the snp and disease, conditional on parent genotype.This is automatically computed in the ga function. Required if dist.type = 'paired'.
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
 #' @param correct.thresh A numeric scalar between 0 and 1 indicating the minimum proportion of of cases among the nearest neighbors for a given individual for that individual to be considered correctly classified. See details for more information.
@@ -111,7 +112,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
   } else if (dist.type == "paired.random.sign"){
 
     #compute weights
-    both.one <- rowSums(cases == 1 & complements == 1)
+    both.one <- rowSums(both.one.mat[ , target.snps])
     family.weights <- both.one + total.different.snps
 
     #weighted difference vectors between cases and complements
