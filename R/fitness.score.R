@@ -110,8 +110,9 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
 
     #compute weights
     #want cases to have at least one copy of each risk allele
-    family.weights <- 2^((rowSums(cases[ , pos.delta, drop = F] > 0) + rowSums(cases[ , neg.delta, drop = F] < 2)) == length(target.snps))
+    family.weights <- ((rowSums(cases[ , pos.delta, drop = F] > 0) + rowSums(cases[ , neg.delta, drop = F] < 2)) == length(target.snps))*total.different.snps
 
+    #compute weighted difference vectors
     dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
 
     #sum the difference vectors
