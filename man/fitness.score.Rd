@@ -11,7 +11,7 @@ fitness.score(
   target.snps,
   dist.type,
   cases.minus.complements = NULL,
-  case.comp.expected.squared.differences = NULL,
+  both.one.mat = NULL,
   k = 10,
   correct.thresh = 0.9
 )
@@ -29,7 +29,7 @@ fitness.score(
 
 \item{cases.minus.complements}{A matrix equal to case.genetic.data - complement.genetic.data. Required if dist.type = 'paired'.}
 
-\item{case.comp.expected.squared.differences}{A matrix containing the expected squared difference in allele counts between case and complement under the null hypothesis of no linkage between the snp and disease, conditional on parent genotype.This is automatically computed in the ga function. Required if dist.type = 'paired'.}
+\item{both.one.mat}{A matrix whose elements indicate whether both the case and control have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).}
 
 \item{k}{A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.}
 
