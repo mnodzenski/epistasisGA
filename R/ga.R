@@ -42,9 +42,8 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
   case.minus.comp <- case.genetic.data - complement.genetic.data
   case.comp.different <- case.minus.comp != 0
 
-  ### Compute matrix of expected squared difference between case and complement given parent geno ###
-  expected.squared.diffs <- ifelse(mother.genetic.data == 1 & father.genetic.data == 1, 2,
-                                   ifelse(abs(mother.genetic.data - father.genetic.data) == 1, 1, 0))
+  ### Compute matrix indicating whether both the case and control have 1 copy of the alt allele ###
+  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
   ### initialize groups of candidate solutions ###
   chromosome.list <- vector(mode = "list", length = n.chromosomes)
@@ -76,7 +75,7 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
       fitness.scores <- unlist(bplapply(1:length(chromosome.list), function(x) {
 
         fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
-                      chromosome.list[[x]], dist.type, case.minus.comp, expected.squared.diffs,
+                      chromosome.list[[x]], dist.type, case.minus.comp, both.one.mat,
                       k, correct.thresh)
 
       }))
@@ -86,7 +85,7 @@ ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data,
       fitness.scores <- sapply(1:length(chromosome.list), function(x) {
 
         fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
-                      chromosome.list[[x]], dist.type, case.minus.comp, expected.squared.diffs,
+                      chromosome.list[[x]], dist.type, case.minus.comp, both.one.mat,
                       k, correct.thresh)
 
       })
