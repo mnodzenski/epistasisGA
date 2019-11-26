@@ -93,27 +93,40 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
   } else if (dist.type == "paired"){
 
     #compute weights
-    both.one <- rowSums(both.one.mat[ , target.snps])
-    family.weights <- both.one + 4*total.different.snps
+    #both.one <- rowSums(both.one.mat[ , target.snps])
+    #family.weights <- both.one + 4*total.different.snps
 
     #weighted difference vectors between cases and complements
-    dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
+    #dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
+
+    #difference vectors
+    dif.vecs <- as.matrix(cases.minus.complements[ , target.snps])
 
     #sum the difference vectors
     sum.dif.vecs <- colSums(dif.vecs)
 
+    #observed variance covariance matrix
+    dif.vec.cov.mat <- t(dif.vecs) %*% dif.vecs
+
+    #compute svd of dif.vec.cov.mat
+    cov.mat.svd <- svd(dif.vec.cov.mat)
+
+    #compute the hotelling t2 stat
+    t2 <- length(dif.vecs) * rowSums((t(sum.dif.vecs) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+    fitness.score <- t2
+
     #compute variance of the absolute values of the elements of the difference vectors
-    dif.vec.sd <- sd(abs(sum.dif.vecs))
+    #dif.vec.sd <- sd(abs(sum.dif.vecs))
 
     #squared vector length of the sum of difference vectors
-    sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
+    #sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
 
     #expected squared length of the sum of the difference vectors under the null
-    expected.sq.length.sum.dif.vecs <- sum(dif.vecs^2)
+   # expected.sq.length.sum.dif.vecs <- sum(dif.vecs^2)
 
     #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
     #1 plus the variance of the absolute value of elements of the vector
-    fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+    #fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
 
   }
 
