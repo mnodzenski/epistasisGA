@@ -97,22 +97,6 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     family.weights <- both.one + 4*total.different.snps
 
     #weighted difference vectors between cases and complements
-    #dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
-    unweighted.diff.vecs <- cases.minus.complements[ , target.snps]
-
-    #compute sum to make a guess at risk allele
-    unweighted.diff.vec.sum <- colSums(unweighted.diff.vecs)
-
-    #determine directions
-    unw.diff.vec.sum.sign <- sign(unweighted.diff.vec.sum)
-    pos.delta <- unw.diff.vec.sum.sign > 0
-    neg.delta <- unw.diff.vec.sum.sign < 0
-
-    #compute weights
-    #want cases to have at least one copy of each risk allele
-    family.weights <- ((rowSums(cases[ , pos.delta, drop = F] > 0) + rowSums(cases[ , neg.delta, drop = F] < 2)) == length(target.snps))*(2*total.different.snps + both.one)
-
-    #compute weighted difference vectors
     dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
 
     #sum the difference vectors
@@ -130,7 +114,6 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
     #1 plus the variance of the absolute value of elements of the vector
     fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
-    #fitness.score <- (sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
 
   }
 
