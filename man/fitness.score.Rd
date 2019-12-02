@@ -25,7 +25,7 @@ fitness.score(
 
 \item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
 
-\item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.}
+\item{dist.type}{A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications. Hotelling computes a Hotellings t2 statistic.}
 
 \item{cases.minus.complements}{A matrix equal to case.genetic.data - complement.genetic.data. Required if dist.type = 'paired'.}
 
