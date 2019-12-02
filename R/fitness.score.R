@@ -6,7 +6,7 @@
 #' @param complement.genetic.data A genetic dataset representing the genetic complements to the cases (for a dichotomous trait). That is, these data correspond to the hypothetical pseudo sibling who inherited the parental alleles not transmitted to the case. Columns are snps, and rows are individuals.
 #' @param case.comp.differences a data from indicating case.genetic.data != complement.genetic.data.
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
-#' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications.
+#' @param dist.type A character string indicating the type of distance measurement. Type 'knn' performs k-nearest neighbors classifications, type 'paired' performs paired length classifications. Hotelling computes a Hotellings t2 statistic.
 #' @param cases.minus.complements A matrix equal to case.genetic.data - complement.genetic.data. Required if dist.type = 'paired'.
 #' @param both.one.mat A matrix whose elements indicate whether both the case and control have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).
 #' @param k A numeric scalar corresponding to the number of nearest neighbors required for computing the fitness score. See details for more information.
@@ -93,40 +93,58 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
   } else if (dist.type == "paired"){
 
     #compute weights
-    #both.one <- rowSums(both.one.mat[ , target.snps])
-    #family.weights <- both.one + 4*total.different.snps
+    both.one <- rowSums(both.one.mat[informative.families , target.snps])
+    family.weights <- both.one + 2*total.different.snps[informative.families]
 
-    #weighted difference vectors between cases and complements
-    #dif.vecs <- family.weights*cases.minus.complements[ , target.snps]
-
-    #difference vectors
-    dif.vecs <- as.matrix(cases.minus.complements[ , target.snps])
+    #difference vectors between cases and complements
+    dif.vecs <- cases.minus.complements[informative.families, target.snps]
 
     #sum the difference vectors
     sum.dif.vecs <- colSums(dif.vecs)
 
-    #observed variance covariance matrix
-    dif.vec.cov.mat <- t(dif.vecs) %*% dif.vecs
+    #also compute the average difference vector
+    ave.dif.vec <- sum.dif.vecs/n.informative.families
+
+    #determine whether the dot product between each family's difference vector
+    #and the average difference vector is positive
+    dot.prods <- dif.vecs %*% ave.dif.vec
+    non.pos.dot.prods <- dot.prods <= 0
+
+    #weight the vector sum, giving weight zero to families with negative dot products
+    #and otherwise the family weights specified above
+    family.weights[non.pos.dot.prods] <- 0
+    weighted.dif.vecs <- family.weights*dif.vecs
+
+    #squared vector length of the sum of difference vectors
+    sq.length.sum.dif.vecs <- sum(colSums(weighted.dif.vecs)^2)
+
+    #sd of the elements of the weighted difference vectors
+    weighted.dif.vec.sd <- sd(colSums(weighted.dif.vecs)^2)
+
+    #expected squared length of the sum of the difference vectors under the null
+    expected.sq.length.sum.dif.vecs <- sum(weighted.dif.vecs^2)
+
+    #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
+    #1 plus the variance of the absolute value of elements of the vector
+    fitness.score <- (1/(1 + weighted.dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+
+  } else if (dist.type == "Hotelling"){
+
+    #difference vectors for informative families
+    dif.vecs <- as.matrix(cases.minus.complements[informative.families , target.snps])
+
+    #average difference vector
+    ave.dif.vec <- colMeans(dif.vecs)
+
+    #observed variance covariance matrix times n
+    dif.vec.cov.mat <- crossprod(dif.vecs)
 
     #compute svd of dif.vec.cov.mat
     cov.mat.svd <- svd(dif.vec.cov.mat)
 
     #compute the hotelling t2 stat
-    t2 <- length(dif.vecs) * rowSums((t(sum.dif.vecs) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+    t2 <- length(dif.vecs) * rowSums((t(ave.dif.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
     fitness.score <- t2
-
-    #compute variance of the absolute values of the elements of the difference vectors
-    #dif.vec.sd <- sd(abs(sum.dif.vecs))
-
-    #squared vector length of the sum of difference vectors
-    #sq.length.sum.dif.vecs <- sum(sum.dif.vecs^2)
-
-    #expected squared length of the sum of the difference vectors under the null
-   # expected.sq.length.sum.dif.vecs <- sum(dif.vecs^2)
-
-    #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
-    #1 plus the variance of the absolute value of elements of the vector
-    #fitness.score <- (1/(1 + dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
 
   }
 
