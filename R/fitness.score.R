@@ -97,7 +97,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     family.weights <- both.one + 2*total.different.snps[informative.families]
 
     #difference vectors between cases and complements
-    dif.vecs <- cases.minus.complements[informative.families, target.snps]
+    dif.vecs <- as.matrix(cases.minus.complements[informative.families, target.snps])
 
     #sum the difference vectors
     sum.dif.vecs <- colSums(dif.vecs)
@@ -107,7 +107,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
 
     #determine whether the dot product between each family's difference vector
     #and the average difference vector is positive
-    dot.prods <- dif.vecs %*% ave.dif.vec
+    dot.prods <- as.numeric(dif.vecs %*% t(ave.dif.vec))
     non.pos.dot.prods <- dot.prods <= 0
 
     #weight the vector sum, giving weight zero to families with negative dot products
