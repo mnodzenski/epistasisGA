@@ -98,7 +98,7 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     family.weights <- both.one + 2*total.different.snps[informative.families]
 
     #weighted difference vectors between cases and complements
-    dif.vecs <- as.matrix(family.weights*cases.minus.complements[informative.families, target.snps])
+    dif.vecs <- as.matrix(family.weights*cases.minus.complements[informative.families, target.snps]/sum(family.weights))
 
     #sum the difference vectors
     sum.dif.vecs <- colSums(dif.vecs)
