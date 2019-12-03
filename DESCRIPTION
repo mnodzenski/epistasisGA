@@ -8,6 +8,6 @@ Description: Runs knn-GA algorithm to detect candidate solutions for genetic epi
 License: Placeholder
 Encoding: UTF-8
 LazyData: true
-Imports: Rfast, BiocParallel
+Imports: Rfast, BiocParallel, e1071
 RoxygenNote: 7.0.0
 Depends: R (>= 3.5.0)
