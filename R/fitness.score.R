@@ -23,6 +23,7 @@
 #' fitness.score(case, comp, case.comp.diff, target.snps = c(1, 4, 7), dist.type = "knn")
 #'
 #' @importFrom Rfast Dist
+#' @importFrom e1071 skewness
 #' @export
 
 fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
