@@ -96,8 +96,8 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     both.one <- rowSums(both.one.mat[informative.families , target.snps])
     family.weights <- both.one + 2*total.different.snps[informative.families]
 
-    #difference vectors between cases and complements
-    dif.vecs <- as.matrix(cases.minus.complements[informative.families, target.snps])
+    #weighted difference vectors between cases and complements
+    dif.vecs <- as.matrix(family.weights*cases.minus.complements[informative.families, target.snps])
 
     #sum the difference vectors
     sum.dif.vecs <- colSums(dif.vecs)
@@ -108,25 +108,27 @@ fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.
     #determine whether the dot product between each family's difference vector
     #and the average difference vector is positive
     dot.prods <- as.numeric(dif.vecs %*% ave.dif.vec)
-    non.pos.dot.prods <- dot.prods <= 0
+   # non.pos.dot.prods <- dot.prods <= 0
 
     #weight the vector sum, giving weight zero to families with negative dot products
     #and otherwise the family weights specified above
-    family.weights[non.pos.dot.prods] <- 0
-    weighted.dif.vecs <- family.weights*dif.vecs
+    #family.weights[non.pos.dot.prods] <- 0
+    #weighted.dif.vecs <- family.weights*dif.vecs
+   # weighted.dif.vecs <- dif.vecs
 
     #squared vector length of the sum of difference vectors
-    sq.length.sum.dif.vecs <- sum(colSums(weighted.dif.vecs)^2)
+    #sq.length.sum.dif.vecs <- sum(colSums(weighted.dif.vecs)^2)
 
     #sd of the elements of the weighted difference vectors
-    weighted.dif.vec.sd <- sd(colSums(weighted.dif.vecs)^2)
+    #weighted.dif.vec.sd <- sd(colSums(weighted.dif.vecs)^2)
 
     #expected squared length of the sum of the difference vectors under the null
-    expected.sq.length.sum.dif.vecs <- sum(weighted.dif.vecs^2)
+    #expected.sq.length.sum.dif.vecs <- sum(weighted.dif.vecs^2)
 
     #fitness score as the ratio of the observed to expected squared vector length, inverse weigthed by
     #1 plus the variance of the absolute value of elements of the vector
-    fitness.score <- (1/(1 + weighted.dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+    #fitness.score <- (1/(1 + weighted.dif.vec.sd))*(sq.length.sum.dif.vecs/(expected.sq.length.sum.dif.vecs))
+    fitness.score <- skewness(dot.prods)
 
   } else if (dist.type == "Hotelling"){
 
