@@ -61,7 +61,6 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
 
-    chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat)
     fitness.scores <- sapply(1:length(chromosome.list), function(x) {
 
         chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat)
