@@ -8,7 +8,9 @@ chrom.fitness.score(
   case.comp.differences,
   target.snps,
   cases.minus.complements,
-  both.one.mat
+  both.one.mat,
+  n.different.snps.weight = 2,
+  n.both.one.weight = 1
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ chrom.fitness.score(
 \item{cases.minus.complements}{A matrix equal to case genetic data - complement genetic data.}
 
 \item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).}
+
+\item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
+
+\item{n.both.one.weight}{The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
 }
 \value{
 A scalar, the fitness score for the given set of snps.

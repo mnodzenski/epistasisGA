@@ -7,6 +7,8 @@
 #' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param chromosome.size The number of snps within each candidate solution.
+#' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
@@ -24,7 +26,8 @@
 #' @export
 
 run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size,
-               generations = 2000,gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
+                   n.different.snps.weight = 2, n.both.one.weight = 1, generations = 2000, gen.same.fitness = 500,
+                   tol = 10^-6, n.top.chroms = 100){
 
   ### Compute the complement data ###
   complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
@@ -63,7 +66,8 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
 
     fitness.scores <- sapply(1:length(chromosome.list), function(x) {
 
-        chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat)
+        chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat,
+                            n.different.snps.weight, n.both.one.weight)
 
     })
 
