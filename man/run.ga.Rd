@@ -10,6 +10,8 @@ run.ga(
   mother.genetic.data,
   n.chromosomes,
   chromosome.size,
+  n.different.snps.weight = 2,
+  n.both.one.weight = 1,
   generations = 2000,
   gen.same.fitness = 500,
   tol = 10^-6,
@@ -26,6 +28,10 @@ run.ga(
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
 \item{chromosome.size}{The number of snps within each candidate solution.}
+
+\item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
+
+\item{n.both.one.weight}{The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 
