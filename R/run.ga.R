@@ -9,6 +9,7 @@
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
+#' @param min.allele.freq The minimum minor allele frequency in cases required for a snp to be considered for inclusion in the GA solution. Any snps with MAF < min.allele.freq in the cases will be omitted. Defaults to 0.01.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
@@ -26,8 +27,17 @@
 #' @export
 
 run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size,
-                   n.different.snps.weight = 2, n.both.one.weight = 1, generations = 2000, gen.same.fitness = 500,
+                   n.different.snps.weight = 2, n.both.one.weight = 1, min.allele.freq = 0.01, generations = 2000, gen.same.fitness = 500,
                    tol = 10^-6, n.top.chroms = 100){
+
+  ### find the snps with MAF < minimum threshold in the cases ###
+  alt.allele.freqs <- colSums(case.genetic.data)/(2*nrow(case.genetic.data))
+  below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
+
+  ### remove the snps not meeting the required allele frequency threshold ###
+  father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
+  mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
+  case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
 
   ### Compute the complement data ###
   complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data

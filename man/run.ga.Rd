@@ -12,6 +12,7 @@ run.ga(
   chromosome.size,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
+  min.allele.freq = 0.01,
   generations = 2000,
   gen.same.fitness = 500,
   tol = 10^-6,
@@ -32,6 +33,8 @@ run.ga(
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
 \item{n.both.one.weight}{The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
+
+\item{min.allele.freq}{The minimum minor allele frequency in cases required for a snp to be considered for inclusion in the GA solution. Any snps with MAF < min.allele.freq in the cases will be omitted. Defaults to 0.01.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 
