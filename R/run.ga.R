@@ -150,7 +150,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
 
     cross.overs <- rep(F, length(unique.lower.idx))
     #note: need at least two crossovers assigned, and need an even number
-    if (unique.lower.idx > 1){
+    if (length(unique.lower.idx) > 1){
 
       while (sum(cross.overs) < 2 | sum(cross.overs) %% 2 != 0){
 
