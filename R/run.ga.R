@@ -261,7 +261,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
 
       #grab the chromosome and its difference vector
       target.chrom <- sampled.lower.chromosomes[[i]]
-      target.dif.vec <- sampled.lower.dif.vecs[i, ]
+      target.dif.vec <- as.vector(t(sampled.lower.dif.vecs[i, ]))
 
       #determine which snps to mutate
       total.mutations <- sample.int(chromosome.size, 1)
