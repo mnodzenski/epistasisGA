@@ -303,15 +303,15 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
   }
   ### Return the best chromosomes, their fitness scores, difference vectors and the number of generations ###
   last.generation <- generation - 1
-  all.chrom.dt <- rbindlist(chromosome.mat.list)
-  all.chrom.dif.vec.dt <- rbindlist(sum.dif.vec.list)
+  all.chrom.dt <- rbindlist(chromosome.mat.list, use.names = F)
+  all.chrom.dif.vec.dt <- rbindlist(sum.dif.vec.list, use.names = F)
   unique.chromosome.dt <- unique(all.chrom.dt)
   colnames(unique.chromosome.dt) <- paste0("snp", 1:ncol(unique.chromosome.dt))
   unique.chrom.dif.vec.dt <- all.chrom.dif.vec.dt[!duplicated(all.chrom.dt), ]
   colnames(unique.chrom.dif.vec.dt) <- paste0("snp", 1:ncol(unique.chrom.dif.vec.dt), ".diff.vec")
   unique.fitness.score.vec <- as.vector(fitness.score.mat)[!duplicated(all.chrom.dt)]
   unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt)
-  unique.results$fitness.score <- unique.fitness.score.vec
+  unique.results[ , fitness.score := unique.fitness.score.vec]
   setorder(unique.results, -fitness.score)
   final.result <- unique.results[1:n.top.chroms, ]
 
