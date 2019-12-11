@@ -165,100 +165,104 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
 
     ### 6. Execute crossing over for the relevant chromosomes ###
     print("Step 6/9")
-    cross.over.positions <- match(unique.lower.idx[cross.overs], sampled.lower.idx)
-    cross.over.starts <- seq(1, length(cross.over.positions), by = 2)
-    for (i in cross.over.starts){
+    if (any(cross.overs)){
 
-      #grab pair of chromosomes to cross over
-      chrom1 <- sampled.lower.chromosomes[[cross.over.positions[i]]]
-      chrom1.dif.vecs <- sampled.lower.dif.vecs[cross.over.positions[i], ]
-      chrom1.fitness.score <- sampled.lower.fitness.scores[cross.over.positions[i]]
+      cross.over.positions <- match(unique.lower.idx[cross.overs], sampled.lower.idx)
+      cross.over.starts <- seq(1, length(cross.over.positions), by = 2)
+      for (i in cross.over.starts){
 
-      chrom2 <- sampled.lower.chromosomes[[cross.over.positions[i+1]]]
-      chrom2.dif.vecs <- sampled.lower.dif.vecs[cross.over.positions[i+1], ]
-      chrom2.fitness.score <- sampled.lower.fitness.scores[cross.over.positions[i+1]]
+        #grab pair of chromosomes to cross over
+        chrom1 <- sampled.lower.chromosomes[[cross.over.positions[i]]]
+        chrom1.dif.vecs <- sampled.lower.dif.vecs[cross.over.positions[i], ]
+        chrom1.fitness.score <- sampled.lower.fitness.scores[cross.over.positions[i]]
 
-      if (any(duplicated(chrom1))){
+        chrom2 <- sampled.lower.chromosomes[[cross.over.positions[i+1]]]
+        chrom2.dif.vecs <- sampled.lower.dif.vecs[cross.over.positions[i+1], ]
+        chrom2.fitness.score <- sampled.lower.fitness.scores[cross.over.positions[i+1]]
 
-        stop("Duplicate elements in chrom1")
+        if (any(duplicated(chrom1))){
+
+          stop("Duplicate elements in chrom1")
+
+        }
+
+        if (any(duplicated(chrom2))){
+
+          stop("Duplicate elements in chrom2")
+
+        }
+
+        #check for overlapping snps
+        c1.c2.matching.snp.positions <- match(chrom1, chrom2)
+        c1.c2.matching.snp.positions <-  c1.c2.matching.snp.positions[!is.na(c1.c2.matching.snp.positions)]
+        c1.c2.not.matching.snp.positions <- setdiff(1:chromosome.size, c1.c2.matching.snp.positions)
+
+        c2.c1.matching.snp.positions <- match(chrom2, chrom1)
+        c2.c1.matching.snp.positions <-  c2.c1.matching.snp.positions[!is.na(c2.c1.matching.snp.positions)]
+        c2.c1.not.matching.snp.positions <- setdiff(1:chromosome.size, c2.c1.matching.snp.positions)
+
+        #for the non-matching snps, order by the decreasing magnitude of the difference vector in the chromsome with the higher fitness score
+        #and order by the increasing magntidue of the difference vector in the chromosome with the lower fitness score
+        #**ultimately will be used to substitute the higher magnitude elements in the lower scoring chromosome for the lower magnitude
+        #elements in the higher scoring chromosome**
+        if (chrom1.fitness.score >= chrom2.fitness.score){
+
+          c1.c2.not.matching.snp.positions <- c1.c2.not.matching.snp.positions[order(abs(chrom2.dif.vecs[c1.c2.not.matching.snp.positions]))]
+          c2.c1.not.matching.snp.positions <- c2.c1.not.matching.snp.positions[order(abs(chrom1.dif.vecs[c2.c1.not.matching.snp.positions]), decreasing = T)]
+
+        } else{
+
+          c1.c2.not.matching.snp.positions <- c1.c2.not.matching.snp.positions[order(abs(chrom2.dif.vecs[c1.c2.not.matching.snp.positions]), decreasing = T)]
+          c2.c1.not.matching.snp.positions <- c2.c1.not.matching.snp.positions[order(abs(chrom1.dif.vecs[c2.c1.not.matching.snp.positions]))]
+
+        }
+
+        #order the chromosomes, first by the overlapping snps and the non-overlapping
+        chrom2 <- chrom2[c(c1.c2.matching.snp.positions, c1.c2.not.matching.snp.positions)]
+        chrom1 <- chrom1[c(c2.c1.matching.snp.positions, c2.c1.not.matching.snp.positions)]
+
+        #determine how many snps could be crossed over
+        #and also make sure we don't simply swap chromosomes
+        possible.cut.points <- sort(which(chrom1 != chrom2), decreasing = T)
+        if (length(possible.cut.points) == chromosome.size){
+
+          n.possible.crosses <- chromosome.size - 1
+
+        } else {
+
+          n.possible.crosses <- length(possible.cut.points)
+
+        }
+
+        #determine how many snps will actually be crossed over
+        n.crosses <- sample.int(n.possible.crosses, 1)
+
+        #pick out their positions
+        cross.points <- c(1:chromosome.size)[(chromosome.size - n.crosses + 1):chromosome.size]
+
+        #exchange the high magnitude elements from the lower scoring chromosome with the low magnitude elements from the high
+        #scoring chromsosome
+        chrom1.cross <- chrom1
+        chrom1.cross[cross.points] <- chrom2[cross.points]
+        chrom2.cross <- chrom2
+        chrom2.cross[cross.points] <- chrom1[cross.points]
+
+        #error checking
+        if(length(chrom1.cross) != chromosome.size){
+
+          stop("chrom1 wrong length")
+        }
+
+        if(length(chrom2.cross) != chromosome.size){
+
+          stop("chrom2 wrong length")
+        }
+
+        #replace in the chromosome list
+        sampled.lower.chromosomes[[cross.over.positions[i]]] <- chrom1.cross
+        sampled.lower.chromosomes[[cross.over.positions[i+1]]] <- chrom2.cross
 
       }
-
-      if (any(duplicated(chrom2))){
-
-        stop("Duplicate elements in chrom2")
-
-      }
-
-      #check for overlapping snps
-      c1.c2.matching.snp.positions <- match(chrom1, chrom2)
-      c1.c2.matching.snp.positions <-  c1.c2.matching.snp.positions[!is.na(c1.c2.matching.snp.positions)]
-      c1.c2.not.matching.snp.positions <- setdiff(1:chromosome.size, c1.c2.matching.snp.positions)
-
-      c2.c1.matching.snp.positions <- match(chrom2, chrom1)
-      c2.c1.matching.snp.positions <-  c2.c1.matching.snp.positions[!is.na(c2.c1.matching.snp.positions)]
-      c2.c1.not.matching.snp.positions <- setdiff(1:chromosome.size, c2.c1.matching.snp.positions)
-
-      #for the non-matching snps, order by the decreasing magnitude of the difference vector in the chromsome with the higher fitness score
-      #and order by the increasing magntidue of the difference vector in the chromosome with the lower fitness score
-      #**ultimately will be used to substitute the higher magnitude elements in the lower scoring chromosome for the lower magnitude
-      #elements in the higher scoring chromosome**
-      if (chrom1.fitness.score >= chrom2.fitness.score){
-
-        c1.c2.not.matching.snp.positions <- c1.c2.not.matching.snp.positions[order(abs(chrom2.dif.vecs[c1.c2.not.matching.snp.positions]))]
-        c2.c1.not.matching.snp.positions <- c2.c1.not.matching.snp.positions[order(abs(chrom1.dif.vecs[c2.c1.not.matching.snp.positions]), decreasing = T)]
-
-      } else{
-
-        c1.c2.not.matching.snp.positions <- c1.c2.not.matching.snp.positions[order(abs(chrom2.dif.vecs[c1.c2.not.matching.snp.positions]), decreasing = T)]
-        c2.c1.not.matching.snp.positions <- c2.c1.not.matching.snp.positions[order(abs(chrom1.dif.vecs[c2.c1.not.matching.snp.positions]))]
-
-      }
-
-      #order the chromosomes, first by the overlapping snps and the non-overlapping
-      chrom2 <- chrom2[c(c1.c2.matching.snp.positions, c1.c2.not.matching.snp.positions)]
-      chrom1 <- chrom1[c(c2.c1.matching.snp.positions, c2.c1.not.matching.snp.positions)]
-
-      #determine how many snps could be crossed over
-      #and also make sure we don't simply swap chromosomes
-      possible.cut.points <- sort(which(chrom1 != chrom2), decreasing = T)
-      if (length(possible.cut.points) == chromosome.size){
-
-        n.possible.crosses <- chromosome.size - 1
-
-      } else {
-
-        n.possible.crosses <- length(possible.cut.points)
-
-      }
-
-      #determine how many snps will actually be crossed over
-      n.crosses <- sample.int(n.possible.crosses, 1)
-
-      #pick out their positions
-      cross.points <- c(1:chromosome.size)[(chromosome.size - n.crosses + 1):chromosome.size]
-
-      #exchange the high magnitude elements from the lower scoring chromosome with the low magnitude elements from the high
-      #scoring chromsosome
-      chrom1.cross <- chrom1
-      chrom1.cross[cross.points] <- chrom2[cross.points]
-      chrom2.cross <- chrom2
-      chrom2.cross[cross.points] <- chrom1[cross.points]
-
-      #error checking
-      if(length(chrom1.cross) != chromosome.size){
-
-        stop("chrom1 wrong length")
-      }
-
-      if(length(chrom2.cross) != chromosome.size){
-
-        stop("chrom2 wrong length")
-      }
-
-      #replace in the chromosome list
-      sampled.lower.chromosomes[[cross.over.positions[i]]] <- chrom1.cross
-      sampled.lower.chromosomes[[cross.over.positions[i+1]]] <- chrom2.cross
 
     }
 
