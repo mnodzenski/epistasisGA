@@ -272,7 +272,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
 
       #remove the chromosome's snps from the pool of available snps
       #and sample new snps for the mutations
-      mutated.snps <- sample(1:ncol(case.genetic.data)[-target.chrom], total.mutations, prob = abs(snp.zscores)[-target.chrom])
+      mutated.snps <- sample((1:ncol(case.genetic.data))[-target.chrom], total.mutations, prob = abs(snp.zscores)[-target.chrom])
 
       #substitute in mutations
       target.chrom[mutate.these] <- mutated.snps
