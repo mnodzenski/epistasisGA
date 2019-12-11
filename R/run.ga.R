@@ -290,7 +290,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     top.generation.chromosome[[generation]] <- original.col.numbers[top.chromosome[[1]]]
     print(paste0("Max fitness score:", max.fitness))
     print("Top Chromosome(s):")
-    print(original.col.numbers[top.chromosome[[1]]])
+    print(original.col.numbers[top.chromosome[1]])
     if (generation >= gen.same.fitness){
 
       last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
@@ -306,9 +306,9 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
   all.chrom.dif.vec.dt <- rbindlist(sum.dif.vec.list)
   unique.chromosome.dt <- unique(all.chrom.dt)
   colnames(unique.chromosome.dt) <- paste0("snp", 1:ncol(unique.chromosome.dt))
-  unique.chrom.dif.vec.dt <- all.chrom.dif.vec.dt[!duplicated(all.chrome.dt), ]
+  unique.chrom.dif.vec.dt <- all.chrom.dif.vec.dt[!duplicated(all.chrom.dt), ]
   colnames(unique.chrom.dif.vec.dt) <- paste0("snp", 1:ncol(unique.chrom.dif.vec.dt), ".diff.vec")
-  unique.fitness.score.vec <- as.vector(fitness.score.mat)[!duplicated(all.chrome.dt)]
+  unique.fitness.score.vec <- as.vector(fitness.score.mat)[!duplicated(all.chrom.dt)]
   unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt)
   unique.results$fitness.score <- unique.fitness.score.vec
   setorder(unique.results, -fitness.score)
