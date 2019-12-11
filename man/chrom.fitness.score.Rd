@@ -27,7 +27,7 @@ chrom.fitness.score(
 \item{n.both.one.weight}{The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
 }
 \value{
-A scalar, the fitness score for the given set of snps.
+A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 }
 \description{
 This function returns a fitness score for a set of snps, where the fitness score is the squared vector length of the weighted sum of difference vectors between cases and complements.
