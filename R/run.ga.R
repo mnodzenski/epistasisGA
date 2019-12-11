@@ -25,7 +25,7 @@
 #' ga.res <- run.ga(case, dad, mom, 7, 3, generations = 1)
 #'
 #' @importFrom matrixStats colSds
-#' @importFrom data.table data.table rbindlist
+#' @importFrom data.table data.table rbindlist setorder
 #' @export
 
 run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size,
