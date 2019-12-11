@@ -45,8 +45,20 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
 
+  ### compute the average difference vector ###
+  ave.dif.vec <- sum.dif.vecs/n.informative.families
+
+  ### compute dot product of difference vectors with the average difference vector ###
+  dot.prods <- as.numeric(dif.vecs %*% ave.dif.vec)
+
+  ### keep the families with a positive dot product ###
+  keep.these <- dot.prods > 0
+
+  ### get final difference vectors ###
+  final.sum.dif.vecs <- colSums(dif.vecs[keep.these, ])
+
   ### fitness score is squared vector length of the sum of weighted difference vectors ###
-  fitness.score <- sum(colSums(dif.vecs)^2)
+  fitness.score <- sum(final.sum.dif.vecs^2)
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
 
 }
