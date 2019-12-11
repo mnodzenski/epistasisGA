@@ -130,10 +130,10 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     print("Step 3/9")
     lower.chromosomes <- c(which(fitness.scores != max.fitness), duplicate.top.chromosomes)
 
-    ### 4. Sample with replacement from the lower scoring chroms ###
+    ### 4. Sample with replacement from the existing chromosomes ###
     print("Step 4/9")
-    sampled.lower.idx <- sample(lower.chromosomes, length(lower.chromosomes),
-                                replace = T, prob = 1 + fitness.scores[lower.chromosomes])
+    sampled.lower.idx <- sample(1:n.chromosomes, length(lower.chromosomes),
+                                replace = T, prob = fitness.scores)
     sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
     sampled.lower.dif.vecs <- sum.dif.vecs[sampled.lower.idx , ]
     sampled.lower.fitness.scores <- fitness.scores[sampled.lower.idx]
