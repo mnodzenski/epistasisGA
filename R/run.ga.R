@@ -36,6 +36,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
   alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
   below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
   original.col.numbers <- which(!below.maf.threshold)
+  names(original.col.numbers) <- NULL
 
   ### remove the snps not meeting the required allele frequency threshold ###
   father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
@@ -290,7 +291,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     top.generation.chromosome[[generation]] <- original.col.numbers[top.chromosome[[1]]]
     print(paste0("Max fitness score:", max.fitness))
     print("Top Chromosome(s):")
-    print(original.col.numbers[top.chromosome[1]])
+    print(original.col.numbers[top.chromosome[[1]]])
     if (generation >= gen.same.fitness){
 
       last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
