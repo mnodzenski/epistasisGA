@@ -55,7 +55,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   keep.these <- dot.prods > 0
 
   ### get final difference vectors ###
-  final.sum.dif.vecs <- colSums(dif.vecs[keep.these, ])
+  sum.dif.vecs <- colSums(dif.vecs[keep.these, ])
 
   ### fitness score is squared vector length of the sum of weighted difference vectors ###
   fitness.score <- sum(final.sum.dif.vecs^2)
