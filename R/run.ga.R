@@ -132,8 +132,11 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
 
     ### 4. Sample with replacement from the existing chromosomes ###
     print("Step 4/9")
-    sampled.lower.idx <- sample(1:n.chromosomes, length(lower.chromosomes),
-                                replace = T, prob = fitness.scores)
+
+    #allow the top scoring chromosome to be sampled, but only sample from the unique chromosomes available
+    sample.these <- !duplicated(chromosome.list)
+    sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
+                                replace = T, prob = fitness.scores[sample.these])
     sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
     sampled.lower.dif.vecs <- sum.dif.vecs[sampled.lower.idx , ]
     sampled.lower.fitness.scores <- fitness.scores[sampled.lower.idx]
@@ -145,11 +148,15 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     # (i.e, if a chromosome was sampled twice, it can't cross over with itself)
     unique.lower.idx <- unique(sampled.lower.idx)
 
-    #note: need at least two crossovers assigned, and need an even number
     cross.overs <- rep(F, length(unique.lower.idx))
-    while (sum(cross.overs) < 2 | sum(cross.overs) %% 2 != 0){
+    #note: need at least two crossovers assigned, and need an even number
+    if (unique.lower.idx > 1){
 
-      cross.overs <- rbinom(length(unique.lower.idx), 1, 0.5) == 1
+      while (sum(cross.overs) < 2 | sum(cross.overs) %% 2 != 0){
+
+        cross.overs <- rbinom(length(unique.lower.idx), 1, 0.5) == 1
+
+      }
 
     }
 
