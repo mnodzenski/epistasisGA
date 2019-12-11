@@ -263,16 +263,20 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
       target.chrom <- sampled.lower.chromosomes[[i]]
       target.dif.vec <- as.vector(t(sampled.lower.dif.vecs[i, ]))
 
+      #sort the chromosome elements from lowest absolute difference vector to highest
+      target.chrom <- target.chrom[order(abs(target.dif.vec))]
+
       #determine which snps to mutate
       total.mutations <- sample.int(chromosome.size, 1)
-      mutate.these <- sample.int(chromosome.size, total.mutations, prob = abs(target.dif.vec))
+      mutate.these <- 1:total.mutations
 
       #remove the chromosome's snps from the pool of available snps
       #and sample new snps for the mutations
-      mutated.snps <- sample.int(ncol(case.genetic.data)[-target.chrom], total.mutations, prob = abs(snp.zscores)[-target.chrom])
+      mutated.snps <- sample(1:ncol(case.genetic.data)[-target.chrom], total.mutations, prob = abs(snp.zscores)[-target.chrom])
 
       #substitute in mutations
-      sampled.lower.chromosomes[[i]][mutate.these] <- mutated.snps
+      target.chrom[mutate.these] <- mutated.snps
+      sampled.lower.chromosomes[[i]] <- target.chrom
 
     }
 
