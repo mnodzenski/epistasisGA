@@ -62,6 +62,6 @@ data(case)
 data(dad)
 data(mom)
 
-ga.res <- run.ga(case, dad, mom, 7, 3, generations = 1)
+ga.res <- run.ga(case, dad, mom, 7, 3, seed.val = 10, generations = 1)
 
 }
