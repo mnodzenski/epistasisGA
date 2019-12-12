@@ -8,6 +8,7 @@
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
+#' @param weight.function A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
 #' @examples
@@ -24,7 +25,7 @@
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1){
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity()){
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
@@ -36,7 +37,8 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
   ### compute weights ###
   both.one <- rowSums(both.one.mat[informative.families , target.snps])
-  family.weights <- n.both.one.weight*both.one + n.different.snps.weight*total.different.snps[informative.families]
+  weighted.informativeness <- n.both.one.weight*both.one + n.different.snps.weight*total.different.snps[informative.families]
+  family.weights <- weight.function(weighted.informativeness)
   family.weights  <- family.weights/sum(family.weights)
 
   ### compute weighted difference vectors for cases vs complements ###
@@ -45,20 +47,36 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
 
+  ### return the squared length of the sum of the case - complement differences ###
+  fitness.score <- sum(sum.dif.vecs^2)
+
   ### compute the average difference vector ###
-  ave.dif.vec <- sum.dif.vecs/n.informative.families
+  #ave.dif.vec <- sum.dif.vecs/n.informative.families
 
   ### compute dot product of difference vectors with the average difference vector ###
-  dot.prods <- as.numeric(dif.vecs %*% ave.dif.vec)
+  #dot.prods <- as.numeric(dif.vecs %*% ave.dif.vec)
+  #ave.dif.vec.mat <- matrix(rep(sign(ave.dif.vec), nrow(dif.vecs)), byrow = T, nrow = nrow(dif.vecs))
+  #sign.comp.mat <- sign(dif.vecs) == ave.dif.vec.mat
+  #keep.these <- rowSums(sign.comp.mat) == length(ave.dif.vec)
 
   ### keep the families with a positive dot product ###
-  keep.these <- dot.prods > 0
+  #keep.these <- dot.prods > 0
 
   ### get final difference vectors ###
-  sum.dif.vecs <- colSums(dif.vecs[keep.these, ])
+  #if( any(keep.these)){
 
-  ### fitness score is squared vector length of the sum of weighted difference vectors ###
-  fitness.score <- sum(sum.dif.vecs^2)
+ #   sum.dif.vecs <- colSums(dif.vecs[keep.these, , drop = F])
+
+    ### fitness score is squared vector length of the sum of weighted difference vectors ###
+#    fitness.score <- sum(sum.dif.vecs^2)
+
+#  } else{
+
+ #   sum.dif.vecs <- rep(10^-6, length(target.snps))
+#    fitness.score <- 0
+
+#  }
+
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
 
 }
