@@ -9,6 +9,7 @@
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
+#' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
 #' @examples
@@ -25,7 +26,7 @@
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity){
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10){
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
@@ -47,8 +48,22 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
 
-  ### return the squared length of the sum of the case - complement differences ###
-  fitness.score <- sum(sum.dif.vecs^2)
+  ### determine how many cases actually have the proposed risk set ###
+  risk.set.signs <- sign(sum.dif.vecs)
+  target.snp.signs <- sign(case.comp.diff)
+  n.risk.set <- sum(apply(target.snp.signs, 1, function(x) all(x == risk.set.signs)))
+
+  ### If not enough indviduals with the risk set, give a very low fitness score ###
+  if(n.risk.set < min.n.risk.set){
+
+    fitness.score <- 10^-10
+
+  } else{
+
+  ### Otherwise, return the squared length of the sum of the case - complement differences ###
+    fitness.score <- sum(sum.dif.vecs^2)
+
+  }
 
   ### compute the average difference vector ###
   #ave.dif.vec <- sum.dif.vecs/n.informative.families
