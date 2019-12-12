@@ -30,7 +30,7 @@
 #' @export
 
 run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size,
-                   n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity(), min.allele.freq = 0.01,
+                   n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.allele.freq = 0.01,
                    generations = 2000, gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
 
   ### find the snps with MAF < minimum threshold in the cases ###
