@@ -6,6 +6,7 @@
 #' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals.
 #' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
+#' @param seed.val An integer indicating the seed to be used for the random samples.
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
@@ -29,9 +30,13 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @export
 
-run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size,
+run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size, seed.val,
                    n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.allele.freq = 0.01,
                    generations = 2000, gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
+
+  #set seed for reproducibility
+  set.seed(seed.val)
+  print(paste("Starting GA. Seed value:", seed.val))
 
   ### find the snps with MAF < minimum threshold in the cases ###
   alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
