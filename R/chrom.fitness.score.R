@@ -25,7 +25,7 @@
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity()){
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity){
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
