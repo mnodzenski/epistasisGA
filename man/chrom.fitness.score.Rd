@@ -11,7 +11,8 @@ chrom.fitness.score(
   both.one.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = identity
+  weight.function = identity,
+  min.n.risk.set = 10
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ chrom.fitness.score(
 \item{n.both.one.weight}{The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
 
 \item{weight.function}{A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.}
+
+\item{min.n.risk.set}{A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.}
 }
 \value{
 A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
