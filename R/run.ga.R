@@ -9,6 +9,7 @@
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
+#' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
 #' @param min.allele.freq The minimum minor allele frequency in cases required for a snp to be considered for inclusion in the GA solution. Any snps with MAF < `r min.allele.freq` in the parents will be omitted. Defaults to 0.01.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
@@ -29,8 +30,8 @@
 #' @export
 
 run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size,
-                   n.different.snps.weight = 2, n.both.one.weight = 1, min.allele.freq = 0.01, generations = 2000, gen.same.fitness = 500,
-                   tol = 10^-6, n.top.chroms = 100){
+                   n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity(), min.allele.freq = 0.01,
+                   generations = 2000, gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
 
   ### find the snps with MAF < minimum threshold in the cases ###
   alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
@@ -87,7 +88,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
         chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat,
-                            n.different.snps.weight, n.both.one.weight)
+                            n.different.snps.weight, n.both.one.weight, weight.function)
 
     })
 
