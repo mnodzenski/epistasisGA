@@ -56,7 +56,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### If not enough indviduals with the risk set, give a very low fitness score ###
   if (n.risk.set < min.n.risk.set){
 
-    fitness.score <- 1^-10
+    fitness.score <- 10^-10
 
   } else {
 
