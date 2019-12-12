@@ -14,6 +14,7 @@
 #' @param min.allele.freq The minimum minor allele frequency in the parents required for a snp to be considered as a potential GA solution. Any snps with MAF < \code{r min.allele.freq} in the parents will be omitted. Defaults to 0.01.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
+#' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
 #' @return A list, whose first element is a data.table of the top \code{r n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
@@ -32,7 +33,7 @@
 
 run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size, seed.val,
                    n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.allele.freq = 0.01,
-                   generations = 2000, gen.same.fitness = 500, tol = 10^-6, n.top.chroms = 100){
+                   generations = 2000, gen.same.fitness = 500, min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100){
 
   #set seed for reproducibility
   set.seed(seed.val)
@@ -93,7 +94,7 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
         chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat,
-                            n.different.snps.weight, n.both.one.weight, weight.function)
+                            n.different.snps.weight, n.both.one.weight, weight.function, min.n.risk.set)
 
     })
 

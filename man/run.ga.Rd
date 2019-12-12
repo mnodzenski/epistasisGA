@@ -17,6 +17,7 @@ run.ga(
   min.allele.freq = 0.01,
   generations = 2000,
   gen.same.fitness = 500,
+  min.n.risk.set = 10,
   tol = 10^-6,
   n.top.chroms = 100
 )
@@ -46,7 +47,8 @@ run.ga(
 
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination.}
 
-\item{tol}{The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.}
+\item{min.n.risk.set}{A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
+@param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.}
 
 \item{n.top.chroms}{The number of top scoring chromosomes, according to fitness score, to return.}
 }
