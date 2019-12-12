@@ -36,11 +36,11 @@ run.ga(
 
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
+\item{n.both.one.weight}{The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.}
 
 \item{weight.function}{A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.}
 
-\item{min.allele.freq}{The minimum minor allele frequency in cases required for a snp to be considered for inclusion in the GA solution. Any snps with MAF < `r min.allele.freq` in the parents will be omitted. Defaults to 0.01.}
+\item{min.allele.freq}{The minimum minor allele frequency in the parents required for a snp to be considered as a potential GA solution. Any snps with MAF < \code{r min.allele.freq} in the parents will be omitted. Defaults to 0.01.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 2000.}
 
@@ -51,7 +51,7 @@ run.ga(
 \item{n.top.chroms}{The number of top scoring chromosomes, according to fitness score, to return.}
 }
 \value{
-A list, whose first element is a data.table of the top `r n.top.chroms scoring chromosomes`, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < `r min.allele.freq`.
+A list, whose first element is a data.table of the top \code{r n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 }
 \description{
 This function runs a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.
