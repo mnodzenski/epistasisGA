@@ -10,6 +10,7 @@ run.ga(
   mother.genetic.data,
   n.chromosomes,
   chromosome.size,
+  seed.val,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function = identity,
@@ -30,6 +31,8 @@ run.ga(
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
 \item{chromosome.size}{The number of snps within each candidate solution.}
+
+\item{seed.val}{An integer indicating the seed to be used for the random samples.}
 
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
