@@ -135,9 +135,8 @@ run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, 
     print("Step 4/9")
 
     #allow the top scoring chromosome to be sampled, but only sample from the unique chromosomes available
-    sample.these <- !duplicated(chromosome.list)
-    sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
-                                replace = T, prob = fitness.scores[sample.these])
+    sampled.lower.idx <- sample(lower.chromosomes, length(lower.chromosomes),
+                                replace = T, prob = fitness.scores[lower.chromosomes])
     sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
     sampled.lower.dif.vecs <- sum.dif.vecs[sampled.lower.idx , ]
     sampled.lower.fitness.scores <- fitness.scores[sampled.lower.idx]
