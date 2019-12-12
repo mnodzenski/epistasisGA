@@ -54,11 +54,11 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   n.risk.set <- sum(rowSums(risk.set.sign.mat - target.snp.signs) == 0)
 
   ### If not enough indviduals with the risk set, give a very low fitness score ###
-  if(n.risk.set < min.n.risk.set){
+  if (n.risk.set < min.n.risk.set){
 
-    fitness.score <- 10^-10
+    fitness.score <- 1^-10
 
-  } else{
+  } else {
 
   ### Otherwise, return the squared length of the sum of the case - complement differences ###
     fitness.score <- sum(sum.dif.vecs^2)
