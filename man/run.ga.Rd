@@ -12,7 +12,7 @@ run.ga(
   chromosome.size,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = identity(),
+  weight.function = identity,
   min.allele.freq = 0.01,
   generations = 2000,
   gen.same.fitness = 500,
