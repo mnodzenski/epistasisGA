@@ -68,6 +68,6 @@ data(case)
 data(dad)
 data(mom)
 
-ga.res <- run.ga(case, dad, mom, 7, 3, seed.val = 10, generations = 1)
+ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7, chromosome.size = 3, seed.val = 10, generations = 1)
 
 }
