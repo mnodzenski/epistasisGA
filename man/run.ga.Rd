@@ -28,9 +28,9 @@ run.ga(
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
 
-\item{father.genetic.data}{The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{comp.genetic.data} is specified.}
+\item{father.genetic.data}{The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.}
 
-\item{mother.genetic.data}{The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{comp.genetic.data} is specified.}
+\item{mother.genetic.data}{The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.}
 
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
