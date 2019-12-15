@@ -356,7 +356,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   setorder(unique.results, -fitness.score)
   final.result <- unique.results[1:n.top.chroms, ]
 
-  print(paste("Algorithm terminated after", last.generation, "runs."))
+  print(paste("Algorithm terminated after", last.generation, "generations."))
   return(list(top.chromosome.results = final.result, n.generations = last.generation, n.filtered.snps = sum(below.maf.threshold) ))
 
 }
