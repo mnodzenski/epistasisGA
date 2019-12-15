@@ -3,8 +3,9 @@
 #' This function runs a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.
 #'
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
-#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals.
-#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals.
+#' @param comp.genetic.data A genetic dataset from the complements of the cases, where \code{comp.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
+#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{comp.genetic.data} is specified.
+#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{comp.genetic.data} is specified.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param seed.val An integer indicating the seed to be used for the random samples.
 #' @param chromosome.size The number of snps within each candidate solution.
@@ -31,27 +32,50 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @export
 
-run.ga <- function(case.genetic.data, father.genetic.data, mother.genetic.data, n.chromosomes, chromosome.size, seed.val,
-                   n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.allele.freq = 0.01,
-                   generations = 2000, gen.same.fitness = 500, min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100){
+run.ga <- function(case.genetic.data, comp.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
+                   n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
+                   weight.function = identity, min.allele.freq = 0.01, generations = 2000, gen.same.fitness = 500,
+                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100){
+
+  #make sure the appropriate genetic data is included
+  if (is.null(comp.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
+
+    stop("Must include comp.genetic.data or both father.genetic.data and mother.genetic.data")
+
+  }
 
   #set seed for reproducibility
   set.seed(seed.val)
   print(paste("Starting GA. Seed value:", seed.val))
 
   ### find the snps with MAF < minimum threshold in the cases ###
-  alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
-  below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
-  original.col.numbers <- which(!below.maf.threshold)
-  names(original.col.numbers) <- NULL
+  if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)){
 
-  ### remove the snps not meeting the required allele frequency threshold ###
-  father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
-  mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
-  case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
+    alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
+    below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
+    original.col.numbers <- which(!below.maf.threshold)
+    names(original.col.numbers) <- NULL
 
-  ### Compute the complement data ###
-  complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
+    ### remove the snps not meeting the required allele frequency threshold ###
+    father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
+    mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
+    case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
+
+    ### Compute the complement data ###
+    complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
+
+  } else if (!is.null(comp.genetic.data)){
+
+    alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4*nrow(case.genetic.data))
+    below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
+    original.col.numbers <- which(!below.maf.threshold)
+    names(original.col.numbers) <- NULL
+
+    ### remove the snps not meeting the required allele frequency threshold ###
+    case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
+    complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
+
+  }
 
   ### Compute matrices of differences between cases and complements ###
   case.minus.comp <- as.matrix(case.genetic.data - complement.genetic.data)
