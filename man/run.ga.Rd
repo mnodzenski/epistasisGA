@@ -6,7 +6,7 @@
 \usage{
 run.ga(
   case.genetic.data,
-  comp.genetic.data = NULL,
+  complement.genetic.data = NULL,
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
   n.chromosomes,
@@ -26,7 +26,7 @@ run.ga(
 \arguments{
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
 
-\item{comp.genetic.data}{A genetic dataset from the complements of the cases, where \code{comp.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
+\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
 
 \item{father.genetic.data}{The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{comp.genetic.data} is specified.}
 
