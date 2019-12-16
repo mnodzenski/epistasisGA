@@ -51,7 +51,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### determine how many cases actually have the proposed risk set ###
   risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
   target.snp.signs <- sign(case.comp.diff[informative.families, ])
-  n.risk.set <- sum(rowSums(risk.set.sign.mat == target.snp.signs|risk.set.sign.mat == 0) == ncol(risk.set.sign.mat))
+  n.risk.set <- sum(rowSums(risk.set.sign.mat == target.snp.signs) == ncol(risk.set.sign.mat))
 
   ### If not enough indviduals with the risk set, give a very low fitness score ###
   if (n.risk.set < min.n.risk.set){
