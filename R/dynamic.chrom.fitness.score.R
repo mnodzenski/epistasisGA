@@ -25,7 +25,7 @@
 #'
 #' @export
 
-chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
+dynamic.chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10){
 
   ### pick out the differences for the target snps ###
@@ -61,7 +61,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   } else {
 
   ### Otherwise, return the squared length of the sum of the case - complement differences ###
-    fitness.score <- sum(sum.dif.vecs^2)
+    fitness.score <- sum(sum.dif.vecs^2)/length(sum.dif.vecs)
 
   }
 
