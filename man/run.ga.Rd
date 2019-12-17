@@ -20,7 +20,8 @@ run.ga(
   gen.same.fitness = 500,
   min.n.risk.set = 10,
   tol = 10^-6,
-  n.top.chroms = 100
+  n.top.chroms = 100,
+  zscore.sd.threshold = 2.5
 )
 }
 \arguments{
@@ -55,6 +56,8 @@ run.ga(
 \item{tol}{The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.}
 
 \item{n.top.chroms}{The number of top scoring chromosomes, according to fitness score, to return.}
+
+\item{zscore.sd.threshold}{A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
