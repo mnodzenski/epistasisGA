@@ -9,5 +9,5 @@ License: Placeholder
 Encoding: UTF-8
 LazyData: true
 Imports: Rfast, BiocParallel, e1071, data.table
-RoxygenNote: 7.0.0
+RoxygenNote: 7.0.2
 Depends: R (>= 3.5.0)
