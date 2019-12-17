@@ -18,6 +18,7 @@
 #' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
+#' @param zscore.sd.threshold A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -35,7 +36,7 @@
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
                    n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.01, generations = 2000, gen.same.fitness = 500,
-                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100){
+                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -85,6 +86,14 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   mean.snp.diffs <- colMeans(case.minus.comp)
   sd.snp.diffs <- colSds(case.minus.comp)
   snp.zscores <- mean.snp.diffs/sd.snp.diffs
+
+  #don't allow extreme z-scores (preserve the ability to find snps with small marginal differences)
+  zscore.sd <- sd(snp.zscores)
+  zscore.mean <- mean(zscore)
+  extreme.zcore.upper.thresh <- zscore.mean + zscore.sd.threshold*zscore.sd
+  extreme.zcore.lower.thresh <- zscore.mean - zscore.sd.threshold*zscore.sd
+  snp.zscores[snp.zscores >= extreme.zcore.upper.thresh] <- extreme.zcore.upper.thresh
+  snp.zscores[snp.zscores <= extreme.zcore.lower.thresh] <- extreme.zcore.lower.thresh
 
   ### Compute matrix indicating whether both the case and control have 1 copy of the alt allele ###
   both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
