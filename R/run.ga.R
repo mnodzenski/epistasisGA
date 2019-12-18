@@ -36,7 +36,7 @@
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
                    n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.01, generations = 2000, gen.same.fitness = 500,
-                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5){
+                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 1.5){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
