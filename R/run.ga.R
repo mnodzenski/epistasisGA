@@ -103,7 +103,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   all.snps.idx <- 1:ncol(case.genetic.data)
   for (i in 1:n.chromosomes){
 
-    snp.idx <- sort(sample(all.snps.idx, chromosome.size, replace = F, prob = abs(snp.zscores)))
+    snp.idx <- sort(sample(all.snps.idx, chromosome.size, replace = F))
     all.snps.idx <- all.snps.idx[-snp.idx]
     chromosome.list[[i]] <- snp.idx
 
