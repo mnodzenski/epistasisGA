@@ -21,7 +21,7 @@ run.ga(
   min.n.risk.set = 10,
   tol = 10^-6,
   n.top.chroms = 100,
-  zscore.sd.threshold = 1.5
+  zscore.sd.threshold = 2.5
 )
 }
 \arguments{
