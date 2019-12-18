@@ -89,7 +89,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
   #don't allow extreme z-scores (preserve the ability to find snps with small marginal differences)
   zscore.sd <- sd(snp.zscores)
-  zscore.mean <- mean(zscore)
+  zscore.mean <- mean(snp.zscores)
   extreme.zcore.upper.thresh <- zscore.mean + zscore.sd.threshold*zscore.sd
   extreme.zcore.lower.thresh <- zscore.mean - zscore.sd.threshold*zscore.sd
   snp.zscores[snp.zscores >= extreme.zcore.upper.thresh] <- extreme.zcore.upper.thresh
