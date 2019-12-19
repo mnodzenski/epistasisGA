@@ -19,6 +19,7 @@
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
 #' @param zscore.sd.threshold A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.
+#' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -36,7 +37,7 @@
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
                    n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
-                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5){
+                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -104,7 +105,11 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   for (i in 1:n.chromosomes){
 
     snp.idx <- sort(sample(all.snps.idx, chromosome.size, replace = F))
-    all.snps.idx <- all.snps.idx[-snp.idx]
+    if (!initial.sample.duplicates){
+
+      all.snps.idx <- all.snps.idx[-snp.idx]
+
+    }
     chromosome.list[[i]] <- snp.idx
 
   }
