@@ -1,7 +1,7 @@
 Package: knnGA
 Type: Package
 Title: An R package for knn-GA detection of genetic epistasis
-Version: 1.0.1
+Version: 1.0.2
 Author: Michael Nodzenski
 Maintainer: Michael Nodzenski <michael.nodzenski@nih.gov>
 Description: Runs knn-GA algorithm to detect candidate solutions for genetic epistasis. 
