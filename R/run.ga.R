@@ -20,6 +20,7 @@
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
 #' @param zscore.sd.threshold A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
+#' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -37,7 +38,8 @@
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
                    n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
-                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F){
+                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
+                   snp.sampling.type = "zscore"){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -83,18 +85,26 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   case.minus.comp <- as.matrix(case.genetic.data - complement.genetic.data)
   case.comp.different <- case.minus.comp != 0
 
-  ### Compute matrix of snp 'Z-scores' ###
-  mean.snp.diffs <- colMeans(case.minus.comp)
-  sd.snp.diffs <- colSds(case.minus.comp)
-  snp.zscores <- mean.snp.diffs/sd.snp.diffs
+  if (snp.sampling.type == "zscore"){
 
-  #don't allow extreme z-scores (preserve the ability to find snps with small marginal differences)
-  zscore.sd <- sd(snp.zscores)
-  zscore.mean <- mean(snp.zscores)
-  extreme.zcore.upper.thresh <- zscore.mean + zscore.sd.threshold*zscore.sd
-  extreme.zcore.lower.thresh <- zscore.mean - zscore.sd.threshold*zscore.sd
-  snp.zscores[snp.zscores >= extreme.zcore.upper.thresh] <- extreme.zcore.upper.thresh
-  snp.zscores[snp.zscores <= extreme.zcore.lower.thresh] <- extreme.zcore.lower.thresh
+    ### Compute matrix of snp 'Z-scores' ###
+    mean.snp.diffs <- colMeans(case.minus.comp)
+    sd.snp.diffs <- colSds(case.minus.comp)
+    snp.zscores <- mean.snp.diffs/sd.snp.diffs
+
+    #don't allow extreme z-scores (preserve the ability to find snps with small marginal differences)
+    zscore.sd <- sd(snp.zscores)
+    zscore.mean <- mean(snp.zscores)
+    extreme.zcore.upper.thresh <- zscore.mean + zscore.sd.threshold*zscore.sd
+    extreme.zcore.lower.thresh <- zscore.mean - zscore.sd.threshold*zscore.sd
+    snp.zscores[snp.zscores >= extreme.zcore.upper.thresh] <- extreme.zcore.upper.thresh
+    snp.zscores[snp.zscores <= extreme.zcore.lower.thresh] <- extreme.zcore.lower.thresh
+
+  } else if (snp.sampling.type == "random") {
+
+    snp.zscores <- rep(1, ncol(case.minus.comp))
+
+  }
 
   ### Compute matrix indicating whether both the case and control have 1 copy of the alt allele ###
   both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
