@@ -58,14 +58,11 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
     ld.vec <- ld.vec[ld.vec != 1]
     max.obs.ld <- max(ld.vec)
 
-  } else {
+    if (max.obs.ld >= max.ld){
 
-    max.obs.ld <- 0
+      fitness.score <- 10^-10
 
-  }
-  if (max.obs.ld >= max.ld){
-
-    fitness.score <- 10^-10
+    }
 
   } else {
 
