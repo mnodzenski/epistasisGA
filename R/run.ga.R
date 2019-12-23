@@ -69,13 +69,6 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     ### Compute the complement data ###
     complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
 
-    if (!is.null(restrict.sampling.ld)){
-
-        snp.mat <- as(as.matrix(rbind(father.genetic.data, mother.genetic.data)), "SnpMatrix")
-        dprime.mat <- ld(snp.mat, snp.mat, stats = "D.prime")
-
-    }
-
   } else if (!is.null(complement.genetic.data)){
 
     alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4*nrow(case.genetic.data))
@@ -87,12 +80,16 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
     complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
 
-    if (!is.null(restrict.sampling.ld)){
+  }
 
-      snp.mat <- as(as.matrix(rbind(case.genetic.data, complement.genetic.data)), "SnpMatrix")
-      dprime.mat <- ld(snp.mat, snp.mat, stats = "D.prime")
+  ### Compute matrix of dprime estimates in the cases ###
+  if (!is.null(restrict.sampling.ld)){
 
-    }
+    dprime.mat <- ld(case.genetic.data, case.genetic.data, stats = "D.prime")
+
+  } else {
+
+    dprime.mat <- NULL
 
   }
 
