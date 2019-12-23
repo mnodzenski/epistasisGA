@@ -54,7 +54,9 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### if there are ld restrictions, determine whether the score should be set to 10^-10 ###
   if (!is.null(max.ld)){
 
-    max.obs.ld <- max(ld.mat[ target.snps, target.snps])
+    ld.vec <- unlist(ld.mat[ target.snps, target.snps])
+    ld.vec <- ld.vec[ld.vec != 1]
+    max.obs.ld <- max(ld.vec)
 
   } else {
 
