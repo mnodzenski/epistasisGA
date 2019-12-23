@@ -407,6 +407,19 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
         chromosome.mat.list <- c(chromosome.mat.list, vector(mode = "list", length = generations))
         sum.dif.vec.list <- c(sum.dif.vec.list, vector(mode = "list", length = generations))
         generations <- generation + generations
+        chromosome.list <- vector(mode = "list", length = n.chromosomes)
+        all.snps.idx <- 1:ncol(case.genetic.data)
+        for (i in 1:n.chromosomes){
+
+          snp.idx <- sort(sample(all.snps.idx, chromosome.size, replace = F))
+          if (!initial.sample.duplicates){
+
+            all.snps.idx <- all.snps.idx[-snp.idx]
+
+          }
+          chromosome.list[[i]] <- snp.idx
+
+        }
 
 
       } else{
