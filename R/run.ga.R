@@ -21,7 +21,8 @@
 #' @param zscore.sd.threshold A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
-#' @param restrict.sampling.ld A numeric indicating the maximimum D.prime, as computed by the \code{snpStats} package, allowed among elements of a chromosome. Defaults to NULL, meaning there are no ld restrictions.
+#' @param ld.mat A matrix of ld estimates among snps for the cases. Defaults to NULL.
+#' @param max.ld A numeric indicating the maximimum ld allowed among elements of a chromosome. Defaults to NULL, meaning there are no ld restrictions.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -40,12 +41,18 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
                    n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
                    min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
-                   snp.sampling.type = "zscore", restrict.sampling.ld = NULL){
+                   snp.sampling.type = "zscore", ld.mat = NULL, max.ld = NULL){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
 
     stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
+
+  }
+
+  if (!is.null(ld.mat) & is.null(max.ld) | is.null(ld.mat) & !is.null(max.ld)){
+
+    stop("Must include both or neither of ld.mat and max.ld")
 
   }
 
@@ -82,14 +89,13 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
   }
 
-  ### Compute matrix of dprime estimates in the cases ###
-  if (!is.null(restrict.sampling.ld)){
+  if (!is.null(ld.mat)){
 
-    dprime.mat <- ld(case.genetic.data, case.genetic.data, stats = "D.prime")
+    ld.mat <- ld.mat[!below.maf.threshold , !below.maf.threshold]
 
   } else {
 
-    dprime.mat <- NULL
+    ld.mat <- NULL
 
   }
 
@@ -141,11 +147,14 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   fitness.score.mat <- matrix(rep(NA, generations*n.chromosomes), nrow = generations)
   top.fitness <- rep(0, generations)
   last.gens.equal <- F
+  top.score.ld <- F
+  ld.thresh <- NULL
   top.generation.chromosome <- vector(mode = "list", length = generations)
   chromosome.mat.list <- vector(mode = "list", length = generations)
   sum.dif.vec.list <- vector(mode = "list", length = generations)
 
-  while (generation <= generations & !last.gens.equal){
+  ### first run through generations not restricting ld ###
+  while (generation <= generations & !last.gens.equal & !top.score.ld){
 
     print(paste("generation", generation))
     ### 1. compute the fitness score for each set of candidate snps ###
@@ -154,7 +163,8 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
         chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat,
-                            n.different.snps.weight, n.both.one.weight, weight.function, min.n.risk.set)
+                            n.different.snps.weight, n.both.one.weight, weight.function, min.n.risk.set,
+                            ld.mat = ld.mat, max.ld = ld.thresh)
 
     })
 
@@ -371,11 +381,45 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     print(original.col.numbers[top.chromosome[[1]]])
     if (generation >= gen.same.fitness){
 
+      #check to see if enough of the last generations have had the same top chromosome to terminate
       last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
       last.gens.equal <- abs(max(last.gens) - min(last.gens)) < tol
 
     }
     generation <- generation + 1
+
+    #Once the non-ld restricted algorithm terminates, if requested, check to see if the top chromosome has snps in high ld
+    if (generation > generations & last.gens.equal & !is.null(max.ld)){
+
+      top.chrom.ld.mat <- ld.mat[top.chromosome[[1]], top.chromosome[[1]]]
+      top.chrom.max.ld <- max(top.chrom.ld.mat)
+
+      #if there are snps with dprime value above the ld threshold, re-run the algorithm not allowing high ld,
+      #still using the same stopping criteria
+      if (top.chrom.max.ld > max.ld){
+
+        ld.thresh <- max.ld
+        fitness.score.mat <- rbind(fitness.score.mat, matrix(rep(NA, generations*n.chromosomes), nrow = generations))
+        top.fitness <- c(top.fitness, rep(0, generations))
+        last.gens.equal <- F
+        top.score.ld <- F
+        top.generation.chromosome <- c(top.generation.chromosome, vector(mode = "list", length = generations))
+        chromosome.mat.list <- c(chromosome.mat.list, vector(mode = "list", length = generations))
+        sum.dif.vec.list <- c(sum.dif.vec.list, vector(mode = "list", length = generations))
+        generations <- generation + generations
+
+
+      } else{
+
+        top.score.ld <- T
+
+      }
+
+    } else if (generation > generations & last.gens.equal & is.null(max.ld)){
+
+      top.score.ld <- T
+
+    }
 
   }
   ### Return the best chromosomes, their fitness scores, difference vectors and the number of generations ###

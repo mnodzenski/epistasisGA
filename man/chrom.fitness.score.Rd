@@ -12,7 +12,9 @@ chrom.fitness.score(
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function = identity,
-  min.n.risk.set = 10
+  min.n.risk.set = 10,
+  ld.mat = NULL,
+  max.ld = NULL
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ chrom.fitness.score(
 \item{weight.function}{A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.}
 
 \item{min.n.risk.set}{A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.}
+
+\item{ld.mat}{A matrix of ld estimates among snps for the cases. Defaults to NULL.}
+
+\item{max.ld}{A numeric indicating the maximimum ld value in the \code{ld.mat} matrix allowed among elements of a chromosome. If any elements of the chromosome have ld estimates above this threshold, the score will be set to 10^-10. Defaults to NULL, meaning there are no ld restrictions.}
 }
 \value{
 A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
