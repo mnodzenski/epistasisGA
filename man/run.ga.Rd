@@ -23,7 +23,9 @@ run.ga(
   n.top.chroms = 100,
   zscore.sd.threshold = 2.5,
   initial.sample.duplicates = F,
-  snp.sampling.type = "zscore"
+  snp.sampling.type = "zscore",
+  ld.mat = NULL,
+  max.ld = NULL
 )
 }
 \arguments{
@@ -64,6 +66,10 @@ run.ga(
 \item{initial.sample.duplicates}{A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.}
 
 \item{snp.sampling.type}{A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".}
+
+\item{ld.mat}{A matrix of ld estimates among snps for the cases. Defaults to NULL.}
+
+\item{max.ld}{A numeric indicating the maximimum ld allowed among elements of a chromosome. Defaults to NULL, meaning there are no ld restrictions.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
