@@ -10,6 +10,8 @@
 #' @param n.both.one.weight The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
 #' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
+#' @param ld.mat A matrix of ld estimates among snps for the cases. Defaults to NULL.
+#' @param max.ld A numeric indicating the maximimum ld value in the \code{ld.mat} matrix allowed among elements of a chromosome. If any elements of the chromosome have ld estimates above this threshold, the score will be set to 10^-10. Defaults to NULL, meaning there are no ld restrictions.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
 #' @examples
@@ -26,7 +28,8 @@
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10){
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10,
+                                ld.mat = NULL, max.ld = NULL){
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
@@ -48,50 +51,40 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
 
-  ### determine how many cases actually have the proposed risk set ###
-  risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
-  target.snp.signs <- sign(case.comp.diff[informative.families, ])
-  n.risk.set <- sum(rowSums(risk.set.sign.mat == target.snp.signs) == ncol(risk.set.sign.mat))
+  ### if there are ld restrictions, determine whether the score should be set to 10^-10 ###
+  if (!is.null(max.ld)){
 
-  ### If not enough indviduals with the risk set, give a very low fitness score ###
-  if (n.risk.set < min.n.risk.set){
+    max.obs.ld <- max(ld.mat[ target.snps, target.snps])
+
+  } else {
+
+    max.obs.ld <- 0
+
+  }
+  if (max.obs.ld >= max.ld){
 
     fitness.score <- 10^-10
 
   } else {
 
-  ### Otherwise, return the squared length of the sum of the case - complement differences ###
-    fitness.score <- sum(sum.dif.vecs^2)
+    ### determine how many cases actually have the proposed risk set ###
+    risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
+    target.snp.signs <- sign(case.comp.diff[informative.families, ])
+    n.risk.set <- sum(rowSums(risk.set.sign.mat == target.snp.signs) == ncol(risk.set.sign.mat))
+
+    ### If not enough indviduals with the risk set, give a very low fitness score ###
+    if (n.risk.set < min.n.risk.set){
+
+      fitness.score <- 10^-10
+
+    } else {
+
+      ### Otherwise, return the squared length of the sum of the case - complement differences ###
+      fitness.score <- sum(sum.dif.vecs^2)
+
+    }
 
   }
-
-  ### compute the average difference vector ###
-  #ave.dif.vec <- sum.dif.vecs/n.informative.families
-
-  ### compute dot product of difference vectors with the average difference vector ###
-  #dot.prods <- as.numeric(dif.vecs %*% ave.dif.vec)
-  #ave.dif.vec.mat <- matrix(rep(sign(ave.dif.vec), nrow(dif.vecs)), byrow = T, nrow = nrow(dif.vecs))
-  #sign.comp.mat <- sign(dif.vecs) == ave.dif.vec.mat
-  #keep.these <- rowSums(sign.comp.mat) == length(ave.dif.vec)
-
-  ### keep the families with a positive dot product ###
-  #keep.these <- dot.prods > 0
-
-  ### get final difference vectors ###
-  #if( any(keep.these)){
-
- #   sum.dif.vecs <- colSums(dif.vecs[keep.these, , drop = F])
-
-    ### fitness score is squared vector length of the sum of weighted difference vectors ###
-#    fitness.score <- sum(sum.dif.vecs^2)
-
-#  } else{
-
- #   sum.dif.vecs <- rep(10^-6, length(target.snps))
-#    fitness.score <- 0
-
-#  }
-
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
 
 }
