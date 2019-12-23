@@ -21,6 +21,7 @@
 #' @param zscore.sd.threshold A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
+#' @param restrict.sampling.ld A numeric indicating the maximimum D.prime, as computed by the \code{snpStats} package, allowed among elements of a chromosome. Defaults to NULL, meaning there are no ld restrictions.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -39,7 +40,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
                    n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
                    min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
-                   snp.sampling.type = "zscore"){
+                   snp.sampling.type = "zscore", restrict.sampling.ld = NULL){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -68,6 +69,13 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     ### Compute the complement data ###
     complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
 
+    if (!is.null(restrict.sampling.ld)){
+
+        snp.mat <- as(as.matrix(rbind(father.genetic.data, mother.genetic.data)), "SnpMatrix")
+        dprime.mat <- ld(snp.mat, snp.mat, stats = "D.prime")
+
+    }
+
   } else if (!is.null(complement.genetic.data)){
 
     alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4*nrow(case.genetic.data))
@@ -78,6 +86,13 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     ### remove the snps not meeting the required allele frequency threshold ###
     case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
     complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
+
+    if (!is.null(restrict.sampling.ld)){
+
+      snp.mat <- as(as.matrix(rbind(case.genetic.data, complement.genetic.data)), "SnpMatrix")
+      dprime.mat <- ld(snp.mat, snp.mat, stats = "D.prime")
+
+    }
 
   }
 
