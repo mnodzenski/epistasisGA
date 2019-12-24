@@ -397,6 +397,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
       #still using the same stopping criteria
       if (top.chrom.max.ld > max.ld){
 
+        print("Top scoring chromosome has elements in high LD, re-running algorithm not allowing LD")
         ld.thresh <- max.ld
         fitness.score.mat <- rbind(fitness.score.mat, matrix(rep(NA, generations*n.chromosomes), nrow = generations))
         top.fitness <- c(top.fitness, rep(0, generations))
