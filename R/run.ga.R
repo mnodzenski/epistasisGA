@@ -386,10 +386,9 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
       last.gens.equal <- abs(max(last.gens) - min(last.gens)) < tol
 
     }
-    generation <- generation + 1
 
     #Once the non-ld restricted algorithm terminates, if requested, check to see if the top chromosome has snps in high ld
-    if (generation > generations & last.gens.equal & !is.null(max.ld)){
+    if (generation == generations & !is.null(max.ld) | last.gens.equal & !is.null(max.ld)){
 
       top.chrom.ld.mat <- ld.mat[top.chromosome[[1]], top.chromosome[[1]]]
       top.chrom.max.ld <- max(top.chrom.ld.mat)
@@ -428,11 +427,13 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
       }
 
-    } else if (generation > generations & last.gens.equal & is.null(max.ld)){
+    } else if (generation == generations & is.null(max.ld) & last.gens.equal) {
 
       top.score.ld <- T
 
     }
+
+    generation <- generation + 1
 
   }
   ### Return the best chromosomes, their fitness scores, difference vectors and the number of generations ###
