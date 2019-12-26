@@ -391,9 +391,10 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     if (generation == generations & !is.null(max.ld) | last.gens.equal & !is.null(max.ld)){
 
       top.chrom.ld.mat <- ld.mat[top.chromosome[[1]], top.chromosome[[1]]]
-      top.chrom.max.ld <- max(top.chrom.ld.mat)
+      top.chrom.ld.vec <- top.chrom.ld.mat[upper.tri(top.chrom.ld.mat)]
+      top.chrom.max.ld <- max(top.chrom.ld.vec)
 
-      #if there are snps with dprime value above the ld threshold, re-run the algorithm not allowing high ld,
+      #if there are snps with ld value above the ld threshold, re-run the algorithm not allowing high ld,
       #still using the same stopping criteria
       if (top.chrom.max.ld > max.ld){
 
@@ -428,7 +429,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
       }
 
-    } else if (generation == generations & is.null(max.ld) & last.gens.equal) {
+    } else if (generation == generations & is.null(max.ld) | last.gens.equal & is.null(max.ld)) {
 
       top.score.ld <- T
 
