@@ -12,6 +12,7 @@
 #' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @param ld.mat A matrix of ld estimates among snps for the cases. Defaults to NULL.
 #' @param max.ld A numeric indicating the maximimum ld value in the \code{ld.mat} matrix allowed among elements of a chromosome. If any elements of the chromosome have ld estimates above this threshold, the score will be set to 10^-10. Defaults to NULL, meaning there are no ld restrictions.
+#' @param zscore.vec A vector of the z-scores of the case - complement differences. Defaults to NULL.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
 #' @examples
@@ -25,11 +26,43 @@
 #' both.one.mat <- case == 1 & comp == 1
 #' chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat)
 #'
+#' @importFrom stats dist hclust cutree
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10,
-                                ld.mat = NULL, max.ld = NULL){
+                                ld.mat = NULL, max.ld = NULL, zscore.vec = NULL){
+
+  ### if there are ld restrictions, determine whether the score needs to be adjusted ###
+  if (!is.null(max.ld)){
+
+    target.ld.mat <- ld.mat[ target.snps, target.snps]
+    ld.vec <- target.ld.mat[upper.tri(target.ld.mat)]
+    max.obs.ld <- max(ld.vec)
+
+  #otherwise just give values that allow the algorithm to proceed to the score
+  } else {
+
+    max.obs.ld <- 0
+    max.ld <- 1
+
+  }
+
+  #if elements in ld, find the ld blocks and only allow one element of each block to contribute to the score
+  #keeping the snp with the highest z-score
+  if (max.obs.ld >= max.ld){
+
+    #fitness.score <-  10^-10
+    target.dist.mat <- as.dist(1 - abs(target.ld.mat))
+    target.snp.clust <- hclust(target.dist.mat, method = "complete")
+    ld.block.vec <- cutree(target.snp.clust, 1 - max.ld)
+    ordered.target.snps <- target.snps[order(zscore.vec, decreasing = T)]
+    omit.these <- ordered.target.snps[duplicated(ld.block.vec)]
+    case.comp.differences[ , omit.these] <- F
+    both.one.mat[ , omit.these] <- F
+    cases.minus.complements[ , omit.these] <- 0
+
+  }
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
@@ -51,45 +84,23 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
 
-  ### if there are ld restrictions, determine whether the score should be set to 10^-10 ###
-  if (!is.null(max.ld)){
+  ### determine how many cases actually have the proposed risk set ###
+  risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
+  target.snp.signs <- sign(case.comp.diff[informative.families, ])
+  n.risk.set <- sum(rowSums(risk.set.sign.mat == target.snp.signs) == ncol(risk.set.sign.mat))
 
-    target.ld.mat <- ld.mat[ target.snps, target.snps]
-    ld.vec <- target.ld.mat[upper.tri(target.ld.mat)]
-    max.obs.ld <- max(ld.vec)
+  ### If not enough indviduals with the risk set, give a very low fitness score ###
+  if (n.risk.set < min.n.risk.set){
 
-  #otherwise just give values that allow the algorithm to proceed to the score
-  } else {
-
-    max.obs.ld <- 0
-    max.ld <- 1
-
-  }
-
-  if (max.obs.ld >= max.ld){
-
-      fitness.score <- 10^-10
+    fitness.score <- 10^-10
 
   } else {
 
-    ### determine how many cases actually have the proposed risk set ###
-    risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
-    target.snp.signs <- sign(case.comp.diff[informative.families, ])
-    n.risk.set <- sum(rowSums(risk.set.sign.mat == target.snp.signs) == ncol(risk.set.sign.mat))
-
-    ### If not enough indviduals with the risk set, give a very low fitness score ###
-    if (n.risk.set < min.n.risk.set){
-
-      fitness.score <- 10^-10
-
-    } else {
-
-      ### Otherwise, return the squared length of the sum of the case - complement differences ###
-      fitness.score <- sum(sum.dif.vecs^2)
-
-    }
+    ### Otherwise, return the squared length of the sum of the case - complement differences ###
+    fitness.score <- sum(sum.dif.vecs^2)
 
   }
+
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
 
 }
