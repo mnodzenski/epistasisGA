@@ -395,11 +395,17 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
       top.chrom.ld.vec <- top.chrom.ld.mat[upper.tri(top.chrom.ld.mat)]
       top.chrom.max.ld <- max(top.chrom.ld.vec)
 
-      #if there are snps with ld value above the ld threshold, re-run the algorithm not allowing high ld,
+      #if there are snps with ld value above the ld threshold, remove the top chromosome snps, re-run the algorithm not allowing high ld,
       #still using the same stopping criteria
       if (top.chrom.max.ld > max.ld){
 
         print("Top scoring chromosome has elements in high LD, re-running algorithm not allowing LD")
+        original.col.numbers <- original.col.numbers[-top.chromosome[[1]]]
+        case.genetic.data <- case.genetic.data[ , -top.chromosome[[1]]]
+        complement.genetic.data <- complement.genetic.data[ , -top.chromosome[[1]]]
+        case.minus.comp <- case.minus.comp[ , -top.chromosome[[1]]]
+        case.comp.different <- case.comp.different[ , -top.chromosome[[1]]]
+        snp.zscores <- snp.zscores[-top.chromosome[[1]]]
         ld.thresh <- max.ld
         fitness.score.mat <- rbind(fitness.score.mat, matrix(rep(NA, generations*n.chromosomes), nrow = generations))
         top.fitness <- c(top.fitness, rep(0, generations))
