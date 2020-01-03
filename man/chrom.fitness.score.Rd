@@ -14,8 +14,7 @@ chrom.fitness.score(
   weight.function = identity,
   min.n.risk.set = 10,
   ld.mat = NULL,
-  max.ld = NULL,
-  zscore.vec = NULL
+  max.ld = NULL
 )
 }
 \arguments{
@@ -38,8 +37,6 @@ chrom.fitness.score(
 \item{ld.mat}{A matrix of ld estimates among snps for the cases. Defaults to NULL.}
 
 \item{max.ld}{A numeric indicating the maximimum ld value in the \code{ld.mat} matrix allowed among elements of a chromosome. If any elements of the chromosome have ld estimates above this threshold, the score will be set to 10^-10. Defaults to NULL, meaning there are no ld restrictions.}
-
-\item{zscore.vec}{A vector of the z-scores of the case - complement differences. Defaults to NULL.}
 }
 \value{
 A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
