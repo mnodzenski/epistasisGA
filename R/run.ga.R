@@ -35,8 +35,7 @@
 #'
 #' @importFrom matrixStats colSds
 #' @importFrom data.table data.table rbindlist setorder
-#' @importFrom stats as.dist hclust cutree rbinom sd
-#' @importFrom methods as
+#' @importFrom stats rbinom sd
 #' @export
 
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
@@ -166,7 +165,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
         chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat,
                             n.different.snps.weight, n.both.one.weight, weight.function, min.n.risk.set,
-                            ld.mat = ld.mat, max.ld = ld.thresh, zscore.vec = snp.zscores)
+                            ld.mat = ld.mat, max.ld = ld.thresh)
 
     })
 
