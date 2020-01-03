@@ -55,7 +55,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
     #fitness.score <-  10^-10
     target.dist.mat <- as.dist(1 - abs(target.ld.mat))
     target.snp.clust <- hclust(target.dist.mat, method = "complete")
-    ld.block.vec <- cutree(target.snp.clust, 1 - max.ld)
+    ld.block.vec <- cutree(target.snp.clust, h = 1 - max.ld)
     ordered.target.snps <- target.snps[order(zscore.vec, decreasing = T)]
     omit.these <- ordered.target.snps[duplicated(ld.block.vec)]
     case.comp.differences[ , omit.these] <- F
