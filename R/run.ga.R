@@ -405,7 +405,9 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
         complement.genetic.data <- complement.genetic.data[ , -top.chromosome[[1]]]
         case.minus.comp <- case.minus.comp[ , -top.chromosome[[1]]]
         case.comp.different <- case.comp.different[ , -top.chromosome[[1]]]
+        both.one.mat <- both.one.mat[ , -top.chromosome[[1]]]
         snp.zscores <- snp.zscores[-top.chromosome[[1]]]
+        ld.mat <- ld.mat[-top.chromosome[[1]], -top.chromosome[[1]]]
         ld.thresh <- max.ld
         fitness.score.mat <- rbind(fitness.score.mat, matrix(rep(NA, generations*n.chromosomes), nrow = generations))
         top.fitness <- c(top.fitness, rep(0, generations))
