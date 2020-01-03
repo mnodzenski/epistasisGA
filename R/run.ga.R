@@ -35,7 +35,8 @@
 #'
 #' @importFrom matrixStats colSds
 #' @importFrom data.table data.table rbindlist setorder
-#' @importFrom stats dist hclust cutree
+#' @importFrom stats as.dist hclust cutree rbinom sd
+#' @importFrom methods as
 #' @export
 
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
