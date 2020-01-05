@@ -87,13 +87,14 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       ### Otherwise, return the squared length of the sum of the case - complement differences ###
       mean.diff.vec <- (1/n.informative.families)*sum.dif.vecs
       mean.diff.mat <- matrix(rep(mean.diff.vec, n.informative.families), nrow = n.informative.families, byrow = T)
-      cov.mat <- (1/(n.informative.families - 1))*crossprod(dif.vecs - mean.diff.mat)
+      #cov.mat <- (1/(n.informative.families - 1))*crossprod(dif.vecs - mean.diff.mat)
+      cov.mat <- cov(case.comp.diff)
 
       #compute svd of dif.vec.cov.mat
       cov.mat.svd <- svd(cov.mat)
 
       #compute final fitness score using generalized inverse and hotelling
-      fitness.score <- n.informative.families*rowSums((t(mean.dif.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+      fitness.score <- n.informative.families*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
       #fitness.score <- sum(sum.dif.vecs^2)
 
     }
