@@ -88,15 +88,19 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       #mean.diff.vec <- (1/n.informative.families)*sum.dif.vecs
       #mean.diff.mat <- matrix(rep(mean.diff.vec, n.informative.families), nrow = n.informative.families, byrow = T)
       #cov.mat <- (1/(n.informative.families - 1))*crossprod(dif.vecs - mean.diff.mat)
-      var.dif.vecs <- var(sum.dif.vecs)
+      #var.dif.vecs <- var(sum.dif.vecs)
+      sd.dif.vecs <- sd(sum.dif.vecs)
+      mean.diff.vec <- mean(sum.dif.vecs)
+      #diff.vec.zscores <- (sum.dif.vecs - mean.diff.vec)/sd.dif.vecs
+      #standardized.range <- diff(range(diff.vec.zscores))
       #cov.mat <- cov(case.comp.diff)
 
       #compute svd of dif.vec.cov.mat
       #cov.mat.svd <- svd(cov.mat)
 
       #compute final fitness score using generalized inverse and hotelling
-      #fitness.score <- (n.informative.families/var.dif.vecs)*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-      fitness.score <- (1/(1 + var.dif.vecs))*sum(sum.dif.vecs^2)
+      #fitness.score <- n.informative.families*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+      fitness.score <- (mean.diff.vec/sd.dif.vecs)*sum(sum.dif.vecs^2)
 
     }
 
