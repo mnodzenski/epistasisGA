@@ -25,6 +25,7 @@
 #' both.one.mat <- case == 1 & comp == 1
 #' chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat)
 #'
+#' @importFrom e1071 skewness
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
@@ -89,10 +90,10 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       #mean.diff.mat <- matrix(rep(mean.diff.vec, n.informative.families), nrow = n.informative.families, byrow = T)
       #cov.mat <- (1/(n.informative.families - 1))*crossprod(dif.vecs - mean.diff.mat)
       #var.dif.vecs <- var(sum.dif.vecs)
-      sd.dif.vecs <- sd(sum.dif.vecs)
-      mean.diff.vec <- mean(sum.dif.vecs)
+      #sd.dif.vecs <- sd(sum.dif.vecs)
+      #mean.diff.vec <- mean(sum.dif.vecs)
       #diff.vec.zscores <- (sum.dif.vecs - mean.diff.vec)/sd.dif.vecs
-      #standardized.range <- diff(range(diff.vec.zscores))
+      #standardized.range <- diff(range(sum.dif.vecs))
       #cov.mat <- cov(case.comp.diff)
 
       #compute svd of dif.vec.cov.mat
@@ -100,7 +101,19 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
       #compute final fitness score using generalized inverse and hotelling
       #fitness.score <- n.informative.families*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-      fitness.score <- (mean.diff.vec/sd.dif.vecs)*sum(sum.dif.vecs^2)
+      #fitness.score <- (mean.diff.vec/standardized.range)*sum(sum.dif.vecs^2)
+      dif.vec.skew <- skewness(sum.dif.vecs)
+      if (dif.vec.skew < 0){
+
+        penalty <- 1/(1 + abs(dif.vec.skew))
+
+      } else {
+
+        penalty <- 1
+
+      }
+
+      fitness.score <- penalty*sum(sum.dif.vecs^2)
 
     }
 
