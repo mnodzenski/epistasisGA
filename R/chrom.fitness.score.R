@@ -96,7 +96,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
       #compute final fitness score using generalized inverse and hotelling
       #fitness.score <- (n.informative.families/var.dif.vecs)*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-      fitness.score <- (1/var.dif.vecs)*sum(sum.dif.vecs^2)
+      fitness.score <- (1/(1 + var.dif.vecs))*sum(sum.dif.vecs^2)
 
     }
 
