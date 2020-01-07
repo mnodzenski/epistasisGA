@@ -24,6 +24,7 @@
 #' case.comp.diff <- case != comp
 #' case.minus.comp <- case - comp
 #' both.one.mat <- case == 1 & comp == 1
+#' library(Matrix)
 #' chrom.mat <- as.matrix(bdiag(list(matrix(rep(T, 2500^2), nrow = 2500),
 #'                               matrix(rep(T, 2500^2), nrow = 2500),
 #'                               matrix(rep(T, 2500^2), nrow = 2500),
