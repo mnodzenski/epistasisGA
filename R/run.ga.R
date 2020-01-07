@@ -7,8 +7,9 @@
 #' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
 #' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
-#' @param seed.val An integer indicating the seed to be used for the random samples.
 #' @param chromosome.size The number of snps within each candidate solution.
+#' @param chrom.mat A logical matrix indicating whether the snps in the input genetic data belong to the same chromosome.
+#' @param seed.val An integer indicating the seed to be used for the random samples.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
@@ -30,8 +31,13 @@
 #' data(case)
 #' data(dad)
 #' data(mom)
-#'
-#' ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7, chromosome.size = 3, seed.val = 10, generations = 1)
+#' library(Matrix)
+#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(T, 2500^2), nrow = 2500),
+#'                               matrix(rep(T, 2500^2), nrow = 2500),
+#'                               matrix(rep(T, 2500^2), nrow = 2500),
+#'                               matrix(rep(T, 2500^2), nrow = 2500))))
+#' ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
+#'                  chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
 #'
 #' @importFrom matrixStats colSds
 #' @importFrom data.table data.table rbindlist setorder
@@ -39,7 +45,7 @@
 #' @export
 
 run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
-                   n.chromosomes, chromosome.size, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
+                   n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
                    min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
                    snp.sampling.type = "zscore", ld.mat = NULL, max.ld = NULL){
@@ -163,7 +169,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
-        chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat,
+        chrom.fitness.score(case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat, chrom.mat,
                             n.different.snps.weight, n.both.one.weight, weight.function, min.n.risk.set,
                             ld.mat = ld.mat, max.ld = ld.thresh)
 
