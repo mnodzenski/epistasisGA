@@ -11,6 +11,7 @@ run.ga(
   mother.genetic.data = NULL,
   n.chromosomes,
   chromosome.size,
+  chrom.mat,
   seed.val,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
@@ -40,6 +41,8 @@ run.ga(
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
 \item{chromosome.size}{The number of snps within each candidate solution.}
+
+\item{chrom.mat}{A logical matrix indicating whether the snps in the input genetic data belong to the same chromosome.}
 
 \item{seed.val}{An integer indicating the seed to be used for the random samples.}
 
@@ -82,7 +85,12 @@ This function runs a genetic algorithm on a collection of candidate snp sets, to
 data(case)
 data(dad)
 data(mom)
-
-ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7, chromosome.size = 3, seed.val = 10, generations = 1)
+library(Matrix)
+chrom.mat <- as.matrix(bdiag(list(matrix(rep(T, 2500^2), nrow = 2500),
+                              matrix(rep(T, 2500^2), nrow = 2500),
+                              matrix(rep(T, 2500^2), nrow = 2500),
+                              matrix(rep(T, 2500^2), nrow = 2500))))
+ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
+                 chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
 
 }
