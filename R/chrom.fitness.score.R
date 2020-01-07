@@ -25,7 +25,6 @@
 #' both.one.mat <- case == 1 & comp == 1
 #' chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat)
 #'
-#' @importFrom e1071 skewness
 #' @export
 
 chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
@@ -102,18 +101,12 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       #compute final fitness score using generalized inverse and hotelling
       #fitness.score <- n.informative.families*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
       #fitness.score <- (mean.diff.vec/standardized.range)*sum(sum.dif.vecs^2)
-      dif.vec.skew <- skewness(sum.dif.vecs)
-      if (dif.vec.skew < 0){
-
-        penalty <- 1/(1 + abs(dif.vec.skew))
-
-      } else {
-
-        penalty <- 1
-
-      }
-
-      fitness.score <- penalty*sum(sum.dif.vecs^2)
+      #dif.vec.skew <- skewness(sum.dif.vecs)
+      sum.dif.vecs.sq <- sum.dif.vecs^2
+      squared.vec.length <- sum(sum.dif.vecs.sq)
+      element.contributions <- sum.dif.vecs.sq/squared.vec.length
+      penalty <- min(element.contributions)
+      fitness.score <- penalty*squared.vec.length
 
     }
 
