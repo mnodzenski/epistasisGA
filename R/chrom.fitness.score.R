@@ -12,6 +12,7 @@
 #' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @param ld.mat A matrix of ld estimates among snps for the cases. Defaults to NULL.
 #' @param max.ld A numeric indicating the maximimum ld value in the \code{ld.mat} matrix allowed among elements of a chromosome. If any elements of the chromosome have ld estimates above this threshold, the score will be set to 10^-10. Defaults to NULL, meaning there are no ld restrictions.
+#' @param chrom.mat A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
 #' @examples
@@ -23,11 +24,15 @@
 #' case.comp.diff <- case != comp
 #' case.minus.comp <- case - comp
 #' both.one.mat <- case == 1 & comp == 1
-#' chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat)
+#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(T, 2500^2), nrow = 2500),
+#'                               matrix(rep(T, 2500^2), nrow = 2500),
+#'                               matrix(rep(T, 2500^2), nrow = 2500),
+#'                               matrix(rep(T, 2500^2), nrow = 2500))))
+#' chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
 #'
 #' @export
 
-chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat,
+chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat, chrom.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10,
                                 ld.mat = NULL, max.ld = NULL){
 
@@ -85,28 +90,20 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
     } else {
 
       ### Otherwise, return the squared length of the sum of the case - complement differences ###
-      #mean.diff.vec <- (1/n.informative.families)*sum.dif.vecs
-      #mean.diff.mat <- matrix(rep(mean.diff.vec, n.informative.families), nrow = n.informative.families, byrow = T)
-      #cov.mat <- (1/(n.informative.families - 1))*crossprod(dif.vecs - mean.diff.mat)
-      #var.dif.vecs <- var(sum.dif.vecs)
-      #sd.dif.vecs <- sd(sum.dif.vecs)
-      #mean.diff.vec <- mean(sum.dif.vecs)
-      #diff.vec.zscores <- (sum.dif.vecs - mean.diff.vec)/sd.dif.vecs
-      #standardized.range <- diff(range(sum.dif.vecs))
-      #cov.mat <- cov(case.comp.diff)
+      mean.diff.vec <- (1/n.informative.families)*sum.dif.vecs
+      mean.diff.mat <- matrix(rep(mean.diff.vec, n.informative.families), nrow = n.informative.families, byrow = T)
+      cov.mat <- (1/(n.informative.families - 1))*crossprod(dif.vecs - mean.diff.mat)
+      target.chrom.mat <- chrom.mat[target.snps, target.snps]
+      cov.mat[!target.chrom.mat] <- 0
 
       #compute svd of dif.vec.cov.mat
-      #cov.mat.svd <- svd(cov.mat)
+      cov.mat.svd <- svd(cov.mat)
 
       #compute final fitness score using generalized inverse and hotelling
-      #fitness.score <- n.informative.families*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-      #fitness.score <- (mean.diff.vec/standardized.range)*sum(sum.dif.vecs^2)
-      #dif.vec.skew <- skewness(sum.dif.vecs)
-      sum.dif.vecs.sq <- sum.dif.vecs^2
-      squared.vec.length <- sum(sum.dif.vecs.sq)
-      element.contributions <- sum.dif.vecs.sq/squared.vec.length
-      penalty <- min(element.contributions)
-      fitness.score <- penalty*squared.vec.length
+      fitness.score <- n.informative.families*rowSums((t(mean.diff.vec) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+      #sum.dif.vecs.sq <- sum.dif.vecs^2
+      #squared.vec.length <- sum(sum.dif.vecs.sq)
+      #fitness.score <- squared.vec.length
 
     }
 

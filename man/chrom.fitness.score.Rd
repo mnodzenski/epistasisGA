@@ -9,6 +9,7 @@ chrom.fitness.score(
   target.snps,
   cases.minus.complements,
   both.one.mat,
+  chrom.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function = identity,
@@ -25,6 +26,8 @@ chrom.fitness.score(
 \item{cases.minus.complements}{A matrix equal to case genetic data - complement genetic data.}
 
 \item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).}
+
+\item{chrom.mat}{A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.}
 
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
@@ -53,6 +56,10 @@ comp <- mom + dad - case
 case.comp.diff <- case != comp
 case.minus.comp <- case - comp
 both.one.mat <- case == 1 & comp == 1
-chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat)
+chrom.mat <- as.matrix(bdiag(list(matrix(rep(T, 2500^2), nrow = 2500),
+                              matrix(rep(T, 2500^2), nrow = 2500),
+                              matrix(rep(T, 2500^2), nrow = 2500),
+                              matrix(rep(T, 2500^2), nrow = 2500))))
+chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
 
 }
