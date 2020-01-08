@@ -109,7 +109,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       cov.mat.svd <- svd(cov.mat)
 
       #compute final fitness score using generalized inverse and hotelling
-      fitness.score <- 100*sum.sq.weights*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+      fitness.score <- rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
       #fitness.score <- (10^10)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
       #sum.dif.vecs.sq <- sum.dif.vecs^2
       #squared.vec.length <- sum(sum.dif.vecs.sq)
