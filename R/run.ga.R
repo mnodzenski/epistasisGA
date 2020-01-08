@@ -79,6 +79,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
     mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
     case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
+    chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
 
     ### Compute the complement data ###
     complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
@@ -93,6 +94,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     ### remove the snps not meeting the required allele frequency threshold ###
     case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
     complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
+    chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
 
   }
 
