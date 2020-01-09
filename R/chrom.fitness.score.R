@@ -106,10 +106,10 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       target.chrom.mat <- chrom.mat[target.snps, target.snps]
       cov.mat[!target.chrom.mat] <- 0
       sum.dif.vecs <- sum.dif.vecs/diag(cov.mat)
-      sum.dif.vecs[is.na(sum.dif.vecs) | is.infinite(sum.dif.vecs)] <- 10^(-10)
 
       #compute svd of dif.vec.cov.mat
       cov.mat.svd <- svd(cov.mat)
+      cov.mat.svd$d[cov.mat.svd$d == 0] <- 10^10
 
       #compute final fitness score using generalized inverse and hotelling
       fitness.score <- rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
