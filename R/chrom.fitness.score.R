@@ -98,12 +98,14 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       x.minus.mu.hat <- x - mu.hat.mat
       weighted.x.minus.mu.hat <- family.weights*x.minus.mu.hat
 
-      sum.sq.weights <- sum(family.weights^2)
+      #sum.sq.weights <- sum(family.weights^2)
 
-      cov.mat <- (1/(1 - sum.sq.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
+      #cov.mat <- (1/(1 - sum.sq.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
+      cov.mat <- (1/(n.informative.families))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
 
       target.chrom.mat <- chrom.mat[target.snps, target.snps]
       cov.mat[!target.chrom.mat] <- 0
+      sum.dif.vecs <- sum.dif.vecs/diag(cov.mat)
 
       #compute svd of dif.vec.cov.mat
       cov.mat.svd <- svd(cov.mat)
