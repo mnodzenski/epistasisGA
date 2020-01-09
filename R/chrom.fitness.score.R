@@ -106,6 +106,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       target.chrom.mat <- chrom.mat[target.snps, target.snps]
       cov.mat[!target.chrom.mat] <- 0
       sum.dif.vecs <- sum.dif.vecs/diag(cov.mat)
+      sum.dif.vecs[is.na(sum.dif.vecs) | is.infinite(sum.dif.vecs)] <- 10^(-10)
 
       #compute svd of dif.vec.cov.mat
       cov.mat.svd <- svd(cov.mat)
