@@ -137,6 +137,12 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
   ### initialize groups of candidate solutions ###
+  if (ncol(case.genetic.data) > n.chromosomes*chromosome.size & !initial.sample.duplicates){
+
+    print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
+    initial.sample.duplicates <- T
+
+  }
   chromosome.list <- vector(mode = "list", length = n.chromosomes)
   all.snps.idx <- 1:ncol(case.genetic.data)
   for (i in 1:n.chromosomes){
@@ -144,7 +150,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     snp.idx <- sort(sample(all.snps.idx, chromosome.size, replace = F))
     if (!initial.sample.duplicates){
 
-      all.snps.idx <- all.snps.idx[-snp.idx]
+      all.snps.idx <- all.snps.idx[! all.snps.idx %in% snp.idx]
 
     }
     chromosome.list[[i]] <- snp.idx
