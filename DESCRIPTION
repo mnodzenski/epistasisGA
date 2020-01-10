@@ -1,4 +1,4 @@
-Package: epiGA
+Package: knnGA
 Type: Package
 Title: An R package for GA detection of genetic epistasis
 Version: 1.0.9
