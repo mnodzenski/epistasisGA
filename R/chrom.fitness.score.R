@@ -106,8 +106,8 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       mu.hat.mat <- matrix(rep(mu.hat, n.informative.families), nrow = n.informative.families, byrow = T)
 
       x <- as.matrix(cases.minus.complements[informative.families, target.snps])
-      x.minus.mu.hat <- x - mu.hat.mat
-      #x.minus.mu.hat <- x
+      #x.minus.mu.hat <- x - mu.hat.mat
+      x.minus.mu.hat <- x
       weighted.x.minus.mu.hat <- family.weights*x.minus.mu.hat
 
       #sum.sq.weights <- sum(family.weights^2)
@@ -115,8 +115,8 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       #cov.mat <- (1/(1 - sum.sq.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
       cov.mat <- (1/(n.informative.families))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
 
-      #target.chrom.mat <- chrom.mat[target.snps, target.snps]
-      #cov.mat[!target.chrom.mat] <- 0
+      target.chrom.mat <- chrom.mat[target.snps, target.snps]
+      cov.mat[!target.chrom.mat] <- 0
       sum.dif.vecs <- sum.dif.vecs/sqrt(diag(cov.mat))
 
       #compute svd of dif.vec.cov.mat
@@ -124,7 +124,7 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
       cov.mat.svd$d[cov.mat.svd$d == 0] <- 10^10
 
       #compute final fitness score using generalized inverse and hotelling
-      fitness.score <- (n.informative.families/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+      fitness.score <- sqrt(rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
       #fitness.score <- (10^10)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
       #sum.dif.vecs.sq <- sum.dif.vecs^2
       #squared.vec.length <- sum(sum.dif.vecs.sq)
