@@ -26,7 +26,8 @@ run.ga(
   initial.sample.duplicates = F,
   snp.sampling.type = "zscore",
   ld.mat = NULL,
-  max.ld = NULL
+  max.ld = NULL,
+  warmup.gens = 100
 )
 }
 \arguments{
@@ -73,6 +74,8 @@ run.ga(
 \item{ld.mat}{A matrix of ld estimates among snps for the cases. Defaults to NULL.}
 
 \item{max.ld}{A numeric indicating the maximimum ld allowed among elements of a chromosome. Defaults to NULL, meaning there are no ld restrictions.}
+
+\item{warmup.gens}{A numeric indicating the number of warmup generations to be used. Defaults to 100.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
