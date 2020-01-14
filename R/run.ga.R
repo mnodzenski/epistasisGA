@@ -24,6 +24,7 @@
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param ld.mat A matrix of ld estimates among snps for the cases. Defaults to NULL.
 #' @param max.ld A numeric indicating the maximimum ld allowed among elements of a chromosome. Defaults to NULL, meaning there are no ld restrictions.
+#' @param warmup.gens A numeric indicating the number of warmup generations to be used. Defaults to 100.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -39,7 +40,7 @@
 #' ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
 #'                  chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
 #'
-#' @importFrom matrixStats colSds
+#' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
 #' @export
@@ -48,7 +49,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
                    n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
                    min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
-                   snp.sampling.type = "zscore", ld.mat = NULL, max.ld = NULL){
+                   snp.sampling.type = "zscore", ld.mat = NULL, max.ld = NULL, warmup.gens = 100){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -137,7 +138,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
   ### initialize groups of candidate solutions ###
-  if (ncol(case.genetic.data) > n.chromosomes*chromosome.size & !initial.sample.duplicates){
+  if ((ncol(case.genetic.data) < n.chromosomes*chromosome.size) & !initial.sample.duplicates){
 
     print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
     initial.sample.duplicates <- T
@@ -171,7 +172,16 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   ### first run through generations not restricting ld ###
   while (generation <= generations & !last.gens.equal & !top.score.ld){
 
-    print(paste("generation", generation))
+    if (generation <= warmup.gens){
+
+      print(paste("warmup: generation", generation))
+
+    } else{
+
+      print(paste("generation", generation))
+
+    }
+
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
 
@@ -185,6 +195,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
     fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
     sum.dif.vecs <- t(sapply(fitness.score.list, function(x) x$sum.dif.vecs))
+    dif.vec.maxs <- rowMaxs(abs(sum.dif.vecs))
 
     #store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
     fitness.score.mat[generation, ] <- fitness.scores
@@ -226,8 +237,18 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     print("Step 4/9")
     #allow the top scoring chromosome to be sampled, but only sample from the unique chromosomes available
     sample.these <- !duplicated(chromosome.list)
-    sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
-                                replace = T, prob = fitness.scores[sample.these])
+    if (generation <= warmup.gens){
+
+      sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
+                                  replace = T, prob = dif.vec.maxs[sample.these])
+
+    } else {
+
+      sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
+                                  replace = T, prob = fitness.scores[sample.these])
+
+    }
+
     sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
     sampled.lower.dif.vecs <- sum.dif.vecs[sampled.lower.idx , ]
     sampled.lower.fitness.scores <- fitness.scores[sampled.lower.idx]
@@ -240,16 +261,30 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     unique.lower.idx <- unique(sampled.lower.idx)
 
     cross.overs <- rep(F, length(unique.lower.idx))
-    #note: need at least two crossovers assigned, and need an even number
-    if (length(unique.lower.idx) > 1){
+    if (length(unique.lower.idx)/2 %% 2 == 0){
 
-      while (sum(cross.overs) < 2 | sum(cross.overs) %% 2 != 0){
+      cross.overs[sample(1:length(unique.lower.idx), size = length(unique.lower.idx)/2)] <- TRUE
 
-        cross.overs <- rbinom(length(unique.lower.idx), 1, 0.5) == 1
+    } else if (round(length(unique.lower.idx)/2) %% 2 == 0){
 
-      }
+      cross.overs[sample(1:length(unique.lower.idx), size = round(length(unique.lower.idx)/2))] <- TRUE
+
+    } else {
+
+      cross.overs[sample(1:length(unique.lower.idx), size = (round(length(unique.lower.idx)/2) + 1))] <- TRUE
 
     }
+
+    #note: need at least two crossovers assigned, and need an even number
+    #if (length(unique.lower.idx) > 1){
+
+     # while (sum(cross.overs) < 2 | sum(cross.overs) %% 2 != 0){
+
+      #  cross.overs <- rbinom(length(unique.lower.idx), 1, 0.5) == 1
+
+    #  }
+
+    #}
 
     #those not getting crossover will be mutated
     mutations <- !cross.overs
@@ -394,7 +429,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     print(paste0("Max fitness score:", max.fitness))
     print("Top Chromosome(s):")
     print(original.col.numbers[top.chromosome[[1]]])
-    if (generation >= gen.same.fitness){
+    if (generation >= (gen.same.fitness + warmup.gens)){
 
       #check to see if enough of the last generations have had the same top chromosome to terminate
       last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
