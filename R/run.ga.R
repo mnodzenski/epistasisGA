@@ -395,6 +395,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     ### 7. Mutate the chromosomes that were not crossed over ###
     print("Step 7/9")
     mutation.positions <- (1:length(sampled.lower.chromosomes))[-cross.over.positions]
+    snps.for.mutation <- sample(1:ncol(case.genetic.data), ncol(case.genetic.data), prob = abs(snp.zscores), replace = T)
     for (i in mutation.positions){
 
       #grab the chromosome and its difference vector
@@ -405,12 +406,20 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
       target.chrom <- target.chrom[order(abs(target.dif.vec))]
 
       #determine which snps to mutate
-      total.mutations <- sample.int(chromosome.size, 1)
+      total.mutations <- max(1, rbinom(1, chromosome.size, 0.5))
       mutate.these <- 1:total.mutations
 
       #remove the chromosome's snps from the pool of available snps
       #and sample new snps for the mutations
-      mutated.snps <- sample((1:ncol(case.genetic.data))[-target.chrom], total.mutations, prob = abs(snp.zscores)[-target.chrom])
+      possible.snps.for.mutation <- snps.for.mutation[ ! snps.for.mutation %in% target.chrom]
+      mutated.snps <- rep(NA, total.mutations)
+      for (j in 1:total.mutations){
+
+        sampled.snp <- sample(possible.snps.for.mutation, 1)
+        mutated.snps[j] <- sampled.snp
+        possible.snps.for.mutation <- possible.snps.for.mutation[possible.snps.for.mutation != sampled.snp]
+
+      }
 
       #substitute in mutations
       target.chrom[mutate.these] <- mutated.snps
