@@ -23,6 +23,7 @@
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param warmup.gens A numeric indicating the number of warmup generations to be used. Defaults to 100.
+#' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
 #' @examples
@@ -47,7 +48,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
                    n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
                    min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
-                   snp.sampling.type = "zscore", warmup.gens = 100){
+                   snp.sampling.type = "zscore", warmup.gens = 100, crossover.prop = 0.5){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -150,7 +151,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
   sum.dif.vec.list <- vector(mode = "list", length = generations)
 
   ### first run through generations not restricting ld ###
-  while (generation <= generations & !last.gens.equal & !top.score.ld){
+  while (generation <= generations & !last.gens.equal){
 
     if (generation <= warmup.gens){
 
@@ -240,17 +241,13 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     unique.lower.idx <- unique(sampled.lower.idx)
 
     cross.overs <- rep(F, length(unique.lower.idx))
-    if (length(unique.lower.idx)/2 %% 2 == 0){
+    if (round(length(unique.lower.idx)*crossover.prop) %% 2 == 0){
 
-      cross.overs[sample(1:length(unique.lower.idx), size = length(unique.lower.idx)/2)] <- TRUE
-
-    } else if (round(length(unique.lower.idx)/2) %% 2 == 0){
-
-      cross.overs[sample(1:length(unique.lower.idx), size = round(length(unique.lower.idx)/2))] <- TRUE
+      cross.overs[sample(1:length(unique.lower.idx), size = round(length(unique.lower.idx)*crossover.prop))] <- TRUE
 
     } else {
 
-      cross.overs[sample(1:length(unique.lower.idx), size = (round(length(unique.lower.idx)/2) + 1))] <- TRUE
+      cross.overs[sample(1:length(unique.lower.idx), size = (round(length(unique.lower.idx)*crossover.prop) + 1))] <- TRUE
 
     }
 
