@@ -51,19 +51,21 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
   ### compute weighted difference vectors for cases vs complements ###
   dif.vecs <- as.matrix(family.weights*cases.minus.complements[informative.families, target.snps])/sum.family.weights
+  #dif.vecs <- as.matrix(family.weights*cases.minus.complements[informative.families, target.snps])
 
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
+  #print(sum.dif.vecs)
 
   ### determine how many cases actually have the proposed risk set ###
-  risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
-  target.snp.signs <- sign(cases.minus.complements[informative.families, target.snps])
-  n.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat | target.snp.signs == 0) == ncol(risk.set.sign.mat))
-  #print("N Risk Set:")
+  #risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
+  #target.snp.signs <- sign(cases.minus.complements[informative.families, target.snps])
+  #n.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat | target.snp.signs == 0) == ncol(risk.set.sign.mat))
+ # print("N Risk Set:")
   #print(n.risk.set)
   #print("Prop Risk Set:")
   #print(n.risk.set/n.informative.families)
-  #dot.prods <- as.matrix(cases.minus.complements[informative.families, target.snps]) %*% sum.dif.vecs
+  #dot.prods <- family.weights*as.matrix(cases.minus.complements[informative.families, target.snps]) %*% (sum.dif.vecs*sum.family.weights)
   #print("Prop Positive Dot Prods:")
   #phat <- sum(as.vector(dot.prods) > 0)/n.informative.families
   #print(phat)
@@ -83,14 +85,17 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   #sum.sq.weights <- sum(family.weights^2)
 
   cov.mat <- (1/(sum.family.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
+  #cov.mat <- (1/(1 - sum.sq.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
+  #cov.mat <-  crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
   #cov.mat <- (1/(n.informative.families))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
   #cov.mat <- crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
 
   target.chrom.mat <- chrom.mat[target.snps, target.snps]
   cov.mat[!target.chrom.mat] <- 0
+  #print(cov.mat)
   sum.dif.vecs <- sum.dif.vecs/sqrt(diag(cov.mat))
-  sq.sum.dif.vecs <- sum.dif.vecs^2
-  element.contributions <- sq.sum.dif.vecs/sum(sq.sum.dif.vecs)
+  #sq.sum.dif.vecs <- sum.dif.vecs^2
+  #element.contributions <- sq.sum.dif.vecs/sum(sq.sum.dif.vecs)
 
   #compute svd of dif.vec.cov.mat
   cov.mat.svd <- svd(cov.mat)
@@ -98,15 +103,15 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
   #compute final fitness score using generalized inverse and hotelling
   ### If not enough indviduals with the risk set, give a very low fitness score ###
-  if (n.risk.set < min.n.risk.set){
+ # if (n.risk.set < min.n.risk.set){
 
-    fitness.score <- 10^-10
+  #  fitness.score <- 10^-10
 
-  } else {
+#  } else {
 
-    fitness.score <- min(element.contributions)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+    fitness.score <- (1/1000)*sum.family.weights*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
 
-  }
+ # }
 
   #fitness.score <- (10^10)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   #sum.dif.vecs.sq <- sum.dif.vecs^2
