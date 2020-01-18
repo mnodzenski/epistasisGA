@@ -25,7 +25,7 @@ run.ga(
   zscore.sd.threshold = 2.5,
   initial.sample.duplicates = F,
   snp.sampling.type = "zscore",
-  warmup.gens = 100,
+  warmup.gens = 25,
   crossover.prop = 0.5
 )
 }
