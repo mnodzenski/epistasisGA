@@ -48,7 +48,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
                    n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
                    weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
                    min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
-                   snp.sampling.type = "zscore", warmup.gens = 100, crossover.prop = 0.5){
+                   snp.sampling.type = "zscore", warmup.gens = 25, crossover.prop = 0.5){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
