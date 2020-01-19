@@ -78,8 +78,8 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   mu.hat.mat <- matrix(rep(mu.hat, n.informative.families), nrow = n.informative.families, byrow = T)
 
   x <- as.matrix(cases.minus.complements[informative.families, target.snps])
-  #x.minus.mu.hat <- x - mu.hat.mat
-  x.minus.mu.hat <- x
+  x.minus.mu.hat <- x - mu.hat.mat
+  #x.minus.mu.hat <- x
   weighted.x.minus.mu.hat <- family.weights*x.minus.mu.hat
 
   #sum.sq.weights <- sum(family.weights^2)
