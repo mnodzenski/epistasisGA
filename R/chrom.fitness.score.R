@@ -58,9 +58,9 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   #print(sum.dif.vecs)
 
   ### determine how many cases actually have the proposed risk set ###
-  #risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
-  #target.snp.signs <- sign(cases.minus.complements[informative.families, target.snps])
-  #n.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat | target.snp.signs == 0) == ncol(risk.set.sign.mat))
+  risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
+  target.snp.signs <- sign(cases.minus.complements[informative.families, target.snps])
+  n.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat) == ncol(risk.set.sign.mat))
  # print("N Risk Set:")
   #print(n.risk.set)
   #print("Prop Risk Set:")
@@ -103,15 +103,15 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
   #compute final fitness score using generalized inverse and hotelling
   ### If not enough indviduals with the risk set, give a very low fitness score ###
- # if (n.risk.set < min.n.risk.set){
+  if (n.risk.set < min.n.risk.set){
 
-  #  fitness.score <- 10^-10
+    fitness.score <- 10^-10
 
-#  } else {
+  } else {
 
     fitness.score <- (1/1000)*sum.family.weights*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
 
- # }
+  }
 
   #fitness.score <- (10^10)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   #sum.dif.vecs.sq <- sum.dif.vecs^2
