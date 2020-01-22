@@ -25,7 +25,7 @@ run.ga(
   zscore.sd.threshold = 2.5,
   initial.sample.duplicates = F,
   snp.sampling.type = "zscore",
-  warmup.gens = 25,
+  warmup.gens = 0,
   crossover.prop = 0.5
 )
 }
@@ -70,7 +70,7 @@ run.ga(
 
 \item{snp.sampling.type}{A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".}
 
-\item{warmup.gens}{A numeric indicating the number of warmup generations to be used. Defaults to 100.}
+\item{warmup.gens}{A numeric indicating the number of warmup generations to be used. Defaults to 0.}
 
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.}
 }
