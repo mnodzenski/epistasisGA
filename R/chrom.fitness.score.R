@@ -2,6 +2,8 @@
 #'
 #' This function returns a fitness score for a set of snps, where the fitness score is the squared vector length of the weighted sum of difference vectors between cases and complements.
 #'
+#' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
+#' @param complement.genetic.data A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
 #' @param case.comp.differences a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.
 #' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
 #' @param cases.minus.complements A matrix equal to case genetic data - complement genetic data.
@@ -31,7 +33,7 @@
 #'
 #' @export
 
-chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.complements, both.one.mat, chrom.mat,
+chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps, cases.minus.complements, both.one.mat, chrom.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10){
 
   ### pick out the differences for the target snps ###
@@ -57,16 +59,41 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   sum.dif.vecs <- colSums(dif.vecs)
   #print(sum.dif.vecs)
 
-  ### determine how many cases actually have the proposed risk set ###
+  ### determine how many cases and complements actually have the proposed risk set ###
+  risk.dirs <- sign(sum.dif.vecs)
+  pos.risk <- which(risk.dirs > 0)
+  neg.risk <- which(risk.dirs <= 0)
+
+  case <- case.genetic.data[ , target.snps]
+  comp <- complement.genetic.data[ , target.snps]
+
+  case.high.risk <- as.numeric((rowSums(case[informative.families , pos.risk, drop = F] > 0) +  rowSums(case[informative.families , neg.risk, drop = F] < 2)) == length(target.snps))
+  comp.high.risk <- as.numeric((rowSums(comp[informative.families , pos.risk, drop = F] > 0) +  rowSums(comp[informative.families , neg.risk, drop = F] < 2)) == length(target.snps))
+
+  n.case.risk <- sum(family.weights*case.high.risk)
+  n.comp.risk <- sum(family.weights*comp.high.risk)
+  rr <- n.case.risk/(n.case.risk  + n.comp.risk)
+  rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
+  #n.risk.ratio <- ifelse(is.na(rr), 0, rr)
+  #ppv <-ifelse(is.na(rr), 0, n.case.risk/(n.case.risk + n.comp.risk))
+  #n.both.risk <- sum(case.high.risk & comp.high.risk)
+
+  #print("Case Risk Set:")
+  #print(n.case.risk)
+  #print("Comp Risk Set:")
+  #print(n.comp.risk)
+  #print("Both High Risk:")
+  #print(n.both.risk)
+
   #risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
   #target.snp.signs <- sign(cases.minus.complements[informative.families, target.snps])
-  #n.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat) == ncol(risk.set.sign.mat))
+  #case.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat | target.snp.signs == 0) == ncol(risk.set.sign.mat))
   #print("N Risk Set:")
   #print(n.risk.set)
   #print(n.informative.families)
   #print("Prop Risk Set:")
   #print(n.risk.set/n.informative.families)
-  dot.prods <- family.weights*as.matrix(cases.minus.complements[informative.families, target.snps]) %*% (sum.dif.vecs*sum.family.weights)
+  #dot.prods <- family.weights*as.matrix(cases.minus.complements[informative.families, target.snps]) %*% (sum.dif.vecs*sum.family.weights)
   #mean.sum.cubed.dot.prods <- mean(dot.prods^3)
   #mean.dot.prod <- mean(dot.prods)
   #denominator <- ((1/(n.informative.families - 1))*sum((dot.prods - mean.dot.prod)^2))^(3/2)
@@ -74,15 +101,15 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
   #print("Skewness")
   #print(sample.skew)
   #hist(dot.prods)
-  pos.dot.prods <- ifelse(dot.prods > 0, 1, 0)
-  w.prop.pos.dot.prods <- sum(family.weights*pos.dot.prods)/sum.family.weights
+  #pos.dot.prods <- ifelse(dot.prods > 0, 1, 0)
+  #w.prop.pos.dot.prods <- sum(family.weights*pos.dot.prods)/sum.family.weights
   #z.score.num <- (w.prop.pos.dot.prods - 0.5)
   #z.score.denom <- w.prop.pos.dot.prods*(1 - w.prop.pos.dot.prods)*sum((1/family.weights)^2)
   #w.zscore <- z.score.num/sqrt(z.score.denom)
   #print("Zscore")
   #print(w.zscore)
   #prop.scale <- ifelse(w.prop.pos.dot.prods < 0.6, 10^-10, w.prop.pos.dot.prods)
-  prop.scale <- w.prop.pos.dot.prods
+  #prop.scale <- w.prop.pos.dot.prods
   #print(prop.scale)
   #print("Prop Positive Dot Prods:")
   #phat <- sum(as.vector(dot.prods) > 0)/n.informative.families
@@ -126,8 +153,21 @@ chrom.fitness.score <- function(case.comp.differences, target.snps, cases.minus.
 
   #} else {
 
-    fitness.score <-  prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-   # fitness.score <- rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+
+  #  fitness.score <-  prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  #print("T2")
+   #print(sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
+  fitness.score <- rr*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+
+  #}
+
+  #if (n.comp.risk > 30){
+
+   # fitness.score <- 10^-10
+
+  #} else {
+
+   # fitness.score <- rr
 
   #}
 
