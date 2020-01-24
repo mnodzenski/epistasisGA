@@ -5,6 +5,8 @@
 \title{A function to generate a fitness score for a subset of snps from a dataset of case genetic markers}
 \usage{
 chrom.fitness.score(
+  case.genetic.data,
+  complement.genetic.data,
   case.comp.differences,
   target.snps,
   cases.minus.complements,
@@ -17,6 +19,10 @@ chrom.fitness.score(
 )
 }
 \arguments{
+\item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
+
+\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
+
 \item{case.comp.differences}{a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.}
 
 \item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
