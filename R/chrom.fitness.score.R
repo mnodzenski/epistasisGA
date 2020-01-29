@@ -71,13 +71,13 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   comp <- complement.genetic.data[ , target.snps]
 
   n.target <- length(target.snps)
-  #case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
-  #comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
+  case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
+  comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
 
-  #n.case.risk <- sum(family.weights[case.high.risk])
-  #n.comp.risk <- sum(family.weights[comp.high.risk])
-  #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
-  #rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
+  n.case.risk <- sum(family.weights[case.high.risk])
+  n.comp.risk <- sum(family.weights[comp.high.risk])
+  rr <- n.case.risk/(n.case.risk  + n.comp.risk)
+  rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
   #n.risk.ratio <- ifelse(is.na(rr), 0, rr)
   #ppv <-ifelse(is.na(rr), 0, n.case.risk/(n.case.risk + n.comp.risk))
   #n.both.risk <- sum(case.high.risk & comp.high.risk)
@@ -97,7 +97,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   #print(n.informative.families)
   #print("Prop Risk Set:")
   #print(n.risk.set/n.informative.families)
-  dot.prods <- as.matrix(cases.minus.complements.inf) %*% sum.dif.vecs
+  #dot.prods <- as.matrix(cases.minus.complements.inf) %*% sum.dif.vecs
   #mean.sum.cubed.dot.prods <- mean(dot.prods^3)
   #mean.dot.prod <- mean(dot.prods)
   #denominator <- ((1/(n.informative.families - 1))*sum((dot.prods - mean.dot.prod)^2))^(3/2)
@@ -105,9 +105,9 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   #print("Skewness")
   #print(sample.skew)
   #hist(dot.prods)
-  pos.dot.prods <- ifelse(dot.prods > 0, 1, 0)
+  #pos.dot.prods <- ifelse(dot.prods > 0, 1, 0)
   #w.prop.pos.dot.prods <- sum(family.weights*pos.dot.prods)/sum.family.weights
-  prop.pos.dot.prods <- sum(pos.dot.prods)/length(pos.dot.prods)
+  #prop.pos.dot.prods <- sum(pos.dot.prods)/length(pos.dot.prods)
   #print("Prop Pos Dot Prods:")
   #print(prop.pos.dot.prods)
   #z.score.num <- (w.prop.pos.dot.prods - 0.5)
@@ -116,7 +116,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   #print("Zscore")
   #print(w.zscore)
   #prop.scale <- ifelse(w.prop.pos.dot.prods < 0.6, 10^-10, w.prop.pos.dot.prods)
-  prop.scale <- prop.pos.dot.prods
+  #prop.scale <- w.prop.pos.dot.prods
   #print(prop.scale)
   #print("Prop Positive Dot Prods:")
   #phat <- sum(as.vector(dot.prods) > 0)/n.informative.families
@@ -164,8 +164,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   #  fitness.score <-  prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   #print("T2")
    #print(sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
-  #fitness.score <- rr*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-  fitness.score <- prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  fitness.score <- rr*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  #fitness.score <- prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
 
   #}
 
