@@ -51,24 +51,18 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   both.one <- rowSums(both.one.mat[informative.families , target.snps])
   weighted.informativeness <- n.both.one.weight*both.one + n.different.snps.weight*total.different.snps[informative.families]
   family.weights <- weight.function(weighted.informativeness)
-  #family.weights  <- family.weights/sum(family.weights)
   sum.family.weights <- sum(family.weights)
 
   ### compute weighted difference vectors for cases vs complements ###
   dif.vecs <- as.matrix(family.weights*cases.minus.complements.inf)/sum.family.weights
-  #dif.vecs <- as.matrix(family.weights*cases.minus.complements[informative.families, target.snps])
 
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
-  #print(sum.dif.vecs)
 
   ### determine how many cases and complements actually have the proposed risk set ###
   risk.dirs <- sign(sum.dif.vecs)
   pos.risk <- which(risk.dirs > 0)
   neg.risk <- which(risk.dirs <= 0)
-
-  case <- case.genetic.data[ , target.snps]
-  comp <- complement.genetic.data[ , target.snps]
 
   n.target <- length(target.snps)
   case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
@@ -78,113 +72,34 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   n.comp.risk <- sum(family.weights[comp.high.risk])
   rr <- n.case.risk/(n.case.risk  + n.comp.risk)
   rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
-  #n.risk.ratio <- ifelse(is.na(rr), 0, rr)
-  #ppv <-ifelse(is.na(rr), 0, n.case.risk/(n.case.risk + n.comp.risk))
-  #n.both.risk <- sum(case.high.risk & comp.high.risk)
 
-  #print("Case Risk Set:")
-  #print(n.case.risk)
-  #print("Comp Risk Set:")
-  #print(n.comp.risk)
-  #print("Both High Risk:")
-  #print(n.both.risk)
-
-  #risk.set.sign.mat <- matrix(rep(sign(sum.dif.vecs), n.informative.families), nrow = n.informative.families, byrow = T)
-  #target.snp.signs <- sign(cases.minus.complements[informative.families, target.snps])
-  #case.risk.set <- sum(rowSums(target.snp.signs == risk.set.sign.mat | target.snp.signs == 0) == ncol(risk.set.sign.mat))
-  #print("N Risk Set:")
-  #print(n.risk.set)
-  #print(n.informative.families)
-  #print("Prop Risk Set:")
-  #print(n.risk.set/n.informative.families)
   #dot.prods <- as.matrix(cases.minus.complements.inf) %*% sum.dif.vecs
-  #mean.sum.cubed.dot.prods <- mean(dot.prods^3)
-  #mean.dot.prod <- mean(dot.prods)
-  #denominator <- ((1/(n.informative.families - 1))*sum((dot.prods - mean.dot.prod)^2))^(3/2)
-  #sample.skew <- mean.sum.cubed.dot.prods/denominator
-  #print("Skewness")
-  #print(sample.skew)
-  #hist(dot.prods)
   #pos.dot.prods <- ifelse(dot.prods > 0, 1, 0)
   #w.prop.pos.dot.prods <- sum(family.weights*pos.dot.prods)/sum.family.weights
   #prop.pos.dot.prods <- sum(pos.dot.prods)/length(pos.dot.prods)
   #print("Prop Pos Dot Prods:")
   #print(prop.pos.dot.prods)
-  #z.score.num <- (w.prop.pos.dot.prods - 0.5)
-  #z.score.denom <- w.prop.pos.dot.prods*(1 - w.prop.pos.dot.prods)*sum((1/family.weights)^2)
-  #w.zscore <- z.score.num/sqrt(z.score.denom)
-  #print("Zscore")
-  #print(w.zscore)
   #prop.scale <- ifelse(w.prop.pos.dot.prods < 0.6, 10^-10, w.prop.pos.dot.prods)
   #prop.scale <- w.prop.pos.dot.prods
-  #print(prop.scale)
-  #print("Prop Positive Dot Prods:")
-  #phat <- sum(as.vector(dot.prods) > 0)/n.informative.families
-  #print(w.prop.pos.dot.prods)
-  #zscore <- (phat - 0.5)/sqrt((1/n.informative.families)*phat*(1 - phat))
-  #print("Zscore:")
-  #print(zscore)
 
   ### Otherwise, return the squared length of the sum of the case - complement differences ###
   mu.hat <- sum.dif.vecs
   mu.hat.mat <- matrix(rep(mu.hat, n.informative.families), nrow = n.informative.families, byrow = T)
   x <- as.matrix(cases.minus.complements.inf)
   x.minus.mu.hat <- x - mu.hat.mat
-  #x.minus.mu.hat <- x
   weighted.x.minus.mu.hat <- family.weights*x.minus.mu.hat
-
-  #sum.sq.weights <- sum(family.weights^2)
-
   cov.mat <- (1/(sum.family.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
-  #cov.mat <- (1/(1 - sum.sq.weights))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
-  #cov.mat <-  crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
-  #cov.mat <- (1/(n.informative.families))*crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
-  #cov.mat <- crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
 
   target.chrom.mat <- chrom.mat[target.snps, target.snps]
   cov.mat[!target.chrom.mat] <- 0
-  #print(cov.mat)
   sum.dif.vecs <- sum.dif.vecs/sqrt(diag(cov.mat))
-  #sq.sum.dif.vecs <- sum.dif.vecs^2
-  #element.contributions <- sq.sum.dif.vecs/sum(sq.sum.dif.vecs)
 
   #compute svd of dif.vec.cov.mat
   cov.mat.svd <- svd(cov.mat)
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
-  #compute final fitness score using generalized inverse and hotelling
-  ### If not enough indviduals with the risk set, give a very low fitness score ###
-  #if (n.risk.set < min.n.risk.set){
-
-   # fitness.score <- 10^-10
-
-  #} else {
-
-
-  #  fitness.score <-  prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-  #print("T2")
-   #print(sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
+  #compute fitness score
   fitness.score <- rr*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-  #fitness.score <- prop.scale*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-
-  #}
-
-  #if (n.comp.risk > 30){
-
-   # fitness.score <- 10^-10
-
-  #} else {
-
-   # fitness.score <- rr
-
-  #}
-
-  #fitness.score <- (10^10)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-  #sum.dif.vecs.sq <- sum.dif.vecs^2
-  #squared.vec.length <- sum(sum.dif.vecs.sq)
-  #fitness.score <- squared.vec.length
-  #print("Scaled Fitness Score")
-  #print((n.risk.set/n.informative.families)*fitness.score)
 
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
 
