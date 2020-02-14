@@ -56,31 +56,6 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   ###get the sign of the differences ###
   diff.signs <- colSums(family.weights*sign(cases.minus.complements.inf))
 
-  ### determine which allele to consider the risk allele ###
-  pos.diff.signs <- which(diff.signs >= 0)
-  neg.diff.signs <- which(diff.signs < 0)
-
-  ### adjust the difference vectors based on the proposed risk directions ###
-  if (any(pos.diff.signs)){
-
-    case.pos.adjust.idx <- case.inf[ , pos.diff.signs] == 2 & comp.inf[ , pos.diff.signs] == 1
-    cases.minus.complements.inf[ , pos.diff.signs][case.pos.adjust.idx] <- 0.5
-
-    comp.pos.adjust.idx <- case.inf[ , pos.diff.signs] == 1 & comp.inf[ , pos.diff.signs] == 2
-    cases.minus.complements.inf[ , pos.diff.signs][comp.pos.adjust.idx] <- -0.5
-
-  }
-
-  if (any(neg.diff.signs)){
-
-    case.neg.adjust.idx <- case.inf[ , neg.diff.signs] == 0 & comp.inf[ , neg.diff.signs] == 1
-    cases.minus.complements.inf[ , neg.diff.signs][case.neg.adjust.idx] <- -0.5
-
-    comp.neg.adjust.idx <- case.inf[ , neg.diff.signs] == 1 & comp.inf[ , neg.diff.signs] == 0
-    cases.minus.complements.inf[ , neg.diff.signs][comp.neg.adjust.idx] <- 0.5
-
-  }
-
   ### compute weighted difference vectors for cases vs complements ###
   dif.vecs <- as.matrix(family.weights*cases.minus.complements.inf)/sum.family.weights
 
