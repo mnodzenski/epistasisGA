@@ -94,9 +94,6 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
 
   ### Compute matrices of differences between cases and complements ###
 
-  #set allele counts of 2 to 1.5, since we don't want 2-1 to have the same weight as 1 - 0
-  case.genetic.data[case.genetic.data == 2] <- 1.5
-  complement.genetic.data[complement.genetic.data == 2] <- 1.5
   case.minus.comp <- as.matrix(case.genetic.data - complement.genetic.data)
   case.comp.different <- case.minus.comp != 0
 
