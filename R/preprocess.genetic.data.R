@@ -97,14 +97,14 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     two.one <- cross.tab[3, 2]
 
     #retabulate if not enough discrepant transmitted alleles
-    if (two.zero + two.one < 10){
+    #if (two.zero + two.one < 5){
 
-      case.snp[case.snp == 2] <- 1
-      comp.snp[comp.snp == 2] <- 1
-      case.snp <- factor(case.snp, levels = c(0, 1))
-      comp.snp <- factor(comp.snp, levels = c(0, 1))
+    #  case.snp[case.snp == 2] <- 1
+    #  comp.snp[comp.snp == 2] <- 1
+    #  case.snp <- factor(case.snp, levels = c(0, 1))
+    #  comp.snp <- factor(comp.snp, levels = c(0, 1))
 
-    }
+    #}
 
     #get p-value of association from conditional logistic regression
     case.comp.geno <- as.numeric(as.character(c(case.snp, comp.snp)))
@@ -117,7 +117,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
   #combine results into new dataframes
   case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
-  complement.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$complement.snp))))
+  complement.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$comp.snp))))
   chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
 
   return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, chisq.stats = chisq.stats, original.col.numbers = original.col.numbers,
