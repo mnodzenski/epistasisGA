@@ -2,27 +2,19 @@
 #'
 #' This function runs a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.
 #'
-#' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
-#' @param complement.genetic.data A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
-#' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
-#' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
+#' @param data.list The output list from \code{preprocess.genetic.data}.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param chromosome.size The number of snps within each candidate solution.
-#' @param chrom.mat A logical matrix indicating whether the snps in the input genetic data belong to the same chromosome.
 #' @param seed.val An integer indicating the seed to be used for the random samples.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
-#' @param min.allele.freq The minimum minor allele frequency in the parents required for a snp to be considered as a potential GA solution. Any snps with MAF < \code{min.allele.freq} in the parents will be omitted. Defaults to 0.01.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
-#' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
 #' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
-#' @param zscore.sd.threshold A scalar indicating the maximum number of standard deviations from the mean a snp z-score can be. Any snps with marginal z-scores more extreme than this threshold will be set to the threshold value. This should be used to prevent very strong marginal associations from dominating the sampling.
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
-#' @param warmup.gens A numeric indicating the number of warmup generations to be used. Defaults to 0.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
 #'
@@ -42,79 +34,38 @@
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
+#' @importFrom survival clogit
 #' @export
 
-run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, mother.genetic.data = NULL,
-                   n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
-                   weight.function = identity, min.allele.freq = 0.025, generations = 2000, gen.same.fitness = 500,
-                   min.n.risk.set = 10, tol = 10^-6, n.top.chroms = 100, zscore.sd.threshold = 2.5, initial.sample.duplicates = F,
-                   snp.sampling.type = "zscore", warmup.gens = 0, crossover.prop = 0.5){
+run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
+                   weight.function = identity,generations = 2000, gen.same.fitness = 500,
+                   tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
+                   snp.sampling.type = "chisq", crossover.prop = 0.5){
 
-  #make sure the appropriate genetic data is included
-  if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
 
-    stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
-
-  }
+  #grab the analysis data
+  case.genetic.data <- data.list$case.genetic.data
+  complement.genetic.data <- data.list$complement.genetic.data
+  original.col.numbers <- data.list$original.col.numbers
+  chisq.stats <- data.list$chisq.stats
+  chrom.mat <- data.list$chrom.mat
 
   #set seed for reproducibility
   set.seed(seed.val)
   print(paste("Starting GA. Seed value:", seed.val))
 
-  ### find the snps with MAF < minimum threshold in the cases ###
-  if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)){
-
-    alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
-    below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
-    original.col.numbers <- which(!below.maf.threshold)
-    names(original.col.numbers) <- NULL
-
-    ### remove the snps not meeting the required allele frequency threshold ###
-    father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
-    mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
-    case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
-    chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
-
-    ### Compute the complement data ###
-    complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
-
-  } else if (!is.null(complement.genetic.data)){
-
-    alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4*nrow(case.genetic.data))
-    below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
-    original.col.numbers <- which(!below.maf.threshold)
-    names(original.col.numbers) <- NULL
-
-    ### remove the snps not meeting the required allele frequency threshold ###
-    case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
-    complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
-    chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
-
-  }
-
   ### Compute matrices of differences between cases and complements ###
-
   case.minus.comp <- as.matrix(case.genetic.data - complement.genetic.data)
   case.comp.different <- case.minus.comp != 0
 
-  if (snp.sampling.type == "zscore"){
+  if (snp.sampling.type == "chisq"){
 
-    ### Compute matrix of snp 'Z-scores' ###
-    mean.snp.diffs <- colMeans(case.minus.comp)
-    sd.snp.diffs <- colSds(case.minus.comp)
-    snp.zscores <- mean.snp.diffs/sd.snp.diffs
-
-    #don't allow extreme z-scores (preserve the ability to find snps with small marginal differences)
-    zscore.sd <- sd(snp.zscores)
-    zscore.mean <- mean(snp.zscores)
-    extreme.zcore.upper.thresh <- zscore.mean + zscore.sd.threshold*zscore.sd
-    extreme.zcore.lower.thresh <- zscore.mean - zscore.sd.threshold*zscore.sd
-    snp.zscores[snp.zscores >= extreme.zcore.upper.thresh] <- extreme.zcore.upper.thresh
-    snp.zscores[snp.zscores <= extreme.zcore.lower.thresh] <- extreme.zcore.lower.thresh
+    snp.chisq <- sqrt(chisq.stats)
+    #p75 <- quantile(snp.chisq, 0.75)
 
   } else if (snp.sampling.type == "random") {
 
-    snp.zscores <- rep(1, ncol(case.minus.comp))
+    snp.chisq <- rep(1, ncol(case.minus.comp))
 
   }
 
@@ -170,13 +121,12 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
         chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat, chrom.mat,
-                            n.different.snps.weight, n.both.one.weight, weight.function, min.n.risk.set)
+                            n.different.snps.weight, n.both.one.weight, weight.function)
 
     })
 
     fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
     sum.dif.vecs <- t(sapply(fitness.score.list, function(x) x$sum.dif.vecs))
-    dif.vec.maxs <- rowMaxs(abs(sum.dif.vecs))
 
     #store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
     fitness.score.mat[generation, ] <- fitness.scores
@@ -218,18 +168,8 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     print("Step 4/9")
     #allow the top scoring chromosome to be sampled, but only sample from the unique chromosomes available
     sample.these <- !duplicated(chromosome.list)
-    if (generation <= warmup.gens){
-
-      sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
-                                  replace = T, prob = dif.vec.maxs[sample.these])
-
-    } else {
-
-      sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
+    sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
                                   replace = T, prob = fitness.scores[sample.these])
-
-    }
-
     sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
     sampled.lower.dif.vecs <- sum.dif.vecs[sampled.lower.idx , ]
     sampled.lower.fitness.scores <- fitness.scores[sampled.lower.idx]
@@ -251,17 +191,6 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
       cross.overs[sample(1:length(unique.lower.idx), size = (round(length(unique.lower.idx)*crossover.prop) + 1))] <- TRUE
 
     }
-
-    #note: need at least two crossovers assigned, and need an even number
-    #if (length(unique.lower.idx) > 1){
-
-     # while (sum(cross.overs) < 2 | sum(cross.overs) %% 2 != 0){
-
-      #  cross.overs <- rbinom(length(unique.lower.idx), 1, 0.5) == 1
-
-    #  }
-
-    #}
 
     #those not getting crossover will be mutated
     mutations <- !cross.overs
@@ -372,7 +301,7 @@ run.ga <- function(case.genetic.data, complement.genetic.data = NULL, father.gen
     ### 7. Mutate the chromosomes that were not crossed over ###
     print("Step 7/9")
     mutation.positions <- (1:length(sampled.lower.chromosomes))[-cross.over.positions]
-    snps.for.mutation <- sample(1:ncol(case.genetic.data), ncol(case.genetic.data), prob = abs(snp.zscores), replace = T)
+    snps.for.mutation <- sample(1:ncol(case.genetic.data), ncol(case.genetic.data), prob = snp.chisq, replace = T)
     for (i in mutation.positions){
 
       #grab the chromosome and its difference vector
