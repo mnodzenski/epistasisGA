@@ -11,7 +11,6 @@
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
-#' @param min.n.risk.set A scalar indicating the minimum number of individuals whose case - control difference vector must have sign consistent with the sign of the weighted sum of the differences vectors across families. Defaults to 10.
 #' @param chrom.mat A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
@@ -34,7 +33,7 @@
 #' @export
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps, cases.minus.complements, both.one.mat, chrom.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity, min.n.risk.set = 10){
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity){
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
