@@ -16,7 +16,7 @@
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.
-#' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution, and the third element is the number of snps filtered due to MAF < \code{min.allele.freq}.
+#' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
 #' @examples
 #'
@@ -55,7 +55,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
   print(paste("Starting GA. Seed value:", seed.val))
 
   ### Compute matrices of differences between cases and complements ###
-  case.minus.comp <- as.matrix(case.genetic.data - complement.genetic.data)
+  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
   case.comp.different <- case.minus.comp != 0
 
   if (snp.sampling.type == "chisq"){
@@ -105,15 +105,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
   ### first run through generations not restricting ld ###
   while (generation <= generations & !last.gens.equal){
 
-    if (generation <= warmup.gens){
+    print(paste("generation", generation))
 
-      print(paste("warmup: generation", generation))
-
-    } else{
-
-      print(paste("generation", generation))
-
-    }
 
     ### 1. compute the fitness score for each set of candidate snps ###
     print("Step 1/9")
@@ -344,7 +337,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
     print(paste0("Max fitness score:", max.fitness))
     print("Top Chromosome(s):")
     print(original.col.numbers[top.chromosome[[1]]])
-    if (generation >= (gen.same.fitness + warmup.gens)){
+    if (generation >= gen.same.fitness){
 
       #check to see if enough of the last generations have had the same top chromosome to terminate
       last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
@@ -370,7 +363,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
   final.result <- unique.results[1:n.top.chroms, ]
 
   print(paste("Algorithm terminated after", last.generation, "generations."))
-  return(list(top.chromosome.results = final.result, n.generations = last.generation, n.filtered.snps = sum(below.maf.threshold) ))
+  return(list(top.chromosome.results = final.result, n.generations = last.generation))
 
 }
 
