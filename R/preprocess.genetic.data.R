@@ -28,7 +28,7 @@
 #' @importFrom stats rbinom sd
 #' @importFrom survival clogit
 #' @importFrom BiocParallel bplapply
-#' @importFrom survival clogit
+#' @importFrom survival clogit strata coxph Surv
 #' @export
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
