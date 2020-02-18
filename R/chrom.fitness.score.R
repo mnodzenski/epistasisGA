@@ -52,9 +52,6 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   family.weights <- weight.function(weighted.informativeness)
   sum.family.weights <- sum(family.weights)
 
-  ###get the sign of the differences ###
-  diff.signs <- colSums(family.weights*sign(cases.minus.complements.inf))
-
   ### compute weighted difference vectors for cases vs complements ###
   dif.vecs <- as.matrix(family.weights*cases.minus.complements.inf)/sum.family.weights
 
@@ -74,15 +71,6 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   n.comp.risk <- sum(family.weights[comp.high.risk])
   rr <- n.case.risk/(n.case.risk  + n.comp.risk)
   rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
-
-  #dot.prods <- as.matrix(cases.minus.complements.inf) %*% sum.dif.vecs
-  #pos.dot.prods <- ifelse(dot.prods > 0, 1, 0)
-  #w.prop.pos.dot.prods <- sum(family.weights*pos.dot.prods)/sum.family.weights
-  #prop.pos.dot.prods <- sum(pos.dot.prods)/length(pos.dot.prods)
-  #print("Prop Pos Dot Prods:")
-  #print(prop.pos.dot.prods)
-  #prop.scale <- ifelse(w.prop.pos.dot.prods < 0.6, 10^-10, w.prop.pos.dot.prods)
-  #prop.scale <- w.prop.pos.dot.prods
 
   ### Otherwise, return the squared length of the sum of the case - complement differences ###
   mu.hat <- sum.dif.vecs
