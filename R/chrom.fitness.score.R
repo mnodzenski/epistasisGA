@@ -67,9 +67,10 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
   comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
 
-  n.case.risk <- sum(family.weights[case.high.risk])
-  n.comp.risk <- sum(family.weights[comp.high.risk])
-  rr <- n.case.risk/(n.case.risk  + n.comp.risk)
+  #n.case.risk <- sum(family.weights[case.high.risk])
+  #n.comp.risk <- sum(family.weights[comp.high.risk])
+  #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
+  rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
   rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
 
   ### Otherwise, return the squared length of the sum of the case - complement differences ###
@@ -89,7 +90,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
   #compute fitness score
-  fitness.score <- rr*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  fitness.score <- (rr^2)*sum.family.weights/1000*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
 
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
 
