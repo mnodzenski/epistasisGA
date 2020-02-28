@@ -69,14 +69,14 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
   #case.high.risk <- sum(colSums(family.weights*case.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - case.inf[ , neg.risk, drop = F])))
   #comp.high.risk <- sum(colSums(family.weights*comp.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - comp.inf[ , neg.risk, drop = F])))
-  pooled.dif.vec <- case.high.risk - comp.high.risk
+  #pooled.dif.vec <- case.high.risk - comp.high.risk
 
   #n.case.risk <- sum(family.weights[case.high.risk])
   #n.comp.risk <- sum(family.weights[comp.high.risk])
   #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
-  #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
-  rr <- sum(pooled.dif.vec)/sqrt(sum(pooled.dif.vec^2))
-  rr <- ifelse(rr == 0 | is.na(rr), 10^-10, rr)
+  rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
+  #rr <- sum(pooled.dif.vec)/sqrt(sum(pooled.dif.vec^2))
+  rr <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
   #print(rr)
 
   ### Otherwise, return the squared length of the sum of the case - complement differences ###
@@ -96,7 +96,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
   #compute fitness score
-  fitness.score <- (rr)*(sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  fitness.score <- (rr^2)*(sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   #fitness.score <- (rr)* sqrt(((sum.family.weights - chromosome.size)/(chromosome.size*(sum.family.weights - 1)))*sum.family.weights*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
 
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
