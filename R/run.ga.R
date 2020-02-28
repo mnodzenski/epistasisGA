@@ -358,7 +358,9 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
   colnames(unique.chrom.dif.vec.dt) <- paste0("snp", 1:ncol(unique.chrom.dif.vec.dt), ".diff.vec")
   unique.fitness.score.vec <- as.vector(t(fitness.score.mat[1:last.generation, ]))[!duplicated(all.chrom.dt)]
   unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt)
-  unique.results[ , fitness.score := unique.fitness.score.vec]
+  unique.results[ , raw.fitness.score := unique.fitness.score.vec]
+  unique.results[ , min.elem := min(abs(.SD)), by = seq_len(nrow(unique.results)), .SDcols = (1 + chromosome.size):(2*chromosome.size)]
+  unique.results[ , fitness.score := min.elem*raw.fitness.score]
   setorder(unique.results, -fitness.score)
   final.result <- unique.results[1:n.top.chroms, ]
 
