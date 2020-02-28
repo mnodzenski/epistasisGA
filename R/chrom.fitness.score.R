@@ -70,12 +70,17 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   #case.high.risk <- sum(colSums(family.weights*case.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - case.inf[ , neg.risk, drop = F])))
   #comp.high.risk <- sum(colSums(family.weights*comp.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - comp.inf[ , neg.risk, drop = F])))
   #pooled.dif.vec <- case.high.risk - comp.high.risk
+  case.high.risk.alleles <- rowSums(case.inf[case.high.risk, pos.risk, drop = F]) + (rowSums(2 - case.inf[case.high.risk, neg.risk, drop = F]))
+  comp.high.risk.alleles <- rowSums(comp.inf[comp.high.risk, pos.risk, drop = F]) + (rowSums(2 - comp.inf[comp.high.risk, neg.risk, drop = F]))
 
   #n.case.risk <- sum(family.weights[case.high.risk])
   #n.comp.risk <- sum(family.weights[comp.high.risk])
   #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
-  rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
   #rr <- sum(pooled.dif.vec)/sqrt(sum(pooled.dif.vec^2))
+  #rr <- ifelse(is.na(rr), 10^-10, weight.function(rr))
+  #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
+  #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
+  rr <- sum(case.high.risk.alleles)/(sum(case.high.risk.alleles) + sum(comp.high.risk.alleles))
   rr <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
   #print(rr)
 
@@ -96,10 +101,12 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
   #compute fitness score
-  fitness.score <- (rr^2)*(sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  #fitness.score <- (rr)*(sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  pseudo.t2 <- (sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  fitness.score <- (rr^2)*pseudo.t2
   #fitness.score <- (rr)* sqrt(((sum.family.weights - chromosome.size)/(chromosome.size*(sum.family.weights - 1)))*sum.family.weights*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
 
-  return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs))
+  return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2))
 
 }
 
