@@ -35,7 +35,6 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
 #' @importFrom survival clogit
-#' @importFrom Rfast mahala
 #' @export
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
@@ -119,18 +118,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
 
     })
 
+    fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
     sum.dif.vecs <- t(sapply(fitness.score.list, function(x) x$sum.dif.vecs))
-    rr <- sapply(fitness.score.list, function(x) x$rr)
-    pseudo.t2 <- sapply(fitness.score.list, function(x) x$pseudo.t2)
-    rr.t2.mat <- as.matrix(cbind(rr, pseudo.t2))
-    if (generation == 1){
-
-        rr.t2.cov.mat <- cov(rr.t2.mat)
-
-    }
-    #fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
-    fitness.scores <- mahala(rr.t2.mat, mu = c(0.5, 0), sigma = rr.t2.cov.mat)
-    fitness.scores[is.na(fitness.scores) | fitness.scores == 0] <- 10^-10
 
     #store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
     fitness.score.mat[generation, ] <- fitness.scores
