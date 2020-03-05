@@ -91,21 +91,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     case.snp <- factor(case.genetic.data[ , snp], levels = c(0, 1, 2))
     comp.snp <- factor(complement.genetic.data[ , snp], levels = c(0,1,2))
 
-    #look at the cross-tabulation to determine of alleles should be grouped
-    cross.tab <- table(case.snp, comp.snp)
-    two.zero <- cross.tab[3, 1]
-    two.one <- cross.tab[3, 2]
-
-    #retabulate if not enough discrepant transmitted alleles
-    #if (two.zero + two.one < 5){
-
-    #  case.snp[case.snp == 2] <- 1
-    #  comp.snp[comp.snp == 2] <- 1
-    #  case.snp <- factor(case.snp, levels = c(0, 1))
-    #  comp.snp <- factor(comp.snp, levels = c(0, 1))
-
-    #}
-
     #get p-value of association from conditional logistic regression
     case.comp.geno <- as.numeric(as.character(c(case.snp, comp.snp)))
     clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
