@@ -134,14 +134,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
 
     #if we have the same chromosome multiple times, just take one of them
     #and put the duplicates in the pool to be resampled
-    if (length(unique(top.chromosomes)) == 1){
-
-      top.chromosome <- top.chromosomes[1]
-      duplicate.top.chromosomes <- top.chromosome.idx[-1]
-
-    #if we have everyone with the same score, just choose the first one and
-    #re-sample all other chromosomes
-    } else if (length(unique(top.chromosomes)) == n.chromosomes){
+    if (length(top.chromosomes) > 1){
 
       top.chromosome <- top.chromosomes[1]
       duplicate.top.chromosomes <- top.chromosome.idx[-1]
