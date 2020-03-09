@@ -50,6 +50,10 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
   chisq.stats <- data.list$chisq.stats
   chrom.mat <- data.list$chrom.mat
 
+  #clean up chisq stats for models that did not converge
+  chisq.stats[chisq.stats <= 0] <- 10^-10
+  chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
+
   #set seed for reproducibility
   set.seed(seed.val)
   print(paste("Starting GA. Seed value:", seed.val))
