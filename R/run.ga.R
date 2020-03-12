@@ -118,7 +118,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.va
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
         chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat, chrom.mat,
-                            n.different.snps.weight, n.both.one.weight, weight.function)
+                          n.different.snps.weight, n.both.one.weight, weight.function)
 
     })
 
