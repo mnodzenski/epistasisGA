@@ -66,42 +66,100 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
   n.target <- length(target.snps)
   case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
+  n.case.high.risk <- sum(case.high.risk)
   comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
+  n.comp.high.risk <- sum(comp.high.risk)
+  case.high.inf <- case.inf[case.high.risk, , drop = F]
+  comp.high.inf <- comp.inf[comp.high.risk, , drop = F]
 
-  ### pick out misclassifications using mahalanobis distnace for multivariate outlier detection ####
-  #all.high.risk <- as.matrix(rbind(case.inf[case.high.risk, ], comp.inf[comp.high.risk, ]))
-  #arw()
-  #case.mean.vec <- colMeans(case.inf[case.high.risk, ])
-  #case.cov <- cov(case.inf[case.high.risk, ])
-  #case.mahala.distances <- try(mahala(case.inf[case.high.risk, ], case.mean.vec, case.cov))
+  ### pick out misclassifications via outlier detection ####
+  if (n.case.high.risk > 0){
 
-  ### if the instances of high risk are all too similar to compute mahalanobis distance, move on
-  ### otherwise remov the outliers
-  #if(! "try-error" %in% class(mahala.distances)){
+    case.high.risk.means <- colMeans(case.high.inf)
+    case.high.risk.sd <- colSds(as.matrix(case.high.inf))
+    high.outlier.thresh <- case.high.risk.means + 2.5*case.high.risk.sd
+    low.outlier.thresh <- case.high.risk.means - 2.5*case.high.risk.sd
+    if(any(neg.risk)){
 
-   # misclassifications <- which(mahala.distances > qchisq(0.99, length(target.snps)))
-    #case.misclassifications <- misclassifications[misclassifications <= sum(case.high.risk)]
-    #comp.misclassifications <- misclassifications[misclassifications > sum(case.high.risk)] - sum(case.high.risk)
-    #case.high.risk <- case.high.risk[-case.misclassifications]
-    #comp.high.risk <- comp.high.risk[-comp.misclassifications]
+      neg.risk.thresh <- high.outlier.thresh[neg.risk]
+      case.neg.test <- case.high.inf[ , neg.risk, drop = F]
+      if (n.comp.high.risk > 0){
 
+        comp.neg.test <- comp.high.inf[ , neg.risk, drop = F]
 
-  #}
+      }
 
-  #case.high.risk <- sum(colSums(family.weights*case.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - case.inf[ , neg.risk, drop = F])))
-  #comp.high.risk <- sum(colSums(family.weights*comp.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - comp.inf[ , neg.risk, drop = F])))
-  #pooled.dif.vec <- case.high.risk - comp.high.risk
-  case.high.risk.alleles <- rowSums(case.inf[case.high.risk, pos.risk, drop = F]) + (rowSums(2 - case.inf[case.high.risk, neg.risk, drop = F]))
-  comp.high.risk.alleles <- rowSums(comp.inf[comp.high.risk, pos.risk, drop = F]) + (rowSums(2 - comp.inf[comp.high.risk, neg.risk, drop = F]))
+    } else {
 
-  #n.case.risk <- sum(family.weights[case.high.risk])
-  #n.comp.risk <- sum(family.weights[comp.high.risk])
-  #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
-  #rr <- sum(pooled.dif.vec)/sqrt(sum(pooled.dif.vec^2))
-  #rr <- ifelse(is.na(rr), 10^-10, weight.function(rr))
-  #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
-  #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
-  rr <- sum(case.high.risk.alleles)/(sum(case.high.risk.alleles) + sum(comp.high.risk.alleles))
+      neg.risk.thresh <- 1
+      case.neg.test <- matrix(rep(2, n.case.high.risk), ncol= 1)
+      comp.neg.test <- matrix(rep(2, n.comp.high.risk), ncol= 1)
+
+    }
+    if (any(pos.risk)){
+
+      pos.risk.thresh <- low.outlier.thresh[pos.risk]
+      case.pos.test <- case.high.inf[, pos.risk, drop = F]
+      if (n.comp.high.risk > 0){
+
+        comp.pos.test <- comp.high.inf[, pos.risk, drop = F]
+
+      }
+
+    } else {
+
+      pos.risk.thresh <- 1
+      case.pos.test <- matrix(rep(0, n.case.high.risk), ncol= 1)
+      comp.pos.test <- matrix(rep(0, n.comp.high.risk), ncol= 1)
+
+    }
+    n.rows <- max(n.case.high.risk, n.comp.high.risk)
+    high.outlier.mat <- matrix(rep(neg.risk.thresh, n.rows), nrow = n.rows, byrow = T)
+    low.outlier.mat <- matrix(rep(pos.risk.thresh, n.rows), nrow = n.rows, byrow = T)
+
+    case.outliers <- (rowSums(case.pos.test >= low.outlier.mat[1:n.case.high.risk, , drop = F]) +
+                        rowSums(case.neg.test <= high.outlier.mat[1:n.case.high.risk, , drop = F])) < n.target
+    case.high.inf <- case.high.inf[!case.outliers, , drop = F]
+
+    ### count the number of risk alleles in those with the full risk set ###
+    case.high.risk.alleles <- rowSums(case.high.inf[ , pos.risk, drop = F]) + (rowSums(2 - case.high.inf[ , neg.risk, drop = F]))
+    total.case.high.risk.alleles <- sum(case.high.risk.alleles)
+
+    if (n.comp.high.risk > 0){
+
+      comp.outliers <- (rowSums(comp.pos.test >= low.outlier.mat[1:n.comp.high.risk, , drop = F]) +
+                          rowSums(comp.neg.test <= high.outlier.mat[1:n.comp.high.risk, , drop = F])) < n.target
+      comp.high.inf <- comp.high.inf[!comp.outliers, , drop = F]
+
+      ### count the number of risk alleles in those with the full risk set ###
+      comp.high.risk.alleles <- rowSums(comp.high.inf[ , pos.risk, drop = F]) + (rowSums(2 - comp.high.inf[ , neg.risk, drop = F]))
+      total.comp.high.risk.alleles <- sum(comp.high.risk.alleles)
+
+      ### compute scaling factor ###
+      rr <- total.case.high.risk.alleles/(total.case.high.risk.alleles + total.comp.high.risk.alleles)
+
+    } else {
+
+      rr <- 1
+
+    }
+
+    ### compute scaling factor ###
+    #n.case.risk <- sum(family.weights[case.high.risk])
+    #n.comp.risk <- sum(family.weights[comp.high.risk])
+    #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
+    #rr <- sum(pooled.dif.vec)/sqrt(sum(pooled.dif.vec^2))
+    #rr <- ifelse(is.na(rr), 10^-10, weight.function(rr))
+    #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
+    #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
+    #rr <- sum(case.high.risk.alleles)/(sum(case.high.risk.alleles) + sum(comp.high.risk.alleles))
+
+  } else {
+
+    rr <- 10^-10
+
+  }
+
   rr <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
   #print(rr)
 
