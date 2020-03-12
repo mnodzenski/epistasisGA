@@ -67,6 +67,27 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   n.target <- length(target.snps)
   case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
   comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
+
+  ### pick out misclassifications using mahalanobis distnace for multivariate outlier detection ####
+  #all.high.risk <- as.matrix(rbind(case.inf[case.high.risk, ], comp.inf[comp.high.risk, ]))
+  #arw()
+  #case.mean.vec <- colMeans(case.inf[case.high.risk, ])
+  #case.cov <- cov(case.inf[case.high.risk, ])
+  #case.mahala.distances <- try(mahala(case.inf[case.high.risk, ], case.mean.vec, case.cov))
+
+  ### if the instances of high risk are all too similar to compute mahalanobis distance, move on
+  ### otherwise remov the outliers
+  #if(! "try-error" %in% class(mahala.distances)){
+
+   # misclassifications <- which(mahala.distances > qchisq(0.99, length(target.snps)))
+    #case.misclassifications <- misclassifications[misclassifications <= sum(case.high.risk)]
+    #comp.misclassifications <- misclassifications[misclassifications > sum(case.high.risk)] - sum(case.high.risk)
+    #case.high.risk <- case.high.risk[-case.misclassifications]
+    #comp.high.risk <- comp.high.risk[-comp.misclassifications]
+
+
+  #}
+
   #case.high.risk <- sum(colSums(family.weights*case.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - case.inf[ , neg.risk, drop = F])))
   #comp.high.risk <- sum(colSums(family.weights*comp.inf[ , pos.risk, drop = F])) +  sum(colSums(family.weights*(2 - comp.inf[ , neg.risk, drop = F])))
   #pooled.dif.vec <- case.high.risk - comp.high.risk
