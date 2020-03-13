@@ -47,7 +47,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cases.minus.complements.inf <- cases.minus.complements[informative.families, target.snps]
 
   ### compute weights ###
-  both.one <- rowSums(both.one.mat[informative.families , target.snps])
+  both.one.inf <- both.one.mat[informative.families , target.snps]
+  both.one <- rowSums(both.one.inf)
   weighted.informativeness <- n.both.one.weight*both.one + n.different.snps.weight*total.different.snps[informative.families]
   family.weights <- weight.function(weighted.informativeness)
   sum.family.weights <- sum(family.weights)
@@ -68,102 +69,109 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
   n.case.high.risk <- sum(case.high.risk)
   comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
-  n.comp.high.risk <- sum(comp.high.risk)
+  #n.comp.high.risk <- sum(comp.high.risk)
   case.high.inf <- case.inf[case.high.risk, , drop = F]
   comp.high.inf <- comp.inf[comp.high.risk, , drop = F]
 
-  ### pick out misclassifications via outlier detection ####
+  ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
+
+  #only applies if we have at least one high risk case
   if (n.case.high.risk > 0){
 
     case.high.risk.means <- colMeans(case.high.inf)
     case.high.risk.sd <- colSds(as.matrix(case.high.inf))
+    case.high.risk.sd[is.na(case.high.risk.sd)] <- 0
     high.outlier.thresh <- case.high.risk.means + 2.5*case.high.risk.sd
     low.outlier.thresh <- case.high.risk.means - 2.5*case.high.risk.sd
-    if(any(neg.risk)){
-
-      neg.risk.thresh <- high.outlier.thresh[neg.risk]
-      case.neg.test <- case.high.inf[ , neg.risk, drop = F]
-      if (n.comp.high.risk > 0){
-
-        comp.neg.test <- comp.high.inf[ , neg.risk, drop = F]
-
-      }
-
-    } else {
-
-      neg.risk.thresh <- 1
-      case.neg.test <- matrix(rep(2, n.case.high.risk), ncol= 1)
-      comp.neg.test <- matrix(rep(2, n.comp.high.risk), ncol= 1)
-
-    }
+    all.high.risk <- rbind(case.high.inf, comp.high.inf)
+    n.high.risk <- nrow(all.high.risk)
+    outliers <- rep(F, n.target)
     if (any(pos.risk)){
 
-      pos.risk.thresh <- low.outlier.thresh[pos.risk]
-      case.pos.test <- case.high.inf[, pos.risk, drop = F]
-      if (n.comp.high.risk > 0){
+      positive.high.risk <- all.high.risk[ , pos.risk, drop = F]
+      low.outlier.mat <- matrix(rep(low.outlier.thresh[pos.risk], n.high.risk), nrow = n.high.risk, byrow = T)
+      positive.outliers <- colSums(positive.high.risk < low.outlier.mat) > 0
+      outliers[pos.risk] <- positive.outliers
 
-        comp.pos.test <- comp.high.inf[, pos.risk, drop = F]
+    }
+
+    if (any(neg.risk)){
+
+      negative.high.risk <- all.high.risk[ , neg.risk, drop = F]
+      high.outlier.mat <- matrix(rep(high.outlier.thresh[neg.risk], n.high.risk), nrow = n.high.risk, byrow = T)
+      negative.outliers <- colSums(negative.high.risk > high.outlier.mat) > 0
+      outliers[neg.risk] <- negative.outliers
+
+    }
+
+    ### if there are outliers, recompute the weights and associated statistics ###
+    if (any(outliers)){
+
+      pos.outlier.cols <- which(outliers[pos.risk])
+      neg.outlier.cols <- which(outliers[neg.risk])
+
+      #recode instances where the model appears to be recessive
+       if (length(pos.outlier.cols) > 0){
+
+        case.inf[ , pos.outlier.cols][case.inf[ , pos.outlier.cols] == 1] <- 0
+        comp.inf[ , pos.outlier.cols][comp.inf[ , pos.outlier.cols] == 1] <- 0
+        both.one.inf[ , pos.outlier.cols] <- F
+
+       }
+
+      if (length(neg.outlier.cols) > 0){
+
+        case.inf[ , neg.outlier.cols][case.inf[ , neg.outlier.cols] == 1] <- 2
+        comp.inf[ , neg.outlier.cols][comp.inf[ , neg.outlier.cols] == 1] <- 2
+        both.one.inf[ , neg.outlier.cols] <- F
 
       }
 
-    } else {
+      #recompute the number of informative families
+      cases.minus.complements <- sign(case.inf - comp.inf)
+      case.comp.diff <- cases.minus.complements != 0
+      total.different.snps <-rowSums(case.comp.diff)
+      informative.families <- total.different.snps != 0
+      n.informative.families <- sum(informative.families)
+      case.inf <- case.inf[informative.families, ]
+      comp.inf <- comp.inf[informative.families, ]
+      cases.minus.complements.inf <- cases.minus.complements[informative.families, ]
 
-      pos.risk.thresh <- 1
-      case.pos.test <- matrix(rep(0, n.case.high.risk), ncol= 1)
-      comp.pos.test <- matrix(rep(0, n.comp.high.risk), ncol= 1)
+      ### re-compute weights ###
+      both.one.inf <- both.one.inf[informative.families , ]
+      both.one <- rowSums(both.one.inf)
+      weighted.informativeness <- n.both.one.weight*both.one + n.different.snps.weight*total.different.snps[informative.families]
+      family.weights <- weight.function(weighted.informativeness)
+      sum.family.weights <- sum(family.weights)
 
-    }
-    n.rows <- max(n.case.high.risk, n.comp.high.risk)
-    high.outlier.mat <- matrix(rep(neg.risk.thresh, n.rows), nrow = n.rows, byrow = T)
-    low.outlier.mat <- matrix(rep(pos.risk.thresh, n.rows), nrow = n.rows, byrow = T)
+      ### re-compute weighted difference vectors for cases vs complements ###
+      dif.vecs <- as.matrix(family.weights*cases.minus.complements.inf)/sum.family.weights
+      sum.dif.vecs <- colSums(dif.vecs)
 
-    case.outliers <- (rowSums(case.pos.test >= low.outlier.mat[1:n.case.high.risk, , drop = F]) +
-                        rowSums(case.neg.test <= high.outlier.mat[1:n.case.high.risk, , drop = F])) < n.target
-    case.high.inf <- case.high.inf[!case.outliers, , drop = F]
+      ### re-compute proposed risk set ###
+      risk.dirs <- sign(sum.dif.vecs)
+      pos.risk <- which(risk.dirs > 0)
+      neg.risk <- which(risk.dirs <= 0)
 
-    ### count the number of risk alleles in those with the full risk set ###
-    case.high.risk.alleles <- rowSums(case.high.inf[ , pos.risk, drop = F]) + (rowSums(2 - case.high.inf[ , neg.risk, drop = F]))
-    total.case.high.risk.alleles <- sum(case.high.risk.alleles)
-
-    if (n.comp.high.risk > 0){
-
-      comp.outliers <- (rowSums(comp.pos.test >= low.outlier.mat[1:n.comp.high.risk, , drop = F]) +
-                          rowSums(comp.neg.test <= high.outlier.mat[1:n.comp.high.risk, , drop = F])) < n.target
-      comp.high.inf <- comp.high.inf[!comp.outliers, , drop = F]
-
-      ### count the number of risk alleles in those with the full risk set ###
-      comp.high.risk.alleles <- rowSums(comp.high.inf[ , pos.risk, drop = F]) + (rowSums(2 - comp.high.inf[ , neg.risk, drop = F]))
-      total.comp.high.risk.alleles <- sum(comp.high.risk.alleles)
-
-      ### compute scaling factor ###
-      rr <- total.case.high.risk.alleles/(total.case.high.risk.alleles + total.comp.high.risk.alleles)
-
-    } else {
-
-      rr <- 1
+      case.high.risk <- (rowSums(case.inf[ , pos.risk, drop = F] > 0) +  rowSums(case.inf[ , neg.risk, drop = F] < 2)) == n.target
+      comp.high.risk <- (rowSums(comp.inf[ , pos.risk, drop = F] > 0) +  rowSums(comp.inf[ , neg.risk, drop = F] < 2)) == n.target
+      case.high.inf <- case.inf[case.high.risk, , drop = F]
+      comp.high.inf <- comp.inf[comp.high.risk, , drop = F]
 
     }
-
-    ### compute scaling factor ###
-    #n.case.risk <- sum(family.weights[case.high.risk])
-    #n.comp.risk <- sum(family.weights[comp.high.risk])
-    #rr <- n.case.risk/(n.case.risk  + n.comp.risk)
-    #rr <- sum(pooled.dif.vec)/sqrt(sum(pooled.dif.vec^2))
-    #rr <- ifelse(is.na(rr), 10^-10, weight.function(rr))
-    #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
-    #rr <- sum(case.high.risk)/(sum(case.high.risk) + sum(comp.high.risk))
-    #rr <- sum(case.high.risk.alleles)/(sum(case.high.risk.alleles) + sum(comp.high.risk.alleles))
-
-  } else {
-
-    rr <- 10^-10
-
   }
 
-  rr <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
-  #print(rr)
+  ### count the number of risk alleles in those with the full risk set ###
+  case.high.risk.alleles <- rowSums(case.high.inf[ , pos.risk, drop = F]) + (rowSums(2 - case.high.inf[ , neg.risk, drop = F]))
+  total.case.high.risk.alleles <- sum(case.high.risk.alleles)
+  comp.high.risk.alleles <- rowSums(comp.high.inf[ , pos.risk, drop = F]) + (rowSums(2 - comp.high.inf[ , neg.risk, drop = F]))
+  total.comp.high.risk.alleles <- sum(comp.high.risk.alleles)
 
-  ### Otherwise, return the squared length of the sum of the case - complement differences ###
+  ### compute scaling factor ###
+  rr <- total.case.high.risk.alleles/(total.case.high.risk.alleles + total.comp.high.risk.alleles)
+  rr <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
+
+  ### compute pseudo hotelling t2 ###
   mu.hat <- sum.dif.vecs
   mu.hat.mat <- matrix(rep(mu.hat, n.informative.families), nrow = n.informative.families, byrow = T)
   x <- as.matrix(cases.minus.complements.inf)
