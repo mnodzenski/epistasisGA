@@ -107,8 +107,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
     ### if there are outliers, recompute the weights and associated statistics ###
     if (any(outliers)){
 
-      pos.outlier.cols <- which(outliers[pos.risk])
-      neg.outlier.cols <- which(outliers[neg.risk])
+      pos.outlier.cols <- pos.risk[outliers[pos.risk]]
+      neg.outlier.cols <- neg.risk[outliers[neg.risk]]
 
       #recode instances where the model appears to be recessive
        if (length(pos.outlier.cols) > 0){
