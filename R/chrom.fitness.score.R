@@ -76,7 +76,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
 
   #only applies if we have at least one high risk case
-  if (n.case.high.risk > 0){
+  if (n.case.high.risk > 20){
 
     case.high.risk.means <- colMeans(case.high.inf)
     case.high.risk.sd <- colSds(as.matrix(case.high.inf))
