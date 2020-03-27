@@ -3,6 +3,7 @@
 export(chrom.fitness.score)
 export(code.risk.set)
 export(dynamic.chrom.fitness.score)
+export(evolve.island)
 export(fitness.score)
 export(ga)
 export(network.plot)
