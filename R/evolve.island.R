@@ -28,19 +28,6 @@
 #' @param chromosome.list A list of chromosomes on which the genetic algorithm will start
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
-#' @examples
-#'
-#' data(case)
-#' data(dad)
-#' data(mom)
-#' library(Matrix)
-#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
-#'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
-#'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
-#'                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
-#' ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
-#'                  chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
-#'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
