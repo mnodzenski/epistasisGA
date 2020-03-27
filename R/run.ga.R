@@ -5,7 +5,7 @@
 #' @param data.list The output list from \code{preprocess.genetic.data}.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param chromosome.size The number of snps within each candidate solution.
-#' @param seed.val An integer indicating the seed to be used for the random samples.
+#' @param results.dir The directory to which island results will be saved.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
@@ -16,6 +16,11 @@
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.
+#' @param n.islands An integer indicating the number of islands to be used.
+#' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
+#' @param migration.generations An integer equal to the number of generations between migration among islands.
+#' @param n.migrations The number of chromosomes that migrate among islands.
+#'
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
 #' @examples
@@ -28,342 +33,184 @@
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
-#' ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
-#'                  chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
+#' #ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
+#'  #                chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
 #'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
 #' @importFrom survival clogit
+#' @importFrom BiocParallel bplapply
 #' @export
 
-run.ga <- function(data.list, n.chromosomes, chromosome.size, chrom.mat, seed.val,n.different.snps.weight = 2, n.both.one.weight = 1,
-                   weight.function = identity,generations = 2000, gen.same.fitness = 500,
+run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
+                   n.different.snps.weight = 2, n.both.one.weight = 1,
+                   weight.function = identity,generations = 500, gen.same.fitness = 50,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
-                   snp.sampling.type = "chisq", crossover.prop = 0.5){
+                   snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
+                   island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
+                   starting.seeds = NULL){
 
+  ### make sure the island cluster size divides the number of islands evenly ###
+  if ( n.islands %% island.cluster.size != 0){
 
-  #grab the analysis data
+    stop("Number of islands needs to be an multiple of island cluster size")
+
+  }
+
+  ### make sure, if starting seeds are provided, that enough are provided ###
+  if (!is.null(starting.seeds)){
+
+    if (length(starting.seeds) != n.islands){
+
+      stop("Number of starting seeds is not equal to the number of islands")
+
+    }
+
+  }
+
+  #### grab the analysis data ###
   case.genetic.data <- data.list$case.genetic.data
   complement.genetic.data <- data.list$complement.genetic.data
   original.col.numbers <- data.list$original.col.numbers
   chisq.stats <- data.list$chisq.stats
   chrom.mat <- data.list$chrom.mat
 
-  #clean up chisq stats for models that did not converge
+  #### clean up chisq stats for models that did not converge ###
   chisq.stats[chisq.stats <= 0] <- 10^-10
   chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
-
-  #set seed for reproducibility
-  set.seed(seed.val)
-  print(paste("Starting GA. Seed value:", seed.val))
 
   ### Compute matrices of differences between cases and complements ###
   case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
   case.comp.different <- case.minus.comp != 0
 
-  if (snp.sampling.type == "chisq"){
-
-    snp.chisq <- sqrt(chisq.stats)
-    #p75 <- quantile(snp.chisq, 0.75)
-
-  } else if (snp.sampling.type == "random") {
-
-    snp.chisq <- rep(1, ncol(case.minus.comp))
-
-  }
-
-  ### Compute matrix indicating whether both the case and control have 1 copy of the alt allele ###
+  ### Compute matrix indicating whether both the case and control have 1 copy of the minor allele ###
   both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
-  ### initialize groups of candidate solutions ###
-  if ((ncol(case.genetic.data) < n.chromosomes*chromosome.size) & !initial.sample.duplicates){
+  ### initialize seeds for different islands ###
+  if (is.null(starting.seeds)){
 
-    print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
-    initial.sample.duplicates <- T
-
-  }
-  chromosome.list <- vector(mode = "list", length = n.chromosomes)
-  all.snps.idx <- 1:ncol(case.genetic.data)
-  for (i in 1:n.chromosomes){
-
-    snp.idx <- sort(sample(all.snps.idx, chromosome.size, replace = F))
-    if (!initial.sample.duplicates){
-
-      all.snps.idx <- all.snps.idx[! all.snps.idx %in% snp.idx]
-
-    }
-    chromosome.list[[i]] <- snp.idx
+    starting.seeds <- 1:n.islands
 
   }
 
-  ### Begin iterating over generations ###
-  generation <- 1
-  fitness.score.mat <- matrix(rep(NA, generations*n.chromosomes), nrow = generations)
-  top.fitness <- rep(0, generations)
-  last.gens.equal <- F
-  top.generation.chromosome <- vector(mode = "list", length = generations)
-  chromosome.mat.list <- vector(mode = "list", length = generations)
-  sum.dif.vec.list <- vector(mode = "list", length = generations)
+  if (!dir.exists(results.dir)){
 
-  ### first run through generations not restricting ld ###
-  while (generation <= generations & !last.gens.equal){
+    dir.create(results.dir, recursive = T)
 
-    print(paste("generation", generation))
+  } else {
 
+    prev.islands <- list.files(results.dir)
+    prev.islands <- prev.islands[! prev.islands %in% c("Old", "old") ]
+    n.prev.islands <- length(prev.islands)
+    n.islands <- n.islands - n.prev.islands
+    prev.seeds <- as.numeric(gsub("island|.rds", "", prev.islands))
+    starting.seeds <- setdiff(starting.seeds, prev.seeds)[1:n.islands]
 
-    ### 1. compute the fitness score for each set of candidate snps ###
-    print("Step 1/9")
+  }
 
-    fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
+  if (length(starting.seeds) == 0){
 
-        chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat, chrom.mat,
-                          n.different.snps.weight, n.both.one.weight, weight.function)
+    stop("All islands have already been evolved")
+
+  }
+
+  ### initialize the generations at which chromosomes will migrate between islands ###
+  migration.gens <- seq(migration.generations, generations - migration.generations, migration.generations)
+
+  ### evolve populations over island clusters ###
+  first.seeds <- seq(1, n.islands, island.cluster.size)
+ try(bplapply(first.seeds, function(cluster.start){
+
+    cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
+
+    ## initialize populations in the island cluster ##
+    island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+
+      cluster.seed.val <- cluster.seeds[cluster.idx]
+      evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                    complement.genetic.data = complement.genetic.data,
+                    case.comp.different = case.comp.different,
+                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                    chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                    n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                    start.generation = 1,
+                    seed.val = cluster.seed.val, snp.chisq = chisq.stats,
+                    original.col.numbers = original.col.numbers,
+                    n.different.snps.weight = n.different.snps.weight,
+                    n.both.one.weight = n.both.one.weight,
+                    weight.function = weight.function, total.generations = migration.generations,
+                    gen.same.fitness = gen.same.fitness,
+                    max.generations = generations,
+                    tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                    snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
 
     })
 
-    fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
-    sum.dif.vecs <- t(sapply(fitness.score.list, function(x) x$sum.dif.vecs))
+    ### if we do not get convergence for all islands, migrate chromosomes ###
+    all.converged <- F
+    max.generations <- F
+    while(!max.generations){
 
-    #store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
-    fitness.score.mat[generation, ] <- fitness.scores
-    chromosome.mat.list[[generation]] <- data.table(t(sapply(chromosome.list, function(x) original.col.numbers[x])))
-    sum.dif.vec.list[[generation]] <- data.table(sum.dif.vecs)
+      for (island in 1:island.cluster.size){
 
-    ### 2. identify the top scoring candidate solution(s) and fitness score ###
-    print("Step 2/9")
-    max.fitness <- max(fitness.scores)
-    top.chromosome.idx <- which(fitness.scores == max.fitness)
-    top.chromosomes <- chromosome.list[top.chromosome.idx]
+        if (island == 1){
 
-    #if we have the same chromosome multiple times, just take one of them
-    #and put the duplicates in the pool to be resampled
-    if (length(top.chromosomes) > 1){
-
-      top.chromosome <- top.chromosomes[1]
-      duplicate.top.chromosomes <- top.chromosome.idx[-1]
-
-    } else {
-
-      top.chromosome <- top.chromosomes
-      duplicate.top.chromosomes <- NULL
-
-    }
-
-    ### 3. identify the lower scoring chromosomes ###
-    print("Step 3/9")
-    lower.chromosomes <- c(which(fitness.scores != max.fitness), duplicate.top.chromosomes)
-
-    ### 4. Sample with replacement from the existing chromosomes ###
-    print("Step 4/9")
-    #allow the top scoring chromosome to be sampled, but only sample from the unique chromosomes available
-    sample.these <- !duplicated(chromosome.list)
-    sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
-                                  replace = T, prob = fitness.scores[sample.these])
-    sampled.lower.chromosomes <- chromosome.list[sampled.lower.idx]
-    sampled.lower.dif.vecs <- sum.dif.vecs[sampled.lower.idx , ]
-    sampled.lower.fitness.scores <- fitness.scores[sampled.lower.idx]
-
-    ### 5. Determine whether each lower chromosome will be subject to mutation or crossing over ###
-    print("Step 5/9")
-
-    # only allowing cross-overs between distinct chromosomes
-    # (i.e, if a chromosome was sampled twice, it can't cross over with itself)
-    unique.lower.idx <- unique(sampled.lower.idx)
-
-    cross.overs <- rep(F, length(unique.lower.idx))
-    if (round(length(unique.lower.idx)*crossover.prop) %% 2 == 0){
-
-      cross.overs[sample(1:length(unique.lower.idx), size = round(length(unique.lower.idx)*crossover.prop))] <- TRUE
-
-    } else {
-
-      cross.overs[sample(1:length(unique.lower.idx), size = (round(length(unique.lower.idx)*crossover.prop) + 1))] <- TRUE
-
-    }
-
-    #those not getting crossover will be mutated
-    mutations <- !cross.overs
-
-    ### 6. Execute crossing over for the relevant chromosomes ###
-    print("Step 6/9")
-    if (any(cross.overs)){
-
-      cross.over.positions <- match(unique.lower.idx[cross.overs], sampled.lower.idx)
-      cross.over.starts <- seq(1, length(cross.over.positions), by = 2)
-      for (i in cross.over.starts){
-
-        #grab pair of chromosomes to cross over
-        chrom1 <- sampled.lower.chromosomes[[cross.over.positions[i]]]
-        chrom1.dif.vecs <- sampled.lower.dif.vecs[cross.over.positions[i], ]
-        chrom1.fitness.score <- sampled.lower.fitness.scores[cross.over.positions[i]]
-
-        chrom2 <- sampled.lower.chromosomes[[cross.over.positions[i+1]]]
-        chrom2.dif.vecs <- sampled.lower.dif.vecs[cross.over.positions[i+1], ]
-        chrom2.fitness.score <- sampled.lower.fitness.scores[cross.over.positions[i+1]]
-
-        if (any(duplicated(chrom1))){
-
-          stop("Duplicate elements in chrom1")
-
-        }
-
-        if (any(duplicated(chrom2))){
-
-          stop("Duplicate elements in chrom2")
-
-        }
-
-        #check for overlapping snps
-        c1.c2.matching.snp.positions <- match(chrom1, chrom2)
-        c1.c2.matching.snp.positions <-  c1.c2.matching.snp.positions[!is.na(c1.c2.matching.snp.positions)]
-        c1.c2.not.matching.snp.positions <- setdiff(1:chromosome.size, c1.c2.matching.snp.positions)
-
-        c2.c1.matching.snp.positions <- match(chrom2, chrom1)
-        c2.c1.matching.snp.positions <-  c2.c1.matching.snp.positions[!is.na(c2.c1.matching.snp.positions)]
-        c2.c1.not.matching.snp.positions <- setdiff(1:chromosome.size, c2.c1.matching.snp.positions)
-
-        #for the non-matching snps, order by the decreasing magnitude of the difference vector in the chromsome with the higher fitness score
-        #and order by the increasing magntidue of the difference vector in the chromosome with the lower fitness score
-        #**ultimately will be used to substitute the higher magnitude elements in the lower scoring chromosome for the lower magnitude
-        #elements in the higher scoring chromosome**
-        if (chrom1.fitness.score >= chrom2.fitness.score){
-
-          c1.c2.not.matching.snp.positions <- c1.c2.not.matching.snp.positions[order(abs(chrom2.dif.vecs[c1.c2.not.matching.snp.positions]))]
-          c2.c1.not.matching.snp.positions <- c2.c1.not.matching.snp.positions[order(abs(chrom1.dif.vecs[c2.c1.not.matching.snp.positions]), decreasing = T)]
-
-        } else{
-
-          c1.c2.not.matching.snp.positions <- c1.c2.not.matching.snp.positions[order(abs(chrom2.dif.vecs[c1.c2.not.matching.snp.positions]), decreasing = T)]
-          c2.c1.not.matching.snp.positions <- c2.c1.not.matching.snp.positions[order(abs(chrom1.dif.vecs[c2.c1.not.matching.snp.positions]))]
-
-        }
-
-        #order the chromosomes, first by the overlapping snps and the non-overlapping
-        chrom2 <- chrom2[c(c1.c2.matching.snp.positions, c1.c2.not.matching.snp.positions)]
-        chrom1 <- chrom1[c(c2.c1.matching.snp.positions, c2.c1.not.matching.snp.positions)]
-
-        #determine how many snps could be crossed over
-        #and also make sure we don't simply swap chromosomes
-        possible.cut.points <- sort(which(chrom1 != chrom2), decreasing = T)
-        if (length(possible.cut.points) == chromosome.size){
-
-          n.possible.crosses <- chromosome.size - 1
+          island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
+                                                            island.populations[[island.cluster.size]]$migrations)
 
         } else {
 
-          n.possible.crosses <- length(possible.cut.points)
+          island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
+                                                            island.populations[[island - 1]]$migrations)
 
         }
-
-        #determine how many snps will actually be crossed over
-        n.crosses <- sample.int(n.possible.crosses, 1)
-
-        #pick out their positions
-        cross.points <- c(1:chromosome.size)[(chromosome.size - n.crosses + 1):chromosome.size]
-
-        #exchange the high magnitude elements from the lower scoring chromosome with the low magnitude elements from the high
-        #scoring chromsosome
-        chrom1.cross <- chrom1
-        chrom1.cross[cross.points] <- chrom2[cross.points]
-        chrom2.cross <- chrom2
-        chrom2.cross[cross.points] <- chrom1[cross.points]
-
-        #error checking
-        if(length(chrom1.cross) != chromosome.size){
-
-          stop("chrom1 wrong length")
-        }
-
-        if(length(chrom2.cross) != chromosome.size){
-
-          stop("chrom2 wrong length")
-        }
-
-        #replace in the chromosome list
-        sampled.lower.chromosomes[[cross.over.positions[i]]] <- chrom1.cross
-        sampled.lower.chromosomes[[cross.over.positions[i+1]]] <- chrom2.cross
-
       }
 
-    }
+      ## evolving islands using the existing populations ##
+      island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
 
-    ### 7. Mutate the chromosomes that were not crossed over ###
-    print("Step 7/9")
-    mutation.positions <- (1:length(sampled.lower.chromosomes))[-cross.over.positions]
-    snps.for.mutation <- sample(1:ncol(case.genetic.data), ncol(case.genetic.data), prob = snp.chisq, replace = T)
-    for (i in mutation.positions){
+        cluster.seed.val <- cluster.seeds[cluster.idx]
+        island <- island.populations[[cluster.idx]]
+        evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                      complement.genetic.data = complement.genetic.data,
+                      case.comp.different = case.comp.different,
+                      case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                      chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                      n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                      start.generation = island$generation,
+                      seed.val = cluster.seed.val, snp.chisq = chisq.stats,
+                      original.col.numbers = original.col.numbers, all.converged = all.converged,
+                      n.different.snps.weight = n.different.snps.weight,
+                      n.both.one.weight = n.both.one.weight,
+                      weight.function = weight.function, total.generations = migration.generations,
+                      gen.same.fitness = gen.same.fitness,
+                      max.generations = generations,
+                      tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                      snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
+                      chromosome.list = island$chromosome.list, fitness.score.mat = island$fitness.score.mat,
+                      top.fitness = island$top.fitness, last.gens.equal = island$last.gens.equal,
+                      top.generation.chromosome = island$top.generation.chromosome,
+                      chromosome.mat.list = island$chromosome.mat.list,
+                      sum.dif.vec.list = island$sum.dif.vec.list)
 
-      #grab the chromosome and its difference vector
-      target.chrom <- sampled.lower.chromosomes[[i]]
-      target.dif.vec <- as.vector(t(sampled.lower.dif.vecs[i, ]))
-
-      #sort the chromosome elements from lowest absolute difference vector to highest
-      target.chrom <- target.chrom[order(abs(target.dif.vec))]
-
-      #determine which snps to mutate
-      total.mutations <- max(1, rbinom(1, chromosome.size, 0.5))
-      mutate.these <- 1:total.mutations
-
-      #remove the chromosome's snps from the pool of available snps
-      #and sample new snps for the mutations
-      possible.snps.for.mutation <- snps.for.mutation[ ! snps.for.mutation %in% target.chrom]
-      mutated.snps <- rep(NA, total.mutations)
-      for (j in 1:total.mutations){
-
-        sampled.snp <- sample(possible.snps.for.mutation, 1)
-        mutated.snps[j] <- sampled.snp
-        possible.snps.for.mutation <- possible.snps.for.mutation[possible.snps.for.mutation != sampled.snp]
-
-      }
-
-      #substitute in mutations
-      target.chrom[mutate.these] <- mutated.snps
-      sampled.lower.chromosomes[[i]] <- target.chrom
+      })
+      all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
+      max.generations <- "top.chromosome.results" %in% names(island.populations[[1]])
 
     }
 
-    ### 8. Combine into new population (i.e., the final collection of chromosomes for the next generation)
-    print("Step 8/9")
-    chromosome.list <- lapply(c(top.chromosome, sampled.lower.chromosomes), sort)
+    ### write results to file
+    lapply(1:length(cluster.seeds), function(cluster.idx){
 
-    ### 9.Increment Iterators
-    print("Step 9/9")
-    top.fitness[generation] <- max.fitness
-    top.generation.chromosome[[generation]] <- original.col.numbers[top.chromosome[[1]]]
-    print(paste0("Max fitness score:", max.fitness))
-    print("Top Chromosome(s):")
-    print(original.col.numbers[top.chromosome[[1]]])
-    if (generation >= gen.same.fitness){
+      cluster.seed.val <- cluster.seeds[cluster.idx]
+      island <- island.populations[[cluster.idx]]
+      out.file <- file.path(results.dir, paste0("island", cluster.seed.val, ".rds"))
+      saveRDS(island, out.file)
 
-      #check to see if enough of the last generations have had the same top chromosome to terminate
-      last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
-      last.gens.equal <- abs(max(last.gens) - min(last.gens)) < tol
+    })
 
-    }
-
-    generation <- generation + 1
-
-  }
-  ### Return the best chromosomes, their fitness scores, difference vectors and the number of generations ###
-  last.generation <- generation - 1
-  all.chrom.dt <- rbindlist(chromosome.mat.list[1:last.generation], use.names = F)
-  all.chrom.dif.vec.dt <- rbindlist(sum.dif.vec.list[1:last.generation], use.names = F)
-  unique.chromosome.dt <- unique(all.chrom.dt)
-  colnames(unique.chromosome.dt) <- paste0("snp", 1:ncol(unique.chromosome.dt))
-  unique.chrom.dif.vec.dt <- all.chrom.dif.vec.dt[!duplicated(all.chrom.dt), ]
-  colnames(unique.chrom.dif.vec.dt) <- paste0("snp", 1:ncol(unique.chrom.dif.vec.dt), ".diff.vec")
-  unique.fitness.score.vec <- as.vector(t(fitness.score.mat[1:last.generation, ]))[!duplicated(all.chrom.dt)]
-  unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt)
-  unique.results[ , raw.fitness.score := unique.fitness.score.vec]
-  unique.results[ , min.elem := min(abs(.SD)), by = seq_len(nrow(unique.results)), .SDcols = (1 + chromosome.size):(2*chromosome.size)]
-  unique.results[ , fitness.score := min.elem*raw.fitness.score]
-  setorder(unique.results, -fitness.score)
-  final.result <- unique.results[1:n.top.chroms, ]
-
-  print(paste("Algorithm terminated after", last.generation, "generations."))
-  return(list(top.chromosome.results = final.result, n.generations = last.generation))
-
+  }))
 }
 
 
