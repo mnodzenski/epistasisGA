@@ -40,7 +40,6 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
 #' @importFrom survival clogit
-#' @importFrom BiocParallel bplapply
 #' @export
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
@@ -87,6 +86,17 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
   ### Compute matrix indicating whether both the case and control have 1 copy of the minor allele ###
   both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
+  ### set sampling type for mutation snps ###
+  if (snp.sampling.type == "chisq"){
+
+    snp.chisq <- sqrt(chisq.stats)
+
+  } else if (snp.sampling.type == "random") {
+
+    snp.chisq <- rep(1, ncol(case.minus.comp))
+
+  }
+
   ### initialize seeds for different islands ###
   if (is.null(starting.seeds)){
 
@@ -109,96 +119,129 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
   }
 
-  if (length(starting.seeds) == 0){
+  if (is.na(starting.seeds)){
 
     stop("All islands have already been evolved")
 
   }
 
   ### initialize the generations at which chromosomes will migrate between islands ###
-  migration.gens <- seq(migration.generations, generations - migration.generations, migration.generations)
+  if (island.cluster.size != 1){
+
+    migration.gens <- seq(migration.generations, generations - migration.generations, migration.generations)
+
+  } else {
+
+    migration.gens <- generations
+
+  }
+
 
   ### evolve populations over island clusters ###
   first.seeds <- seq(1, n.islands, island.cluster.size)
- try(bplapply(first.seeds, function(cluster.start){
+  try(bplapply(first.seeds, function(cluster.start){
 
-    cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
+   cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
 
-    ## initialize populations in the island cluster ##
-    island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+   if (island.cluster.size > 1){
 
-      cluster.seed.val <- cluster.seeds[cluster.idx]
-      evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
-                    complement.genetic.data = complement.genetic.data,
-                    case.comp.different = case.comp.different,
-                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                    chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
-                    n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
-                    start.generation = 1,
-                    seed.val = cluster.seed.val, snp.chisq = chisq.stats,
-                    original.col.numbers = original.col.numbers,
-                    n.different.snps.weight = n.different.snps.weight,
-                    n.both.one.weight = n.both.one.weight,
-                    weight.function = weight.function, total.generations = migration.generations,
-                    gen.same.fitness = gen.same.fitness,
-                    max.generations = generations,
-                    tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                    snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
+     ## initialize populations in the island cluster ##
+     island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
 
-    })
+       cluster.seed.val <- cluster.seeds[cluster.idx]
+       evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                     complement.genetic.data = complement.genetic.data,
+                     case.comp.different = case.comp.different,
+                     case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                     chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                     n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                     start.generation = 1,
+                     seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                     original.col.numbers = original.col.numbers,
+                     n.different.snps.weight = n.different.snps.weight,
+                     n.both.one.weight = n.both.one.weight,
+                     weight.function = weight.function, total.generations = migration.generations,
+                     gen.same.fitness = gen.same.fitness,
+                     max.generations = generations,
+                     tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                     snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
 
-    ### if we do not get convergence for all islands, migrate chromosomes ###
-    all.converged <- F
-    max.generations <- F
-    while(!max.generations){
+     })
 
-      for (island in 1:island.cluster.size){
+     ### if we do not get convergence for all islands, migrate chromosomes ###
+     all.converged <- F
+     max.generations <- F
+     while(!all.converged & !max.generations){
 
-        if (island == 1){
+       for (island in 1:island.cluster.size){
 
-          island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
-                                                            island.populations[[island.cluster.size]]$migrations)
+         if (island == 1){
 
-        } else {
+           island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
+                                                             island.populations[[island.cluster.size]]$migrations)
 
-          island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
-                                                            island.populations[[island - 1]]$migrations)
+         } else {
 
-        }
-      }
+           island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
+                                                             island.populations[[island - 1]]$migrations)
 
-      ## evolving islands using the existing populations ##
-      island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+         }
+       }
 
-        cluster.seed.val <- cluster.seeds[cluster.idx]
-        island <- island.populations[[cluster.idx]]
-        evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
-                      complement.genetic.data = complement.genetic.data,
-                      case.comp.different = case.comp.different,
-                      case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                      chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
-                      n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
-                      start.generation = island$generation,
-                      seed.val = cluster.seed.val, snp.chisq = chisq.stats,
-                      original.col.numbers = original.col.numbers, all.converged = all.converged,
-                      n.different.snps.weight = n.different.snps.weight,
-                      n.both.one.weight = n.both.one.weight,
-                      weight.function = weight.function, total.generations = migration.generations,
-                      gen.same.fitness = gen.same.fitness,
-                      max.generations = generations,
-                      tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                      snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
-                      chromosome.list = island$chromosome.list, fitness.score.mat = island$fitness.score.mat,
-                      top.fitness = island$top.fitness, last.gens.equal = island$last.gens.equal,
-                      top.generation.chromosome = island$top.generation.chromosome,
-                      chromosome.mat.list = island$chromosome.mat.list,
-                      sum.dif.vec.list = island$sum.dif.vec.list)
+       ## evolving islands using the existing populations ##
+       island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
 
-      })
-      all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
-      max.generations <- "top.chromosome.results" %in% names(island.populations[[1]])
+         cluster.seed.val <- cluster.seeds[cluster.idx]
+         island <- island.populations[[cluster.idx]]
+         evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                       complement.genetic.data = complement.genetic.data,
+                       case.comp.different = case.comp.different,
+                       case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                       chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                       n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                       start.generation = island$generation,
+                       seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                       original.col.numbers = original.col.numbers, all.converged = all.converged,
+                       n.different.snps.weight = n.different.snps.weight,
+                       n.both.one.weight = n.both.one.weight,
+                       weight.function = weight.function, total.generations = migration.generations,
+                       gen.same.fitness = gen.same.fitness,
+                       max.generations = generations,
+                       tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                       snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
+                       chromosome.list = island$chromosome.list, fitness.score.mat = island$fitness.score.mat,
+                       top.fitness = island$top.fitness, last.gens.equal = island$last.gens.equal,
+                       top.generation.chromosome = island$top.generation.chromosome,
+                       chromosome.mat.list = island$chromosome.mat.list,
+                       sum.dif.vec.list = island$sum.dif.vec.list)
 
-    }
+       })
+       all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
+       max.generations <- "top.chromosome.results" %in% names(island.populations[[1]])
+
+     }
+
+   } else {
+
+     island.populations <- evolve.island(n.migrations = NULL, case.genetic.data = case.genetic.data,
+                               complement.genetic.data = complement.genetic.data,
+                               case.comp.different = case.comp.different,
+                               case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                               chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                               n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                               start.generation = 1,
+                               seed.val = cluster.seeds, snp.chisq = snp.chisq,
+                               original.col.numbers = original.col.numbers,
+                               n.different.snps.weight = n.different.snps.weight,
+                               n.both.one.weight = n.both.one.weight,
+                               weight.function = weight.function, total.generations = generations,
+                               gen.same.fitness = gen.same.fitness,
+                               max.generations = generations,
+                               tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                               snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
+
+   }
+
 
     ### write results to file
     lapply(1:length(cluster.seeds), function(cluster.idx){
