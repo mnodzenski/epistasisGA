@@ -56,6 +56,12 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
   ### initiate chromosome list if this is the first generation ###
   if (generation == 1){
 
+    if ((ncol(case.genetic.data) < n.chromosomes*chromosome.size) & !initial.sample.duplicates){
+
+      #print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
+      initial.sample.duplicates <- T
+
+    }
     chromosome.list <- vector(mode = "list", length = n.chromosomes)
     all.snps.idx <- 1:n.candidate.snps
     for (i in 1:n.chromosomes){
@@ -287,6 +293,11 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
       #check to see if enough of the last generations have had the same top chromosome to terminate
       last.gens <- top.fitness[(generation - (gen.same.fitness -1)):generation]
       last.gens.equal <- abs(max(last.gens) - min(last.gens)) < tol
+      if (is.null(n.migrations) & last.gens.equal){
+
+        all.converged <- T
+
+      }
 
     }
 
@@ -294,7 +305,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
 
   }
   ### If the algorithm hasn't hit the max number of generations or converged, return a partial list of the results ###
-  if (generation < max.generations & ! all.converged){
+  if (generation < max.generations & ! all.converged & !is.null(n.migrations)){
 
     #pick out the top fitness scores, and bottom fitness scores
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
