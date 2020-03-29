@@ -115,13 +115,17 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     n.prev.islands <- length(prev.islands)
     n.islands <- n.islands - n.prev.islands
     prev.seeds <- as.numeric(gsub("island|.rds", "", prev.islands))
-    starting.seeds <- setdiff(starting.seeds, prev.seeds)[1:n.islands]
+    starting.seeds <- setdiff(starting.seeds, prev.seeds)
 
   }
 
-  if (is.na(starting.seeds)){
+  if (length(starting.seeds) == 0){
 
     stop("All islands have already been evolved")
+
+  } else {
+
+    starting.seeds <- setdiff(starting.seeds, prev.seeds)[1:n.islands]
 
   }
 
@@ -140,6 +144,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
   ### evolve populations over island clusters ###
   first.seeds <- seq(1, n.islands, island.cluster.size)
   try(bplapply(first.seeds, function(cluster.start){
+   # (lapply(first.seeds, function(cluster.start){
 
    cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
 
@@ -171,7 +176,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
      ### if we do not get convergence for all islands, migrate chromosomes ###
      all.converged <- F
      max.generations <- F
-     while(!all.converged & !max.generations){
+     while(!max.generations){
 
        for (island in 1:island.cluster.size){
 
