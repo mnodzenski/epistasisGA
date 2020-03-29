@@ -58,7 +58,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
 
     if ((ncol(case.genetic.data) < n.chromosomes*chromosome.size) & !initial.sample.duplicates){
 
-      #print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
+      print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
       initial.sample.duplicates <- T
 
     }
