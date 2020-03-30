@@ -115,7 +115,6 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     n.prev.islands <- length(prev.islands)
     n.islands <- n.islands - n.prev.islands
     prev.seeds <- as.numeric(gsub("island|.rds", "", prev.islands))
-    starting.seeds <- setdiff(starting.seeds, prev.seeds)
 
   }
 
