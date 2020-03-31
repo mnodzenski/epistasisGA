@@ -20,6 +20,8 @@
 #' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
 #' @param migration.generations An integer equal to the number of generations between migration among islands.
 #' @param n.migrations The number of chromosomes that migrate among islands.
+#' @param batch.param The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting the jobs for each clsuter of islands. Defaults to bpparam.
+#' @param cluster.param The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting GA runs within each clsuter of islands. Defaults to SerialParam.
 #'
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
@@ -48,7 +50,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
                    island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
-                   starting.seeds = NULL){
+                   starting.seeds = NULL, batch.param = bpparam(), cluster.param = SerialParam()){
 
   ### make sure the island cluster size divides the number of islands evenly ###
   if ( n.islands %% island.cluster.size != 0){
@@ -151,7 +153,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
    if (island.cluster.size > 1){
 
      ## initialize populations in the island cluster ##
-     island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+     island.populations <- bplapply(1:length(cluster.seeds), function(cluster.idx){
 
        cluster.seed.val <- cluster.seeds[cluster.idx]
        evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
@@ -171,7 +173,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                      tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                      snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
 
-     })
+     }, BPPARAM = cluster.param)
 
      ### if we do not get convergence for all islands, migrate chromosomes ###
      all.converged <- F
@@ -194,7 +196,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
        }
 
        ## evolving islands using the existing populations ##
-       island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+       island.populations <- bplapply(1:length(cluster.seeds), function(cluster.idx){
 
          cluster.seed.val <- cluster.seeds[cluster.idx]
          island <- island.populations[[cluster.idx]]
@@ -220,7 +222,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                        chromosome.mat.list = island$chromosome.mat.list,
                        sum.dif.vec.list = island$sum.dif.vec.list)
 
-       })
+       }, BPPARAM = cluster.param)
        all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
        max.generations <- "top.chromosome.results" %in% names(island.populations[[1]])
 
@@ -258,7 +260,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
     })
 
-  }))
+  }, BPPARAM = batch.param))
 }
 
 

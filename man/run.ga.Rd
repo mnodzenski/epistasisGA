@@ -23,7 +23,9 @@ run.ga(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  starting.seeds = NULL
+  starting.seeds = NULL,
+  batch.param = bpparam(),
+  cluster.param = SerialParam()
 )
 }
 \arguments{
@@ -62,6 +64,10 @@ run.ga(
 \item{migration.generations}{An integer equal to the number of generations between migration among islands.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands.}
+
+\item{batch.param}{The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting the jobs for each clsuter of islands. Defaults to bpparam.}
+
+\item{cluster.param}{The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting GA runs within each clsuter of islands. Defaults to SerialParam.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
