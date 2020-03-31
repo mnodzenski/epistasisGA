@@ -35,8 +35,8 @@ network.plot <- function(results.df, chrom.size, seed = 10, n.top.chroms = 50){
 
       }
 
-      pair1.pos <- which(chrom.res[ , 1:chromosome.size] == pair1)
-      pair2.pos <- which(chrom.res[ , 1:chromosome.size] == pair2)
+      pair1.pos <- which(chrom.res[ , 1:chrom.size] == pair1)
+      pair2.pos <- which(chrom.res[ , 1:chrom.size] == pair2)
       standardized.elements <- as.vector(t(chrom.res[ , (1+chrom.size):(2*chrom.size)]))
       vec.length.sq <- sum(standardized.elements^2)
       pair1.val <- standardized.elements[pair1.pos]
