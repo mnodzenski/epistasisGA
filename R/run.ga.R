@@ -153,7 +153,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
    if (island.cluster.size > 1){
 
      ## initialize populations in the island cluster ##
-     island.populations <- bplapply(1:length(cluster.seeds), function(cluster.idx){
+     island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
 
        cluster.seed.val <- cluster.seeds[cluster.idx]
        evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
@@ -173,7 +173,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                      tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                      snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
 
-     }, BPPARAM = cluster.param)
+     })
 
      ### if we do not get convergence for all islands, migrate chromosomes ###
      all.converged <- F
@@ -196,7 +196,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
        }
 
        ## evolving islands using the existing populations ##
-       island.populations <- bplapply(1:length(cluster.seeds), function(cluster.idx){
+       island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
 
          cluster.seed.val <- cluster.seeds[cluster.idx]
          island <- island.populations[[cluster.idx]]
@@ -222,7 +222,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                        chromosome.mat.list = island$chromosome.mat.list,
                        sum.dif.vec.list = island$sum.dif.vec.list)
 
-       }, BPPARAM = cluster.param)
+       })
        all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
        max.generations <- "top.chromosome.results" %in% names(island.populations[[1]])
 
