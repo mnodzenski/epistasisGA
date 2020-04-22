@@ -114,12 +114,11 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
     prev.islands <- list.files(results.dir)
     prev.islands <- prev.islands[! prev.islands %in% c("Old", "old") ]
-    n.prev.islands <- length(prev.islands)
-    n.islands <- n.islands - n.prev.islands
     prev.seeds <- as.numeric(gsub("island|.rds", "", prev.islands))
     starting.seeds <- setdiff(starting.seeds, prev.seeds)
+    n.islands <- length(starting.seeds)
 
-    if (length(starting.seeds) == 0){
+    if (n.islands == 0){
 
       stop("All islands have already been evolved")
 
