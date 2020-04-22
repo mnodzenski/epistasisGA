@@ -16,6 +16,8 @@
 #' data(mom)
 #' perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
 #'                  n.permutations = 100)
+#'
+#' @export
 permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
                                     mother.genetic.data = NULL, n.permutations = 100, seed.val = 1){
 
