@@ -3,7 +3,6 @@
 export(chrom.fitness.score)
 export(evolve.island)
 export(network.plot)
-export(original.run.ga)
 export(preprocess.genetic.data)
 export(run.ga)
 import(igraph)
