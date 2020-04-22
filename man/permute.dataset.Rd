@@ -39,4 +39,5 @@ data(dad)
 data(mom)
 perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
                  n.permutations = 100)
+
 }
