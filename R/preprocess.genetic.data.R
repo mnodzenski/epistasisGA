@@ -88,7 +88,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
   case.status <- c(rep(1, nrow(case.genetic.data)), rep(0, nrow(complement.genetic.data)))
   ids <- rep(1:nrow(case.genetic.data), 2)
   n <- nrow(case.genetic.data)
-  res.list <- bplapply(1:ncol(case.genetic.data), function(snp){
+  res.list <- bplapply(1:ncol(case.genetic.data), function(snp, case.genetic.data, complement.genetic.data){
 
     case.snp <- factor(case.genetic.data[ , snp], levels = c(0, 1, 2))
     comp.snp <- factor(complement.genetic.data[ , snp], levels = c(0,1,2))
@@ -100,7 +100,8 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
 
-  }, BPPARAM = bp.param)
+  }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
+      BPPARAM = bp.param)
 
   #combine results into new dataframes
   case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
