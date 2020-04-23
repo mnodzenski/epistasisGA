@@ -8,6 +8,7 @@
 #' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
 #' @param chrom.mat A logical matrix indicating whether the snps in the input genetic data belong to the same chromosome.
 #' @param min.allele.freq The minimum minor allele frequency in the parents required for a snp to be considered as a potential GA solution. Any snps with MAF < \code{min.allele.freq} in the parents will be omitted. Defaults to 0.01.
+#' @param bp.param The BPPARAM argument to be passed to bplapply when running conditional logistic regressions on each input SNP. If using a cluster computer, this parameter needs to be set with care.
 #' @return A list, whose first element is a matrix of case genetic data, second element is complment genetic data, and third element is a vector of chi-square statistics, fourth element is a list of column numbers in the original dataset to whom the .
 #'
 #' @examples
@@ -32,7 +33,8 @@
 #' @export
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-                                    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025){
+                                    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025,
+                                    bp.param = bpparam()){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -98,7 +100,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
 
-  })
+  }, BPPARAM = bp.param)
 
   #combine results into new dataframes
   case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
