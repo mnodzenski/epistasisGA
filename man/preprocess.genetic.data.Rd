@@ -10,7 +10,8 @@ preprocess.genetic.data(
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
   chrom.mat,
-  min.allele.freq = 0.025
+  min.allele.freq = 0.025,
+  bp.param = bpparam()
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ preprocess.genetic.data(
 \item{chrom.mat}{A logical matrix indicating whether the snps in the input genetic data belong to the same chromosome.}
 
 \item{min.allele.freq}{The minimum minor allele frequency in the parents required for a snp to be considered as a potential GA solution. Any snps with MAF < \code{min.allele.freq} in the parents will be omitted. Defaults to 0.01.}
+
+\item{bp.param}{The BPPARAM argument to be passed to bplapply when running conditional logistic regressions on each input SNP. If using a cluster computer, this parameter needs to be set with care.}
 }
 \value{
 A list, whose first element is a matrix of case genetic data, second element is complment genetic data, and third element is a vector of chi-square statistics, fourth element is a list of column numbers in the original dataset to whom the .
