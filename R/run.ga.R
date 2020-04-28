@@ -6,6 +6,11 @@
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param results.dir The directory to which island results will be saved.
+#' @param cluster.type A character string indicating the type of cluster on which to evolve islands in parallel. Supported options are interactive, socket, multicore, sge, slurm, lsf, openlava, or torque. See the documentation for package batchtools for more information.
+#' @param registryargs A list of the arguments to be provided to \code{batchtools::makeRegistry}.
+#' @param resources A named list of key-value pairs to be subsituted into the template file, options available are specified in \code{batchtools::submitJobs}.
+#' @param cluster.template A character string of the path to the template file required for the cluster specified in \code{cluster.type}. Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque for argument \code{cluster.type}.
+#' @param n.workers An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if one of socket or multicore. Defaults to \code{parallel::detectCores - 2}.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
@@ -20,8 +25,6 @@
 #' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
 #' @param migration.generations An integer equal to the number of generations between migration among islands.
 #' @param n.migrations The number of chromosomes that migrate among islands.
-#' @param batch.param The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting the jobs for each clsuter of islands. Defaults to bpparam.
-#' @param cluster.param The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting GA runs within each clsuter of islands. Defaults to SerialParam.
 #'
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
@@ -42,15 +45,17 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
 #' @importFrom survival clogit
+#' @importFrom batchtools chunk makeRegistry batchMap submitJobs
+#' @importFrom parallel detectCores
 #' @export
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
-                   n.different.snps.weight = 2, n.both.one.weight = 1,
-                   weight.function = identity,generations = 500, gen.same.fitness = 50,
+                   cluster.type, registryargs, resources, cluster.template = NULL, n.workers = detectCores() - 2, n.different.snps.weight = 2,
+                   n.both.one.weight = 1, weight.function = identity,generations = 500, gen.same.fitness = 50,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
                    island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
-                   starting.seeds = NULL, batch.param = bpparam(), cluster.param = SerialParam()){
+                   starting.seeds = NULL){
 
   ### make sure the island cluster size divides the number of islands evenly ###
   if ( n.islands %% island.cluster.size != 0){
@@ -144,7 +149,41 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
   ### evolve populations over island clusters ###
   first.seeds <- seq(1, n.islands, island.cluster.size)
-  try(bplapply(first.seeds, function(cluster.start){
+
+  #make registry for submitting batch jobs
+  registry <- do.call(makeRegistry, registryargs)
+  registry$cluster.functions <- switch(
+    cluster.type,
+    interactive = batchtools::makeClusterFunctionsInteractive(),
+    socket = batchtools::makeClusterFunctionsSocket(n.workers),
+    multicore = batchtools::makeClusterFunctionsMulticore(n.workers),
+    sge = batchtools::makeClusterFunctionsSGE(template = cluster.template),
+    slurm = batchtools::makeClusterFunctionsSlurm(template = cluster.template),
+    lsf = batchtools::makeClusterFunctionsLSF(template = cluster.template),
+    openlava = batchtools::makeClusterFunctionsOpenLava(template = cluster.template),
+    torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
+    default = stop("unsupported cluster type '", cluster, "'")
+  )
+  if (is.null(n.workers)){
+
+    n.chunks <- length(first.seeds)
+
+  } else {
+
+    n.chunks <- n.workers
+
+  }
+
+  ids <- batchMap(function(cluster.start, starting.seeds, island.cluster.size,
+                           n.migrations, case.genetic.data, complement.genetic.data,
+                           case.comp.different, case.minus.comp, both.one.mat,
+                           chrom.mat, n.chromosomes, n.candidate.snps, chromosome.size,
+                           start.generation, seed.val, snp.chisq,
+                           original.col.numbers, n.different.snps.weight, n.both.one.weight,
+                           weight.function, total.generations, gen.same.fitness,
+                           max.generations, tol, n.top.chroms, initial.sample.duplicates,
+                           snp.sampling.type, crossover.prop){
+  #try(bplapply(first.seeds, function(cluster.start){
    # (lapply(first.seeds, function(cluster.start){
 
    cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
@@ -259,7 +298,25 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
     })
 
-  }, BPPARAM = batch.param))
+  }, cluster.start = first.seeds,
+  more.args = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                                                   complement.genetic.data = complement.genetic.data,
+                                                   case.comp.different = case.comp.different,
+                                                   case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                                                   chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                                                   n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                                                   start.generation = 1,
+                                                   seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                                                   original.col.numbers = original.col.numbers,
+                                                   n.different.snps.weight = n.different.snps.weight,
+                                                   n.both.one.weight = n.both.one.weight,
+                                                   weight.function = weight.function, total.generations = migration.generations,
+                                                   gen.same.fitness = gen.same.fitness,
+                                                   max.generations = generations,
+                                                   tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                                                   snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop), reg = registry)
+  ids[, chunk := chunk(job.id, chunk.size = n.chunks)]
+  submitJobs(ids = ids, reg = registry, resources = resources)
 }
 
 
