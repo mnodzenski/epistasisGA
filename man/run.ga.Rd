@@ -9,6 +9,11 @@ run.ga(
   n.chromosomes,
   chromosome.size,
   results.dir,
+  cluster.type,
+  registryargs,
+  resources,
+  cluster.template = NULL,
+  n.workers = detectCores() - 2,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function = identity,
@@ -23,9 +28,7 @@ run.ga(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  starting.seeds = NULL,
-  batch.param = bpparam(),
-  cluster.param = SerialParam()
+  starting.seeds = NULL
 )
 }
 \arguments{
@@ -36,6 +39,16 @@ run.ga(
 \item{chromosome.size}{The number of snps within each candidate solution.}
 
 \item{results.dir}{The directory to which island results will be saved.}
+
+\item{cluster.type}{A character string indicating the type of cluster on which to evolve islands in parallel. Supported options are interactive, socket, multicore, sge, slurm, lsf, openlava, or torque. See the documentation for package batchtools for more information.}
+
+\item{registryargs}{A list of the arguments to be provided to \code{batchtools::makeRegistry}.}
+
+\item{resources}{A named list of key-value pairs to be subsituted into the template file, options available are specified in \code{batchtools::submitJobs}.}
+
+\item{cluster.template}{A character string of the path to the template file required for the cluster specified in \code{cluster.type}. Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque for argument \code{cluster.type}.}
+
+\item{n.workers}{An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if one of socket or multicore. Defaults to \code{parallel::detectCores - 2}.}
 
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
@@ -64,10 +77,6 @@ run.ga(
 \item{migration.generations}{An integer equal to the number of generations between migration among islands.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands.}
-
-\item{batch.param}{The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting the jobs for each clsuter of islands. Defaults to bpparam.}
-
-\item{cluster.param}{The BiocParallel BiocParallelParam to be passed to the call to bplapply when submitting GA runs within each clsuter of islands. Defaults to SerialParam.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
