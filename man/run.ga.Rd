@@ -10,7 +10,7 @@ run.ga(
   chromosome.size,
   results.dir,
   cluster.type,
-  registryargs,
+  registryargs = list(file.dir = NA, seed = 1500),
   resources = list(),
   cluster.template = NULL,
   n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
@@ -77,6 +77,8 @@ run.ga(
 \item{migration.generations}{An integer equal to the number of generations between migration among islands.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands.}
+
+\item{starting.seeds}{A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
