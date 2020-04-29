@@ -50,7 +50,8 @@
 #' @export
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
-                   cluster.type, registryargs, resources, cluster.template = NULL, n.workers = detectCores() - 2, n.different.snps.weight = 2,
+                   cluster.type, registryargs, resources = list(), cluster.template = NULL,
+                   n.workers = min(detectCores() - 2, n.islands/island.cluster.size), n.different.snps.weight = 2,
                    n.both.one.weight = 1, weight.function = identity,generations = 500, gen.same.fitness = 50,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
@@ -178,7 +179,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                            n.migrations, case.genetic.data, complement.genetic.data,
                            case.comp.different, case.minus.comp, both.one.mat,
                            chrom.mat, n.chromosomes, n.candidate.snps, chromosome.size,
-                           start.generation, seed.val, snp.chisq,
+                           start.generation,  snp.chisq,
                            original.col.numbers, n.different.snps.weight, n.both.one.weight,
                            weight.function, total.generations, gen.same.fitness,
                            max.generations, tol, n.top.chroms, initial.sample.duplicates,
@@ -299,15 +300,14 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     })
 
   }, cluster.start = first.seeds,
-  reg = registry)
-  batchExport(export = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+     more.args = list(starting.seeds = starting.seeds, n.migrations = n.migrations, case.genetic.data = case.genetic.data,
                                  complement.genetic.data = complement.genetic.data,
-                                 case.comp.different = case.comp.different,
+                                 case.comp.different = case.comp.different, island.cluster.size = island.cluster.size,
                                  case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
                                  chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
                                  n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
                                  start.generation = 1,
-                                 seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                                 snp.chisq = snp.chisq,
                                  original.col.numbers = original.col.numbers,
                                  n.different.snps.weight = n.different.snps.weight,
                                  n.both.one.weight = n.both.one.weight,
@@ -316,7 +316,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                  max.generations = generations,
                                  tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                                  snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop),
-                reg = registry)
+    reg = registry)
   ids[, chunk := chunk(job.id, chunk.size = n.chunks)]
   submitJobs(ids = ids, reg = registry, resources = resources)
 }
