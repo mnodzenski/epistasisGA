@@ -299,22 +299,24 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     })
 
   }, cluster.start = first.seeds,
-  more.args = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
-                                                   complement.genetic.data = complement.genetic.data,
-                                                   case.comp.different = case.comp.different,
-                                                   case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                                                   chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
-                                                   n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
-                                                   start.generation = 1,
-                                                   seed.val = cluster.seed.val, snp.chisq = snp.chisq,
-                                                   original.col.numbers = original.col.numbers,
-                                                   n.different.snps.weight = n.different.snps.weight,
-                                                   n.both.one.weight = n.both.one.weight,
-                                                   weight.function = weight.function, total.generations = migration.generations,
-                                                   gen.same.fitness = gen.same.fitness,
-                                                   max.generations = generations,
-                                                   tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                                                   snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop), reg = registry)
+  reg = registry)
+  batchExport(export = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                                 complement.genetic.data = complement.genetic.data,
+                                 case.comp.different = case.comp.different,
+                                 case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                                 chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
+                                 n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                                 start.generation = 1,
+                                 seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                                 original.col.numbers = original.col.numbers,
+                                 n.different.snps.weight = n.different.snps.weight,
+                                 n.both.one.weight = n.both.one.weight,
+                                 weight.function = weight.function, total.generations = migration.generations,
+                                 gen.same.fitness = gen.same.fitness,
+                                 max.generations = generations,
+                                 tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                                 snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop),
+                reg = registry)
   ids[, chunk := chunk(job.id, chunk.size = n.chunks)]
   submitJobs(ids = ids, reg = registry, resources = resources)
 }
