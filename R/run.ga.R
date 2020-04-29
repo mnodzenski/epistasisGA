@@ -25,6 +25,7 @@
 #' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
 #' @param migration.generations An integer equal to the number of generations between migration among islands.
 #' @param n.migrations The number of chromosomes that migrate among islands.
+#' @param starting.seeds A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.
 #'
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
@@ -50,7 +51,7 @@
 #' @export
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
-                   cluster.type, registryargs, resources = list(), cluster.template = NULL,
+                   cluster.type, registryargs = list(file.dir = NA,  seed = 1500), resources = list(), cluster.template = NULL,
                    n.workers = min(detectCores() - 2, n.islands/island.cluster.size), n.different.snps.weight = 2,
                    n.both.one.weight = 1, weight.function = identity,generations = 500, gen.same.fitness = 50,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
