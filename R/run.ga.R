@@ -167,11 +167,11 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
   )
   if (is.null(n.workers)){
 
-    n.chunks <- length(first.seeds)
+    chunk.size <- length(first.seeds)
 
   } else {
 
-    n.chunks <- n.workers
+    chunk.size <- n.workers
 
   }
 
@@ -317,7 +317,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                  tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                                  snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop),
     reg = registry)
-  ids[, chunk := chunk(job.id, chunk.size = n.chunks)]
+  ids[, chunk := chunk(job.id, chunk.size = chunk.size)]
   submitJobs(ids = ids, reg = registry, resources = resources)
 }
 
