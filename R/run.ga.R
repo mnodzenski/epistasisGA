@@ -165,7 +165,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
     default = stop("unsupported cluster type '", cluster, "'")
   )
-  if (is.null(n.workers)){
+  if (! cluster.type %in% c("socket", "multicore")){
 
     chunk.size <- length(first.seeds)
 
