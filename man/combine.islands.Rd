@@ -10,7 +10,7 @@ combine.islands(results.dir)
 \item{results.dir}{The directory in which individual island results from \code{run.ga} are saved.}
 }
 \value{
-A data.table combing results from all islands stored in \code{results.dir}. This will also be written to \code{results.dir}
+A list of two elements, \code{all.results} and \code{unique.results}. \code{all.results} contains chromosome results across all islands, including chromsomes identified on more than one island. \code{unique.results} removes duplicate chromosomes found on more than one island. These two objects will also be written to \code{results.dir} as combined.island.results.rds and combined.island.unique.chromosome.results.rds.
 }
 \description{
 This function combines results for individual islands into a single dataset.
