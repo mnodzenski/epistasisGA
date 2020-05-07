@@ -34,7 +34,7 @@ run.global.test <- function(results.list){
     obs.fitness.scores <- obs.data$fitness.score
 
     #compute the eCDF for the observed data
-    obs.data.seq <- seq(min(obs.fitness.scores), max(obs.fitness.scores), length.out = 10000)
+    obs.data.seq <- seq(0, max(obs.fitness.scores), length.out = 10000)
     obs.ecdf.fun <- ecdf(obs.fitness.scores)
     obs.ecdf <- obs.ecdf.fun(obs.data.seq)
 
