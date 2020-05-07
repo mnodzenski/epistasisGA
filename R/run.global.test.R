@@ -44,7 +44,7 @@ run.global.test <- function(results.list){
     for (i in 1:length(perm.list)){
 
       perm.res <- perm.list[[i]]
-      perm.ecdf.fun <- ecdf(perm.res)
+      perm.ecdf.fun <- ecdf(perm.res$fitness.score)
       perm.ecdf.mat[i, ] <- perm.ecdf.fun(obs.data.seq)
 
     }
