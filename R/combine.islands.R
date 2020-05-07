@@ -4,7 +4,7 @@
 #'
 #' @param results.dir The directory in which individual island results from \code{run.ga} are saved.
 #' @return A list of two elements, \code{all.results} and \code{unique.results}. \code{all.results} contains chromosome results across all islands, including chromsomes identified on more than one island. \code{unique.results} removes duplicate chromosomes found on more than one island. These two objects will also be written to \code{results.dir} as combined.island.results.rds and combined.island.unique.chromosome.results.rds.
-#' @importFrom data.table rbindlist
+#' @importFrom data.table rbindlist setkey setorder
 #' @export
 combine.islands <- function(results.dir){
 
