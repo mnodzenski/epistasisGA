@@ -72,7 +72,7 @@ run.global.test <- function(results.list){
   perm.cov.mat.inv <- solve(perm.cov.mat)
 
   #calculate mahalanobis distance to mean vector for obs data
-  obs.mahala <- (obs.ks.vec - mean.perm.vec) %*% perm.cov.mat.inv %*% (obs.ks.vec - mean.perm.vec)
+  obs.mahala <- as.numeric((obs.ks.vec - mean.perm.vec) %*% perm.cov.mat.inv %*% (obs.ks.vec - mean.perm.vec))
 
   #now for each of the permutations
   perm.mahala <- rep(NA, nrow(perm.ks.mat))
