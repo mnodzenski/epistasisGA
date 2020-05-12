@@ -10,5 +10,5 @@ Encoding: UTF-8
 LazyData: true
 Imports: BiocParallel, data.table, matrixStats, stats, methods, survival, dplyr, igraph
 Suggests: snpStats, Matrix
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Depends: R (>= 3.5.0)
