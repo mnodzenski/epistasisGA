@@ -4,19 +4,33 @@
 \alias{network.plot}
 \title{A function to plot a network of potential epistatic snps}
 \usage{
-network.plot(results.df, chrom.size, seed = 10, n.top.chroms = 50)
+network.plot(
+  results.df,
+  repulse.rad = 1000,
+  node.size = 25,
+  graph.area = 100,
+  vertex.label.cex = 0.5,
+  seed = 10,
+  plot = TRUE
+)
 }
 \arguments{
-\item{results.df}{A data frame of results of GA runs. The first n columns are snp ids, the next n columns are there associated mean vector components.}
+\item{results.df}{The \code{unique.results} data frame of results of GA runs from \code{combine.islands}, with fitness scores restricted to the top results using function \code{network.threshold}.}
 
-\item{chrom.size}{An integer indicating the number of snps in the chromosome.}
+\item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes.}
+
+\item{node.size}{A scalar affecting the size of the graph nodes. Increse to increase size.}
+
+\item{graph.area}{A scalar affecting the size of the graph area. Increase to increase graph area.}
+
+\item{vertex.label.cex}{A scalar controlling the size of the vertex label. Increase to increase size.}
 
 \item{seed}{an integer specifying the graph seed}
 
-\item{n.top.chroms}{An integer indicating the number of top chromosomes to plot}
+\item{plot}{A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object which can be used for manual plotting.}
 }
 \value{
-A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
+An igraph object, if \code{plot} is set to FALSE.
 }
 \description{
 This function rplot a network of potential epistatic snps.
