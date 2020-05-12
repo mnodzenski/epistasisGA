@@ -14,7 +14,7 @@
 network.threshold <- function(observed.results, permutation.list, threshold.val){
 
   #error checking
-  if (any(duplicated(observed.results$fitness.score))){
+  if (any(duplicated(observed.results$chromosome))){
 
     stop("Observed results must included only unique chromosomes, duplicates detected.")
 
@@ -36,7 +36,7 @@ network.threshold <- function(observed.results, permutation.list, threshold.val)
     val <- obs.scores[i]
     prop.higher[i] <- sum(perm.scores > val)/n.perm.scores
 
-    if (prop.higher <= threshold.val){
+    if (prop.higher[i] >= threshold.val){
 
       fitness.score.threshold <- val
       prop.permutations.higher <- prop.higher[i - 1]
