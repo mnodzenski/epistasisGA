@@ -22,8 +22,8 @@ evolve.island(
   all.converged = F,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = identity,
-  total.generations = 50,
+  weight.function = function(x) 2^x,
+  migration.interval = 50,
   gen.same.fitness = 50,
   max.generations = 500,
   tol = 10^-6,
@@ -66,7 +66,7 @@ evolve.island(
 
 \item{weight.function}{A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.}
 
-\item{total.generations}{The number of generations for which the GA will run. Defaults to 50.}
+\item{migration.interval}{The interval of generations for which the GA will run prior to migration of chromosomes among islands in a cluster. Defaults to 50.}
 
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination.}
 
@@ -82,7 +82,7 @@ evolve.island(
 
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.8.}
 
-\item{chromosome.list}{A list of chromosomes on which the genetic algorithm will start}
+\item{chromosome.list}{A list of chromosomes on which the genetic algorithm will start.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 
@@ -93,8 +93,46 @@ evolve.island(
 \item{cases.minus.complements}{A matrix equal to case genetic data - complement genetic data.}
 }
 \value{
-A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
+A list of nine elements \code{migrations}, \code{chromosome.list}, \code{fitness.score.mat},
+        \code{top.fitness}, \code{last.gens.equal}, \code{top.generation.chromosome}, \code{chromosome.mat.list},
+        \code{sum.dif.vec.list}, and \code{generation}.
 }
 \description{
-This function evolves a genetic algorithm for a given number of generations.
+This function evolves a genetic algorithm for a given number of generations. This function should not be used independently, it is only intended for use in \code{run.ga}.
+}
+\examples{
+
+data(case)
+data(dad)
+data(mom)
+library(Matrix)
+chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
+                              matrix(rep(TRUE, 2500^2), nrow = 2500),
+                              matrix(rep(TRUE, 2500^2), nrow = 2500),
+                              matrix(rep(TRUE, 2500^2), nrow = 2500))))
+data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+                               mother.genetic.data = mom[ , 1:10],
+                               chrom.mat = chrom.mat[ , 1:10])
+
+ case.genetic.data <- data.list$case.genetic.data
+ complement.genetic.data <- data.list$complement.genetic.data
+ original.col.numbers <- data.list$original.col.numbers
+ chisq.stats <- data.list$chisq.stats
+ chrom.mat <- data.list$chrom.mat
+ case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
+ case.comp.different <- case.minus.comp != 0
+ both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
+ snp.chisq <- sqrt(chisq.stats)
+ ex.island <- evolve.island(n.migrations = 2, case.genetic.data = case.genetic.data,
+                   complement.genetic.data = complement.genetic.data,
+                   case.comp.different = case.comp.different,
+                   case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                   chrom.mat = chrom.mat, n.chromosomes = 10,
+                   n.candidate.snps = ncol(case.genetic.data),
+                   chromosome.size = 3, start.generation = 1,
+                   seed.val = 1, snp.chisq = snp.chisq,
+                   original.col.numbers = original.col.numbers,
+                   migration.interval = 5, max.generations = 10)
+
+
 }
