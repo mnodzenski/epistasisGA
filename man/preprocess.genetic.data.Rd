@@ -45,7 +45,7 @@ chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
                               matrix(rep(TRUE, 2500^2), nrow = 2500),
                               matrix(rep(TRUE, 2500^2), nrow = 2500),
                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
-res <- preprocess.genetic.data(case[, 1:3], father.genetic.data = dad[ , 1:3], mother.genetic.data = mom[ , 1:3],
-                 chrom.mat = chrom.mat[ , 1:3])
+res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+                               mother.genetic.data = mom[ , 1:10], chrom.mat = chrom.mat[ , 1:10])
 
 }
