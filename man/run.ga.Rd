@@ -28,7 +28,8 @@ run.ga(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  starting.seeds = NULL
+  starting.seeds = NULL,
+  n.case.high.risk.thresh = 20
 )
 }
 \arguments{
@@ -79,6 +80,8 @@ run.ga(
 \item{n.migrations}{The number of chromosomes that migrate among islands.}
 
 \item{starting.seeds}{A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.}
+
+\item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 }
 \value{
 A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.

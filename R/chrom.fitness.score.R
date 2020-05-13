@@ -12,6 +12,7 @@
 #' @param n.both.one.weight The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
 #' @param chrom.mat A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.
+#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
 #'
 #' @examples
@@ -33,7 +34,8 @@
 #' @export
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps, cases.minus.complements, both.one.mat, chrom.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity){
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity,
+                                n.case.high.risk.thresh = 20){
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[ , target.snps]
@@ -75,8 +77,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
   ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
 
-  #only applies if we have at least one high risk case
-  if (n.case.high.risk > 20){
+  #only applies if we have at least 20 high risk case
+  if (n.case.high.risk > n.case.high.risk.thresh){
 
     case.high.risk.means <- colMeans(case.high.inf)
     case.high.risk.sd <- colSds(as.matrix(case.high.inf))
@@ -188,10 +190,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
   #compute fitness score
-  #fitness.score <- (rr)*(sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   pseudo.t2 <- (sum.family.weights/1000)*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   fitness.score <- (rr^2)*pseudo.t2
-  #fitness.score <- (rr)* sqrt(((sum.family.weights - chromosome.size)/(chromosome.size*(sum.family.weights - 1)))*sum.family.weights*rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d))
 
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2))
 

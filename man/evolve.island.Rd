@@ -37,7 +37,8 @@ evolve.island(
   last.gens.equal = NULL,
   top.generation.chromosome = NULL,
   chromosome.mat.list = NULL,
-  sum.dif.vec.list = NULL
+  sum.dif.vec.list = NULL,
+  n.case.high.risk.thresh = 20
 )
 }
 \arguments{
@@ -82,6 +83,8 @@ evolve.island(
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.8.}
 
 \item{chromosome.list}{A list of chromosomes on which the genetic algorithm will start}
+
+\item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 
 \item{case.comp.differences}{a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.}
 
