@@ -1,6 +1,6 @@
 #' A function to evolve a genetic algorithm for a specific island for a given number of generations
 #'
-#' This function evolves a genetic algorithm for a given number of generations.
+#' This function evolves a genetic algorithm for a given number of generations. This function should not be used independently, it is only intended for use in \code{run.ga}.
 #'
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
@@ -17,7 +17,7 @@
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
-#' @param total.generations The number of generations for which the GA will run. Defaults to 50.
+#' @param migration.interval The interval of generations for which the GA will run prior to migration of chromosomes among islands in a cluster. Defaults to 50.
 #' @param max.generations The total allowable number of generations. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
@@ -25,9 +25,46 @@
 #' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.8.
-#' @param chromosome.list A list of chromosomes on which the genetic algorithm will start
+#' @param chromosome.list A list of chromosomes on which the genetic algorithm will start.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
-#' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
+#' @return A list of nine elements \code{migrations}, \code{chromosome.list}, \code{fitness.score.mat},
+#'         \code{top.fitness}, \code{last.gens.equal}, \code{top.generation.chromosome}, \code{chromosome.mat.list},
+#'         \code{sum.dif.vec.list}, and \code{generation}.
+#'
+#' @examples
+#'
+#' data(case)
+#' data(dad)
+#' data(mom)
+#' library(Matrix)
+#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
+#'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
+#'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
+#'                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
+#' data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+#'                                mother.genetic.data = mom[ , 1:10],
+#'                                chrom.mat = chrom.mat[ , 1:10])
+#'
+#'  case.genetic.data <- data.list$case.genetic.data
+#'  complement.genetic.data <- data.list$complement.genetic.data
+#'  original.col.numbers <- data.list$original.col.numbers
+#'  chisq.stats <- data.list$chisq.stats
+#'  chrom.mat <- data.list$chrom.mat
+#'  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
+#'  case.comp.different <- case.minus.comp != 0
+#'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
+#'  snp.chisq <- sqrt(chisq.stats)
+#'  ex.island <- evolve.island(n.migrations = 2, case.genetic.data = case.genetic.data,
+#'                    complement.genetic.data = complement.genetic.data,
+#'                    case.comp.different = case.comp.different,
+#'                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+#'                    chrom.mat = chrom.mat, n.chromosomes = 10,
+#'                    n.candidate.snps = ncol(case.genetic.data),
+#'                    chromosome.size = 3, start.generation = 1,
+#'                    seed.val = 1, snp.chisq = snp.chisq,
+#'                    original.col.numbers = original.col.numbers,
+#'                    migration.interval = 5, max.generations = 10)
+#'
 #'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
@@ -40,7 +77,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
                           n.candidate.snps, chromosome.size, start.generation,
                           seed.val, snp.chisq, original.col.numbers, all.converged = F,
                           n.different.snps.weight = 2, n.both.one.weight = 1,
-                          weight.function = identity, total.generations = 50, gen.same.fitness = 50,
+                          weight.function = function(x) 2^x, migration.interval = 50, gen.same.fitness = 50,
                           max.generations = 500,
                           tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                           snp.sampling.type = "chisq", crossover.prop = 0.8,
@@ -52,7 +89,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
   ### initialize groups of candidate solutions if generation 1 ###
   set.seed(seed.val)
   generation <- start.generation
-  generations <- min(start.generation + total.generations - 1, max.generations)
+  generations <- min(start.generation + migration.interval - 1, max.generations)
 
   ### initiate chromosome list if this is the first generation ###
   if (generation == 1){
