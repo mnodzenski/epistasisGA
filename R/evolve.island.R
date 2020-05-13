@@ -170,7 +170,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
     lower.chromosomes <- c(which(fitness.scores != max.fitness), duplicate.top.chromosomes)
 
     ### 4. Sample with replacement from the existing chromosomes ###
-    #print("Step 4/9")
+    ##print("Step 4/9")
     #allow the top scoring chromosome to be sampled, but only sample from the unique chromosomes available
     sample.these <- !duplicated(chromosome.list)
     sampled.lower.idx <- sample(which(sample.these), length(lower.chromosomes),
@@ -293,13 +293,16 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
       #sort the chromosome elements from lowest absolute difference vector to highest
       target.chrom <- target.chrom[order(abs(target.dif.vec))]
 
-      #determine which snps to mutate
-      total.mutations <- max(1, rbinom(1, chromosome.size, 0.5))
-      mutate.these <- 1:total.mutations
-
       #remove the chromosome's snps from the pool of available snps
       #and sample new snps for the mutations
       possible.snps.for.mutation <- snps.for.mutation[ ! snps.for.mutation %in% target.chrom]
+
+      #determine which snps to mutate
+      total.mutations <- min(max(1, rbinom(1, chromosome.size, 0.5)),
+                             length(unique(possible.snps.for.mutation)))
+      mutate.these <- 1:total.mutations
+
+      #execute mutations
       mutated.snps <- rep(NA, total.mutations)
       for (j in 1:total.mutations){
 
@@ -386,7 +389,8 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
     final.result <- unique.results[1:n.top.chroms, ]
 
     #print(paste("Algorithm terminated after", last.generation, "generations."))
-    return(list(top.chromosome.results = final.result, n.generations = last.generation))
+    res.list <- list(top.chromosome.results = final.result, n.generations = last.generation)
+    return(res.list)
 
   }
 }
