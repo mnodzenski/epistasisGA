@@ -26,6 +26,7 @@
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.8.
 #' @param chromosome.list A list of chromosomes on which the genetic algorithm will start
+#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
 #' @importFrom matrixStats colSds rowMaxs
@@ -46,7 +47,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
                           chromosome.list = NULL, fitness.score.mat = NULL,
                           top.fitness = NULL, last.gens.equal = NULL,
                           top.generation.chromosome = NULL, chromosome.mat.list = NULL,
-                          sum.dif.vec.list = NULL){
+                          sum.dif.vec.list = NULL, n.case.high.risk.thresh = 20){
 
   ### initialize groups of candidate solutions if generation 1 ###
   set.seed(seed.val)
@@ -95,7 +96,7 @@ evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.da
     fitness.score.list <- lapply(1:length(chromosome.list), function(x) {
 
       chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]], case.minus.comp, both.one.mat, chrom.mat,
-                          n.different.snps.weight, n.both.one.weight, weight.function)
+                          n.different.snps.weight, n.both.one.weight, weight.function, n.case.high.risk.thresh)
 
     })
 
