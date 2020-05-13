@@ -23,8 +23,8 @@
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.
 #' @param n.islands An integer indicating the number of islands to be used.
 #' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
-#' @param migration.generations An integer equal to the number of generations between migration among islands.
-#' @param n.migrations The number of chromosomes that migrate among islands.
+#' @param migration.generations An integer equal to the number of generations between migration among islands. \code{generations} must be an integer multiple of this value.
+#' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes}.
 #' @param starting.seeds A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #'
@@ -46,7 +46,7 @@
 #'                                chrom.mat = chrom.mat[ , 1:10])
 #' run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
 #'        cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1)
+#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 #'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
@@ -59,16 +59,40 @@
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                    cluster.type, registryargs = list(file.dir = NA,  seed = 1500), resources = list(), cluster.template = NULL,
                    n.workers = min(detectCores() - 2, n.islands/island.cluster.size), n.different.snps.weight = 2,
-                   n.both.one.weight = 1, weight.function = identity,generations = 500, gen.same.fitness = 50,
+                   n.both.one.weight = 1, weight.function = identity, generations = 500, gen.same.fitness = 50,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
                    island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
                    starting.seeds = NULL, n.case.high.risk.thresh = 20){
 
-  ### make sure the island cluster size divides the number of islands evenly ###
-  if ( n.islands %% island.cluster.size != 0){
+  ### make sure if island clusters exist, the migration interval is set properly ###
+  if (island.cluster.size > 1 & migration.generations >= generations){
 
-    stop("Number of islands needs to be an multiple of island cluster size")
+    stop("migration.generations must be less than generations. Specify island.cluster.size = 1 if no migrations are desired.")
+
+  }
+  if (migration.generations == 1){
+
+    stop("migration.generations must be greater than 1")
+
+  }
+  if (island.cluster.size > 1 & generations %% migration.generations != 0){
+
+    stop("generations must be an integer multiple of migration.generations.")
+
+  }
+
+  ### make sure the island cluster size divides the number of islands evenly ###
+  if ( island.cluster.size > 1 & n.islands %% island.cluster.size != 0){
+
+    stop("n.islands must be an integer multiple of island.cluster.size")
+
+  }
+
+  ### make sure number of migrations is specified properly ###
+  if (island.cluster.size > 1 & n.migrations >= n.chromosomes){
+
+    stop("n.migrations must be less than n.chromosomes")
 
   }
 
@@ -140,17 +164,6 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
       starting.seeds <- setdiff(starting.seeds, prev.seeds)[1:n.islands]
 
     }
-
-  }
-
-  ### initialize the generations at which chromosomes will migrate between islands ###
-  if (island.cluster.size != 1){
-
-    migration.gens <- seq(migration.generations, generations - migration.generations, migration.generations)
-
-  } else {
-
-    migration.gens <- generations
 
   }
 
@@ -274,9 +287,19 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
      }
 
+     ### write results to file
+     lapply(1:length(cluster.seeds), function(cluster.idx){
+
+       cluster.seed.val <- cluster.seeds[cluster.idx]
+       island <- island.populations[[cluster.idx]]
+       out.file <- file.path(results.dir, paste0("island", cluster.seed.val, ".rds"))
+       saveRDS(island, out.file)
+
+     })
+
    } else {
 
-     island.populations <- evolve.island(n.migrations = NULL, case.genetic.data = case.genetic.data,
+     island <- evolve.island(n.migrations = NULL, case.genetic.data = case.genetic.data,
                                complement.genetic.data = complement.genetic.data,
                                case.comp.different = case.comp.different,
                                case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
@@ -294,18 +317,12 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
                                n.case.high.risk.thresh = n.case.high.risk.thresh)
 
+     ### write results to file
+     out.file <- file.path(results.dir, paste0("island", cluster.seeds, ".rds"))
+     saveRDS(island, out.file)
+
+
    }
-
-
-    ### write results to file
-    lapply(1:length(cluster.seeds), function(cluster.idx){
-
-      cluster.seed.val <- cluster.seeds[cluster.idx]
-      island <- island.populations[[cluster.idx]]
-      out.file <- file.path(results.dir, paste0("island", cluster.seed.val, ".rds"))
-      saveRDS(island, out.file)
-
-    })
 
   }, cluster.start = first.seeds,
      more.args = list(starting.seeds = starting.seeds, n.migrations = n.migrations, case.genetic.data = case.genetic.data,
