@@ -26,6 +26,7 @@
 #' @param migration.generations An integer equal to the number of generations between migration among islands.
 #' @param n.migrations The number of chromosomes that migrate among islands.
 #' @param starting.seeds A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.
+#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #'
 #' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
@@ -57,7 +58,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
                    island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
-                   starting.seeds = NULL){
+                   starting.seeds = NULL, n.case.high.risk.thresh = 20){
 
   ### make sure the island cluster size divides the number of islands evenly ###
   if ( n.islands %% island.cluster.size != 0){
@@ -184,9 +185,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                            original.col.numbers, n.different.snps.weight, n.both.one.weight,
                            weight.function, total.generations, gen.same.fitness,
                            max.generations, tol, n.top.chroms, initial.sample.duplicates,
-                           snp.sampling.type, crossover.prop){
-  #try(bplapply(first.seeds, function(cluster.start){
-   # (lapply(first.seeds, function(cluster.start){
+                           snp.sampling.type, crossover.prop, n.case.high.risk.thresh){
 
    cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
 
@@ -211,7 +210,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                      gen.same.fitness = gen.same.fitness,
                      max.generations = generations,
                      tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                     snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
+                     snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
+                     n.case.high.risk.thresh = n.case.high.risk.thresh)
 
      })
 
@@ -260,7 +260,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                        top.fitness = island$top.fitness, last.gens.equal = island$last.gens.equal,
                        top.generation.chromosome = island$top.generation.chromosome,
                        chromosome.mat.list = island$chromosome.mat.list,
-                       sum.dif.vec.list = island$sum.dif.vec.list)
+                       sum.dif.vec.list = island$sum.dif.vec.list,
+                       n.case.high.risk.thresh = n.case.high.risk.thresh)
 
        })
        all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
@@ -285,7 +286,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                gen.same.fitness = gen.same.fitness,
                                max.generations = generations,
                                tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                               snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop)
+                               snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
+                               n.case.high.risk.thresh = n.case.high.risk.thresh)
 
    }
 
@@ -316,7 +318,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                  gen.same.fitness = gen.same.fitness,
                                  max.generations = generations,
                                  tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                                 snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop),
+                                 snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
+                                 n.case.high.risk.thresh = n.case.high.risk.thresh),
     reg = registry)
   ids[, chunk := chunk(job.id, chunk.size = chunk.size)]
   submitJobs(ids = ids, reg = registry, resources = resources)
