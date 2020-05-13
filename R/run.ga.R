@@ -28,7 +28,8 @@
 #' @param starting.seeds A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #'
-#' @return A list, whose first element is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
+#' @return For each island, a list of two elements will be written to \code{results.dir}.
+#'         The first element of each list is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
 #'
 #' @examples
 #'
@@ -40,8 +41,12 @@
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
-#' #ga.res <- run.ga(case, father.genetic.data = dad, mother.genetic.data = mom, n.chromosomes = 7,
-#'  #                chromosome.size = 3, chrom.mat = chrom.mat, seed.val = 10, generations = 1)
+#' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+#'                                mother.genetic.data = mom[ , 1:10],
+#'                                chrom.mat = chrom.mat[ , 1:10])
+#' run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
+#'        cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+#'        generations = 2, n.islands = 2, island.cluster.size = 1)
 #'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
