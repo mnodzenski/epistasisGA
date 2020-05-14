@@ -1,6 +1,6 @@
-#' A function to plot a network of potential epistatic snps
+#' A function to plot a network of snps with potential non-additive multi-snp effects.
 #'
-#' This function rplot a network of potential epistatic snps.
+#' This function plots a network of snps with potential non-additive multi-snp effects.
 #'
 #' @param results.df The \code{unique.results} data frame of results of GA runs from \code{combine.islands}, with fitness scores restricted to the top results using function \code{network.threshold}.
 #' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes.
@@ -10,6 +10,7 @@
 #' @param seed an integer specifying the graph seed
 #' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object which can be used for manual plotting.
 #' @return An igraph object, if \code{plot} is set to FALSE.
+#'@examples
 #'
 #' data(case)
 #' data(dad)
