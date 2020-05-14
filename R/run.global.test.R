@@ -123,6 +123,9 @@
 #'  ## run global test
 #'  global.test.res <- run.global.test(final.results)
 #'
+#'  lapply(c("tmp_2", "tmp_3", "p1_tmp_2", "p2_tmp_2", "p3_tmp_2",
+#'           "p1_tmp_3", "p2_tmp_3", "p3_tmp_3"), unlink, recursive = TRUE)
+#'
 #'
 #' @importFrom matrixStats rowMaxs
 #' @importFrom stats ecdf

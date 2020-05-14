@@ -58,4 +58,6 @@ combined.res <- combine.islands("tmp")
 
 network.plot(combined.res$unique.results)
 
+unlink("tmp", recursive = TRUE)
+
 }

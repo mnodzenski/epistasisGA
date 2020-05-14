@@ -133,5 +133,8 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
  ## run global test
  global.test.res <- run.global.test(final.results)
 
+ lapply(c("tmp_2", "tmp_3", "p1_tmp_2", "p2_tmp_2", "p3_tmp_2",
+          "p1_tmp_3", "p2_tmp_3", "p3_tmp_3"), unlink, recursive = TRUE)
+
 
 }

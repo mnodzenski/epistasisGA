@@ -33,6 +33,8 @@
 #'
 #' network.plot(combined.res$unique.results)
 #'
+#' unlink("tmp", recursive = TRUE)
+#'
 #' @importFrom  dplyr group_by summarize %>%
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
