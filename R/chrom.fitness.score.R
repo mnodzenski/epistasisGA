@@ -25,10 +25,10 @@
 #' case.minus.comp <- case - comp
 #' both.one.mat <- case == 1 & comp == 1
 #' library(Matrix)
-#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
-#'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
-#'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
-#'                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
+#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+#'                               matrix(rep(TRUE, 25^2), nrow = 25),
+#'                               matrix(rep(TRUE, 25^2), nrow = 25),
+#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
 #'
 #' @export
