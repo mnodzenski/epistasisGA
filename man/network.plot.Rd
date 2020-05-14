@@ -2,7 +2,7 @@
 % Please edit documentation in R/network.plot.R
 \name{network.plot}
 \alias{network.plot}
-\title{A function to plot a network of potential epistatic snps}
+\title{A function to plot a network of snps with potential non-additive multi-snp effects.}
 \usage{
 network.plot(
   results.df,
@@ -31,6 +31,11 @@ network.plot(
 }
 \value{
 An igraph object, if \code{plot} is set to FALSE.
+}
+\description{
+This function plots a network of snps with potential non-additive multi-snp effects.
+}
+\examples{
 
 data(case)
 data(dad)
@@ -52,7 +57,5 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
 combined.res <- combine.islands("tmp")
 
 network.plot(combined.res$unique.results)
-}
-\description{
-This function rplot a network of potential epistatic snps.
+
 }
