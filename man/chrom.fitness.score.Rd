@@ -14,7 +14,7 @@ chrom.fitness.score(
   chrom.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = identity,
+  weight.function = function(x) 2^x,
   n.case.high.risk.thresh = 20
 )
 }
@@ -61,6 +61,6 @@ chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
                               matrix(rep(TRUE, 2500^2), nrow = 2500),
                               matrix(rep(TRUE, 2500^2), nrow = 2500),
                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
-chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
+chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
 
 }
