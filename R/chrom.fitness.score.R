@@ -29,12 +29,13 @@
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500),
 #'                               matrix(rep(TRUE, 2500^2), nrow = 2500))))
-#' chrom.fitness.score(case.comp.diff, target.snps = c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
+#' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
 #'
 #' @export
 
-chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps, cases.minus.complements, both.one.mat, chrom.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = identity,
+chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
+                                cases.minus.complements, both.one.mat, chrom.mat,
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = function(x) 2^x,
                                 n.case.high.risk.thresh = 20){
 
   ### pick out the differences for the target snps ###
