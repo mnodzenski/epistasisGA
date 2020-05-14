@@ -34,6 +34,7 @@
 #' network.plot(combined.res$unique.results)
 #'
 #' unlink("tmp", recursive = TRUE)
+#' unlink("tmp_reg", recursive = TRUE)
 #'
 #' @importFrom  dplyr group_by summarize %>%
 #' @import igraph

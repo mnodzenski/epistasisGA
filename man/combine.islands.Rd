@@ -37,5 +37,6 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
 combined.res <- combine.islands("tmp")
 
 unlink("tmp", recursive = TRUE)
+unlink("tmp_reg", recursive = TRUE)
 
 }
