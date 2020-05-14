@@ -8,7 +8,7 @@ Description: Runs genetic algorithm to identify multi-snp effects in case-parent
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: BiocParallel, data.table, matrixStats, stats, methods, survival, dplyr, igraph
+Imports: BiocParallel, data.table, matrixStats, stats, methods, survival, dplyr, igraph, batchtools, qgraph
 Suggests: snpStats, Matrix
 RoxygenNote: 7.1.0
 Depends: R (>= 3.5.0)
