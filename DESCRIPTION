@@ -1,11 +1,11 @@
 Package: knnGA
 Type: Package
-Title: An R package for GA detection of genetic epistasis
+Title: An R package to identify multi-snp effects in case-parent triad studies. 
 Version: 1.0.21
 Author: Michael Nodzenski
-Maintainer: Michael Nodzenski <michael.nodzenski@nih.gov>
-Description: Runs knn-GA algorithm to detect candidate solutions for genetic epistasis. 
-License: Placeholder
+Maintainer: Michael Nodzenski <michael.nodzenski@gmail.com>
+Description: Runs genetic algorithm to identify multi-snp effects in case-parent triad studies. 
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: BiocParallel, data.table, matrixStats, stats, methods, survival, dplyr, igraph
