@@ -16,6 +16,11 @@ for each permutation.}
 \value{
 A list containing the observed test statistic \code{obs.test.stat}, the p-value \code{pval},
 and a vector of permutation test statistics \code{perm.test.stats}.
+}
+\description{
+This function runs a global test for significance of top chromosome results across a range of chromosome sizes.
+}
+\examples{
 
 data(case)
 data(dad)
@@ -127,7 +132,6 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
 
  ## run global test
  global.test.res <- run.global.test(final.results)
-}
-\description{
-This function runs a global test for significance of top chromosome results across a range of chromosome sizes.
+
+
 }
