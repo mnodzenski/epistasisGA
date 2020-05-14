@@ -108,5 +108,6 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 
 unlink("tmp", recursive = TRUE)
+unlink("tmp_reg", recursive = TRUE)
 
 }

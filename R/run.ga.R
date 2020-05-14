@@ -49,6 +49,7 @@
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 #'
 #' unlink("tmp", recursive = TRUE)
+#' unlink("tmp_reg", recursive = TRUE)
 #'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
