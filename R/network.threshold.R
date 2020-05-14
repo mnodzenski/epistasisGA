@@ -7,7 +7,7 @@
 #' @param threshold.val The desired theshold. This function will return a fitness score such that \code{threshold.val}*100\%  of permutations have at least one chromosome exceeding this score.
 
 #' @return A numeric fitness score such that \code{threshold.val}*100\%  of permutation chromosomes exceed this score.
-#'
+#' @examples
 #' data(case)
 #' data(dad)
 #' data(mom)

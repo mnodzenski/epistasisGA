@@ -15,7 +15,11 @@ network.threshold(observed.results, permutation.list, threshold.val)
 }
 \value{
 A numeric fitness score such that \code{threshold.val}*100\%  of permutation chromosomes exceed this score.
-
+}
+\description{
+This function identifies a threshold fitness score above which chromosomes should be included in a network plot
+}
+\examples{
 data(case)
 data(dad)
 data(mom)
@@ -82,7 +86,5 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
                         p2.combined.res3$unique.results,
                         p3.combined.res3$unique.results),
                    0.2)
-}
-\description{
-This function identifies a threshold fitness score above which chromosomes should be included in a network plot
+
 }
