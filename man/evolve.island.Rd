@@ -5,7 +5,7 @@
 \title{A function to evolve a genetic algorithm for a specific island for a given number of generations}
 \usage{
 evolve.island(
-  n.migrations,
+  n.migrations = 20,
   case.genetic.data,
   complement.genetic.data,
   case.comp.different,
@@ -42,13 +42,19 @@ evolve.island(
 )
 }
 \arguments{
+\item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes}.}
+
 \item{case.genetic.data}{A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
 
+\item{case.comp.different}{a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.}
+
+\item{case.minus.comp}{A matrix equal to \code{case.genetic.data - complement genetic data}.}
+
 \item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).}
 
-\item{chrom.mat}{A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.}
+\item{chrom.mat}{A logical matrix indicating whether the snps in \code{case.genetic.data} belong to the same chromosome.}
 
 \item{n.chromosomes}{A scalar indicating the number of candidate collections of snps to use in the GA.}
 
@@ -59,6 +65,12 @@ evolve.island(
 \item{start.generation}{The generation at which this function should begin. If 1, a random set of chromosomes will be initialized. Otherwise the argument \code{chromosome.list} will be used.}
 
 \item{seed.val}{An integer indicating the seed to be used for the random samples.}
+
+\item{snp.chisq}{A vector of chi-square statistics, corresponding to tests of association between the column snp in \code{case.genetic.data} and disease status.}
+
+\item{original.col.numbers}{A vector of integers indicating the original column number of each snp in \code{case.genetic.data}, needed due to removal of low frequency snps in \code{preprocess.genetic.data}.}
+
+\item{all.converged}{A logical indicating whether all islands have previously converged to a solution.}
 
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
@@ -84,13 +96,19 @@ evolve.island(
 
 \item{chromosome.list}{A list of chromosomes on which the genetic algorithm will start.}
 
+\item{fitness.score.mat}{A matrix of fitness scores, from previous generations in island evolution.}
+
+\item{top.fitness}{A vector of top fitness scores from previous generations.}
+
+\item{last.gens.equal}{A logical indicating whether the last generations of the algorithm all produced the same top chromosome.}
+
+\item{top.generation.chromosome}{A list of top chromosomes from previous generations.}
+
+\item{chromosome.mat.list}{A list of matrices containing all chromosomes from previous generations.}
+
+\item{sum.dif.vec.list}{A list of matrices containing the sum of differences vectors for chromosomes in previous generations.}
+
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
-
-\item{case.comp.differences}{a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.}
-
-\item{target.snps}{A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.}
-
-\item{cases.minus.complements}{A matrix equal to case genetic data - complement genetic data.}
 }
 \value{
 A list of nine elements \code{migrations}, \code{chromosome.list}, \code{fitness.score.mat},

@@ -2,18 +2,21 @@
 #'
 #' This function evolves a genetic algorithm for a given number of generations. This function should not be used independently, it is only intended for use in \code{run.ga}.
 #'
+#' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes}.
 #' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
-#' @param case.comp.differences a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.
-#' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
-#' @param cases.minus.complements A matrix equal to case genetic data - complement genetic data.
+#' @param case.comp.different a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.
+#' @param case.minus.comp A matrix equal to \code{case.genetic.data - complement genetic data}.
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).
-#' @param chrom.mat A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.
+#' @param chrom.mat A logical matrix indicating whether the snps in \code{case.genetic.data} belong to the same chromosome.
 #' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
 #' @param n.candidate.snps A scalar indicating the number eligible snps in the input data, after filtering out low MAF SNPs.
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param start.generation The generation at which this function should begin. If 1, a random set of chromosomes will be initialized. Otherwise the argument \code{chromosome.list} will be used.
 #' @param seed.val An integer indicating the seed to be used for the random samples.
+#' @param snp.chisq A vector of chi-square statistics, corresponding to tests of association between the column snp in \code{case.genetic.data} and disease status.
+#' @param original.col.numbers A vector of integers indicating the original column number of each snp in \code{case.genetic.data}, needed due to removal of low frequency snps in \code{preprocess.genetic.data}.
+#' @param all.converged A logical indicating whether all islands have previously converged to a solution.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
@@ -26,6 +29,12 @@
 #' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.8.
 #' @param chromosome.list A list of chromosomes on which the genetic algorithm will start.
+#' @param fitness.score.mat A matrix of fitness scores, from previous generations in island evolution.
+#' @param top.fitness A vector of top fitness scores from previous generations.
+#' @param last.gens.equal A logical indicating whether the last generations of the algorithm all produced the same top chromosome.
+#' @param top.generation.chromosome A list of top chromosomes from previous generations.
+#' @param chromosome.mat.list A list of matrices containing all chromosomes from previous generations.
+#' @param sum.dif.vec.list A list of matrices containing the sum of differences vectors for chromosomes in previous generations.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @return A list of nine elements \code{migrations}, \code{chromosome.list}, \code{fitness.score.mat},
 #'         \code{top.fitness}, \code{last.gens.equal}, \code{top.generation.chromosome}, \code{chromosome.mat.list},
@@ -72,7 +81,7 @@
 #' @importFrom survival clogit
 #' @export
 
-evolve.island <- function(n.migrations, case.genetic.data, complement.genetic.data, case.comp.different,
+evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genetic.data, case.comp.different,
                           case.minus.comp, both.one.mat, chrom.mat, n.chromosomes,
                           n.candidate.snps, chromosome.size, start.generation,
                           seed.val, snp.chisq, original.col.numbers, all.converged = F,
