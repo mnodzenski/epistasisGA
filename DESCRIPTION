@@ -1,6 +1,6 @@
 Package: knnGA
 Type: Package
-Title: An R package to identify multi-snp effects in case-parent triad studies. 
+Title: An R package to identify multi-snp effects in case-parent triad studies using a Genetic Algorithm 
 Version: 1.0.21
 Author: Michael Nodzenski
 Maintainer: Michael Nodzenski <michael.nodzenski@gmail.com>
