@@ -7,19 +7,19 @@
 #' @param father.genetic.data The genetic data for the father of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
 #' @param mother.genetic.data The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.
 #' @param n.permutations The number of permuted datasets to create.
-#' @param seed.val The starting seed for the random permutations of the data.
 #' @return A list of \code{n.permutations} pairs of case and complement data, where the case complement status has been randomly flipped or not flipped.
 #' @examples
 #'
 #' data(case)
 #' data(dad)
 #' data(mom)
+#' set.seed(15)
 #' perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
-#'                  n.permutations = 100)
+#'                  n.permutations = 2)
 #'
 #' @export
 permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-                                    mother.genetic.data = NULL, n.permutations = 100, seed.val = 1){
+                                    mother.genetic.data = NULL, n.permutations = 100){
 
   #make sure the appropriate genetic data is included
   if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
@@ -36,7 +36,6 @@ permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, f
   }
 
   ### permute the data ###
-  set.seed(seed.val)
   n.families <- nrow(case.genetic.data)
   permuted.data.list <- lapply(1:n.permutations, function(x){
 
