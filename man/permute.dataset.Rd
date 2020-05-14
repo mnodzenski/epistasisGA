@@ -9,8 +9,7 @@ permute.dataset(
   complement.genetic.data = NULL,
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
-  n.permutations = 100,
-  seed.val = 1
+  n.permutations = 100
 )
 }
 \arguments{
@@ -23,8 +22,6 @@ permute.dataset(
 \item{mother.genetic.data}{The genetic data for the mother of the case. Columns are snps, rows are individuals. Does not need to be specified if \code{complement.genetic.data} is specified.}
 
 \item{n.permutations}{The number of permuted datasets to create.}
-
-\item{seed.val}{The starting seed for the random permutations of the data.}
 }
 \value{
 A list of \code{n.permutations} pairs of case and complement data, where the case complement status has been randomly flipped or not flipped.
@@ -37,7 +34,8 @@ This function creates permutation datasets for permutation based hypothesis test
 data(case)
 data(dad)
 data(mom)
+set.seed(15)
 perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
-                 n.permutations = 100)
+                 n.permutations = 2)
 
 }
