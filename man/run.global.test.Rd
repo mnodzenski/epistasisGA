@@ -16,6 +16,117 @@ for each permutation.}
 \value{
 A list containing the observed test statistic \code{obs.test.stat}, the p-value \code{pval},
 and a vector of permutation test statistics \code{perm.test.stats}.
+
+data(case)
+data(dad)
+data(mom)
+library(Matrix)
+chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 2500^2), nrow = 2500),
+                              matrix(rep(TRUE, 2500^2), nrow = 2500),
+                              matrix(rep(TRUE, 2500^2), nrow = 2500),
+                              matrix(rep(TRUE, 2500^2), nrow = 2500))))
+
+pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+                               mother.genetic.data = mom[ , 1:10],
+                               chrom.mat = chrom.mat[ , 1:10])
+## run GA for observed data
+
+#observed data chromosome size 2
+run.ga(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "tmp_2",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ combined.res2 <- combine.islands("tmp_2")
+ unlink("tmp_reg", recursive = TRUE)
+
+ #observed data chromosome size 3
+ run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "tmp_3",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ combined.res3 <- combine.islands("tmp_3")
+ unlink("tmp_reg", recursive = TRUE)
+
+#create three permuted datasets
+set.seed(1400)
+perm.data.list <- permute.dataset(case[ , 1:10],
+                                  father.genetic.data = dad[ , 1:10],
+                                  mother.genetic.data = mom[ , 1:10],
+                                  n.permutations = 3)
+
+#pre-process permuted data
+p1.list <- preprocess.genetic.data(perm.data.list[["permutation1"]]$case,
+                                   complement.genetic.data = perm.data.list[["permutation1"]]$comp,
+                                   chrom.mat = chrom.mat[ , 1:10])
+
+p2.list <- preprocess.genetic.data(perm.data.list[["permutation2"]]$case,
+                                   complement.genetic.data = perm.data.list[["permutation2"]]$comp,
+                                   chrom.mat = chrom.mat[ , 1:10])
+
+p3.list <- preprocess.genetic.data(perm.data.list[["permutation3"]]$case,
+                                   complement.genetic.data = perm.data.list[["permutation3"]]$comp,
+                                   chrom.mat = chrom.mat[ , 1:10])
+
+##run GA for permuted data
+
+#permutation 1, chromosome size 2
+run.ga(p1.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "p1_tmp_2",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ p1.combined.res2 <- combine.islands("p1_tmp_2")
+ unlink("tmp_reg", recursive = TRUE)
+
+#permutation 1, chromosome size 3
+run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p1_tmp_3",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ p1.combined.res3 <- combine.islands("p1_tmp_3")
+ unlink("tmp_reg", recursive = TRUE)
+
+#permutation 2, chromosome size 2
+run.ga(p2.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "p2_tmp_2",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ p2.combined.res2 <- combine.islands("p2_tmp_2")
+ unlink("tmp_reg", recursive = TRUE)
+
+#permutation 2, chromosome size 3
+run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p2_tmp_3",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ p2.combined.res3 <- combine.islands("p2_tmp_3")
+ unlink("tmp_reg", recursive = TRUE)
+
+#permutation 3, chromosome size 2
+run.ga(p3.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "p3_tmp_2",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ p3.combined.res2 <- combine.islands("p3_tmp_2")
+ unlink("tmp_reg", recursive = TRUE)
+
+#permutation 3, chromosome size 3
+run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3",
+       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ p3.combined.res3 <- combine.islands("p3_tmp_3")
+ unlink("tmp_reg", recursive = TRUE)
+
+ ## create list of results
+
+ #chromosome size 2 results
+ chrom2.list <- list(observed.data = combined.res2$unique.results,
+                    permutation.list = list(p1.combined.res2$unique.results,
+                                            p2.combined.res2$unique.results,
+                                            p3.combined.res2$unique.results))
+
+ #chromosome size 3 results
+ chrom3.list <- list(observed.data = combined.res3$unique.results,
+                    permutation.list = list(p1.combined.res3$unique.results,
+                                            p2.combined.res3$unique.results,
+                                            p3.combined.res3$unique.results))
+
+ final.results <- list(chrom2.list, chrom3.list)
+
+ ## run global test
+ global.test.res <- run.global.test(final.results)
 }
 \description{
 This function runs a global test for significance of top chromosome results across a range of chromosome sizes.
