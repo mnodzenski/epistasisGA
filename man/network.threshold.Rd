@@ -34,10 +34,10 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                chrom.mat = chrom.mat[ , 1:10])
 ## run GA for observed data
 
-run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "tmp_2",
+run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "tmp_3",
        cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res3 <- combine.islands("tmp_2")
+ combined.res3 <- combine.islands("tmp_3")
  unlink("tmp_reg", recursive = TRUE)
 
 ## create three permuted datasets
@@ -86,5 +86,7 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
                         p2.combined.res3$unique.results,
                         p3.combined.res3$unique.results),
                    0.2)
+
+ lapply(c("tmp_3" ,"p1_tmp_3", "p2_tmp_3", "p3_tmp_3"), unlink, recursive = TRUE)
 
 }

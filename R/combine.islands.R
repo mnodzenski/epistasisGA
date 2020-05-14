@@ -25,6 +25,8 @@
 #'
 #' combined.res <- combine.islands("tmp")
 #'
+#' unlink("tmp", recursive = TRUE)
+#'
 #' @importFrom data.table rbindlist setkey setorder
 #' @export
 
