@@ -29,7 +29,8 @@
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
-#' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7), case.minus.comp, both.one.mat, chrom.mat)
+#' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
+#'                     case.minus.comp, both.one.mat, chrom.mat)
 #'
 #' @export
 
