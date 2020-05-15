@@ -9,6 +9,7 @@
 #'  for each permutation.
 #' @return A list containing the observed test statistic \code{obs.test.stat}, the p-value \code{pval},
 #' and a vector of permutation test statistics \code{perm.test.stats}.
+#' @importFrom stats cov
 #' @examples
 #'
 #' data(case)

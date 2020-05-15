@@ -39,6 +39,7 @@
 #' @importFrom  dplyr group_by summarize %>%
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
+#' @importFrom grDevices adjustcolor colorRampPalette
 #' @export
 
 network.plot <- function(results.df, repulse.rad = 1000, node.size = 25, graph.area = 100,
