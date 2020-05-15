@@ -29,17 +29,9 @@
 #' unlink("tmp_reg", recursive = TRUE)
 #'
 #' @importFrom data.table rbindlist setkey setorder `:=`
-#' @importFrom utils globalVariables
 #' @export
 
 combine.islands <- function(results.dir){
-
-  #define global variables made via data.table
-  if(getRversion() >= "2.15.1"){
-
-    globalVariables(c("chromosome", ".SD", "fitness.score"))
-
-  }
 
   #list all islands in the results data
   island.names <- list.files(results.dir, full.names = TRUE)
