@@ -14,8 +14,20 @@ is a list containing all permutation results data.tables, again using the unique
 for each permutation.}
 }
 \value{
-A list containing the observed test statistic \code{obs.test.stat}, the p-value \code{pval},
-and a vector of permutation test statistics \code{perm.test.stats}.
+A list containing the following:
+\itemize{
+ \item{"obs.test.stat"}{The observed Mahalanobis distance global test statistic.}
+ \item{"pval"}{The p-value for the global test.}
+ \item{"perm.test.stats"}{A vector of Mahalanobis distance global test statistics for the permuted datasets.}
+ \item{"element.test.stats"}{A vector of test statistics for the observed data, where each element of the vector corresponds to a specific chromosome size.}
+ \item{"element.pvals"}{A vector of p-values corresponding to the test statistics in \code{element.test.stats}.}
+ \item{"perm.elem.test.stat.mat"}{A matrix of test statistics for each of the permutation datasets. The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
+ \item{"obs.ks.vec"}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
+ \item{"perm.ks.mat"}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to permutations and columns correspond to chromosome sizes.}
+
+
+}observed test statistic \code{obs.test.stat}, the p-value \code{pval},
+a vector of permutation test statistics \code{perm.test.stats}, .
 }
 \description{
 This function runs a global test for significance of top chromosome results across a range of chromosome sizes.
@@ -26,6 +38,7 @@ data(case)
 data(dad)
 data(mom)
 library(Matrix)
+set.seed(1400)
 chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
