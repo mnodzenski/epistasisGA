@@ -77,7 +77,7 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
 
     final.edge.weights <- all.edge.weights %>%
       group_by(Var1, Var2) %>%
-      summarize(edge.weight = 1/max(fitness.score)) %>%
+      summarize(edge.weight = max(fitness.score)) %>%
       as.data.frame()
 
     node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
@@ -88,13 +88,13 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
       summarize(size = max(fitness.score)) %>%
       as.data.frame()
     node.scores$size <- node.size*(node.scores$size/max(node.scores$size))
-    st.weights <- (1/final.edge.weights$edge.weight)/max(1/final.edge.weights$edge.weight)
+    st.weights <- (final.edge.weights$edge.weight)/max(final.edge.weights$edge.weight)
 
   } else if (weight.fun == "mean"){
 
     final.edge.weights <- all.edge.weights %>%
       group_by(Var1, Var2) %>%
-      summarize(edge.weight = 1/mean(fitness.score)) %>%
+      summarize(edge.weight = mean(fitness.score)) %>%
       as.data.frame()
 
     node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
@@ -104,14 +104,14 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
       group_by(name) %>%
       summarize(size = mean(fitness.score)) %>%
       as.data.frame()
-    node.scores$size <- node.size*(node.scores$size/mean(node.scores$size))
-    st.weights <- (1/final.edge.weights$edge.weight)/mean(1/final.edge.weights$edge.weight)
+    node.scores$size <- node.size*(node.scores$size/max(node.scores$size))
+    st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
 
   } else if (weight.fun == "sum"){
 
     final.edge.weights <- all.edge.weights %>%
       group_by(Var1, Var2) %>%
-      summarize(edge.weight = 1/sum(fitness.score)) %>%
+      summarize(edge.weight = sum(fitness.score)) %>%
       as.data.frame()
 
     node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
@@ -121,14 +121,14 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
       group_by(name) %>%
       summarize(size = sum(fitness.score)) %>%
       as.data.frame()
-    node.scores$size <- node.size*(node.scores$size/sum(node.scores$size))
-    st.weights <- (1/final.edge.weights$edge.weight)/sum(1/final.edge.weights$edge.weight)
+    node.scores$size <- node.size*(node.scores$size/max(node.scores$size))
+    st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
 
   } else if (weight.fun == "logsum"){
 
     final.edge.weights <- all.edge.weights %>%
       group_by(Var1, Var2) %>%
-      summarize(edge.weight = 1/(log(sum(fitness.score)))) %>%
+      summarize(edge.weight = log(sum(fitness.score))) %>%
       as.data.frame()
 
     node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
@@ -138,8 +138,8 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
       group_by(name) %>%
       summarize(size = log(sum(fitness.score))) %>%
       as.data.frame()
-    node.scores$size <- node.size*(node.scores$size/log(sum(node.scores$size)))
-    st.weights <- (1/final.edge.weights$edge.weight)/log(sum(1/final.edge.weights$edge.weight))
+    node.scores$size <- node.size*(node.scores$size/max(node.scores$size))
+    st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
 
   }
 
@@ -147,15 +147,15 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
   network <- graph.data.frame(final.edge.weights[ , 1:2], directed = F, vertices = node.scores)
   E(network)$weight <- final.edge.weights$edge.weight
   E(network)$width <- st.weights
-  color_fun <- colorRampPalette(c('red', 'grey', 'white'))
+  color_fun <- colorRampPalette(c('white', 'grey', 'red'))
   required.colors <- as.integer(as.factor(E(network)$weight))
-  colors <- color_fun(length(required.colors))
+  colors <- color_fun(length(unique(required.colors)))
   edge.colors <- sapply(1:length(st.weights), function(x) adjustcolor(colors[required.colors][x], alpha.f = st.weights[x]))
   E(network)$color <- edge.colors
 
   color_fun <- colorRampPalette(c('white', 'grey', 'green'))
   required.colors <- as.integer(as.factor(V(network)$size))
-  colors <- color_fun(length(required.colors))
+  colors <- color_fun(length(unique(required.colors)))
   V(network)$color <- colors[required.colors]
   V(network)$shape <- node.shape
 
