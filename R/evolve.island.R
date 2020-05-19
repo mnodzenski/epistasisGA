@@ -13,7 +13,6 @@
 #' @param n.candidate.snps A scalar indicating the number eligible snps in the input data, after filtering out low MAF SNPs.
 #' @param chromosome.size The number of snps within each candidate solution.
 #' @param start.generation The generation at which this function should begin. If 1, a random set of chromosomes will be initialized. Otherwise the argument \code{chromosome.list} will be used.
-#' @param seed.val An integer indicating the seed to be used for the random samples.
 #' @param snp.chisq A vector of chi-square statistics, corresponding to tests of association between the column snp in \code{case.genetic.data} and disease status.
 #' @param original.col.numbers A vector of integers indicating the original column number of each snp in \code{case.genetic.data}, needed due to removal of low frequency snps in \code{preprocess.genetic.data}.
 #' @param all.converged A logical indicating whether all islands have previously converged to a solution.
@@ -70,7 +69,7 @@
 #'                    chrom.mat = chrom.mat, n.chromosomes = 10,
 #'                    n.candidate.snps = ncol(case.genetic.data),
 #'                    chromosome.size = 3, start.generation = 1,
-#'                    seed.val = 1, snp.chisq = snp.chisq,
+#'                    snp.chisq = snp.chisq,
 #'                    original.col.numbers = original.col.numbers,
 #'                    migration.interval = 5, max.generations = 10)
 #'
@@ -78,13 +77,12 @@
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
-#' @importFrom survival clogit
 #' @export
 
 evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genetic.data, case.comp.different,
                           case.minus.comp, both.one.mat, chrom.mat, n.chromosomes,
                           n.candidate.snps, chromosome.size, start.generation,
-                          seed.val, snp.chisq, original.col.numbers, all.converged = F,
+                          snp.chisq, original.col.numbers, all.converged = F,
                           n.different.snps.weight = 2, n.both.one.weight = 1,
                           weight.function = function(x) 2^x, migration.interval = 50, gen.same.fitness = 50,
                           max.generations = 500,
@@ -96,7 +94,6 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
                           sum.dif.vec.list = NULL, n.case.high.risk.thresh = 20){
 
   ### initialize groups of candidate solutions if generation 1 ###
-  set.seed(seed.val)
   generation <- start.generation
   generations <- min(start.generation + migration.interval - 1, max.generations)
 
@@ -134,7 +131,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
   ### iterate over generations ###
   while (generation <= generations & !all.converged){
 
-    #print(paste("seed val", seed.val, "generation", generation))
+    #print(paste("generation", generation))
 
     ### 1. compute the fitness score for each set of candidate snps ###
     #print("Step 1/9")
