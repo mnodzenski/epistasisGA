@@ -14,6 +14,7 @@ run.ga(
   resources = list(),
   cluster.template = NULL,
   n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
+  n.chunks = NULL,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function = identity,
@@ -28,7 +29,6 @@ run.ga(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  starting.seeds = NULL,
   n.case.high.risk.thresh = 20
 )
 }
@@ -50,6 +50,11 @@ run.ga(
 \item{cluster.template}{A character string of the path to the template file required for the cluster specified in \code{cluster.type}. Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque for argument \code{cluster.type}.}
 
 \item{n.workers}{An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if one of socket or multicore. Defaults to \code{parallel::detectCores - 2}.}
+
+\item{n.chunks}{An integer specifying the number of chunks jobs running island clusters should be split into when submitting jobs via \code{batchtools}. For multicore or socket \code{cluster.type}, this defaults to
+to \code{n.workers}. Otherwise, this defaults to 1 chunk, with the expectation that users of HPC clusters that support array jobs specify \code{chunks.as.arrayjobs = TRUE}
+in argument \code{resources}. For HPC clusters that do not support array jobs, the default setting should not be used. See \code{batchtools::submitJobs} for more information
+on job chunking.}
 
 \item{n.different.snps.weight}{The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.}
 
@@ -78,8 +83,6 @@ run.ga(
 \item{migration.generations}{An integer equal to the number of generations between migration among islands. \code{generations} must be an integer multiple of this value.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes}.}
-
-\item{starting.seeds}{A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 }
