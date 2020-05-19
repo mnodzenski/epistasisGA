@@ -310,7 +310,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                n.case.high.risk.thresh = n.case.high.risk.thresh)
 
      ### write results to file
-     out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.idx, ".rds"))
+     out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.number, ".rds"))
      saveRDS(island, out.file)
 
    }
