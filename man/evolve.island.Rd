@@ -16,7 +16,6 @@ evolve.island(
   n.candidate.snps,
   chromosome.size,
   start.generation,
-  seed.val,
   snp.chisq,
   original.col.numbers,
   all.converged = F,
@@ -63,8 +62,6 @@ evolve.island(
 \item{chromosome.size}{The number of snps within each candidate solution.}
 
 \item{start.generation}{The generation at which this function should begin. If 1, a random set of chromosomes will be initialized. Otherwise the argument \code{chromosome.list} will be used.}
-
-\item{seed.val}{An integer indicating the seed to be used for the random samples.}
 
 \item{snp.chisq}{A vector of chi-square statistics, corresponding to tests of association between the column snp in \code{case.genetic.data} and disease status.}
 
@@ -148,7 +145,7 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    chrom.mat = chrom.mat, n.chromosomes = 10,
                    n.candidate.snps = ncol(case.genetic.data),
                    chromosome.size = 3, start.generation = 1,
-                   seed.val = 1, snp.chisq = snp.chisq,
+                   snp.chisq = snp.chisq,
                    original.col.numbers = original.col.numbers,
                    migration.interval = 5, max.generations = 10)
 
