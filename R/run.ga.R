@@ -11,6 +11,10 @@
 #' @param resources A named list of key-value pairs to be subsituted into the template file, options available are specified in \code{batchtools::submitJobs}.
 #' @param cluster.template A character string of the path to the template file required for the cluster specified in \code{cluster.type}. Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque for argument \code{cluster.type}.
 #' @param n.workers An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if one of socket or multicore. Defaults to \code{parallel::detectCores - 2}.
+#' @param n.chunks An integer specifying the number of chunks jobs running island clusters should be split into when submitting jobs via \code{batchtools}. For multicore or socket \code{cluster.type}, this defaults to
+#'                 to \code{n.workers}. Otherwise, this defaults to 1 chunk, with the expectation that users of HPC clusters that support array jobs specify \code{chunks.as.arrayjobs = TRUE}
+#'                 in argument \code{resources}. For HPC clusters that do not support array jobs, the default setting should not be used. See \code{batchtools::submitJobs} for more information
+#'                 on job chunking.
 #' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
@@ -25,8 +29,8 @@
 #' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
 #' @param migration.generations An integer equal to the number of generations between migration among islands. \code{generations} must be an integer multiple of this value.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes}.
-#' @param starting.seeds A numeric vector of integers, corresponding to the seeds used to initiate specific island populations.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
+
 #'
 #' @return For each island, a list of two elements will be written to \code{results.dir}.
 #'         The first element of each list is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
@@ -61,12 +65,13 @@
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                    cluster.type, registryargs = list(file.dir = NA,  seed = 1500), resources = list(), cluster.template = NULL,
-                   n.workers = min(detectCores() - 2, n.islands/island.cluster.size), n.different.snps.weight = 2,
+                   n.workers = min(detectCores() - 2, n.islands/island.cluster.size), n.chunks = NULL,
+                   n.different.snps.weight = 2,
                    n.both.one.weight = 1, weight.function = identity, generations = 500, gen.same.fitness = 50,
                    tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
                    island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
-                   starting.seeds = NULL, n.case.high.risk.thresh = 20){
+                   n.case.high.risk.thresh = 20){
 
   ### make sure if island clusters exist, the migration interval is set properly ###
   if (island.cluster.size > 1 & migration.generations >= generations){
@@ -99,17 +104,6 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
   }
 
-  ### make sure, if starting seeds are provided, that enough are provided ###
-  if (!is.null(starting.seeds)){
-
-    if (length(starting.seeds) != n.islands){
-
-      stop("Number of starting seeds is not equal to the number of islands")
-
-    }
-
-  }
-
   #### grab the analysis data ###
   case.genetic.data <- data.list$case.genetic.data
   complement.genetic.data <- data.list$complement.genetic.data
@@ -139,13 +133,12 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
   }
 
-  ### initialize seeds for different islands ###
-  if (is.null(starting.seeds)){
 
-    starting.seeds <- 1:n.islands
-
-  }
-
+  ### determine if islands have already been evolved
+  clusters <- seq(1, n.islands, by = island.cluster.size)
+  n.clusters <- length(clusters)
+  cluster.ids <- seq_len(n.clusters)
+  clusters.to.run <- cluster.ids
   if (!dir.exists(results.dir)){
 
     dir.create(results.dir, recursive = T)
@@ -154,25 +147,19 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
     prev.islands <- list.files(results.dir)
     prev.islands <- prev.islands[! prev.islands %in% c("Old", "old") ]
-    prev.seeds <- as.numeric(gsub("island|.rds", "", prev.islands))
-    starting.seeds <- setdiff(starting.seeds, prev.seeds)
-    n.islands <- length(starting.seeds)
+    prev.clusters <- unique(as.numeric(gsub("cluster|.island[0-9].rds", "", prev.islands)))
+    clusters.to.run <- setdiff(clusters.to.run, prev.clusters)
+    n.clusters.to.run <- length(clusters.to.run)
 
-    if (n.islands == 0){
+    if (n.clusters.to.run == 0){
 
       stop("All islands have already been evolved")
-
-    } else {
-
-      starting.seeds <- setdiff(starting.seeds, prev.seeds)[1:n.islands]
 
     }
 
   }
 
-
   ### evolve populations over island clusters ###
-  first.seeds <- seq(1, n.islands, island.cluster.size)
 
   #make registry for submitting batch jobs
   registry <- do.call(makeRegistry, registryargs)
@@ -188,17 +175,24 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
     default = stop("unsupported cluster type '", cluster, "'")
   )
-  if (! cluster.type %in% c("socket", "multicore")){
 
-    chunk.size <- length(first.seeds)
+  #specify number of chunks
+  if (is.null(n.chunks)){
 
-  } else {
+    if (! cluster.type %in% c("socket", "multicore")){
 
-    chunk.size <- n.workers
+      n.chunks <- 1
+
+    } else {
+
+      n.chunks <- n.workers
+
+    }
 
   }
 
-  ids <- batchMap(function(cluster.start, starting.seeds, island.cluster.size,
+  #write jobs to registry
+  ids <- batchMap(function(cluster.number, island.cluster.size,
                            n.migrations, case.genetic.data, complement.genetic.data,
                            case.comp.different, case.minus.comp, both.one.mat,
                            chrom.mat, n.chromosomes, n.candidate.snps, chromosome.size,
@@ -208,14 +202,11 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                            max.generations, tol, n.top.chroms, initial.sample.duplicates,
                            snp.sampling.type, crossover.prop, n.case.high.risk.thresh){
 
-   cluster.seeds <- starting.seeds[cluster.start:(cluster.start + island.cluster.size - 1)]
-
    if (island.cluster.size > 1){
 
      ## initialize populations in the island cluster ##
-     island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+     island.populations <- lapply(seq_len(island.cluster.size), function(cluster.idx){
 
-       cluster.seed.val <- cluster.seeds[cluster.idx]
        evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
                      complement.genetic.data = complement.genetic.data,
                      case.comp.different = case.comp.different,
@@ -223,7 +214,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                      chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
                      n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
                      start.generation = 1,
-                     seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                     snp.chisq = snp.chisq,
                      original.col.numbers = original.col.numbers,
                      n.different.snps.weight = n.different.snps.weight,
                      n.both.one.weight = n.both.one.weight,
@@ -257,9 +248,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
        }
 
        ## evolving islands using the existing populations ##
-       island.populations <- lapply(1:length(cluster.seeds), function(cluster.idx){
+       island.populations <- lapply(seq_len(island.cluster.size), function(cluster.idx){
 
-         cluster.seed.val <- cluster.seeds[cluster.idx]
          island <- island.populations[[cluster.idx]]
          evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
                        complement.genetic.data = complement.genetic.data,
@@ -268,7 +258,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                        chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
                        n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
                        start.generation = island$generation,
-                       seed.val = cluster.seed.val, snp.chisq = snp.chisq,
+                       snp.chisq = snp.chisq,
                        original.col.numbers = original.col.numbers, all.converged = all.converged,
                        n.different.snps.weight = n.different.snps.weight,
                        n.both.one.weight = n.both.one.weight,
@@ -291,11 +281,10 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
      }
 
      ### write results to file
-     lapply(1:length(cluster.seeds), function(cluster.idx){
+     lapply(seq_len(island.cluster.size), function(cluster.idx){
 
-       cluster.seed.val <- cluster.seeds[cluster.idx]
        island <- island.populations[[cluster.idx]]
-       out.file <- file.path(results.dir, paste0("island", cluster.seed.val, ".rds"))
+       out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.idx, ".rds"))
        saveRDS(island, out.file)
 
      })
@@ -309,7 +298,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                chrom.mat = chrom.mat, n.chromosomes = n.chromosomes,
                                n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
                                start.generation = 1,
-                               seed.val = cluster.seeds, snp.chisq = snp.chisq,
+                               snp.chisq = snp.chisq,
                                original.col.numbers = original.col.numbers,
                                n.different.snps.weight = n.different.snps.weight,
                                n.both.one.weight = n.both.one.weight,
@@ -321,14 +310,13 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                n.case.high.risk.thresh = n.case.high.risk.thresh)
 
      ### write results to file
-     out.file <- file.path(results.dir, paste0("island", cluster.seeds, ".rds"))
+     out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.idx, ".rds"))
      saveRDS(island, out.file)
-
 
    }
 
-  }, cluster.start = first.seeds,
-     more.args = list(starting.seeds = starting.seeds, n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+  }, cluster.number = cluster.ids,
+     more.args = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
                                  complement.genetic.data = complement.genetic.data,
                                  case.comp.different = case.comp.different, island.cluster.size = island.cluster.size,
                                  case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
@@ -346,8 +334,12 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                  snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop,
                                  n.case.high.risk.thresh = n.case.high.risk.thresh),
     reg = registry)
-  ids[, chunk := chunk(job.id, chunk.size = chunk.size)]
-  submitJobs(ids = ids, reg = registry, resources = resources)
+
+  #chunk the jobs
+  ids[, chunk := chunk(job.id, n.chunks = n.chunks)]
+
+  #submit the jobs, using variable cluster.to.run to restrict submitted jobs to those not previously run
+  submitJobs(ids = ids[clusters.to.run, ], reg = registry, resources = resources)
 }
 
 
