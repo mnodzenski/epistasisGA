@@ -11,8 +11,9 @@ A data frame with 1000 rows and 100 variables
 case
 }
 \description{
-A dataset containing the counts of the alternate allele
+A simulated dataset containing the counts of the alternate allele
 for 100 SNPs for the affected child in 1000 simulated case-parent
-triads. Columns represent snps, rows are individuals.
+triads. Columns represent snps, rows are individuals. SNPs
+in columns 51, 52, 76, and 77 represent a true risk pathway.
 }
 \keyword{datasets}
