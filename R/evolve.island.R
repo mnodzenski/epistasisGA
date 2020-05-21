@@ -119,6 +119,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
       chromosome.list[[i]] <- snp.idx
 
     }
+
     fitness.score.mat <- matrix(rep(NA, max.generations*n.chromosomes), nrow = max.generations)
     top.fitness <- rep(0, max.generations)
     last.gens.equal <- F
@@ -193,7 +194,8 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
     unique.lower.idx <- unique(sampled.lower.idx)
 
     cross.overs <- rep(F, length(unique.lower.idx))
-    if (round(length(unique.lower.idx)*crossover.prop) %% 2 == 0){
+
+    if (round(length(unique.lower.idx)*crossover.prop) %% 2 == 0 | length(unique.lower.idx) == 1){
 
       cross.overs[sample(1:length(unique.lower.idx), size = round(length(unique.lower.idx)*crossover.prop))] <- TRUE
 
@@ -208,7 +210,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
 
     ### 6. Execute crossing over for the relevant chromosomes ###
     #print("Step 6/9")
-    if (any(cross.overs)){
+    if (sum(cross.overs) > 1){
 
       cross.over.positions <- match(unique.lower.idx[cross.overs], sampled.lower.idx)
       cross.over.starts <- seq(1, length(cross.over.positions), by = 2)
@@ -284,11 +286,23 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
 
       }
 
+    } else {
+
+      cross.over.positions <- 0
+
     }
 
     ### 7. Mutate the chromosomes that were not crossed over ###
     #print("Step 7/9")
-    mutation.positions <- (1:length(sampled.lower.chromosomes))[-cross.over.positions]
+    if (cross.over.positions[1] == 0){
+
+      mutation.positions <- (1:length(sampled.lower.chromosomes))
+
+    } else {
+
+      mutation.positions <- (1:length(sampled.lower.chromosomes))[-cross.over.positions]
+
+    }
     snps.for.mutation <- sample(1:n.candidate.snps, n.candidate.snps, prob = snp.chisq, replace = T)
     for (i in mutation.positions){
 
