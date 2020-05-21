@@ -17,7 +17,7 @@ run.ga(
   n.chunks = NULL,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = identity,
+  weight.function = function(x) 2^x,
   generations = 500,
   gen.same.fitness = 50,
   tol = 10^-6,
