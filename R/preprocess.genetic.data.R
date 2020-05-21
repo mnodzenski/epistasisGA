@@ -63,6 +63,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
     mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
     case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
+    complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
     chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
 
   } else if (!is.null(complement.genetic.data)){
