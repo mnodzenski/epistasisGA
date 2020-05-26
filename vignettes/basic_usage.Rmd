@@ -1,5 +1,5 @@
 ---
-title: "Use of the SNPGADGET package to identify multi-SNP effects in case-parent triad studies"
+title: "Use of the snpGADGET package to identify multi-SNP effects in case-parent triad studies"
 author: 
 - name: Michael Nodzenski
   affiliation: 
@@ -31,7 +31,7 @@ knitr::opts_chunk$set(tidy = FALSE,
 
 While methods for characterizing marginal relationships between individual SNPs and disease status have been well developed in high throughput genetic association studies of complex diseases, identifying joint associations between collections of genetic variants and disease remains challenging. To date, studies have overwhelmingly focused on detecting variant-disease associations on a SNP by SNP basis. Doing so allows researchers to scan millions of SNPs for evidence of association with disease, but only SNPs with large marginal disease associations can be identified, missing collections of SNPs with large joint disease associations despite small marginal associations. For many diseases, it is hypothesized that increased penetrance may result from the joint effect of variants at multiple susceptibility loci, suggesting methods focused on identifying multi-SNP associations may offer greater insight into the genetic architecture of complex diseases. 
 
-The SNPGADGET package presents one such approach. In this package, we implement the GADGET method (citation) for identifying multi-SNP disease associations in case-parent triad studies. Briefly, GADGET uses a genetic algorithm (GA) to identify collections of high penetrance SNPs. Genetic algorithms are a class of general purpose optimization algorithms particularly well suited to combinatorial optimization. In a genetic algorithm, optimal solutions are identified by mimicking the process of natural selection. In the first iteration of the algorithm, or 'generation', a set of potential solutions, collectively known as a 'population' with each component referred to as a 'chromosome', is initialized. Individual chromosomes are made up of finite sets of discrete elements, just as biological chromosomes are comprised of SNPs. A user defined function then assigns a 'fitness score' to each chromosome, with the fitness score constructed such that better solutions have higher fitness scores. Then, the chromosomes are subjected to 'crossing over', where component elements of different chromosomes are exchanged, or 'mutation', where component elements are arbitrarily altered, to generate a new population for the next generation. Chromosomes with higher fitness scores are preferentially selected to produce 'offspring', analogous to how organisms with higher fitness reproduce more effectively under natural selection. The scoring and mutation/crossing over process continues iteratively until stopping criteria have been achieved, hopefully resulting in an acceptable solution to the optimization problem. 
+The snpGADGET package presents one such approach. In this package, we implement the GADGET method (citation) for identifying multi-SNP disease associations in case-parent triad studies. Briefly, GADGET uses a genetic algorithm (GA) to identify collections of high penetrance SNPs. Genetic algorithms are a class of general purpose optimization algorithms particularly well suited to combinatorial optimization. In a genetic algorithm, optimal solutions are identified by mimicking the process of natural selection. In the first iteration of the algorithm, or 'generation', a set of potential solutions, collectively known as a 'population' with each component referred to as a 'chromosome', is initialized. Individual chromosomes are made up of finite sets of discrete elements, just as biological chromosomes are comprised of SNPs. A user defined function then assigns a 'fitness score' to each chromosome, with the fitness score constructed such that better solutions have higher fitness scores. Then, the chromosomes are subjected to 'crossing over', where component elements of different chromosomes are exchanged, or 'mutation', where component elements are arbitrarily altered, to generate a new population for the next generation. Chromosomes with higher fitness scores are preferentially selected to produce 'offspring', analogous to how organisms with higher fitness reproduce more effectively under natural selection. The scoring and mutation/crossing over process continues iteratively until stopping criteria have been achieved, hopefully resulting in an acceptable solution to the optimization problem. 
 
 In GADGET, the term 'chromosome' refers to a collection of SNPs we wish to examine for evidence of a strong multi-SNP association with disease. To be clear, these SNPs need not be members of the same biological chromosome. The details of the fitness score function and crossover/mutation operations are given in (citation), but in short, the intuitive aim of the fitness score is to assign high scores to collections of SNPs that are jointly transmitted to disease affected children (cases) much more frequently than they are not transmitted. 
 
@@ -127,11 +127,18 @@ Importantly, the function will write these results to the specified directory, s
 The function condenses island results in two ways. First, it simply concatenates the results across islands, so that if a particular set of SNPs is identified on more than one island, it will appear in more than one row in the condensed results. Second, the concatenated results are further condensed so that each row contains a unique collection of SNPs, with an additional column indicating the number of islands on which that collection was identified. These two types of results are both useful in different contexts. In both cases, the rows are sorted in decreasing order according to fitness score, or, more plainly, with the most interesting SNPs appearing at the top of the dataset. 
 
 ```{r}
+library(magrittr)
+library(knitr)
+library(kableExtra)
 #first method of condensing 
-knitr::kable(head(size4.combined.res$all.results))
+kable(head(size4.combined.res$all.results)) %>%
+  kable_styling() %>%
+  scroll_box(width = "750px")
 
 #second method of condensing 
-knitr::kable(head(size4.combined.res$unique.results))
+kable(head(size4.combined.res$unique.results)) %>%
+  kable_styling() %>%
+  scroll_box(width = "750px")
 
 ```
 
@@ -265,13 +272,15 @@ The `max.obs.fitness` element reports the maximum fitness score in the observed 
 As a final step in the analytic pipeline, we recommend users examine network plots of the results using function `network.plot`. This may be particularly useful when trying to determine the true number of SNPs involved in multi-SNP risk pathways. For instance, in the example above, the true risk pathway involves 4 SNPS, but we ran GADGET for chromosome sizes of 3 and 4. For chromosome size 3, we saw that many of the top identified collections of SNPs were subsets of the true 4 SNP pathway. If we didn't know the true pathway size was 4, a network plot might help make this clearer. We start by examining the plot for chromosome size 3:
 
 ```{r}
-network.plot(size3.combined.res$all.results, graph.area = 150)
+network.plot(size3.combined.res$all.results, graph.area = 200,
+             node.size = 40, vertex.label.cex = 0.7)
 ```
 
-By default, the size of a given SNP's node is proportional to the maximum fitness score of all chromosomes in which that SNP appears, as is the color, with larger fitness scores corresponding to greener color. Similarly, the width and color of the edge between a given pair of SNP nodes corresponds to the maximum fitness score among all chromosomes in which that pair appears, with wider edges and redder color corresponding to higher scores. Users should note `network.plot` allows users to specify other mechanisms for coloring and weighting graph nodes and edges (see package documentation). In this case, we immediately see the true 4 SNP pathway appears despite having mis-specified the true pathway size. The plot for chromosome size 4 also shows the same pathway SNPs:
+By default, the size of a given SNP's node is proportional to the maximum fitness score of all chromosomes in which that SNP appears, as is the color, with larger fitness scores corresponding to greener color. Similarly, the width and color of the edge between a given pair of SNP nodes corresponds to the maximum fitness score among all chromosomes in which that pair appears, with wider edges and redder color corresponding to higher scores. Users should note `network.plot` allows users to specify other mechanisms for coloring and weighting graph nodes and edges (see package documentation). In this case, we immediately see the true 4 SNP pathway appears despite having mis-specified the true pathway size. As a confirmation, the plot for chromosome size 4 also shows the same pathway SNPs:
 
 ```{r}
-network.plot(size4.combined.res$all.results, graph.area = 150)
+network.plot(size4.combined.res$all.results, graph.area = 200, 
+             node.size = 40, vertex.label.cex = 0.7)
 ```
 
 # Cleanup and sessionInfo() {.unnumbered}
