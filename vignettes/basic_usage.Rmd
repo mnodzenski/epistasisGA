@@ -2,7 +2,7 @@
 title: "Use of the snpGADGET package to identify multi-SNP effects in case-parent triad studies"
 author: "Michael Nodzenski"
 date: "May 26, 2020"
-package: snpGADGET
+package: knnGA
 output: 
   BiocStyle::html_document:
     toc: true
