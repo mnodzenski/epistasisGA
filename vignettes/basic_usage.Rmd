@@ -6,7 +6,7 @@ author:
   - Department of Biostatistics, University of North Carolina, Chapel Hill, NC
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
-  email: michael.nodezenski@gmail.com
+  email: michael.nodzenski@gmail.com
 date: "May 26, 2020"
 package: knnGA
 output: 
@@ -15,7 +15,7 @@ output:
     fig_width: 5
   BiocStyle::pdf_document: default
 vignette: >
-  %\VignetteIndexEntry{Basic Useage}
+  %\VignetteIndexEntry{Basic Usage}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}  
 ---
@@ -41,7 +41,7 @@ As a final note, users should be aware this method does not currently scale geno
 
 ## Load Data
 
-We begin our example usage of GADGET by loading a simualted example of case-parent triad data. 
+We begin our example usage of GADGET by loading a simulated example of case-parent triad data. 
 
 ```{r}
 library(knnGA)
