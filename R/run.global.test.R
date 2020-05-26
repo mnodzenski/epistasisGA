@@ -4,8 +4,8 @@
 #'
 #' @param results.list A list of length d, where d is the number of chromosome sizes to be included in a global test.
 #'  Each element of the list must itself be a list whose first element \code{observed.data} is a data.table containing
-#'  the unique chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
-#'  is a list containing all permutation results data.tables, again using the unique chromosome results output by \code{combine.islands}
+#'  the all chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
+#'  is a list containing all permutation results data.tables, again using all chromosome results output by \code{combine.islands}
 #'  for each permutation.
 #' @return A list containing the following:
 #' \itemize{
@@ -17,7 +17,9 @@
 #'  \item{"perm.elem.test.stat.mat"}{A matrix of test statistics for each of the permutation datasets. The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
 #'  \item{"obs.ks.vec"}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
 #'  \item{"perm.ks.mat"}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to permutations and columns correspond to chromosome sizes.}
-#'
+#'  \item{"max.obs.fitness"}{A vector of the maximum fitness score for each chromosome size in the observed data.}
+#'  \item{"max.perm.fitness"}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
+#'  \item{"max.order.pvals"}{A vector of p-values for the maximum observed order statistics for each chromosome size. P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
 #'
 #' }observed test statistic \code{obs.test.stat}, the p-value \code{pval},
 #' a vector of permutation test statistics \code{perm.test.stats}, .
@@ -121,16 +123,16 @@
 #'  ## create list of results
 #'
 #'  #chromosome size 2 results
-#'  chrom2.list <- list(observed.data = combined.res2$unique.results,
-#'                     permutation.list = list(p1.combined.res2$unique.results,
-#'                                             p2.combined.res2$unique.results,
-#'                                             p3.combined.res2$unique.results))
+#'  chrom2.list <- list(observed.data = combined.res2$all.results,
+#'                     permutation.list = list(p1.combined.res2$all.results,
+#'                                             p2.combined.res2$all.results,
+#'                                             p3.combined.res2$all.results))
 #'
 #'  #chromosome size 3 results
-#'  chrom3.list <- list(observed.data = combined.res3$unique.results,
-#'                     permutation.list = list(p1.combined.res3$unique.results,
-#'                                             p2.combined.res3$unique.results,
-#'                                             p3.combined.res3$unique.results))
+#'  chrom3.list <- list(observed.data = combined.res3$all.results,
+#'                     permutation.list = list(p1.combined.res3$all.results,
+#'                                             p2.combined.res3$all.results,
+#'                                             p3.combined.res3$all.results))
 #'
 #'  final.results <- list(chrom2.list, chrom3.list)
 #'
@@ -220,7 +222,7 @@ run.global.test <- function(results.list){
   if (n.perms.greater == 0){
 
     pval <- 0
-    suggested <- 1/length(perm.mahala)
+    suggested <- paste0("1/", length(perm.mahala))
     print(paste("No permutation Mahalanobis distances greater than observed, consider setting p-value to", suggested))
 
   } else {
@@ -249,11 +251,38 @@ run.global.test <- function(results.list){
 
   })
 
+  #maximum permutation based fitness scores
+  max.perm.fitness <- sapply(results.list, function(chrom.size.res){
+
+    perm.list <- chrom.size.res$permutation.list
+    sapply(perm.list, function(permutation) max(permutation$fitness.score))
+
+  })
+
+  #maximum observed fitness scores
+  max.obs.fitness <- sapply(results.list, function(chrom.size.res){
+
+    obs.data <- chrom.size.res$observed.data
+    max(obs.data$fitness.score)
+
+  })
+
+  #pvals for max order statistics
+  max.order.pvals <- lapply(seq_along(max.obs.fitness), function(chrom.size){
+
+    max.obs <- max.obs.fitness[chrom.size]
+    max.perms <- max.perm.fitness[[chrom.size]]
+    pval <- sum(max.perms > max.obs)/length(max.perms)
+    pval
+
+  })
+
   #return results list
   res.list <- list(obs.test.stat = obs.mahala, pval = pval, perm.test.stats = perm.mahala,
                    element.test.stats = obs.elements, element.pvals = element.pvals,
                    perm.elem.test.stat.mat = perm.elem.mat, obs.ks.vec = obs.ks.vec,
-                   perm.ks.mat = perm.ks.mat)
+                   perm.ks.mat = perm.ks.mat, max.obs.fitness = max.obs.fitness,
+                   max.perm.fitness = max.perm.fitness, max.order.pvals = max.order.pvals)
   return(res.list)
 
 }
