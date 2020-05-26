@@ -268,7 +268,7 @@ run.global.test <- function(results.list){
   })
 
   #pvals for max order statistics
-  max.order.pvals <- lapply(seq_along(max.obs.fitness), function(chrom.size){
+  max.order.pvals <- sapply(seq_along(max.obs.fitness), function(chrom.size){
 
     max.obs <- max.obs.fitness[chrom.size]
     max.perms <- max.perm.fitness[[chrom.size]]
