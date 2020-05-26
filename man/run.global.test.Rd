@@ -9,8 +9,8 @@ run.global.test(results.list)
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
 Each element of the list must itself be a list whose first element \code{observed.data} is a data.table containing
-the unique chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
-is a list containing all permutation results data.tables, again using the unique chromosome results output by \code{combine.islands}
+the all chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
+is a list containing all permutation results data.tables, again using all chromosome results output by \code{combine.islands}
 for each permutation.}
 }
 \value{
@@ -24,7 +24,9 @@ A list containing the following:
  \item{"perm.elem.test.stat.mat"}{A matrix of test statistics for each of the permutation datasets. The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
  \item{"obs.ks.vec"}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
  \item{"perm.ks.mat"}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to permutations and columns correspond to chromosome sizes.}
-
+ \item{"max.obs.fitness"}{A vector of the maximum fitness score for each chromosome size in the observed data.}
+ \item{"max.perm.fitness"}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
+ \item{"max.order.pvals"}{A vector of p-values for the maximum observed order statistics for each chromosome size. P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
 
 }observed test statistic \code{obs.test.stat}, the p-value \code{pval},
 a vector of permutation test statistics \code{perm.test.stats}, .
@@ -130,16 +132,16 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
  ## create list of results
 
  #chromosome size 2 results
- chrom2.list <- list(observed.data = combined.res2$unique.results,
-                    permutation.list = list(p1.combined.res2$unique.results,
-                                            p2.combined.res2$unique.results,
-                                            p3.combined.res2$unique.results))
+ chrom2.list <- list(observed.data = combined.res2$all.results,
+                    permutation.list = list(p1.combined.res2$all.results,
+                                            p2.combined.res2$all.results,
+                                            p3.combined.res2$all.results))
 
  #chromosome size 3 results
- chrom3.list <- list(observed.data = combined.res3$unique.results,
-                    permutation.list = list(p1.combined.res3$unique.results,
-                                            p2.combined.res3$unique.results,
-                                            p3.combined.res3$unique.results))
+ chrom3.list <- list(observed.data = combined.res3$all.results,
+                    permutation.list = list(p1.combined.res3$all.results,
+                                            p2.combined.res3$all.results,
+                                            p3.combined.res3$all.results))
 
  final.results <- list(chrom2.list, chrom3.list)
 
