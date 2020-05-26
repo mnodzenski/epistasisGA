@@ -1,5 +1,5 @@
 ---
-title: "Use of the snpGADGET package to identify multi-SNP effects in case-parent triad studies"
+title: "Use of the SNPGADGET package to identify multi-SNP effects in case-parent triad studies"
 author: 
 - name: Michael Nodzenski
   affiliation: 
@@ -31,7 +31,7 @@ knitr::opts_chunk$set(tidy = FALSE,
 
 While methods for characterizing marginal relationships between individual SNPs and disease status have been well developed in high throughput genetic association studies of complex diseases, identifying joint associations between collections of genetic variants and disease remains challenging. To date, studies have overwhelmingly focused on detecting variant-disease associations on a SNP by SNP basis. Doing so allows researchers to scan millions of SNPs for evidence of association with disease, but only SNPs with large marginal disease associations can be identified, missing collections of SNPs with large joint disease associations despite small marginal associations. For many diseases, it is hypothesized that increased penetrance may result from the joint effect of variants at multiple susceptibility loci, suggesting methods focused on identifying multi-SNP associations may offer greater insight into the genetic architecture of complex diseases. 
 
-The snpGADGET package presents one such approach. In this package, we implement the GADGET method (citation) for identifying multi-snp disease associations in case-parent triad studies. Briefly, GADGET uses a genetic algorithm (GA) to identify collections of high penetrance SNPs. Genetic algorithms are a class of general purpose optimization algorithms particularly well suited to combinatorial optimization. In a genetic algorithm, optimal solutions are identified by mimicking the process of natural selection. In the first iteration of the algorithm, or 'generation', a set of potential solutions, collectively known as a 'population' with each component referred to as a 'chromosome', is initialized. Individual chromosomes are made up of finite sets of discrete elements, just as biological chromosomes are comprised of SNPs. A user defined function then assigns a 'fitness score' to each chromosome, with the fitness score constructed such that better solutions have higher fitness scores. Then, the chromosomes are subjected to 'crossing over', where component elements of different chromosomes are exchanged, or 'mutation', where component elements are arbitrarily altered, to generate a new population for the next generation. Chromosomes with higher fitness scores are preferentially selected to produce 'offspring', analogous to how organisms with higher fitness reproduce more effectively under natural selection. The scoring and mutation/crossing over process continues iteratively until stopping criteria have been achieved, hopefully resulting in an acceptable solution to the optimization problem. 
+The SNPGADGET package presents one such approach. In this package, we implement the GADGET method (citation) for identifying multi-SNP disease associations in case-parent triad studies. Briefly, GADGET uses a genetic algorithm (GA) to identify collections of high penetrance SNPs. Genetic algorithms are a class of general purpose optimization algorithms particularly well suited to combinatorial optimization. In a genetic algorithm, optimal solutions are identified by mimicking the process of natural selection. In the first iteration of the algorithm, or 'generation', a set of potential solutions, collectively known as a 'population' with each component referred to as a 'chromosome', is initialized. Individual chromosomes are made up of finite sets of discrete elements, just as biological chromosomes are comprised of SNPs. A user defined function then assigns a 'fitness score' to each chromosome, with the fitness score constructed such that better solutions have higher fitness scores. Then, the chromosomes are subjected to 'crossing over', where component elements of different chromosomes are exchanged, or 'mutation', where component elements are arbitrarily altered, to generate a new population for the next generation. Chromosomes with higher fitness scores are preferentially selected to produce 'offspring', analogous to how organisms with higher fitness reproduce more effectively under natural selection. The scoring and mutation/crossing over process continues iteratively until stopping criteria have been achieved, hopefully resulting in an acceptable solution to the optimization problem. 
 
 In GADGET, the term 'chromosome' refers to a collection of SNPs we wish to examine for evidence of a strong multi-SNP association with disease. To be clear, these SNPs need not be members of the same biological chromosome. The details of the fitness score function and crossover/mutation operations are given in (citation), but in short, the intuitive aim of the fitness score is to assign high scores to collections of SNPs that are jointly transmitted to disease affected children (cases) much more frequently than they are not transmitted. 
 
@@ -41,7 +41,7 @@ As a final note, users should be aware this method does not currently scale geno
 
 ## Load Data
 
-We begin our example usage of GADGET by loading an example case-parent triad data. 
+We begin our example usage of GADGET by loading a simualted example of case-parent triad data. 
 
 ```{r}
 library(knnGA)
@@ -50,7 +50,7 @@ data(dad)
 data(mom)
 ```
 
-These data were simulated based on a case-parent triad study of children with orofacial-clefts. We have a separate dataset for mothers, fathers, and the affected children. The rows correspond to families, and the columns correspond to SNPs. Because this is a small example, each of these datasets includes only `r ncol(case)` SNPs. The SNPs in columns 51, 52, 76, and 77 are a true risk pathway, where the joint combination of these variants substantially increases the penetrance compared to all other genotypes with the joint association far exceeding the sum of the marginals.  
+These data were simulated based on a case-parent triad study of children with orofacial-clefts. We have a separate dataset for mothers, fathers, and affected children. The rows correspond to families, and the columns correspond to SNPs. Because this is a small example, each of these datasets includes only `r ncol(case)` SNPs. The SNPs in columns 51, 52, 76, and 77 are a true risk pathway, where the joint combination of variants substantially increases the penetrance compared to other genotypes.  
 
 ## Pre-process Data
 
@@ -73,9 +73,9 @@ pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    chrom.mat = chrom.mat)
 ```
 
-This function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP, based on the observed frequency in the mothers and fathers. Any SNPs in the input data where a '1' corresponds to one copy of the major allele are re-coded so that '1' corresponds to one copy of the minor allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 2.5\% by default, are filtered. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each requisite SNP assuming an additive model. These test statistics are incorporated into the GADGET algorithm in a later step (see (citation) for details). 
+This function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP based on the observed frequency in the mothers and fathers. Any SNPs in the input data where a '1' corresponds to one copy of the major allele are re-coded so that '1' corresponds to one copy of the minor allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 2.5\% by default, are filtered. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each requisite SNP assuming an additive model. These test statistics are incorporated into the GADGET algorithm in a later step (see (citation) for details). 
 
-## Run GADGET for Observed Data
+## Run GADGET on Observed Data
 
 We now use GADGET to identify interesting collections of SNPs that appear to jointly increase the disease penetrance via the `run.ga` function. The method requires a number of tuning parameters, but the function defaults are a good starting point. More information regarding these parameters can be found in the package documentation and the paper describing the method (citation). Briefly, the GADGET method requires the user to pre-specify the number of SNPs that are jointly associated with disease status. This is controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, typically 2-6. For this simple example, however, we will use only examine sizes 3 and 4.  
 
@@ -93,7 +93,7 @@ run.ga(pp.list, n.chromosomes = 5, chromosome.size = 4,
        n.migrations = 2)
 ```
 
-Note that `run.ga` does not output results directly to the R session, it will instead write results to the directory specified in `results.dir`. Furthermore, GADGET uses a technique known as an island model genetic algorithm to identify potentially interesting collections of SNPs. The details of this technique are described fully in (citation), but users will note that results for each island (parameter `n.islands`) are written separately to `results.dir`. 
+Note that `run.ga` does not output results directly to the R session, it will instead write results to the directory specified in `results.dir`. Furthermore, GADGET uses a technique known as an island model to identify potentially interesting collections of SNPs. The details of this technique are described fully in (citation), but users will note that results for each island (parameter `n.islands`) are written separately to `results.dir`. 
 
 The `cluster.type` and `registry.args` parameters are important. For the above example, the "interactive" cluster type indicates that all islands run sequentially in the R session. However this is not how we anticipate `run.ga` will be used in most cases. Rather, we strongly recommend this function be used with high performance computing clusters to avoid prohibitively long run-times. An example (not run) of this type of command can be seen below: 
 
@@ -135,9 +135,9 @@ knitr::kable(head(size4.combined.res$unique.results))
 
 ```
 
-In general, the `unique.results` object is more useful for examining interesting sets of SNPs as it contains all of the information in the `all.results` object, just in a more easily digestible form. In this case, we see that the SNPs corresponding to columns 51, 52, 76, and 77 are the top collection, or, more plainly, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status beyond the sum of its component marginal associations. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
+In general, the `unique.results` object is more useful for examining interesting sets of SNPs as it contains all of the information in the `all.results` object, just in a more easily digestible form. In this case, we see that the SNPs corresponding to columns 51, 52, 76, and 77 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
 
-An important but subtle component of the results users should note are the `diff.vec` columns. The magnitude of these values are not particularly important, but the sign is useful. A positive value for a given snp indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. In the case of the risk pathway SNPs, all values are positive, indicating the risk pathway involves having at copies of the minor allele for all 4 SNPs. If any of these coefficients were negative, the interpretation would be similar. For instance, if the `snp1.diff.vec` value were negative, and the remaining values positive, this would imply the proposed risk pathway includes having copies of the major allele for SNP 1 and copies of the minor alleles for SNPs 2-4.      
+An important but subtle component of the results users should note are the `diff.vec` columns. The magnitude of these values are not particularly important, but the sign is useful. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. In the case of the risk pathway SNPs, all values are positive, indicating the risk pathway requires having copies of the minor allele for all 4 SNPs. If any of these coefficients were negative, the interpretation would be similar. For instance, if the `SNP1.diff.vec` value were negative and the remaining values positive, this would imply the proposed risk pathway includes having copies of the major allele for SNP 1 and copies of the minor alleles for SNPs 2-4.      
 
 ## Create Permuted Datasets
 
@@ -165,7 +165,7 @@ preprocess.lists <- lapply(perm.data.list, function(permutation){
 
 ```
 
-Then, we run GADGET on each permuted dataset for each chromosome size:
+Then, we run GADGET on each permuted dataset for each chromosome size and condense the results:
 
 ```{r, results = "hide"}
 #specify chromosome sizes
@@ -236,7 +236,7 @@ global.test.res$pval
 
 ```
 
-We see the observed Mahalanobis distance is `r global.test.res$obs.test.stat` with associated, permutation based p-value `r global.test.res$pval`. In cases where the p-value is zero, users may wish to report the p-value as $\frac{1}{\#\:permutations}$ or $\lt\frac{1}{\#\:permutations}$. Above, this would be $\frac{1}{4}$. Note that this underscores the need to run as many permutations as is computationally feasible in real applications.   
+We see the observed Mahalanobis distance is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. In cases where the p-value is zero, users may wish to report the p-value as $\frac{1}{\#\:permutations}$ or $\lt\frac{1}{\#\:permutations}$. Above, this would be $\frac{1}{4}$. Note that this underscores the need to run as many permutations as is computationally feasible in real applications.   
 
 Regardless of result, it is crucial that users are clear about what the test implies. The null hypothesis is the observed KS-vector is drawn from the null distribution. In cases where we reject the null hypothesis, of course the conclusion is the observed vector is not drawn from the null distribution. However, to be very clear, rejecting the null does not necessarily imply the observed fitness scores are consistently higher than the null permutation based scores. That is one reason the null may be rejected, but not the only reason. For instance, it is possible that the null will be rejected solely because the covariance pattern among chromosome sizes for the observed data differ from the permutation based estimate. Therefore, to best characterize results, it is incumbent on users to closely examine results beyond the global test. 
 
