@@ -1,22 +1,33 @@
 ---
 title: "Use of the snpGADGET package to identify multi-SNP effects in case-parent triad studies"
-author: "Michael Nodzenski"
+author: 
+- name: Michael Nodzenski
+  affiliation: 
+  - Department of Biostatistics, University of North Carolina, Chapel Hill, NC
+  - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
+  - National Institute of Environmental Health Sciences, Research Triangle Park, NC
+  email: michael.nodezenski@gmail.com
 date: "May 26, 2020"
 package: knnGA
 output: 
   BiocStyle::html_document:
-    toc: true
+    toc_float: true
+    fig_width: 5
+  BiocStyle::pdf_document: default
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Basic Useage}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}  
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = FALSE,
+                      dev = "png",
+                      message = FALSE, error = FALSE, warning = TRUE)
+```	
 
-## Introduction 
+# Introduction 
 
 While methods for characterizing marginal relationships between individual SNPs and disease status have been well developed in high throughput genetic association studies of complex diseases, identifying joint associations between collections of genetic variants and disease remains challenging. To date, studies have overwhelmingly focused on detecting variant-disease associations on a SNP by SNP basis. Doing so allows researchers to scan millions of SNPs for evidence of association with disease, but only SNPs with large marginal disease associations can be identified, missing collections of SNPs with large joint disease associations despite small marginal associations. For many diseases, it is hypothesized that increased penetrance may result from the joint effect of variants at multiple susceptibility loci, suggesting methods focused on identifying multi-SNP associations may offer greater insight into the genetic architecture of complex diseases. 
 
@@ -26,9 +37,9 @@ In GADGET, the term 'chromosome' refers to a collection of SNPs we wish to exami
 
 As a final note, users should be aware this method does not currently scale genome wide, but it does accommodate larger numbers of input SNPs than comparable methods. In our simulations, we have 10,000 input SNPs, but users are encouraged to experiment with larger numbers if desired. 
 
-## Basic Usage 
+# Basic Usage 
 
-### Step 1. Load Data
+## Load Data
 
 We begin our example usage of GADGET by loading an example case-parent triad data. 
 
@@ -41,7 +52,7 @@ data(mom)
 
 These data were simulated based on a case-parent triad study of children with orofacial-clefts. We have a separate dataset for mothers, fathers, and the affected children. The rows correspond to families, and the columns correspond to SNPs. Because this is a small example, each of these datasets includes only `r ncol(case)` SNPs. The SNPs in columns 51, 52, 76, and 77 are a true risk pathway, where the joint combination of these variants substantially increases the penetrance compared to all other genotypes with the joint association far exceeding the sum of the marginals.  
 
-### Step 2. Pre-process Data
+## Pre-process Data
 
 The second step in the analysis pipeline is to pre-process the data. We begin pre-processing by constructing a matrix to indicate whether a given pair of SNPs are from the same biological chromosome, with `TRUE` indicating presence on the same chromosome and FALSE otherwise. For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the matrix as follows:
 
@@ -64,7 +75,7 @@ pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
 
 This function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP, based on the observed frequency in the mothers and fathers. Any SNPs in the input data where a '1' corresponds to one copy of the major allele are re-coded so that '1' corresponds to one copy of the minor allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 2.5\% by default, are filtered. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each requisite SNP assuming an additive model. These test statistics are incorporated into the GADGET algorithm in a later step (see (citation) for details). 
 
-### Step 3. Run GADGET for Observed Data
+## Run GADGET for Observed Data
 
 We now use GADGET to identify interesting collections of SNPs that appear to jointly increase the disease penetrance via the `run.ga` function. The method requires a number of tuning parameters, but the function defaults are a good starting point. More information regarding these parameters can be found in the package documentation and the paper describing the method (citation). Briefly, the GADGET method requires the user to pre-specify the number of SNPs that are jointly associated with disease status. This is controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, typically 2-6. For this simple example, however, we will use only examine sizes 3 and 4.  
 
@@ -92,9 +103,9 @@ run.ga(pp.list, n.chromosomes = 20, chromosome.size = 3, results.dir = "size3_re
 
 ```
 
-The `cluster.template` must be properly calibrated to the user's HPC cluster. Packages `batchtools` and `BiocParallel` both contain good documentation on how to construct these files. It is also possible to run `run.ga` on a single machine with multiple cores (see `run.ga` documentation). 
+The `cluster.template` must be properly calibrated to the user's HPC cluster. Packages `r CRANpkg("batchtools")` and `r Biocpkg("BiocParallel")` both contain good documentation on how to construct these files. It is also possible to run `run.ga` on a single machine with multiple cores (see `run.ga` documentation). 
 
-Regardless of the chosen `cluster.type`, `run.ga` uses the functionality from package `batchtools` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.ga` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `BiocParallel`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `batchtools`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` different sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.ga` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
+Regardless of the chosen `cluster.type`, `run.ga` uses the functionality from package `r CRANpkg("batchtools")` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.ga` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `r Biocpkg("BiocParallel")`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `r CRANpkg("batchtools")`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` different sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.ga` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
 
 Once users have confirmed `run.ga` has completed and run properly, the sets of results across islands should be condensed using function `combine.islands`:
 
@@ -121,7 +132,7 @@ In general, the `unique.results` object is more useful for examining interesting
 
 An important but subtle component of the results users should note are the `diff.vec` columns. The magnitude of these values are not particularly important, but the sign is useful. A positive value for a given snp indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. In the case of the risk pathway SNPs, all values are positive, indicating the risk pathway involves having at copies of the minor allele for all 4 SNPs. If any of these coefficients were negative, the interpretation would be similar. For instance, if the `snp1.diff.vec` value were negative, and the remaining values positive, this would imply the proposed risk pathway includes having copies of the major allele for SNP 1 and copies of the minor alleles for SNPs 2-4.      
 
-### Step 4.Create Permuted Datasets
+## Create Permuted Datasets
 
 Of course, in real studies we do not know the identity of true risk pathways. We would therefore like a way to determine whether the results from the observed data are consistent with what we expect under the null hypothesis of no association between any input SNPs and disease status. We do so via permutation testing. The first step is to create a number of permuted datasets using the `permute.dataset` command. Here we create 4 different permuted datasets. In real applications, users are advised to create at least 100, more if computationally feasible. 
 
@@ -132,7 +143,7 @@ perm.data.list <- permute.dataset(case, father.genetic.data = dad,
 
 ```
 
-### Step 5. Run GADGET on Permuted Datasets
+## Run GADGET on Permuted Datasets
 
 Once we have created the permuted datasets, for each permutation, we perform exactly the same sequence of analyses shown above. Users should note this step is by far the most time consuming of the workflow and almost certainly requires access to a computing cluster. However, since this vignette provides only a very small example, we are able to run the analyses locally. We begin by pre-processing the permuted datasets:
 
@@ -186,7 +197,7 @@ perm.res.list <- lapply(perm.res.dirs, function(perm.res.dir){
 
 ```
 
-### Step 6. Run Global Test of Association 
+## Run Global Test of Association 
 
 Now we are ready to more formally examine whether our results are consistent with what would be expected under the null hypothesis of no association between the input variants and disease status. Our first step is to run a global test across all chromosome sizes examining whether the fitness scores from the observed data are drawn from the distribution expected under the null. The details of the global test are described in (citation). Briefly, for each chromosome size, we use the null permutations to estimate the null fitness score CDF via the mean eCDF. Then, for the observed data and each permutation, for each chromosome size, we compute a one-sided Kolmogorov Smirnov test statistic of the null hypothesis that the observed CDF is not more than the null CDF. Intuitively, we are interested in whether the observed fitness scores are consistently higher than the null permutation based scores. If there are lots of observed fitness scores higher than the permutation scores, the observed fitness score CDF will be much lower than the null CDF for at least some fitness scores, yielding a large one-sided KS-statistic. Otherwise, the KS-statistics should be small.  
 
@@ -238,7 +249,7 @@ global.test.res$max.order.pvals
 
 The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the proportion of permutations whose maximum fitness score exceeds the observed fitness score. In the example above, we see the maximum observed fitness score exceeds all of the permutation maxima for each chromosome size. Again, given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
 
-### Step 7. Visualize Results 
+## Visualize Results 
 
 As a final step in the analytic pipeline, we recommend users examine network plots of the results using function `network.plot`. This may be particularly useful when trying to determine the true number of SNPs involved in multi-SNP risk pathways. For instance, in the example above, the true risk pathway involves 4 SNPS, but we ran GADGET for chromosome sizes of 3 and 4. For chromosome size 3, we saw that many of the top identified collections of SNPs were subsets of the true 4 SNP pathway. If we didn't know the true pathway size was 4, a network plot might help make this clearer. We start by examining the plot for chromosome size 3:
 
@@ -252,15 +263,19 @@ By default, the size of a given SNP's node is proportional to the maximum fitnes
 network.plot(size4.combined.res$all.results)
 ```
 
-### Cleanup and sessionInfo()
+# Cleanup and sessionInfo() {.unnumbered}
 
-```{r}
+```{r, results="hide"}
 #remove all example directories 
 perm.reg.dirs <- as.vector(outer(paste0("perm", 1:4), 
                                  paste0("_size", chrom.sizes, "_reg"), paste0))
 lapply(c("size3_res", "size3_reg", "size4_res", "size4_reg", perm.reg.dirs, perm.res.dirs), 
        unlink, recursive = TRUE)
 
+
+```
+
+```{r}
 #session information 
 sessionInfo()
 
