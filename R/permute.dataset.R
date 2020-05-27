@@ -18,38 +18,38 @@
 #'                  n.permutations = 2)
 #'
 #' @export
-permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-                                    mother.genetic.data = NULL, n.permutations = 100){
-
-  #make sure the appropriate genetic data is included
-  if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
-
-    stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
-
-  }
-
-  ### Compute the complement data if not provided ###
-  if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)){
-
-    complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
-
-  }
-
-  ### permute the data ###
-  n.families <- nrow(case.genetic.data)
-  permuted.data.list <- lapply(seq_len(n.permutations), function(x){
-
-    perm <- as.logical(rbinom(n.families,1,0.5))
-    case.perm <- case.genetic.data
-    comp.perm <- complement.genetic.data
-    comp.copy <- complement.genetic.data
-    case.copy <- case.genetic.data
-    case.perm[perm, ] <- comp.copy[perm, ]
-    comp.perm[perm, ] <- case.copy[perm, ]
-    list(case = case.perm, comp = comp.perm)
-
-  })
-  names(permuted.data.list) <- paste0("permutation", seq_len(n.permutations))
-  permuted.data.list
-
+permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, 
+    mother.genetic.data = NULL, n.permutations = 100) {
+    
+    # make sure the appropriate genetic data is included
+    if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)) {
+        
+        stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
+        
+    }
+    
+    ### Compute the complement data if not provided ###
+    if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)) {
+        
+        complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
+        
+    }
+    
+    ### permute the data ###
+    n.families <- nrow(case.genetic.data)
+    permuted.data.list <- lapply(seq_len(n.permutations), function(x) {
+        
+        perm <- as.logical(rbinom(n.families, 1, 0.5))
+        case.perm <- case.genetic.data
+        comp.perm <- complement.genetic.data
+        comp.copy <- complement.genetic.data
+        case.copy <- case.genetic.data
+        case.perm[perm, ] <- comp.copy[perm, ]
+        comp.perm[perm, ] <- case.copy[perm, ]
+        list(case = case.perm, comp = comp.perm)
+        
+    })
+    names(permuted.data.list) <- paste0("permutation", seq_len(n.permutations))
+    permuted.data.list
+    
 }
