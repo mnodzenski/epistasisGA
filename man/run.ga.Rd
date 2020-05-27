@@ -22,7 +22,7 @@ run.ga(
   gen.same.fitness = 50,
   tol = 10^-6,
   n.top.chroms = 100,
-  initial.sample.duplicates = F,
+  initial.sample.duplicates = FALSE,
   snp.sampling.type = "chisq",
   crossover.prop = 0.8,
   n.islands = 1000,
