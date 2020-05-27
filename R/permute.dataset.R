@@ -37,7 +37,7 @@ permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, f
 
   ### permute the data ###
   n.families <- nrow(case.genetic.data)
-  permuted.data.list <- lapply(1:n.permutations, function(x){
+  permuted.data.list <- lapply(seq_len(n.permutations), function(x){
 
     perm <- as.logical(rbinom(n.families,1,0.5))
     case.perm <- case.genetic.data
@@ -49,7 +49,7 @@ permute.dataset <- function(case.genetic.data, complement.genetic.data = NULL, f
     list(case = case.perm, comp = comp.perm)
 
   })
-  names(permuted.data.list) <- paste0("permutation", 1:n.permutations)
+  names(permuted.data.list) <- paste0("permutation", seq_len(n.permutations))
   permuted.data.list
 
 }

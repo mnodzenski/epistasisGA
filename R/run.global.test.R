@@ -175,7 +175,7 @@ run.global.test <- function(results.list){
     #compute the mean eCDF from the permutation results
     perm.list <- chrom.size.res$permutation.list
     perm.ecdf.mat <- matrix(NA, ncol = length(obs.data.seq), nrow = length(perm.list))
-    for (i in 1:length(perm.list)){
+    for (i in seq_len(length(perm.list))){
 
       perm.res <- perm.list[[i]]
       perm.ecdf.fun <- ecdf(perm.res$fitness.score)
@@ -210,7 +210,7 @@ run.global.test <- function(results.list){
 
   #now for each of the permutations
   perm.mahala <- rep(NA, nrow(perm.ks.mat))
-  for (i in 1:nrow(perm.ks.mat)){
+  for (i in seq_len(nrow(perm.ks.mat))){
 
     perm.ks.vec <- perm.ks.mat[i, ]
     perm.mahala[i] <- (perm.ks.vec - mean.perm.vec) %*% perm.cov.mat.inv %*% (perm.ks.vec - mean.perm.vec)
@@ -234,7 +234,7 @@ run.global.test <- function(results.list){
   #also look at element-wise results
   obs.elements <- as.numeric((obs.ks.vec - mean.perm.vec) / diag(perm.cov.mat.inv))^2
   perm.elem.mat <- matrix(NA, nrow(perm.ks.mat), ncol = ncol(perm.ks.mat))
-  for (i in 1:nrow(perm.ks.mat)){
+  for (i in seq_len(nrow(perm.ks.mat))){
 
     perm.ks.vec <- perm.ks.mat[i, ]
     perm.elem.mat[i, ] <- ((perm.ks.vec - mean.perm.vec) / diag(perm.cov.mat.inv))^2
@@ -242,7 +242,7 @@ run.global.test <- function(results.list){
   }
 
   #element wise p-vals
-  element.pvals <- sapply(1:length(obs.elements), function(element.position){
+  element.pvals <- sapply(seq_len(length(obs.elements)), function(element.position){
 
     obs.elem <- obs.elements[element.position]
     perm.elems <- perm.elem.mat[ , element.position]
