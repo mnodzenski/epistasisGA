@@ -90,7 +90,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
         low.outlier.thresh <- case.high.risk.means - 2.5 * case.high.risk.sd
         all.high.risk <- rbind(case.high.inf, comp.high.inf)
         n.high.risk <- nrow(all.high.risk)
-        outliers <- rep(F, n.target)
+        outliers <- rep(FALSE, n.target)
         if (any(pos.risk)) {
 
             positive.high.risk <- all.high.risk[, pos.risk, drop = FALSE]
