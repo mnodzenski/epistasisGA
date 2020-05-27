@@ -97,7 +97,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         if ((ncol(case.genetic.data) < n.chromosomes * chromosome.size) & !initial.sample.duplicates) {
 
             print("Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.")
-            initial.sample.duplicates <- T
+            initial.sample.duplicates <- TRUE
 
         }
         chromosome.list <- vector(mode = "list", length = n.chromosomes)
@@ -116,7 +116,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
 
         fitness.score.mat <- matrix(rep(NA, max.generations * n.chromosomes), nrow = max.generations)
         top.fitness <- rep(0, max.generations)
-        last.gens.equal <- F
+        last.gens.equal <- FALSE
         top.generation.chromosome <- vector(mode = "list", length = max.generations)
         chromosome.mat.list <- vector(mode = "list", length = max.generations)
         sum.dif.vec.list <- vector(mode = "list", length = max.generations)
@@ -349,7 +349,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
             last.gens.equal <- abs(max(last.gens) - min(last.gens)) < tol
             if (is.null(n.migrations) & last.gens.equal) {
 
-                all.converged <- T
+                all.converged <- TRUE
 
             }
 
