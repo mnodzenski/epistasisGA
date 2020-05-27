@@ -20,7 +20,7 @@ network.plot(
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.}
 
-\item{weight.fun}{A character string, one of "mean", "max", "sum", or "logsum". The default is "max", but "logsum" may also be particularly useful. This argument will change the edge weights and node sizes in the graph.}
+\item{weight.fun}{A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful. This argument will change the edge weights and node sizes in the graph.}
 
 \item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes.}
 
@@ -53,16 +53,16 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                mother.genetic.data = mom[ , 1:10],
                                chrom.mat = chrom.mat[ , 1:10])
 
-run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 
-combined.res <- combine.islands("tmp")
+combined.res <- combine.islands('tmp')
 
 set.seed(10)
 network.plot(combined.res$unique.results)
 
-unlink("tmp", recursive = TRUE)
-unlink("tmp_reg", recursive = TRUE)
+unlink('tmp', recursive = TRUE)
+unlink('tmp_reg', recursive = TRUE)
 
 }

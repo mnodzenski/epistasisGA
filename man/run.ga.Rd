@@ -72,7 +72,7 @@ on job chunking.}
 
 \item{initial.sample.duplicates}{A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.}
 
-\item{snp.sampling.type}{A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".}
+\item{snp.sampling.type}{A string indicating how snps are to be sampled for mutations. Options are 'chisq' or 'random'. Defaults to 'chisq'.}
 
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.}
 
@@ -106,11 +106,11 @@ chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
                                chrom.mat = chrom.mat[ , 1:10])
-run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 
-unlink("tmp", recursive = TRUE)
-unlink("tmp_reg", recursive = TRUE)
+unlink('tmp', recursive = TRUE)
+unlink('tmp_reg', recursive = TRUE)
 
 }
