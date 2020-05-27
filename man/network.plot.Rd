@@ -12,7 +12,6 @@ network.plot(
   node.size = 25,
   graph.area = 100,
   vertex.label.cex = 0.5,
-  seed = 10,
   plot = TRUE
 )
 }
@@ -30,8 +29,6 @@ network.plot(
 \item{graph.area}{A scalar affecting the size of the graph area. Increase to increase graph area.}
 
 \item{vertex.label.cex}{A scalar controlling the size of the vertex label. Increase to increase size.}
-
-\item{seed}{an integer specifying the graph seed}
 
 \item{plot}{A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object which can be used for manual plotting.}
 }
@@ -62,6 +59,7 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = "tmp",
 
 combined.res <- combine.islands("tmp")
 
+set.seed(10)
 network.plot(combined.res$unique.results)
 
 unlink("tmp", recursive = TRUE)
