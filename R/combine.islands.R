@@ -53,7 +53,7 @@ combine.islands <- function(results.dir){
     chromosome.size <- sum(grepl("snp", colnames(chrom.results)))/2
     chrom.results[ , island := rep(island, nrow(chrom.results))]
     chrom.results[ , n.generations := rep(n.generations, nrow(chrom.results))]
-    chrom.results[ , chromosome := paste(.SD, collapse = "."), by = seq_len(nrow(chrom.results)), .SDcols = 1:chromosome.size]
+    chrom.results[ , chromosome := paste(.SD, collapse = "."), by = seq_len(nrow(chrom.results)), .SDcols = seq_len(chromosome.size)]
     return(chrom.results)
 
   })
