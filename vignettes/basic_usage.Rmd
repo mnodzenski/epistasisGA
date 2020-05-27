@@ -272,6 +272,7 @@ The `max.obs.fitness` element reports the maximum fitness score in the observed 
 As a final step in the analytic pipeline, we recommend users examine network plots of the results using function `network.plot`. This may be particularly useful when trying to determine the true number of SNPs involved in multi-SNP risk pathways. For instance, in the example above, the true risk pathway involves 4 SNPS, but we ran GADGET for chromosome sizes of 3 and 4. For chromosome size 3, we saw that many of the top identified collections of SNPs were subsets of the true 4 SNP pathway. If we didn't know the true pathway size was 4, a network plot might help make this clearer. We start by examining the plot for chromosome size 3:
 
 ```{r}
+set.seed(10)
 network.plot(size3.combined.res$all.results, graph.area = 200,
              node.size = 40, vertex.label.cex = 0.7)
 ```
@@ -279,6 +280,7 @@ network.plot(size3.combined.res$all.results, graph.area = 200,
 By default, the size of a given SNP's node is proportional to the maximum fitness score of all chromosomes in which that SNP appears, as is the color, with larger fitness scores corresponding to greener color. Similarly, the width and color of the edge between a given pair of SNP nodes corresponds to the maximum fitness score among all chromosomes in which that pair appears, with wider edges and redder color corresponding to higher scores. Users should note `network.plot` allows users to specify other mechanisms for coloring and weighting graph nodes and edges (see package documentation). In this case, we immediately see the true 4 SNP pathway appears despite having mis-specified the true pathway size. As a confirmation, the plot for chromosome size 4 also shows the same pathway SNPs:
 
 ```{r}
+set.seed(10)
 network.plot(size4.combined.res$all.results, graph.area = 200, 
              node.size = 40, vertex.label.cex = 0.7)
 ```
