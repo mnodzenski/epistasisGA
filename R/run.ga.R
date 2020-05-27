@@ -232,7 +232,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
      max.generations <- F
      while(!max.generations){
 
-       for (island in 1:island.cluster.size){
+       for (island in seq_len(island.cluster.size)){
 
          if (island == 1){
 
