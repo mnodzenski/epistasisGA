@@ -206,8 +206,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
             })
 
             ### if we do not get convergence for all islands, migrate chromosomes ###
-            all.converged <- F
-            max.generations <- F
+            all.converged <- FALSE
+            max.generations <- FALSE
             while (!max.generations) {
 
                 for (island in seq_len(island.cluster.size)) {
