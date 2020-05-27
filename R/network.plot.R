@@ -44,18 +44,18 @@
 #' @importFrom grDevices adjustcolor colorRampPalette
 #' @export
 
-network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "max", repulse.rad = 1000, 
+network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "max", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, plot = TRUE) {
-    
+
     chrom.size <- sum(grepl("snp", colnames(results.df)))/2
     n.top.chroms <- nrow(results.df)
     results.df$h.score <- results.df$fitness.score * results.df$n.islands.found
     results.df$h.score <- (results.df$h.score)/sd(results.df$h.score)
-    
+
     all.edge.weights <- do.call(rbind, lapply(seq_len(n.top.chroms), function(res.row) {
-        
+
         chrom.res <- results.df[res.row, ]
-        chrom <- as.vector(t(chrom.res[, seq_len(chrom.size)]))
+        chrom <- as.vector(t(chrom.res[, 1:chrom.size]))
         chrom.pairs <- expand.grid(chrom, chrom)
         chrom.pairs <- chrom.pairs[chrom.pairs$Var1 != chrom.pairs$Var2, ]
         original.pair1 <- chrom.pairs$Var1
@@ -67,91 +67,91 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
         chrom.pairs$h.score <- chrom.res$h.score
         chrom.pairs$fitness.score <- chrom.res$fitness.score
         return(chrom.pairs)
-        
+
     }))
-    
+
     if (weight.fun == "max") {
-        
-        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = max(fitness.score)) %>% 
+
+        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = max(fitness.score)) %>%
             as.data.frame()
-        
-        node.scores <- data.frame(name = unlist(results.df[seq_len(n.top.chroms), seq_len(chrom.size)]), 
-            fitness.score = unlist(results.df[seq_len(n.top.chroms), "fitness.score"]))
-        
-        node.scores <- node.scores %>% group_by(name) %>% summarize(size = max(fitness.score)) %>% 
+
+        node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
+            fitness.score = unlist(results.df[1:n.top.chroms, "fitness.score"]))
+
+        node.scores <- node.scores %>% group_by(name) %>% summarize(size = max(fitness.score)) %>%
             as.data.frame()
         node.scores$size <- node.size * (node.scores$size/max(node.scores$size))
         st.weights <- (final.edge.weights$edge.weight)/max(final.edge.weights$edge.weight)
-        
+
     } else if (weight.fun == "mean") {
-        
-        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = mean(fitness.score)) %>% 
+
+        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = mean(fitness.score)) %>%
             as.data.frame()
-        
-        node.scores <- data.frame(name = unlist(results.df[seq_len(n.top.chroms), seq_len(chrom.size)]), 
-            fitness.score = unlist(results.df[seq_len(n.top.chroms), "fitness.score"]))
-        
-        node.scores <- node.scores %>% group_by(name) %>% summarize(size = mean(fitness.score)) %>% 
+
+        node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
+            fitness.score = unlist(results.df[1:n.top.chroms, "fitness.score"]))
+
+        node.scores <- node.scores %>% group_by(name) %>% summarize(size = mean(fitness.score)) %>%
             as.data.frame()
         node.scores$size <- node.size * (node.scores$size/max(node.scores$size))
         st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
-        
+
     } else if (weight.fun == "sum") {
-        
-        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = sum(fitness.score)) %>% 
+
+        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = sum(fitness.score)) %>%
             as.data.frame()
-        
-        node.scores <- data.frame(name = unlist(results.df[seq_len(n.top.chroms), seq_len(chrom.size)]), 
-            fitness.score = unlist(results.df[seq_len(n.top.chroms), "fitness.score"]))
-        
-        node.scores <- node.scores %>% group_by(name) %>% summarize(size = sum(fitness.score)) %>% 
+
+        node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
+            fitness.score = unlist(results.df[1:n.top.chroms, "fitness.score"]))
+
+        node.scores <- node.scores %>% group_by(name) %>% summarize(size = sum(fitness.score)) %>%
             as.data.frame()
         node.scores$size <- node.size * (node.scores$size/max(node.scores$size))
         st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
-        
+
     } else if (weight.fun == "logsum") {
-        
-        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = log(sum(fitness.score))) %>% 
+
+        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = log(sum(fitness.score))) %>%
             as.data.frame()
-        
-        node.scores <- data.frame(name = unlist(results.df[seq_len(n.top.chroms), seq_len(chrom.size)]), 
-            fitness.score = unlist(results.df[seq_len(n.top.chroms), "fitness.score"]))
-        
-        node.scores <- node.scores %>% group_by(name) %>% summarize(size = log(sum(fitness.score))) %>% 
+
+        node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
+            fitness.score = unlist(results.df[1:n.top.chroms, "fitness.score"]))
+
+        node.scores <- node.scores %>% group_by(name) %>% summarize(size = log(sum(fitness.score))) %>%
             as.data.frame()
         node.scores$size <- node.size * (node.scores$size/max(node.scores$size))
         st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
-        
+
     }
-    
-    colnames(final.edge.weights)[seq_len(2)] <- c("from", "to")
-    network <- graph.data.frame(final.edge.weights[, seq_len(2)], directed = FALSE, vertices = node.scores)
+
+    colnames(final.edge.weights)[1:2] <- c("from", "to")
+    network <- graph.data.frame(final.edge.weights[, 1:2], directed = FALSE, vertices = node.scores)
     E(network)$weight <- final.edge.weights$edge.weight
     E(network)$width <- st.weights
     color_fun <- colorRampPalette(c("white", "grey", "red"))
     required.colors <- as.integer(as.factor(E(network)$weight))
     colors <- color_fun(length(unique(required.colors)))
-    edge.colors <- sapply(seq_len(length(st.weights)), function(x) adjustcolor(colors[required.colors][x], 
+    edge.colors <- sapply(seq_len(length(st.weights)), function(x) adjustcolor(colors[required.colors][x],
         alpha.f = st.weights[x]))
     E(network)$color <- edge.colors
-    
+
     color_fun <- colorRampPalette(c("white", "grey", "green"))
     required.colors <- as.integer(as.factor(V(network)$size))
     colors <- color_fun(length(unique(required.colors)))
     V(network)$color <- colors[required.colors]
     V(network)$shape <- node.shape
-    
+
     if (plot) {
-        
+
         net.edges <- get.edgelist(network, names = FALSE)
-        coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad * 
+        coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
         plot(network, layout = coords, vertex.label.cex = vertex.label.cex, asp = 0)
-        
+
     } else {
-        
+
         return(network)
-        
+
     }
-    
+
 }
