@@ -16,17 +16,17 @@ for each permutation.}
 \value{
 A list containing the following:
 \itemize{
- \item{"obs.test.stat"}{The observed Mahalanobis distance global test statistic.}
- \item{"pval"}{The p-value for the global test.}
- \item{"perm.test.stats"}{A vector of Mahalanobis distance global test statistics for the permuted datasets.}
- \item{"element.test.stats"}{A vector of test statistics for the observed data, where each element of the vector corresponds to a specific chromosome size.}
- \item{"element.pvals"}{A vector of p-values corresponding to the test statistics in \code{element.test.stats}.}
- \item{"perm.elem.test.stat.mat"}{A matrix of test statistics for each of the permutation datasets. The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
- \item{"obs.ks.vec"}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
- \item{"perm.ks.mat"}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to permutations and columns correspond to chromosome sizes.}
- \item{"max.obs.fitness"}{A vector of the maximum fitness score for each chromosome size in the observed data.}
- \item{"max.perm.fitness"}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
- \item{"max.order.pvals"}{A vector of p-values for the maximum observed order statistics for each chromosome size. P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
+ \item{'obs.test.stat'}{The observed Mahalanobis distance global test statistic.}
+ \item{'pval'}{The p-value for the global test.}
+ \item{'perm.test.stats'}{A vector of Mahalanobis distance global test statistics for the permuted datasets.}
+ \item{'element.test.stats'}{A vector of test statistics for the observed data, where each element of the vector corresponds to a specific chromosome size.}
+ \item{'element.pvals'}{A vector of p-values corresponding to the test statistics in \code{element.test.stats}.}
+ \item{'perm.elem.test.stat.mat'}{A matrix of test statistics for each of the permutation datasets. The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
+ \item{'obs.ks.vec'}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
+ \item{'perm.ks.mat'}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to permutations and columns correspond to chromosome sizes.}
+ \item{'max.obs.fitness'}{A vector of the maximum fitness score for each chromosome size in the observed data.}
+ \item{'max.perm.fitness'}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
+ \item{'max.order.pvals'}{A vector of p-values for the maximum observed order statistics for each chromosome size. P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
 
 }observed test statistic \code{obs.test.stat}, the p-value \code{pval},
 a vector of permutation test statistics \code{perm.test.stats}, .
@@ -52,18 +52,18 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
 ## run GA for observed data
 
 #observed data chromosome size 2
-run.ga(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "tmp_2",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res2 <- combine.islands("tmp_2")
- unlink("tmp_reg", recursive = TRUE)
+ combined.res2 <- combine.islands('tmp_2')
+ unlink('tmp_reg', recursive = TRUE)
 
  #observed data chromosome size 3
- run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+ run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res3 <- combine.islands("tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ combined.res3 <- combine.islands('tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
 #create three permuted datasets
 set.seed(1400)
@@ -73,61 +73,61 @@ perm.data.list <- permute.dataset(case[ , 1:10],
                                   n.permutations = 3)
 
 #pre-process permuted data
-p1.list <- preprocess.genetic.data(perm.data.list[["permutation1"]]$case,
-                                   complement.genetic.data = perm.data.list[["permutation1"]]$comp,
+p1.list <- preprocess.genetic.data(perm.data.list[['permutation1']]$case,
+                                   complement.genetic.data = perm.data.list[['permutation1']]$comp,
                                    chrom.mat = chrom.mat[ , 1:10])
 
-p2.list <- preprocess.genetic.data(perm.data.list[["permutation2"]]$case,
-                                   complement.genetic.data = perm.data.list[["permutation2"]]$comp,
+p2.list <- preprocess.genetic.data(perm.data.list[['permutation2']]$case,
+                                   complement.genetic.data = perm.data.list[['permutation2']]$comp,
                                    chrom.mat = chrom.mat[ , 1:10])
 
-p3.list <- preprocess.genetic.data(perm.data.list[["permutation3"]]$case,
-                                   complement.genetic.data = perm.data.list[["permutation3"]]$comp,
+p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
+                                   complement.genetic.data = perm.data.list[['permutation3']]$comp,
                                    chrom.mat = chrom.mat[ , 1:10])
 
 ##run GA for permuted data
 
 #permutation 1, chromosome size 2
-run.ga(p1.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "p1_tmp_2",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p1.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p1_tmp_2',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p1.combined.res2 <- combine.islands("p1_tmp_2")
- unlink("tmp_reg", recursive = TRUE)
+ p1.combined.res2 <- combine.islands('p1_tmp_2')
+ unlink('tmp_reg', recursive = TRUE)
 
 #permutation 1, chromosome size 3
-run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p1_tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p1_tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p1.combined.res3 <- combine.islands("p1_tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ p1.combined.res3 <- combine.islands('p1_tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
 #permutation 2, chromosome size 2
-run.ga(p2.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "p2_tmp_2",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p2.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p2_tmp_2',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p2.combined.res2 <- combine.islands("p2_tmp_2")
- unlink("tmp_reg", recursive = TRUE)
+ p2.combined.res2 <- combine.islands('p2_tmp_2')
+ unlink('tmp_reg', recursive = TRUE)
 
 #permutation 2, chromosome size 3
-run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p2_tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p2_tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p2.combined.res3 <- combine.islands("p2_tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ p2.combined.res3 <- combine.islands('p2_tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
 #permutation 3, chromosome size 2
-run.ga(p3.list, n.chromosomes = 5, chromosome.size = 2, results.dir = "p3_tmp_2",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p3.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p3_tmp_2',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p3.combined.res2 <- combine.islands("p3_tmp_2")
- unlink("tmp_reg", recursive = TRUE)
+ p3.combined.res2 <- combine.islands('p3_tmp_2')
+ unlink('tmp_reg', recursive = TRUE)
 
 #permutation 3, chromosome size 3
-run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p3.combined.res3 <- combine.islands("p3_tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ p3.combined.res3 <- combine.islands('p3_tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
  ## create list of results
 
@@ -148,8 +148,8 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
  ## run global test
  global.test.res <- run.global.test(final.results)
 
- lapply(c("tmp_2", "tmp_3", "p1_tmp_2", "p2_tmp_2", "p3_tmp_2",
-          "p1_tmp_3", "p2_tmp_3", "p3_tmp_3"), unlink, recursive = TRUE)
+ lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
+          'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
 
 
 }
