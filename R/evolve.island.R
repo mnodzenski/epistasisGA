@@ -184,7 +184,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         # it can't cross over with itself)
         unique.lower.idx <- unique(sampled.lower.idx)
 
-        cross.overs <- rep(F, length(unique.lower.idx))
+        cross.overs <- rep(FALSE, length(unique.lower.idx))
 
         if (round(length(unique.lower.idx) * crossover.prop)%%2 == 0 | length(unique.lower.idx) ==
             1) {
