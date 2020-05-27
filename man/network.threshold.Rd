@@ -34,11 +34,11 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                chrom.mat = chrom.mat[ , 1:10])
 ## run GA for observed data
 
-run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res3 <- combine.islands("tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ combined.res3 <- combine.islands('tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
 ## create three permuted datasets
 set.seed(1400)
@@ -48,37 +48,37 @@ perm.data.list <- permute.dataset(case[ , 1:10],
                                   n.permutations = 3)
 
 ## pre-process permuted data
-p1.list <- preprocess.genetic.data(perm.data.list[["permutation1"]]$case,
-                                   complement.genetic.data = perm.data.list[["permutation1"]]$comp,
+p1.list <- preprocess.genetic.data(perm.data.list[['permutation1']]$case,
+                                   complement.genetic.data = perm.data.list[['permutation1']]$comp,
                                    chrom.mat = chrom.mat[ , 1:10])
 
-p2.list <- preprocess.genetic.data(perm.data.list[["permutation2"]]$case,
-                                   complement.genetic.data = perm.data.list[["permutation2"]]$comp,
+p2.list <- preprocess.genetic.data(perm.data.list[['permutation2']]$case,
+                                   complement.genetic.data = perm.data.list[['permutation2']]$comp,
                                    chrom.mat = chrom.mat[ , 1:10])
 
-p3.list <- preprocess.genetic.data(perm.data.list[["permutation3"]]$case,
-                                   complement.genetic.data = perm.data.list[["permutation3"]]$comp,
+p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
+                                   complement.genetic.data = perm.data.list[['permutation3']]$comp,
                                    chrom.mat = chrom.mat[ , 1:10])
 
 ## run GA for permuted data
 
-run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p1_tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p1_tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p1.combined.res3 <- combine.islands("p1_tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ p1.combined.res3 <- combine.islands('p1_tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
-run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p2_tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p2_tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p2.combined.res3 <- combine.islands("p2_tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ p2.combined.res3 <- combine.islands('p2_tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
-run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3",
-       cluster.type = "interactive", registryargs = list(file.dir = "tmp_reg", seed = 1500),
+run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p3.combined.res3 <- combine.islands("p3_tmp_3")
- unlink("tmp_reg", recursive = TRUE)
+ p3.combined.res3 <- combine.islands('p3_tmp_3')
+ unlink('tmp_reg', recursive = TRUE)
 
  ## get threshold fitness score
  network.threshold(combined.res3$unique.results,
@@ -87,6 +87,6 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = "p3_tmp_3"
                         p3.combined.res3$unique.results),
                    0.2)
 
- lapply(c("tmp_3" ,"p1_tmp_3", "p2_tmp_3", "p3_tmp_3"), unlink, recursive = TRUE)
+ lapply(c('tmp_3' ,'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
 
 }
