@@ -32,85 +32,84 @@
 #' @importFrom survival clogit strata coxph Surv
 #' @export
 
-preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-                                    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025,
-                                    bp.param = bpparam()){
-
-  #make sure the appropriate genetic data is included
-  if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)){
-
-    stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
-
-  }
-
-  ### find the snps with MAF < minimum threshold in the cases ###
-  if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)){
-
-    alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4*nrow(father.genetic.data))
-    minor.alleles <- alt.allele.freqs < 0.5
-    below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
-    original.col.numbers <- which(!below.maf.threshold)
-    names(original.col.numbers) <- NULL
-
-    ### Compute the complement data ###
-    complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
-
-    ###recode the case and complement data so that 1 indicates a copy of the minor allele ###
-    case.genetic.data[ , !minor.alleles] <- 2 - case.genetic.data[ , !minor.alleles]
-    complement.genetic.data[ , !minor.alleles] <- 2 - complement.genetic.data[ , !minor.alleles]
-
-    ### remove the snps not meeting the required allele frequency threshold ###
-    father.genetic.data <- father.genetic.data[ , !below.maf.threshold]
-    mother.genetic.data <- mother.genetic.data[ , !below.maf.threshold]
-    case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
-    complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
-    chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
-
-  } else if (!is.null(complement.genetic.data)){
-
-    alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4*nrow(case.genetic.data))
-    minor.alleles <- alt.allele.freqs < 0.5
-    below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
-    original.col.numbers <- which(!below.maf.threshold)
-    names(original.col.numbers) <- NULL
-
-    ###recode the case and complement data so that 1 indicates a copy of the minor allele ###
-    case.genetic.data[ , !minor.alleles] <- 2 - case.genetic.data[ , !minor.alleles]
-    complement.genetic.data[ , !minor.alleles] <- 2 - complement.genetic.data[ , !minor.alleles]
-
-    ### remove the snps not meeting the required allele frequency threshold ###
-    case.genetic.data <- case.genetic.data[ , !below.maf.threshold]
-    complement.genetic.data <- complement.genetic.data[ , !below.maf.threshold]
-    chrom.mat <- chrom.mat[!below.maf.threshold , !below.maf.threshold]
-
-  }
-
-  ### use conditional logistic regression to estimate model of inherritance ###
-  case.status <- c(rep(1, nrow(case.genetic.data)), rep(0, nrow(complement.genetic.data)))
-  ids <- rep(seq_len(nrow(case.genetic.data)), 2)
-  n <- nrow(case.genetic.data)
-  res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data){
-
-    case.snp <- factor(case.genetic.data[ , snp], levels = c(0, 1, 2))
-    comp.snp <- factor(complement.genetic.data[ , snp], levels = c(0,1,2))
-
-    #get p-value of association from conditional logistic regression
-    case.comp.geno <- as.numeric(as.character(c(case.snp, comp.snp)))
-    clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
-    clogit.chisq <- summary(clogit.res)$logtest[1]
-
-    return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
-
-  }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
-      BPPARAM = bp.param)
-
-  #combine results into new dataframes
-  case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
-  complement.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$comp.snp))))
-  chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
-
-  return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, chisq.stats = chisq.stats, original.col.numbers = original.col.numbers,
-              chrom.mat = chrom.mat, minor.allele.vec = minor.alleles))
-
-
+preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL, 
+    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025, bp.param = bpparam()) {
+    
+    # make sure the appropriate genetic data is included
+    if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)) {
+        
+        stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
+        
+    }
+    
+    ### find the snps with MAF < minimum threshold in the cases ###
+    if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)) {
+        
+        alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4 * nrow(father.genetic.data))
+        minor.alleles <- alt.allele.freqs < 0.5
+        below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
+        original.col.numbers <- which(!below.maf.threshold)
+        names(original.col.numbers) <- NULL
+        
+        ### Compute the complement data ###
+        complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
+        
+        ### recode the case and complement data so that 1 indicates a copy of the minor allele ###
+        case.genetic.data[, !minor.alleles] <- 2 - case.genetic.data[, !minor.alleles]
+        complement.genetic.data[, !minor.alleles] <- 2 - complement.genetic.data[, !minor.alleles]
+        
+        ### remove the snps not meeting the required allele frequency threshold ###
+        father.genetic.data <- father.genetic.data[, !below.maf.threshold]
+        mother.genetic.data <- mother.genetic.data[, !below.maf.threshold]
+        case.genetic.data <- case.genetic.data[, !below.maf.threshold]
+        complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
+        chrom.mat <- chrom.mat[!below.maf.threshold, !below.maf.threshold]
+        
+    } else if (!is.null(complement.genetic.data)) {
+        
+        alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4 * nrow(case.genetic.data))
+        minor.alleles <- alt.allele.freqs < 0.5
+        below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
+        original.col.numbers <- which(!below.maf.threshold)
+        names(original.col.numbers) <- NULL
+        
+        ### recode the case and complement data so that 1 indicates a copy of the minor allele ###
+        case.genetic.data[, !minor.alleles] <- 2 - case.genetic.data[, !minor.alleles]
+        complement.genetic.data[, !minor.alleles] <- 2 - complement.genetic.data[, !minor.alleles]
+        
+        ### remove the snps not meeting the required allele frequency threshold ###
+        case.genetic.data <- case.genetic.data[, !below.maf.threshold]
+        complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
+        chrom.mat <- chrom.mat[!below.maf.threshold, !below.maf.threshold]
+        
+    }
+    
+    ### use conditional logistic regression to estimate model of inherritance ###
+    case.status <- c(rep(1, nrow(case.genetic.data)), rep(0, nrow(complement.genetic.data)))
+    ids <- rep(seq_len(nrow(case.genetic.data)), 2)
+    n <- nrow(case.genetic.data)
+    res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data) {
+        
+        case.snp <- factor(case.genetic.data[, snp], levels = c(0, 1, 2))
+        comp.snp <- factor(complement.genetic.data[, snp], levels = c(0, 1, 2))
+        
+        # get p-value of association from conditional logistic regression
+        case.comp.geno <- as.numeric(as.character(c(case.snp, comp.snp)))
+        clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
+        clogit.chisq <- summary(clogit.res)$logtest[1]
+        
+        return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+        
+    }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, BPPARAM = bp.param)
+    
+    # combine results into new dataframes
+    case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
+    complement.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$comp.snp))))
+    chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+    
+    return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, 
+        chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, chrom.mat = chrom.mat, 
+        minor.allele.vec = minor.alleles))
+    
+    
 }
