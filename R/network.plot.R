@@ -9,7 +9,6 @@
 #' @param node.size A scalar affecting the size of the graph nodes. Increse to increase size.
 #' @param graph.area A scalar affecting the size of the graph area. Increase to increase graph area.
 #' @param vertex.label.cex A scalar controlling the size of the vertex label. Increase to increase size.
-#' @param seed an integer specifying the graph seed
 #' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object which can be used for manual plotting.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -33,6 +32,7 @@
 #'
 #' combined.res <- combine.islands("tmp")
 #'
+#' set.seed(10)
 #' network.plot(combined.res$unique.results)
 #'
 #' unlink("tmp", recursive = TRUE)
@@ -47,9 +47,8 @@
 network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "max",
                          repulse.rad = 1000,
                          node.size = 25, graph.area = 100,
-                         vertex.label.cex = 0.5, seed = 10, plot = TRUE){
+                         vertex.label.cex = 0.5, plot = TRUE){
 
-  set.seed(seed)
   chrom.size <- sum(grepl("snp", colnames(results.df)))/2
   n.top.chroms <- nrow(results.df)
   results.df$h.score <- results.df$fitness.score*results.df$n.islands.found
