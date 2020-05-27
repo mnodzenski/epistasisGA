@@ -101,7 +101,7 @@ network.threshold <- function(observed.results, permutation.list, threshold.val)
 
   #find the observed fitness score closest to producing threshold.val
   prop.higher <- rep(NA, n.obs.scores)
-  for (i in 1:n.obs.scores){
+  for (i in seq_len(n.obs.scores)){
 
     val <- obs.scores[i]
     prop.higher[i] <- sum(perm.scores > val)/n.perm.scores
