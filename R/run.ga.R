@@ -68,7 +68,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                    n.workers = min(detectCores() - 2, n.islands/island.cluster.size), n.chunks = NULL,
                    n.different.snps.weight = 2,
                    n.both.one.weight = 1, weight.function = function(x) 2^x, generations = 500, gen.same.fitness = 50,
-                   tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = F,
+                   tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
                    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000,
                    island.cluster.size = 4, migration.generations = 50, n.migrations = 20,
                    n.case.high.risk.thresh = 20){
@@ -141,7 +141,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir,
   clusters.to.run <- cluster.ids
   if (!dir.exists(results.dir)){
 
-    dir.create(results.dir, recursive = T)
+    dir.create(results.dir, recursive = TRUE)
 
   } else {
 
