@@ -87,7 +87,7 @@ evolve.island(
 
 \item{initial.sample.duplicates}{A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.}
 
-\item{snp.sampling.type}{A string indicating how snps are to be sampled for mutations. Options are "zscore" or "random". Defaults to "zscore".}
+\item{snp.sampling.type}{A string indicating how snps are to be sampled for mutations. Options are 'chisq' or 'random'. Defaults to 'chisq'.}
 
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.8.}
 
