@@ -10,7 +10,7 @@ Encoding: UTF-8
 Imports: BiocParallel, data.table, matrixStats, stats, methods, survival, dplyr, igraph, batchtools, qgraph
 Suggests: snpStats, Matrix, BiocStyle, knitr, rmarkdown, magrittr, kableExtra
 RoxygenNote: 7.1.0
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.6)
 biocViews: Genetics, SNP, GeneticVariability
 VignetteBuilder: knitr
 
