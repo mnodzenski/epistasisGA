@@ -143,7 +143,7 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
   }
 
   colnames(final.edge.weights)[1:2] <- c("from", "to")
-  network <- graph.data.frame(final.edge.weights[ , 1:2], directed = F, vertices = node.scores)
+  network <- graph.data.frame(final.edge.weights[ , 1:2], directed = FALSE, vertices = node.scores)
   E(network)$weight <- final.edge.weights$edge.weight
   E(network)$width <- st.weights
   color_fun <- colorRampPalette(c('white', 'grey', 'red'))
@@ -160,7 +160,7 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
 
   if (plot){
 
-    net.edges <- get.edgelist(network, names = F)
+    net.edges <- get.edgelist(network, names = FALSE)
     coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network),
                                                 repulse.rad = repulse.rad*vcount(network),
                                                 area = graph.area*(vcount(network)^2))
