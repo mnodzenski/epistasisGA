@@ -121,6 +121,10 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
             as.data.frame()
         node.scores$size <- node.size * (node.scores$size/max(node.scores$size))
         st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
+        if (any(st.weights < 0) | any(node.scores$size < 0)){
+
+            stop("Fitness scores are too low to use logsum, use sum instead")
+        }
 
     }
 
