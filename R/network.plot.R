@@ -4,7 +4,9 @@
 #'
 #' @param results.df The \code{unique.results} data frame of results of GA runs from \code{combine.islands}, with fitness scores restricted to the top results using function \code{network.threshold}.
 #' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.
-#' @param weight.fun A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful. This argument will change the edge weights and node sizes in the graph.
+#' @param weight.fun A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
+#'  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
+#'  weights. This argument will change the edge weights and node sizes in the graph.
 #' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes.
 #' @param node.size A scalar affecting the size of the graph nodes. Increse to increase size.
 #' @param graph.area A scalar affecting the size of the graph area. Increase to increase graph area.
@@ -111,21 +113,16 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
 
     } else if (weight.fun == "logsum") {
 
-        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = log(sum(fitness.score))) %>%
+        final.edge.weights <- all.edge.weights %>% group_by(Var1, Var2) %>% summarize(edge.weight = log(1 + sum(fitness.score))) %>%
             as.data.frame()
 
         node.scores <- data.frame(name = unlist(results.df[1:n.top.chroms, 1:chrom.size]),
             fitness.score = unlist(results.df[1:n.top.chroms, "fitness.score"]))
 
-        node.scores <- node.scores %>% group_by(name) %>% summarize(size = log(sum(fitness.score))) %>%
+        node.scores <- node.scores %>% group_by(name) %>% summarize(size = log(1 + sum(fitness.score))) %>%
             as.data.frame()
         node.scores$size <- node.size * (node.scores$size/max(node.scores$size))
         st.weights <- final.edge.weights$edge.weight/max(final.edge.weights$edge.weight)
-        if (any(st.weights < 0) | any(node.scores$size < 0)){
-
-            stop("Fitness scores are too low to use logsum, use sum instead")
-        }
-
     }
 
     colnames(final.edge.weights)[1:2] <- c("from", "to")
