@@ -20,7 +20,9 @@ network.plot(
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.}
 
-\item{weight.fun}{A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful. This argument will change the edge weights and node sizes in the graph.}
+\item{weight.fun}{A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
+Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
+weights. This argument will change the edge weights and node sizes in the graph.}
 
 \item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes.}
 
