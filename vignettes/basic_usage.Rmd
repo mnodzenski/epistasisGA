@@ -8,7 +8,7 @@ author:
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
 date: "June 2, 2020"
-package: knnGA
+package: snpGADGET
 output: 
   BiocStyle::html_document:
     toc_float: true
