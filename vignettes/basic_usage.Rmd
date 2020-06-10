@@ -45,7 +45,7 @@ As a final note, users should be aware this method does not currently scale up t
 We begin our example usage of GADGET by loading a simulated example of case-parent triad data. 
 
 ```{r}
-library(knnGA)
+library(snpGADGET)
 data(case)
 data(dad)
 data(mom)
