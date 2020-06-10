@@ -8,7 +8,7 @@
 A data frame with 1000 rows and 100 variables
 }
 \usage{
-dad
+data(dad)
 }
 \description{
 A simulated dataset containing the counts of the alternate allele

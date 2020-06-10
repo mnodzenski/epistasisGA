@@ -6,6 +6,7 @@
 #' in columns 51, 52, 76, and 77 represent a true risk pathway.
 #'
 #' @format A data frame with 1000 rows and 100 variables
+#' @usage data(mom)
 "mom"
 
 #' SNP counts for the fathers of case-parent triads.
@@ -16,6 +17,7 @@
 #' in columns 51, 52, 76, and 77 represent a true risk pathway.
 #'
 #' @format A data frame with 1000 rows and 100 variables
+#' @usage data(dad)
 "dad"
 
 #' SNP counts for the affected children of case-parent triads.
@@ -26,4 +28,5 @@
 #' in columns 51, 52, 76, and 77 represent a true risk pathway.
 #'
 #' @format A data frame with 1000 rows and 100 variables
+#' @usage data(case)
 "case"
