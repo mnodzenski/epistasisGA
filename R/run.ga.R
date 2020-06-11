@@ -1,39 +1,56 @@
-#' A function to run a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.
+#' A function to run a genetic algorithm to detect multi-SNP effects in case-parent triad studies.
 #'
-#' This function runs a genetic algorithm on a collection of candidate snp sets, to identify epistatic variants.
+#' This function runs a genetic algorithm to detect multi-SNP effects in case-parent triad studies.
 #'
 #' @param data.list The output list from \code{preprocess.genetic.data}.
-#' @param n.chromosomes A scalar indicating the number of candidate collections of snps to use in the GA.
-#' @param chromosome.size The number of snps within each candidate solution.
+#' @param n.chromosomes An integer specifying the number of chromosomes to use in the GA.
+#' @param chromosome.size An integer specifying the number of SNPs on each chromosome.
 #' @param results.dir The directory to which island results will be saved.
-#' @param cluster.type A character string indicating the type of cluster on which to evolve islands in parallel. Supported options are interactive, socket, multicore, sge, slurm, lsf, openlava, or torque. See the documentation for package batchtools for more information.
+#' @param cluster.type A character string indicating the type of cluster on which to evolve solutions in parallel.
+#' Supported options are interactive, socket, multicore, sge, slurm, lsf, openlava, or torque. See the documentation for package batchtools for more information.
 #' @param registryargs A list of the arguments to be provided to \code{batchtools::makeRegistry}.
-#' @param resources A named list of key-value pairs to be subsituted into the template file, options available are specified in \code{batchtools::submitJobs}.
-#' @param cluster.template A character string of the path to the template file required for the cluster specified in \code{cluster.type}. Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque for argument \code{cluster.type}.
-#' @param n.workers An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if one of socket or multicore. Defaults to \code{parallel::detectCores - 2}.
-#' @param n.chunks An integer specifying the number of chunks jobs running island clusters should be split into when submitting jobs via \code{batchtools}. For multicore or socket \code{cluster.type}, this defaults to
-#'                 to \code{n.workers}. Otherwise, this defaults to 1 chunk, with the expectation that users of HPC clusters that support array jobs specify \code{chunks.as.arrayjobs = TRUE}
-#'                 in argument \code{resources}. For HPC clusters that do not support array jobs, the default setting should not be used. See \code{batchtools::submitJobs} for more information
-#'                 on job chunking.
-#' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
-#' @param n.both.one.weight The number by which the number of different snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.function A function that takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
-#' @param generations The maximum number of generations for which the GA will run. Defaults to 2000.
-#' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination.
-#' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous 500 generations considered to be sufficient to stop producing new generations.
-#' @param n.top.chroms The number of top scoring chromosomes, according to fitness score, to return.
-#' @param initial.sample.duplicates A logical indicating whether the same snp can appear in more than one chromosome in the initial sample of chromosomes (the same snp may appear in more than one chromosome thereafter, regardless). Default to F.
-#' @param snp.sampling.type A string indicating how snps are to be sampled for mutations. Options are 'chisq' or 'random'. Defaults to 'chisq'.
-#' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over. The remaining proportion will be mutated. Defaults to 0.5.
-#' @param n.islands An integer indicating the number of islands to be used.
-#' @param island.cluster.size An integer equal to the number of islands among which population migration may occur.
-#' @param migration.generations An integer equal to the number of generations between migration among islands. \code{generations} must be an integer multiple of this value.
-#' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes}.
-#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
+#' @param resources A named list of key-value pairs to be substituted into the template file. Options available are specified in \code{batchtools::submitJobs}.
+#' @param cluster.template A character string of the path to the template file required for the cluster specified in \code{cluster.type}.
+#'  Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque of argument \code{cluster.type}.
+#' @param n.workers An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if socket or multicore.
+#' Defaults to \code{parallel::detectCores - 2}.
+#' @param n.chunks An integer specifying the number of chunks jobs running island clusters should be split into when dispatching jobs using \code{batchtools}.
+#' For multicore or socket \code{cluster.type}, this defaults to \code{n.workers}, resulting in the total number of island cluster jobs
+#' (equal to \code{n.islands}\\\code{island.cluster.size}) being split into \code{n.chunks} chunks.
+#' All job chunks then run in parallel, with jobs within a chunk running sequentially. For other cluster types, this defaults to 1 chunk, with the expectation
+#' that users of HPC clusters that support array jobs specify \code{chunks.as.arrayjobs = TRUE} in argument \code{resources}. For those users, the setup will
+#' submit an array of \code{n.islands}\\\code{island.cluster.size} jobs to the cluster. For HPC clusters that do not support array jobs, the default setting
+#' should not be used. See \code{batchtools::submitJobs} for more information on job chunking.
+#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
+#' @param weight.function A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
+#'  and returns a family weight. Defaults to 2^x.
+#' @param generations The maximum number of generations for which the GA will run. Defaults to 500.
+#' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
+#' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
+#' considered to be sufficient to stop the algorithm.
+#' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
+#' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
+#'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
+#' @param snp.sampling.type A string indicating how SNPs are to be sampled for mutations. Options are 'chisq' or 'random'. The 'chisq' option takes
+#' into account the marginal association between a SNP and disease status, with larger marginal associations corresponding to higher sampling probabilities.
+#' The 'random'  option gives each SNP the same sampling probability regardless of marginal association. Defaults to 'chisq'.
+#' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
+#' The remaining proportion will be mutated. Defaults to 0.8.
+#' @param n.islands An integer indicating the number of islands to be used in the GA. Defaults to 1000.
+#' @param island.cluster.size An integer specifying the number of islands in a given cluster. Must evenly divide \code{n.islands} and defaults to 4.
+#' More specifically, under the default settings, the 1000 \code{n.islands} are split into 250 distinct clusters each containing 4 islands (\code{island.cluster.size}).
+#' Within a cluster, migrations of top chromosomes from one cluster island to another are periodically permitted (controlled by \code{migration.generations}), and distinct
+#' clusters evolve completely independently.
+#' @param migration.generations An integer equal to the number of generations between migrations among islands of a distinct cluster.
+#' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
+#' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
+#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance. Defaults to 20.
 
 #'
 #' @return For each island, a list of two elements will be written to \code{results.dir}.
-#'         The first element of each list is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors. The second element is a scalar indicating the number of generations required to identify a solution.
+#'         The first element of each list is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors.
+#'         The second element is a scalar indicating the number of generations required to identify a solution.
 #'
 #' @examples
 #'

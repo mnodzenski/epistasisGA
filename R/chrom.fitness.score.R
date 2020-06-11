@@ -1,19 +1,31 @@
-#' A function to generate a fitness score for a subset of snps from a dataset of case genetic markers
+#' A function to assign a fitness score to a chromosome
 #'
-#' This function returns a fitness score for a set of snps, where the fitness score is the squared vector length of the weighted sum of difference vectors between cases and complements.
+#' This function assigns a fitness score to a chromosome.
 #'
-#' @param case.genetic.data A genetic dataset from cases (for a dichotomous trait). Columns are snps, and rows are individuals.
-#' @param complement.genetic.data A genetic dataset from the complements of the cases, where \code{complement.genetic.data} = mother snp counts + father snp counts - case snp counts. Columns are snps, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
-#' @param case.comp.differences a data frame or matrix indicating case genetic data != complement genetic data, where rows correspond to individuals and columns correspond to snps.
-#' @param target.snps A numeric vector of the columns corresponding to the snps for which the fitness score will be computed.
-#' @param cases.minus.complements A matrix equal to case genetic data - complement genetic data.
-#' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the alternate allele, equal to (case.genetic.data == 1 & complement.genetic.data == 1).
-#' @param n.different.snps.weight The number by which the number different snps between case and control is multiplied in computing the family weights. Defaults to 2.
-#' @param n.both.one.weight The number by which the number of snps equal to 1 in both case and control is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.function A function which takes the weighted sum of the number of different snps and snps both equal to one as an argument, and returns a family weight. Defaults to the identity function.
-#' @param chrom.mat A logical matrix indicating whether the snps in \code{case.comp.differences} belong to the same chromosome.
+#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+#' @param complement.genetic.data A genetic dataset from the complements of the cases, where
+#' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
+#' Columns are SNPs, rows are families.
+#' @param case.comp.differences A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
+#' where rows correspond to individuals and columns correspond to snps.
+#' @param target.snps A numeric vector of the columns corresponding to the collection of SNPs, or chromosome, for which the fitness score will be computed.
+#' @param cases.minus.complements A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.
+#' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
+#' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
+#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
+#' @param weight.function A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
+#'  and returns a family weight. Defaults to 2^x.
+#' @param chrom.mat A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
-#' @return A list whose first element is the fitness score and second element is the sum of weighted difference vectors for the target snps.
+#' @return A list:
+#' \describe{
+#'  \item{fitness.score}{The chromosome fitness score.}
+#'  \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome.}
+#'  \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
+#'  over the total number of risk alleles carried by either a case or complement with the full risk set.}
+#'  \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
+#' }
 #'
 #' @examples
 #'
