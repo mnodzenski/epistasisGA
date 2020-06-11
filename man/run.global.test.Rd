@@ -2,37 +2,41 @@
 % Please edit documentation in R/run.global.test.R
 \name{run.global.test}
 \alias{run.global.test}
-\title{A function to run a global test for significance of top chromosome results across a range of chromosome sizes}
+\title{A function to run a global test of the null hypothesis that the observed fitness score CDF is not
+more heavy-tailed on the right than the average null CDF across a range of chromosome sizes}
 \usage{
 run.global.test(results.list)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
 Each element of the list must itself be a list whose first element \code{observed.data} is a data.table containing
-the all chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
+the chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
 is a list containing all permutation results data.tables, again using all chromosome results output by \code{combine.islands}
 for each permutation.}
 }
 \value{
 A list containing the following:
-\itemize{
- \item{'obs.test.stat'}{The observed Mahalanobis distance global test statistic.}
- \item{'pval'}{The p-value for the global test.}
- \item{'perm.test.stats'}{A vector of Mahalanobis distance global test statistics for the permuted datasets.}
- \item{'element.test.stats'}{A vector of test statistics for the observed data, where each element of the vector corresponds to a specific chromosome size.}
- \item{'element.pvals'}{A vector of p-values corresponding to the test statistics in \code{element.test.stats}.}
- \item{'perm.elem.test.stat.mat'}{A matrix of test statistics for each of the permutation datasets. The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
- \item{'obs.ks.vec'}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
- \item{'perm.ks.mat'}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to permutations and columns correspond to chromosome sizes.}
- \item{'max.obs.fitness'}{A vector of the maximum fitness score for each chromosome size in the observed data.}
- \item{'max.perm.fitness'}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
- \item{'max.order.pvals'}{A vector of p-values for the maximum observed order statistics for each chromosome size. P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
-
-}observed test statistic \code{obs.test.stat}, the p-value \code{pval},
-a vector of permutation test statistics \code{perm.test.stats}, .
+\describe{
+ \item{obs.test.stat}{The observed Mahalanobis distance global test statistic.}
+ \item{pval}{The p-value for the global test.}
+ \item{perm.test.stats}{A vector of Mahalanobis distance global test statistics for the permuted datasets.}
+ \item{element.test.stats}{A vector of test statistics for the observed data, where each element of the vector
+ corresponds to a specific chromosome size.}
+ \item{element.pvals}{A vector of p-values corresponding to the test statistics in \code{element.test.stats}.}
+ \item{perm.elem.test.stat.mat}{A matrix of test statistics for each of the permutation datasets.
+ The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
+ \item{obs.ks.vec}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
+ \item{perm.ks.mat}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to
+ permutations and columns correspond to chromosome sizes.}
+ \item{max.obs.fitness}{A vector of the maximum fitness score for each chromosome size in the observed data.}
+ \item{max.perm.fitness}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
+ \item{max.order.pvals}{A vector of p-values for the maximum observed order statistics for each chromosome size.
+  P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
+}
 }
 \description{
-This function runs a global test for significance of top chromosome results across a range of chromosome sizes.
+This function runs a global test across chromosome sizes of the null hypothesis
+that the observed fitness score CDF is not more heavy-tailed on the right than the average null CDF
 }
 \examples{
 
