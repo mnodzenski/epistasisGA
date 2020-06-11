@@ -1,17 +1,18 @@
-#' A function to plot a network of snps with potential non-additive multi-snp effects.
+#' A function to plot a network of SNPs with potential multi-SNP effects.
 #'
-#' This function plots a network of snps with potential non-additive multi-snp effects.
+#' This function plots a network of SNPs with potential multi-SNP effects.
 #'
-#' @param results.df The \code{unique.results} data frame of results of GA runs from \code{combine.islands}, with fitness scores restricted to the top results using function \code{network.threshold}.
+#' @param results.df A subset of the \code{all.results} data frame of results from \code{combine.islands} after running \code{run.ga}.
 #' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.
-#' @param weight.fun A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
+#' @param weight.fun A character string specifying the method for weighting network edges and nodes, with options
+#' 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
 #'  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
-#'  weights. This argument will change the edge weights and node sizes in the graph.
-#' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes.
-#' @param node.size A scalar affecting the size of the graph nodes. Increse to increase size.
+#'  weights.
+#' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes, increase to move nodes closer together.
+#' @param node.size A scalar affecting the size of the graph nodes. Increase to increase size.
 #' @param graph.area A scalar affecting the size of the graph area. Increase to increase graph area.
 #' @param vertex.label.cex A scalar controlling the size of the vertex label. Increase to increase size.
-#' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object which can be used for manual plotting.
+#' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
 #'
@@ -35,7 +36,7 @@
 #' combined.res <- combine.islands('tmp')
 #'
 #' set.seed(10)
-#' network.plot(combined.res$unique.results)
+#' network.plot(combined.res$all.results)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)

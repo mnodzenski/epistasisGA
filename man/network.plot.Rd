@@ -2,7 +2,7 @@
 % Please edit documentation in R/network.plot.R
 \name{network.plot}
 \alias{network.plot}
-\title{A function to plot a network of snps with potential non-additive multi-snp effects.}
+\title{A function to plot a network of SNPs with potential multi-SNP effects.}
 \usage{
 network.plot(
   results.df,
@@ -16,29 +16,30 @@ network.plot(
 )
 }
 \arguments{
-\item{results.df}{The \code{unique.results} data frame of results of GA runs from \code{combine.islands}, with fitness scores restricted to the top results using function \code{network.threshold}.}
+\item{results.df}{A subset of the \code{all.results} data frame of results from \code{combine.islands} after running \code{run.ga}.}
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.}
 
-\item{weight.fun}{A character string, one of 'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
-Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
-weights. This argument will change the edge weights and node sizes in the graph.}
+\item{weight.fun}{A character string specifying the method for weighting network edges and nodes, with options
+'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
+ Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
+ weights.}
 
-\item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes.}
+\item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes, increase to move nodes closer together.}
 
-\item{node.size}{A scalar affecting the size of the graph nodes. Increse to increase size.}
+\item{node.size}{A scalar affecting the size of the graph nodes. Increase to increase size.}
 
 \item{graph.area}{A scalar affecting the size of the graph area. Increase to increase graph area.}
 
 \item{vertex.label.cex}{A scalar controlling the size of the vertex label. Increase to increase size.}
 
-\item{plot}{A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object which can be used for manual plotting.}
+\item{plot}{A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.}
 }
 \value{
 An igraph object, if \code{plot} is set to FALSE.
 }
 \description{
-This function plots a network of snps with potential non-additive multi-snp effects.
+This function plots a network of SNPs with potential multi-SNP effects.
 }
 \examples{
 
@@ -62,7 +63,7 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 combined.res <- combine.islands('tmp')
 
 set.seed(10)
-network.plot(combined.res$unique.results)
+network.plot(combined.res$all.results)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
