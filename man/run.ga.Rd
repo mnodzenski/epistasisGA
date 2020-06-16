@@ -29,7 +29,8 @@ run.ga(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  n.case.high.risk.thresh = 20
+  n.case.high.risk.thresh = 20,
+  outlier.sd = 2.5
 )
 }
 \arguments{
@@ -101,11 +102,18 @@ Argument \code{generations} must be an integer multiple of this value. Defaults 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance. Defaults to 20.}
+
+\item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
 }
 \value{
-For each island, a list of two elements will be written to \code{results.dir}.
-        The first element of each list is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors.
-        The second element is a scalar indicating the number of generations required to identify a solution.
+For each island, a list of two elements will be written to \code{results.dir}:
+\describe{
+ \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance. See
+the documentation for \code{chrom.fitness.score} for additional details.}
+ \item{n.generations}{The total number of generations run.}
+}
 }
 \description{
 This function runs a genetic algorithm to detect multi-SNP effects in case-parent triad studies.

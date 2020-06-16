@@ -37,7 +37,9 @@ evolve.island(
   top.generation.chromosome = NULL,
   chromosome.mat.list = NULL,
   sum.dif.vec.list = NULL,
-  n.case.high.risk.thresh = 20
+  inherit.vec.list = NULL,
+  n.case.high.risk.thresh = 20,
+  outlier.sd = 2.5
 )
 }
 \arguments{
@@ -118,10 +120,15 @@ The remaining proportion will be mutated. Defaults to 0.8.}
 
 \item{sum.dif.vec.list}{A list of matrices containing the sum of differences vectors for chromosomes in previous generations.}
 
+\item{inherit.vec.list}{A list of matrices containing the proposed mode of inheritance for SNPs in chromosomes from previous generations.}
+
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
+
+\item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
 }
 \value{
-A list containing the following:
+If the algorithm has not converged, a list containing the following:
 \describe{
  \item{migrations}{A list of chromosomes that will migrate to another island in the cluster.}
  \item{chromosome.list}{A list of chromosomes that will remain the island after migrations.}
@@ -130,8 +137,15 @@ A list containing the following:
  \item{last.gens.equal}{A logical indicating whether the last \code{gen.same.fitness} generations of the algorithm all produced the same top fitness score.}
  \item{top.generation.chromosome}{A list of the top scoring chromosome for the previous generations.}
  \item{chromosome.mat.list}{A list of all of the chromosomes examined in previous generations.}
- \item{sum.dif.vec.list}{A list of matrices containing the sum of the difference vectors for all examined chromosomes.}
+ \item{sum.dif.vec.list}{A list of data.tables containing the sum of the difference vectors for all examined chromosomes.}
+ \item{inherit.vec.list}{A list of data.tables containing the proposed mode of inheritance for SNPs in chromosomes from previous generations.}
  \item{generation}{An integer corresponding to the current generation of the genetic algorithm.}
+}
+If the algorithm converges, a list containing the following:
+\describe{
+ \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance.}
+ \item{n.generations}{The total number of generations run.}
 }
 }
 \description{
@@ -140,6 +154,7 @@ This function should not be used independently, it is only intended for use in \
 }
 \examples{
 
+set.seed(10)
 data(case)
 data(dad)
 data(mom)

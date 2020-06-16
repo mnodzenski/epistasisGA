@@ -15,7 +15,8 @@ chrom.fitness.score(
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function = function(x) 2^x,
-  n.case.high.risk.thresh = 20
+  n.case.high.risk.thresh = 20,
+  outlier.sd = 2.5
 )
 }
 \arguments{
@@ -45,6 +46,9 @@ equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 and returns a family weight. Defaults to 2^x.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
+
+\item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
 }
 \value{
 A list:
@@ -54,6 +58,9 @@ A list:
  \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
  over the total number of risk alleles carried by either a case or complement with the full risk set.}
  \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
+ \item{inherit.vec}{A vector indicating whether each SNP appears to exhibit a dominant or recessive
+ pattern of inheritance in cases with the full provisional risk set. "D" indicates a dominant pattern,
+ and "R" indicates a recessive pattern.}
 }
 }
 \description{
