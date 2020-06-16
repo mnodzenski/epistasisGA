@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "June 2, 2020"
+date: "June 16, 2020"
 package: snpGADGET
 output: 
   BiocStyle::html_document:
@@ -147,7 +147,7 @@ kable(head(size4.combined.res$unique.results)) %>%
 
 In general, the `unique.results` object is more useful for examining interesting sets of SNPs as it contains all of the information in the `all.results` object, just in a more easily digestible form. In this case, we see that the SNPs corresponding to columns 51, 52, 76, and 77 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
 
-An important but subtle component of the results users should note are the `diff.vec` columns. The magnitudes of these values are not particularly important, but the sign is useful. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. In the case of the risk pathway SNPs, all values are positive, indicating the risk pathway requires having copies of the minor allele for all 4 SNPs. If any of these coefficients were negative, the interpretation would be altered. For instance, if the `SNP1.diff.vec` value were negative and the remaining values positive, this would imply the proposed risk pathway includes having copies of the major allele for SNP 1 and copies of the minor alleles for SNPs 2-4.      
+A few important but subtle components of the results users should note are the `diff.vec` and `inherit.vec` columns. For a given SNP, the corresponding `inherit.vec` column indicates the proposed manner of inheritance for individuals with the full risk set. A 'D' indicates a dominant pattern while an 'R' indicates recessive. Interpretation of the `diff.vec` columns is slightly less straightforward. The magnitudes of these values are not particularly important, but the sign is useful. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. In the case of the risk pathway SNPs, all `diff.vec` values are positive and all `inherit.vec` columns are 'D' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs. If any of these coefficients were negative, the interpretation would be altered. For instance, if the `snp1.diff.vec` value were negative and the remaining values positive, this would imply the proposed risk pathway includes having at least one copy of the major allele for SNP 1 and copies of the minor alleles for SNPs 2-4. The interpretation would also be altered if any of the `inherit.vec` values were 'R'. For instance, for the risk pathway, if `snp1.inherit.vec` were 'R' instead of 'D' and all `diff.vec` coefficients were still positive, the result would suggest that the risk pathway involves having two copies of the minor allele for the first pathway SNP and at least one copy of the minor allele for the remaining SNPs.   
 
 ## Create Permuted Datasets
 

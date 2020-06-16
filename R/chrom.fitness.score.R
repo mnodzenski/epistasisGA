@@ -18,6 +18,8 @@
 #'  and returns a family weight. Defaults to 2^x.
 #' @param chrom.mat A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
+#' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+#' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
 #' @return A list:
 #' \describe{
 #'  \item{fitness.score}{The chromosome fitness score.}
@@ -25,6 +27,9 @@
 #'  \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
 #'  over the total number of risk alleles carried by either a case or complement with the full risk set.}
 #'  \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
+#'  \item{inherit.vec}{A vector indicating whether each SNP appears to exhibit a dominant or recessive
+#'  pattern of inheritance in cases with the full provisional risk set. "D" indicates a dominant pattern,
+#'  and "R" indicates a recessive pattern.}
 #' }
 #'
 #' @examples
@@ -48,7 +53,7 @@
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
                                 target.snps, cases.minus.complements, both.one.mat, chrom.mat, n.different.snps.weight = 2, n.both.one.weight = 1,
-                                weight.function = function(x) 2^x, n.case.high.risk.thresh = 20) {
+                                weight.function = function(x) 2^x, n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -68,7 +73,6 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   weighted.informativeness <- n.both.one.weight * both.one + n.different.snps.weight * total.different.snps[informative.families]
   family.weights <- weight.function(weighted.informativeness)
   sum.family.weights <- sum(family.weights)
-  # chromosome.size <- length(target.snps)
 
   ### compute weighted difference vectors for cases vs complements ###
   dif.vecs <- as.matrix(family.weights * t(cases.minus.complements.inf))/sum.family.weights
@@ -87,11 +91,13 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   n.case.high.risk <- sum(case.high.risk)
   comp.high.risk <- (colSums(comp.inf[pos.risk, , drop = FALSE] > 0) + colSums(comp.inf[neg.risk, ,
                                                                                         drop = FALSE] < 2)) == n.target
-  # n.comp.high.risk <- sum(comp.high.risk)
   case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
   comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
 
   ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
+
+  # initalize vector of pattern of inheritance
+  inherit.vec <- rep("D", length(target.snps))
 
   # only applies if we have at least 20 high risk case
   if (n.case.high.risk > n.case.high.risk.thresh) {
@@ -99,8 +105,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
     case.high.risk.means <- colMeans(t(case.high.inf))
     case.high.risk.sd <- colSds(t(as.matrix(case.high.inf)))
     case.high.risk.sd[is.na(case.high.risk.sd)] <- 0
-    high.outlier.thresh <- case.high.risk.means + 2.5 * case.high.risk.sd
-    low.outlier.thresh <- case.high.risk.means - 2.5 * case.high.risk.sd
+    high.outlier.thresh <- case.high.risk.means + outlier.sd * case.high.risk.sd
+    low.outlier.thresh <- case.high.risk.means - outlier.sd * case.high.risk.sd
     all.high.risk <- t(cbind(case.high.inf, comp.high.inf))
     n.high.risk <- nrow(all.high.risk)
     outliers <- rep(FALSE, n.target)
@@ -127,6 +133,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
     ### if there are outliers, recompute the weights and associated statistics ###
     if (any(outliers)) {
 
+      inherit.vec[outliers] <- "R"
       pos.outlier.cols <- pos.risk[outliers[pos.risk]]
       neg.outlier.cols <- neg.risk[outliers[neg.risk]]
 
@@ -215,7 +222,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   pseudo.t2 <- (sum.family.weights/1000) * rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   fitness.score <- (rr^2) * pseudo.t2
 
-  return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2))
+  return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
+              inherit.vec = inherit.vec))
 
 }
 

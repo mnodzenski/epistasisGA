@@ -46,11 +46,16 @@
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance. Defaults to 20.
-
+#' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+#' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
 #'
-#' @return For each island, a list of two elements will be written to \code{results.dir}.
-#'         The first element of each list is a data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, and their difference vectors.
-#'         The second element is a scalar indicating the number of generations required to identify a solution.
+#' @return For each island, a list of two elements will be written to \code{results.dir}:
+#' \describe{
+#'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+#' and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance. See
+#' the documentation for \code{chrom.fitness.score} for additional details.}
+#'  \item{n.generations}{The total number of generations run.}
+#' }
 #'
 #' @examples
 #'
@@ -85,7 +90,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = function(x) 2^x,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, n.case.high.risk.thresh = 20) {
+    n.migrations = 20, n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations) {
@@ -204,7 +209,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
         complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat, chrom.mat, n.chromosomes,
         n.candidate.snps, chromosome.size, start.generation, snp.chisq, original.col.numbers, n.different.snps.weight,
         n.both.one.weight, weight.function, migration.interval, gen.same.fitness, max.generations,
-        tol, n.top.chroms, initial.sample.duplicates, snp.sampling.type, crossover.prop, n.case.high.risk.thresh) {
+        tol, n.top.chroms, initial.sample.duplicates, snp.sampling.type, crossover.prop, n.case.high.risk.thresh, outlier.sd) {
 
         if (island.cluster.size > 1) {
 
@@ -218,7 +223,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                   n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
                   weight.function = weight.function, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
                   max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                  snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh)
+                  snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                  outlier.sd = outlier.sd)
 
             })
 
@@ -259,7 +265,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                     fitness.score.mat = island$fitness.score.mat, top.fitness = island$top.fitness,
                     last.gens.equal = island$last.gens.equal, top.generation.chromosome = island$top.generation.chromosome,
                     chromosome.mat.list = island$chromosome.mat.list, sum.dif.vec.list = island$sum.dif.vec.list,
-                    n.case.high.risk.thresh = n.case.high.risk.thresh)
+                    inherit.vec.list = island$inherit.vec.list, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                    outlier.sd = outlier.sd)
 
                 })
                 all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
@@ -286,7 +293,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                 n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
                 weight.function = weight.function, migration.interval = generations, gen.same.fitness = gen.same.fitness,
                 max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-                snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh)
+                snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                outlier.sd = outlier.sd)
 
             ### write results to file
             out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.number,
@@ -303,7 +311,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, weight.function = weight.function,
         migration.interval = migration.generations, gen.same.fitness = gen.same.fitness, max.generations = generations,
         tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh),
+        snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
+        outlier.sd = outlier.sd),
         reg = registry)
 
     # chunk the jobs

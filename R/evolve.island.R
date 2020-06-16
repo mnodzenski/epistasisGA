@@ -48,8 +48,11 @@
 #' @param top.generation.chromosome A list of top chromosomes from previous generations.
 #' @param chromosome.mat.list A list of matrices containing all chromosomes from previous generations.
 #' @param sum.dif.vec.list A list of matrices containing the sum of differences vectors for chromosomes in previous generations.
+#' @param inherit.vec.list A list of matrices containing the proposed mode of inheritance for SNPs in chromosomes from previous generations.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
-#' @return A list containing the following:
+#' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+#' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
+#' @return If the algorithm has not converged, a list containing the following:
 #' \describe{
 #'  \item{migrations}{A list of chromosomes that will migrate to another island in the cluster.}
 #'  \item{chromosome.list}{A list of chromosomes that will remain the island after migrations.}
@@ -58,12 +61,20 @@
 #'  \item{last.gens.equal}{A logical indicating whether the last \code{gen.same.fitness} generations of the algorithm all produced the same top fitness score.}
 #'  \item{top.generation.chromosome}{A list of the top scoring chromosome for the previous generations.}
 #'  \item{chromosome.mat.list}{A list of all of the chromosomes examined in previous generations.}
-#'  \item{sum.dif.vec.list}{A list of matrices containing the sum of the difference vectors for all examined chromosomes.}
+#'  \item{sum.dif.vec.list}{A list of data.tables containing the sum of the difference vectors for all examined chromosomes.}
+#'  \item{inherit.vec.list}{A list of data.tables containing the proposed mode of inheritance for SNPs in chromosomes from previous generations.}
 #'  \item{generation}{An integer corresponding to the current generation of the genetic algorithm.}
+#' }
+#' If the algorithm converges, a list containing the following:
+#' \describe{
+#'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+#' and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance.}
+#'  \item{n.generations}{The total number of generations run.}
 #' }
 #'
 #' @examples
 #'
+#' set.seed(10)
 #' data(case)
 #' data(dad)
 #' data(mom)
@@ -108,7 +119,8 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
     weight.function = function(x) 2^x, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
     tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE, snp.sampling.type = "chisq",
     crossover.prop = 0.8, chromosome.list = NULL, fitness.score.mat = NULL, top.fitness = NULL, last.gens.equal = NULL,
-    top.generation.chromosome = NULL, chromosome.mat.list = NULL, sum.dif.vec.list = NULL, n.case.high.risk.thresh = 20) {
+    top.generation.chromosome = NULL, chromosome.mat.list = NULL, sum.dif.vec.list = NULL, inherit.vec.list = NULL,
+    n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
 
     ### initialize groups of candidate solutions if generation 1 ###
     generation <- start.generation
@@ -143,13 +155,14 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         top.generation.chromosome <- vector(mode = "list", length = max.generations)
         chromosome.mat.list <- vector(mode = "list", length = max.generations)
         sum.dif.vec.list <- vector(mode = "list", length = max.generations)
+        inherit.vec.list <- vector(mode = "list", length = max.generations)
 
     }
 
     ### iterate over generations ###
     while (generation <= generations & !all.converged) {
 
-        # print(paste('generation', generation))
+        print(paste('generation', generation))
 
         ### 1. compute the fitness score for each set of candidate snps ### print('Step 1/9')
 
@@ -157,17 +170,20 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
 
             chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]],
                 case.minus.comp, both.one.mat, chrom.mat, n.different.snps.weight, n.both.one.weight,
-                weight.function, n.case.high.risk.thresh)
+                weight.function, n.case.high.risk.thresh, outlier.sd)
 
         })
+        print("here")
 
         fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
         sum.dif.vecs <- t(sapply(fitness.score.list, function(x) x$sum.dif.vecs))
+        inherit.vecs <- t(sapply(fitness.score.list, function(x) x$inherit.vec))
 
         # store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
         fitness.score.mat[generation, ] <- fitness.scores
         chromosome.mat.list[[generation]] <- data.table(t(sapply(chromosome.list, function(x) original.col.numbers[x])))
         sum.dif.vec.list[[generation]] <- data.table(sum.dif.vecs)
+        inherit.vec.list[[generation]] <- data.table(inherit.vecs)
 
         ### 2. identify the top scoring candidate solution(s) and fitness score ### print('Step 2/9')
         max.fitness <- max(fitness.scores)
@@ -390,7 +406,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
 
             chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]],
                 case.minus.comp, both.one.mat, chrom.mat, n.different.snps.weight, n.both.one.weight,
-                weight.function)
+                weight.function, n.case.high.risk.thresh, outlier.sd)
 
         })
         fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
@@ -405,7 +421,8 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         ### return list of results ###
         return(list(migrations = migrations, chromosome.list = chromosome.list, fitness.score.mat = fitness.score.mat,
             top.fitness = top.fitness, last.gens.equal = last.gens.equal, top.generation.chromosome = top.generation.chromosome,
-            chromosome.mat.list = chromosome.mat.list, sum.dif.vec.list = sum.dif.vec.list, generation = generation))
+            chromosome.mat.list = chromosome.mat.list, sum.dif.vec.list = sum.dif.vec.list, inherit.vec.list = inherit.vec.list,
+            generation = generation))
 
     } else {
 
@@ -414,13 +431,17 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         last.generation <- generation - 1
         all.chrom.dt <- rbindlist(chromosome.mat.list[seq_len(last.generation)], use.names = FALSE)
         all.chrom.dif.vec.dt <- rbindlist(sum.dif.vec.list[seq_len(last.generation)], use.names = FALSE)
+        all.chrom.inherit.vec.dt <- rbindlist(inherit.vec.list[seq_len(last.generation)], use.names = FALSE)
         unique.chromosome.dt <- unique(all.chrom.dt)
         colnames(unique.chromosome.dt) <- paste0("snp", seq_len(ncol(unique.chromosome.dt)))
         unique.chrom.dif.vec.dt <- all.chrom.dif.vec.dt[!duplicated(all.chrom.dt), ]
+        unique.chrom.inherit.vec.dt <- all.chrom.inherit.vec.dt[!duplicated(all.chrom.dt), ]
         colnames(unique.chrom.dif.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
             ".diff.vec")
+        colnames(unique.chrom.inherit.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
+                                                    ".inherit.vec")
         unique.fitness.score.vec <- as.vector(t(fitness.score.mat[seq_len(last.generation), ]))[!duplicated(all.chrom.dt)]
-        unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt)
+        unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.inherit.vec.dt)
         unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
         unique.results[, `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(unique.results)), .SDcols = (1 +
             chromosome.size):(2 * chromosome.size)]
