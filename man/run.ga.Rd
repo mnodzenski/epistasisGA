@@ -110,8 +110,8 @@ for a given SNP. See the GADGET paper for specific details on the implementation
 For each island, a list of two elements will be written to \code{results.dir}:
 \describe{
  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
-and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance. See
-the documentation for \code{chrom.fitness.score} for additional details.}
+and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
+See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
  \item{n.generations}{The total number of generations run.}
 }
 }
