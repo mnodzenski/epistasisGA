@@ -37,7 +37,7 @@ evolve.island(
   top.generation.chromosome = NULL,
   chromosome.mat.list = NULL,
   sum.dif.vec.list = NULL,
-  inherit.vec.list = NULL,
+  risk.allele.vec.list = NULL,
   n.case.high.risk.thresh = 20,
   outlier.sd = 2.5
 )
@@ -116,11 +116,12 @@ The remaining proportion will be mutated. Defaults to 0.8.}
 
 \item{top.generation.chromosome}{A list of top chromosomes from previous generations.}
 
-\item{chromosome.mat.list}{A list of matrices containing all chromosomes from previous generations.}
+\item{chromosome.mat.list}{A list of data.tables containing all chromosomes from previous generations.}
 
-\item{sum.dif.vec.list}{A list of matrices containing the sum of differences vectors for chromosomes in previous generations.}
+\item{sum.dif.vec.list}{A list of data.tables containing the sum of differences vectors for chromosomes in previous generations.}
 
-\item{inherit.vec.list}{A list of matrices containing the proposed mode of inheritance for SNPs in chromosomes from previous generations.}
+\item{risk.allele.vec.list}{A list of data.tables containing the number of risk alleles required for each SNP in each chromosome
+for a case or complement to be classified as having the full risk set, from previous generations.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 
@@ -136,15 +137,17 @@ If the algorithm has not converged, a list containing the following:
  \item{top.fitness}{A vector of the top fitness scores across generations.}
  \item{last.gens.equal}{A logical indicating whether the last \code{gen.same.fitness} generations of the algorithm all produced the same top fitness score.}
  \item{top.generation.chromosome}{A list of the top scoring chromosome for the previous generations.}
- \item{chromosome.mat.list}{A list of all of the chromosomes examined in previous generations.}
+ \item{chromosome.mat.list}{A list of data.tables containing the chromosomes examined in previous generations.}
  \item{sum.dif.vec.list}{A list of data.tables containing the sum of the difference vectors for all examined chromosomes.}
- \item{inherit.vec.list}{A list of data.tables containing the proposed mode of inheritance for SNPs in chromosomes from previous generations.}
+ \item{risk.allele.vec.list}{A list of data.tables containing the number of risk alleles required for each SNP in each chromosome
+ for a case or complement to be classified as having the full risk set, from previous generations.}
  \item{generation}{An integer corresponding to the current generation of the genetic algorithm.}
 }
 If the algorithm converges, a list containing the following:
 \describe{
  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
-and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance.}
+and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
+See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
  \item{n.generations}{The total number of generations run.}
 }
 }

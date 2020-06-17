@@ -52,8 +52,8 @@
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
-#' and whether each SNP in the provisional risk set appears to exhibit a dominant or recessive pattern of inheritance. See
-#' the documentation for \code{chrom.fitness.score} for additional details.}
+#' and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
+#' See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
 #'  \item{n.generations}{The total number of generations run.}
 #' }
 #'
@@ -265,7 +265,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                     fitness.score.mat = island$fitness.score.mat, top.fitness = island$top.fitness,
                     last.gens.equal = island$last.gens.equal, top.generation.chromosome = island$top.generation.chromosome,
                     chromosome.mat.list = island$chromosome.mat.list, sum.dif.vec.list = island$sum.dif.vec.list,
-                    inherit.vec.list = island$inherit.vec.list, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                    risk.allele.vec.list = island$risk.allele.vec.list, n.case.high.risk.thresh = n.case.high.risk.thresh,
                     outlier.sd = outlier.sd)
 
                 })
