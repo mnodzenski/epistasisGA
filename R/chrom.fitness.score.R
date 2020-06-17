@@ -23,13 +23,20 @@
 #' @return A list:
 #' \describe{
 #'  \item{fitness.score}{The chromosome fitness score.}
-#'  \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome.}
+#'  \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome.
+#'  The magnitudes of these values are not particularly important, but the sign is useful.
+#'  A positive value for a given SNP indicates the minor allele is positively associated with
+#'  disease status, while a negative value implies the reference (‘wild type’) allele is
+#'  positively associated with the disease.}
 #'  \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
 #'  over the total number of risk alleles carried by either a case or complement with the full risk set.}
 #'  \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
-#'  \item{inherit.vec}{A vector indicating whether each SNP appears to exhibit a dominant or recessive
-#'  pattern of inheritance in cases with the full provisional risk set. "D" indicates a dominant pattern,
-#'  and "R" indicates a recessive pattern.}
+#'  \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
+#'   for each SNP in \code{target.snps} for the case or complement to be classified as having the
+#'   proposed risk set. '1+' indicates at least one copy of the risk allele is required, while '2'
+#'   indicates 2 copies are needed. The risk allele can be determined based on the signs of the elements
+#'   of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
+#'   the risk allele, while a positive value implicates the minor allele.}
 #' }
 #'
 #' @examples
@@ -97,7 +104,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
 
   # initalize vector of pattern of inheritance
-  inherit.vec <- rep("D", length(target.snps))
+  risk.set.alleles <- rep("1+", length(target.snps))
 
   # only applies if we have at least 20 high risk case
   if (n.case.high.risk > n.case.high.risk.thresh) {
@@ -133,7 +140,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
     ### if there are outliers, recompute the weights and associated statistics ###
     if (any(outliers)) {
 
-      inherit.vec[outliers] <- "R"
+      risk.set.alleles[outliers] <- "2"
       pos.outlier.cols <- pos.risk[outliers[pos.risk]]
       neg.outlier.cols <- neg.risk[outliers[neg.risk]]
 
@@ -223,7 +230,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   fitness.score <- (rr^2) * pseudo.t2
 
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
-              inherit.vec = inherit.vec))
+              risk.set.alleles = risk.set.alleles))
 
 }
 
