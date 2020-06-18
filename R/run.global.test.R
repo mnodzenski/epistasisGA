@@ -33,6 +33,7 @@
 #' data(case)
 #' data(dad)
 #' data(mom)
+#' data(snp.annotations)
 #' library(Matrix)
 #' set.seed(1400)
 #' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
@@ -50,14 +51,14 @@
 #' run.ga(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  combined.res2 <- combine.islands('tmp_2')
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ 1:10, ], pp.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  #observed data chromosome size 3
 #'  run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  combined.res3 <- combine.islands('tmp_3')
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ 1:10, ], pp.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #create three permuted datasets
@@ -86,42 +87,42 @@
 #' run.ga(p1.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p1_tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p1.combined.res2 <- combine.islands('p1_tmp_2')
+#'  p1.combined.res2 <- combine.islands('p1_tmp_2', snp.annotations[ 1:10, ], p1.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 1, chromosome size 3
 #' run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p1_tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p1.combined.res3 <- combine.islands('p1_tmp_3')
+#'  p1.combined.res3 <- combine.islands('p1_tmp_3', snp.annotations[ 1:10, ], p1.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 2, chromosome size 2
 #' run.ga(p2.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p2_tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p2.combined.res2 <- combine.islands('p2_tmp_2')
+#'  p2.combined.res2 <- combine.islands('p2_tmp_2', snp.annotations[ 1:10, ], p2.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 2, chromosome size 3
 #' run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p2_tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p2.combined.res3 <- combine.islands('p2_tmp_3')
+#'  p2.combined.res3 <- combine.islands('p2_tmp_3', snp.annotations[ 1:10, ], p2.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 3, chromosome size 2
 #' run.ga(p3.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p3_tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p3.combined.res2 <- combine.islands('p3_tmp_2')
+#'  p3.combined.res2 <- combine.islands('p3_tmp_2', snp.annotations[ 1:10, ], p3.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 3, chromosome size 3
 #' run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p3.combined.res3 <- combine.islands('p3_tmp_3')
+#'  p3.combined.res3 <- combine.islands('p3_tmp_3', snp.annotations[ 1:10, ], p3.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
