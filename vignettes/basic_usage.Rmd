@@ -117,11 +117,14 @@ The `cluster.template` must be properly calibrated to the user's HPC cluster. Pa
 
 Regardless of the chosen `cluster.type`, `run.ga` uses the functionality from package `r CRANpkg("batchtools")` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.ga` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `r Biocpkg("BiocParallel")`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `r CRANpkg("batchtools")`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` distinct sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.ga` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
 
-Once users have confirmed `run.ga` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`:
+Once users have confirmed `run.ga` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by the function.  
 
 ```{r}
-size3.combined.res <- combine.islands("size3_res")
-size4.combined.res <- combine.islands("size4_res")
+data(snp.annotations)
+size3.combined.res <- combine.islands("size3_res", snp.annotations,
+                                      pp.list)
+size4.combined.res <- combine.islands("size4_res", snp.annotations,
+                                      pp.list)
 
 ```
 
@@ -147,11 +150,8 @@ kable(head(size4.combined.res$unique.results)) %>%
 
 In general, the `unique.results` object is more useful for examining interesting sets of SNPs as it contains all of the information in the `all.results` object, just in a more easily digestible form. In this case, we see that the SNPs corresponding to columns 51, 52, 76, and 77 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
 
-A few important but subtle components of the results users should note are the `diff.vec` and `risk.alleles` columns. For a given SNP within a chromosome, the corresponding `risk.alleles` column indicates the required number of risk alleles for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `diff.vec` columns can then be used to determine the risk allele. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. Because the input data does not include nucleobase (A,T,G,C) for each SNP, users must take the final step of mapping the minor or major alleles to specific nucleobases. In doing so, users should pay very close attention to the output of `preprocess.genetic.data` to be clear on whether the coding for any of the input SNPs was flipped. 
-
-Aside from the sign, the values in the `diff.vec` columns may be descriptively interesting to some users. In general, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be similarly large across the pathway SNPs. As such, high scoring chromosomes with a subset of SNPs having small magnitude `diff.vec` values may indicate some of the chromosome's SNPs are not jointly transmitted to the cases, suggesting a smaller chromosome size may be warranted.  
-
-In the case of the risk pathway SNPs, all `diff.vec` values are positive and all `risk.alleles` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs. If any of these coefficients were negative, the interpretation would be altered. For instance, if the `snp1.diff.vec` value were negative and the remaining values positive, this would imply the proposed risk pathway includes having at least one copy of the major allele for SNP 1 and copies of the minor alleles for SNPs 2-4. The interpretation would also be altered if any of the `risk.alleles` values were '2'. For instance, in the risk pathway, if `snp1.risk.alleles` were '2' instead of '1+' and all `diff.vec` coefficients were still positive, the result would suggest that the risk pathway involves having two copies of the minor allele for the first pathway SNP and at least one copy of the minor allele for the remaining SNPs.   
+A few important but subtle components of the results users should note are the `risk.allele`, `allele.copies`, 
+and `diff.vec` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be similarly large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs.    
 
 ## Create Permuted Datasets
 
@@ -189,13 +189,12 @@ chrom.sizes <- 3:4
 seeds <- 4:7
 
 #run GADGET for each permutation and size 
-lapply(seq_along(preprocess.lists), function(permutation){
+lapply(chrom.sizes, function(chrom.size){
   
-  perm.data.list <- preprocess.lists[[permutation]]
-  seed.val <- seeds[permutation]
+  lapply(seq_along(preprocess.lists), function(permutation){
   
-  lapply(chrom.sizes, function(chrom.size){
-    
+    perm.data.list <- preprocess.lists[[permutation]]
+    seed.val <- chrom.size*seeds[permutation]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
     reg.dir <- paste0("perm", permutation, "_size", chrom.size, "_reg")
     run.ga(perm.data.list, n.chromosomes = 5, 
@@ -210,13 +209,17 @@ lapply(seq_along(preprocess.lists), function(permutation){
 })
 
 #condense the results 
-perm.res.dirs <- as.vector(outer(paste0("perm", 1:4), 
-                                 paste0("_size", chrom.sizes, "_res"), 
-                                 paste0))
-perm.res.list <- lapply(perm.res.dirs, function(perm.res.dir){
+perm.res.list <- lapply(chrom.sizes, function(chrom.size){
   
-  condensed.res <- combine.islands(perm.res.dir)
-  condensed.res$all.results
+  lapply(seq_along(preprocess.lists), function(permutation){
+  
+    perm.data.list <- preprocess.lists[[permutation]]
+    res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
+    condensed.res <- combine.islands(res.dir, snp.annotations,
+                                     perm.data.list)
+    condensed.res$all.results
+    
+  })
   
 })
 
@@ -231,11 +234,11 @@ We then use the permutation-based vectors of KS-statistics, with each element co
 ```{r}
 # chromosome size 3 results
 chrom3.list <- list(observed.data = size3.combined.res$all.results,
-                     permutation.list = perm.res.list[1:4])
+                     permutation.list = perm.res.list[[1]])
 
 # chromosome size 4 results
 chrom4.list <- list(observed.data = size4.combined.res$all.results,
-                     permutation.list = perm.res.list[5:8])
+                     permutation.list = perm.res.list[[2]])
 
 # list of results across chromosome sizes, with each list 
 # element corresponding to a chromosome size
@@ -315,7 +318,7 @@ By default, the size of a given SNP's node is proportional to the maximum fitnes
 ```{r}
 set.seed(10)
 network.plot(size4.combined.res$all.results, graph.area = 200, 
-             node.size = 40, vertex.label.cex = 0.7)
+             node.size = 40, vertex.label.cex = 0.6)
 ```
 
 In addition, `network.plot` allows users to specify other mechanisms for coloring and weighting graph nodes and edges. For instance, instead of the maximum, the size of a given SNP's node can be proportional to the sum of fitness scores over all chromosomes in which that SNP appears, and the the width and color of the edge between a given pair of SNP nodes can also correspond to the sum of the fitness scores over all chromosomes in which that pair appears:
@@ -324,7 +327,7 @@ In addition, `network.plot` allows users to specify other mechanisms for colorin
 ```{r}
 set.seed(10)
 network.plot(size3.combined.res$all.results, graph.area = 200,
-             node.size = 40, vertex.label.cex = 0.7, 
+             node.size = 40, vertex.label.cex = 0.6, 
              weight.fun = "sum")
 ```
 
@@ -336,6 +339,9 @@ In this example, the results are similar for both weighting approaches. However,
 #remove all example directories 
 perm.reg.dirs <- as.vector(outer(paste0("perm", 1:4), 
                                  paste0("_size", chrom.sizes, "_reg"), 
+                                 paste0))
+perm.res.dirs <- as.vector(outer(paste0("perm", 1:4), 
+                                 paste0("_size", chrom.sizes, "_res"), 
                                  paste0))
 lapply(c("size3_res", "size3_reg", "size4_res", "size4_reg",
          perm.reg.dirs, perm.res.dirs), unlink, recursive = TRUE)
