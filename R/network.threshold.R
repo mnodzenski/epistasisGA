@@ -11,6 +11,7 @@
 #' data(case)
 #' data(dad)
 #' data(mom)
+#' data(snp.annotations)
 #' library(Matrix)
 #' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -26,7 +27,7 @@
 #' run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  combined.res3 <- combine.islands('tmp_3')
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ 1:10, ], pp.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' ## create three permuted datasets
@@ -54,19 +55,19 @@
 #' run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p1_tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p1.combined.res3 <- combine.islands('p1_tmp_3')
+#'  p1.combined.res3 <- combine.islands('p1_tmp_3', snp.annotations[ 1:10, ], p1.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p2_tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p2.combined.res3 <- combine.islands('p2_tmp_3')
+#'  p2.combined.res3 <- combine.islands('p2_tmp_3', snp.annotations[ 1:10, ], p2.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  p3.combined.res3 <- combine.islands('p3_tmp_3')
+#'  p3.combined.res3 <- combine.islands('p3_tmp_3', snp.annotations[ 1:10, ], p3.list)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## get threshold fitness score
@@ -82,44 +83,44 @@
 #' @export
 
 network.threshold <- function(observed.results, permutation.list, threshold.val) {
-    
+
     # error checking
     if (any(duplicated(observed.results$chromosome))) {
-        
+
         stop("Observed results must included only unique chromosomes, duplicates detected.")
-        
+
     }
-    
+
     # observed fitness scores
     obs.scores <- observed.results$fitness.score
     obs.scores <- sort(obs.scores, decreasing = TRUE)
     n.obs.scores <- length(obs.scores)
-    
+
     # permutation fitness scores
     perm.scores <- unique(rbindlist(permutation.list)$fitness.score)
     n.perm.scores <- length(perm.scores)
-    
+
     # find the observed fitness score closest to producing threshold.val
     prop.higher <- rep(NA, n.obs.scores)
     for (i in seq_len(n.obs.scores)) {
-        
+
         val <- obs.scores[i]
         prop.higher[i] <- sum(perm.scores > val)/n.perm.scores
-        
+
         if (prop.higher[i] >= threshold.val) {
-            
+
             fitness.score.threshold <- val
             prop.permutations.higher <- prop.higher[i - 1]
             break
-            
+
         }
-        
+
     }
-    
+
     # return the fitness score threshold and proportion of permutations with at least one fitness score
     # higher than this value
     return(list(fitness.score.threshold = fitness.score.threshold, prop.permutations.higher = prop.permutations.higher))
-    
+
 }
 
 
