@@ -4,14 +4,21 @@
 \alias{combine.islands}
 \title{A function to combine results for individual islands into a single dataset.}
 \usage{
-combine.islands(results.dir)
+combine.islands(results.dir, annotation.data, preprocessed.list)
 }
 \arguments{
 \item{results.dir}{The directory in which individual island results from \code{run.ga} are saved.}
+
+\item{annotation.data}{A data frame containing columns 'RSID', 'REF' and 'ALT'. Column 'RSID' gives the
+RSIDs for the input SNPs, with the rows ordered such that the first RSID entry corresponds to the first SNP
+column in the data passed to function \code{preprocess.genetic.data}, the second RSID corresponds to the second SNP column, etc.}
+
+\item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
 }
 \value{
 A list of two elements. Note these two objects will also be written to \code{results.dir}
-as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'.
+as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'. Furthermore,
+this function should not be called twice on the same directory (i.e., only combine the islands one time).
 \describe{
  \item{all.results}{A dataset containing chromosome results across all islands,
  where top chromosomes that evolved on multiple distinct islands appear in multiple rows.}
@@ -27,6 +34,7 @@ This function combines results for individual islands into a single dataset.
 data(case)
 data(dad)
 data(mom)
+data(snp.annotations)
 library(Matrix)
 chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -41,7 +49,7 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 
-combined.res <- combine.islands('tmp')
+combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)

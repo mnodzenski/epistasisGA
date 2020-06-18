@@ -30,3 +30,14 @@
 #' @format A data frame with 1000 rows and 100 variables
 #' @usage data(case)
 "case"
+
+#' RSID, REF, and ALT annotations for example dataset SNPs
+#'
+#' A data.frame containing the RSID, REF allele and ALT allele
+#' for each SNP in the example datasets. The SNPs are in the same
+#' order as they appear in the example datasets.
+#'
+#' @format A data frame with 100 rows and 3 variables
+#' @usage data(snp.annotations)
+"snp.annotations"
+
