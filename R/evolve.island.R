@@ -442,7 +442,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         colnames(unique.chrom.dif.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
             ".diff.vec")
         colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
-                                                    ".risk.alleles")
+                                                    ".allele.copies")
         unique.fitness.score.vec <- as.vector(t(fitness.score.mat[seq_len(last.generation), ]))[!duplicated(all.chrom.dt)]
         unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
         unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
