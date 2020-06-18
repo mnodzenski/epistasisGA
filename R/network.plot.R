@@ -61,11 +61,12 @@ network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "ma
         chrom <- as.vector(t(chrom.res[, 1:chrom.size]))
         chrom.pairs <- expand.grid(chrom, chrom)
         chrom.pairs <- chrom.pairs[chrom.pairs$Var1 != chrom.pairs$Var2, ]
-        original.pair1 <- chrom.pairs$Var1
-        original.pair2 <- chrom.pairs$Var2
-        switch.these <- chrom.pairs$Var1 > chrom.pairs$Var2
-        chrom.pairs$Var1[switch.these] <- original.pair2[switch.these]
-        chrom.pairs$Var2[switch.these] <- original.pair1[switch.these]
+
+        for (i in seq_len(nrow(chrom.pairs))){
+
+            chrom.pairs[i, c("Var1", "Var2")] <- sort(chrom.pairs[i, c("Var1", "Var2")])
+
+        }
         chrom.pairs <- chrom.pairs[!duplicated(chrom.pairs), ]
         chrom.pairs$h.score <- chrom.res$h.score
         chrom.pairs$fitness.score <- chrom.res$fitness.score
