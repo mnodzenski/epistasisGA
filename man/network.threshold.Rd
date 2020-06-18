@@ -23,6 +23,7 @@ This function identifies a threshold fitness score above which chromosomes shoul
 data(case)
 data(dad)
 data(mom)
+data(snp.annotations)
 library(Matrix)
 chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -37,7 +38,7 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
 run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res3 <- combine.islands('tmp_3')
+ combined.res3 <- combine.islands('tmp_3', snp.annotations[ 1:10, ], pp.list)
  unlink('tmp_reg', recursive = TRUE)
 
 ## create three permuted datasets
@@ -65,19 +66,19 @@ p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
 run.ga(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p1_tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p1.combined.res3 <- combine.islands('p1_tmp_3')
+ p1.combined.res3 <- combine.islands('p1_tmp_3', snp.annotations[ 1:10, ], p1.list)
  unlink('tmp_reg', recursive = TRUE)
 
 run.ga(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p2_tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p2.combined.res3 <- combine.islands('p2_tmp_3')
+ p2.combined.res3 <- combine.islands('p2_tmp_3', snp.annotations[ 1:10, ], p2.list)
  unlink('tmp_reg', recursive = TRUE)
 
 run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- p3.combined.res3 <- combine.islands('p3_tmp_3')
+ p3.combined.res3 <- combine.islands('p3_tmp_3', snp.annotations[ 1:10, ], p3.list)
  unlink('tmp_reg', recursive = TRUE)
 
  ## get threshold fitness score

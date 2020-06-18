@@ -46,6 +46,7 @@ This function plots a network of SNPs with potential multi-SNP effects.
 data(case)
 data(dad)
 data(mom)
+data(snp.annotations)
 library(Matrix)
 chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -60,7 +61,7 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 
-combined.res <- combine.islands('tmp')
+combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 
 set.seed(10)
 network.plot(combined.res$all.results)
