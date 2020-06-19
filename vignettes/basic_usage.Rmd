@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "June 16, 2020"
+date: "June 18, 2020"
 package: snpGADGET
 output: 
   BiocStyle::html_document:
