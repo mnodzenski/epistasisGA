@@ -17,7 +17,7 @@ run.ga(
   n.chunks = NULL,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = function(x) 2^x,
+  weight.function.int = 2,
   generations = 500,
   gen.same.fitness = 50,
   tol = 10^-6,
@@ -67,8 +67,8 @@ should not be used. See \code{batchtools::submitJobs} for more information on jo
 
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.}
 
-\item{weight.function}{A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
-and returns a family weight. Defaults to 2^x.}
+\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
+of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
 
 \item{generations}{The maximum number of generations for which the GA will run. Defaults to 500.}
 
