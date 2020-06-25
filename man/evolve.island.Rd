@@ -21,7 +21,7 @@ evolve.island(
   all.converged = FALSE,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = function(x) 2^x,
+  weight.lookup,
   migration.interval = 50,
   gen.same.fitness = 50,
   max.generations = 500,
@@ -81,8 +81,7 @@ needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
 
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.}
 
-\item{weight.function}{A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
-and returns a family weight. Defaults to 2^x.}
+\item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
 \item{migration.interval}{The interval of generations for which the GA will run prior to migration of top chromosomes among islands in a cluster. Defaults to 50.
 In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations.}
@@ -179,6 +178,7 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
  case.comp.different <- case.minus.comp != 0
  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
  snp.chisq <- sqrt(chisq.stats)
+ weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
  ex.island <- evolve.island(n.migrations = 2, case.genetic.data = case.genetic.data,
                    complement.genetic.data = complement.genetic.data,
                    case.comp.different = case.comp.different,
@@ -188,6 +188,7 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    chromosome.size = 3, start.generation = 1,
                    snp.chisq = snp.chisq,
                    original.col.numbers = original.col.numbers,
+                   weight.lookup = weight.lookup,
                    migration.interval = 5, max.generations = 10)
 
 

@@ -12,10 +12,10 @@
 #' @param cases.minus.complements A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 #' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
+#' @param chrom.mat A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.
+#' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
-#' @param chrom.mat A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
 #' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
@@ -52,14 +52,17 @@
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
+#' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
-#'                     case.minus.comp, both.one.mat, chrom.mat)
+#'                     case.minus.comp, both.one.mat, chrom.mat,
+#'                     weight.lookup)
 #'
 #' @export
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
-                                target.snps, cases.minus.complements, both.one.mat, chrom.mat, n.different.snps.weight = 2, n.both.one.weight = 1,
-                                weight.lookup = c(2,4,8,16,32,64,128,256,512,1024,2048,4096,8192), n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
+                                target.snps, cases.minus.complements, both.one.mat, chrom.mat, weight.lookup,
+                                n.different.snps.weight = 2, n.both.one.weight = 1,
+                                n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -77,7 +80,6 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   both.one.inf <- t(both.one.mat[informative.families, target.snps])
   both.one <- colSums(both.one.inf)
   weighted.informativeness <- n.both.one.weight * both.one + n.different.snps.weight * total.different.snps[informative.families]
-  #family.weights <- weight.function(weighted.informativeness)
   family.weights <- weight.lookup[weighted.informativeness]
   invsum.family.weights <- 1/sum(family.weights)
 
