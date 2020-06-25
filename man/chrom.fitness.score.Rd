@@ -12,9 +12,9 @@ chrom.fitness.score(
   cases.minus.complements,
   both.one.mat,
   chrom.mat,
+  weight.lookup,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function = function(x) 2^x,
   n.case.high.risk.thresh = 20,
   outlier.sd = 2.5
 )
@@ -38,12 +38,11 @@ equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 
 \item{chrom.mat}{A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.}
 
+\item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
+
 \item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.}
 
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.}
-
-\item{weight.function}{A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
-and returns a family weight. Defaults to 2^x.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 
@@ -87,7 +86,9 @@ chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
+weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
-                    case.minus.comp, both.one.mat, chrom.mat)
+                    case.minus.comp, both.one.mat, chrom.mat,
+                    weight.lookup)
 
 }
