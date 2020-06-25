@@ -23,8 +23,8 @@
 #' should not be used. See \code{batchtools::submitJobs} for more information on job chunking.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.function A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
-#'  and returns a family weight. Defaults to 2^x.
+#' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
+#' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
@@ -87,7 +87,7 @@
 
 run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
-    n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function = function(x) 2^x,
+    n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
     n.migrations = 20, n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
@@ -122,6 +122,17 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
         stop("n.migrations must be less than n.chromosomes")
 
     }
+
+    ### make sure the weight function integer is actually an integer ###
+    if (as.integer(weight.function.int) != weight.function.int){
+
+        stop("weight.function.int must be an integer")
+
+    }
+
+    ### compute the weight lookup table ###
+    max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
+    weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
 
     #### grab the analysis data ###
     case.genetic.data <- data.list$case.genetic.data
@@ -208,7 +219,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     ids <- batchMap(function(cluster.number, island.cluster.size, n.migrations, case.genetic.data,
         complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat, chrom.mat, n.chromosomes,
         n.candidate.snps, chromosome.size, start.generation, snp.chisq, original.col.numbers, n.different.snps.weight,
-        n.both.one.weight, weight.function, migration.interval, gen.same.fitness, max.generations,
+        n.both.one.weight, weight.lookup, migration.interval, gen.same.fitness, max.generations,
         tol, n.top.chroms, initial.sample.duplicates, snp.sampling.type, crossover.prop, n.case.high.risk.thresh, outlier.sd) {
 
         if (island.cluster.size > 1) {
@@ -221,7 +232,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                   chrom.mat = chrom.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
                   chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
                   n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
-                  weight.function = weight.function, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
+                  weight.lookup = weight.lookup, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
                   max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                   snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
                   outlier.sd = outlier.sd)
@@ -258,7 +269,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                     n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
                     start.generation = island$generation, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
                     all.converged = all.converged, n.different.snps.weight = n.different.snps.weight,
-                    n.both.one.weight = n.both.one.weight, weight.function = weight.function, migration.interval = migration.generations,
+                    n.both.one.weight = n.both.one.weight, weight.lookup = weight.lookup, migration.interval = migration.generations,
                     gen.same.fitness = gen.same.fitness, max.generations = generations, tol = tol,
                     n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                     snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, chromosome.list = island$chromosome.list,
@@ -291,7 +302,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                 chrom.mat = chrom.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
                 chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
                 n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
-                weight.function = weight.function, migration.interval = generations, gen.same.fitness = gen.same.fitness,
+                weight.lookup = weight.lookup, migration.interval = generations, gen.same.fitness = gen.same.fitness,
                 max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
                 snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
                 outlier.sd = outlier.sd)
@@ -308,7 +319,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
         island.cluster.size = island.cluster.size, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
         chrom.mat = chrom.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
         chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
-        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, weight.function = weight.function,
+        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, weight.lookup = weight.lookup,
         migration.interval = migration.generations, gen.same.fitness = gen.same.fitness, max.generations = generations,
         tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
         snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,

@@ -22,11 +22,10 @@
 #' @param snp.chisq A vector of chi-square statistics corresponding to marginal SNP-disease associations for each column in \code{case.genetic.data}.
 #' @param original.col.numbers A vector of integers indicating the original column number of each SNP in \code{case.genetic.data},
 #' needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.
+#' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param all.converged A logical indicating whether each island in the cluster has converged to a solution.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.function A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
-#'  and returns a family weight. Defaults to 2^x.
 #' @param migration.interval The interval of generations for which the GA will run prior to migration of top chromosomes among islands in a cluster. Defaults to 50.
 #' In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations.
 #' @param max.generations The maximum number of generations for which the GA will run. Defaults to 500.
@@ -99,6 +98,7 @@
 #'  case.comp.different <- case.minus.comp != 0
 #'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 #'  snp.chisq <- sqrt(chisq.stats)
+#'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  ex.island <- evolve.island(n.migrations = 2, case.genetic.data = case.genetic.data,
 #'                    complement.genetic.data = complement.genetic.data,
 #'                    case.comp.different = case.comp.different,
@@ -108,6 +108,7 @@
 #'                    chromosome.size = 3, start.generation = 1,
 #'                    snp.chisq = snp.chisq,
 #'                    original.col.numbers = original.col.numbers,
+#'                    weight.lookup = weight.lookup,
 #'                    migration.interval = 5, max.generations = 10)
 #'
 #'
@@ -119,7 +120,8 @@
 evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genetic.data, case.comp.different,
     case.minus.comp, both.one.mat, chrom.mat, n.chromosomes, n.candidate.snps, chromosome.size, start.generation,
     snp.chisq, original.col.numbers, all.converged = FALSE, n.different.snps.weight = 2, n.both.one.weight = 1,
-    weight.function = function(x) 2^x, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
+    weight.lookup, migration.interval = 50, gen.same.fitness = 50,
+    max.generations = 500,
     tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE, snp.sampling.type = "chisq",
     crossover.prop = 0.8, chromosome.list = NULL, fitness.score.mat = NULL, top.fitness = NULL, last.gens.equal = NULL,
     top.generation.chromosome = NULL, chromosome.mat.list = NULL, sum.dif.vec.list = NULL, risk.allele.vec.list = NULL,
@@ -172,19 +174,19 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         fitness.score.list <- lapply(seq_len(length(chromosome.list)), function(x) {
 
             chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]],
-                case.minus.comp, both.one.mat, chrom.mat, n.different.snps.weight, n.both.one.weight,
-                weight.function, n.case.high.risk.thresh, outlier.sd)
+                case.minus.comp, both.one.mat, chrom.mat, weight.lookup, n.different.snps.weight, n.both.one.weight,
+                n.case.high.risk.thresh, outlier.sd)
 
         })
         print("here")
 
-        fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
-        sum.dif.vecs <- t(sapply(fitness.score.list, function(x) x$sum.dif.vecs))
-        risk.allele.vecs <- t(sapply(fitness.score.list, function(x) x$risk.set.alleles))
+        fitness.scores <- vapply(fitness.score.list, function(x) x$fitness.score, 1.0)
+        sum.dif.vecs <- t(vapply(fitness.score.list, function(x) x$sum.dif.vecs, rep(1.0, chromosome.size)))
+        risk.allele.vecs <- t(vapply(fitness.score.list, function(x) x$risk.set.alleles, rep("c", chromosome.size)))
 
         # store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
         fitness.score.mat[generation, ] <- fitness.scores
-        chromosome.mat.list[[generation]] <- data.table(t(sapply(chromosome.list, function(x) original.col.numbers[x])))
+        chromosome.mat.list[[generation]] <- data.table(t(vapply(chromosome.list, function(x) original.col.numbers[x], rep(1, chromosome.size))))
         sum.dif.vec.list[[generation]] <- data.table(sum.dif.vecs)
         risk.allele.vec.list[[generation]] <- data.table(risk.allele.vecs)
 
@@ -330,17 +332,11 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         }
 
         ### 7. Mutate the chromosomes that were not crossed over ### print('Step 7/9')
-        if (cross.over.positions[1] == 0) {
-
-            mutation.positions <- (seq_len(length(sampled.lower.chromosomes)))
-
-        } else {
-
-            mutation.positions <- (seq_len(length(sampled.lower.chromosomes)))[-cross.over.positions]
-
-        }
+        mutation.positions <- (seq_len(length(sampled.lower.chromosomes)))
         snps.for.mutation <- sample(seq_len(n.candidate.snps), n.candidate.snps, prob = snp.chisq,
             replace = TRUE)
+        ulen <- length(unique(snps.for.mutation))
+
         for (i in mutation.positions) {
 
             # grab the chromosome and its difference vector
@@ -350,34 +346,35 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
             # sort the chromosome elements from lowest absolute difference vector to highest
             target.chrom <- target.chrom[order(abs(target.dif.vec))]
 
-            # remove the chromosome's snps from the pool of available snps and sample new snps for the
-            # mutations
-            possible.snps.for.mutation <- snps.for.mutation[!snps.for.mutation %in% target.chrom]
-
             # determine which snps to mutate
-            total.mutations <- min(max(1, rbinom(1, chromosome.size, 0.5)), length(unique(possible.snps.for.mutation)))
-            mutate.these <- seq_len(total.mutations)
+            total.mutations <- min(max(1, rbinom(1, chromosome.size, 0.5)), ulen)
 
-            # execute mutations
-            mutated.snps <- rep(NA, total.mutations)
-            for (j in seq_len(total.mutations)) {
+            # get random mutation set
+            mutated.snps <- sample(snps.for.mutation, total.mutations)
 
-                sampled.snp <- sample(possible.snps.for.mutation, 1)
-                mutated.snps[j] <- sampled.snp
-                possible.snps.for.mutation <- possible.snps.for.mutation[possible.snps.for.mutation !=
-                  sampled.snp]
+            # check for duplicates versus chromosome or within sample. If so, re-sample with exclusion checks (slow)
+            if (length(mutated.snps) != length(unique(mutated.snps)) || any(mutated.snps %in% target.chrom)) {
 
+                possible.snps.for.mutation <- snps.for.mutation[!snps.for.mutation %in% target.chrom]
+
+                # execute mutations
+                for (j in seq_len(total.mutations)) {
+                    sampled.snp <- sample(possible.snps.for.mutation, 1)
+                    mutated.snps[j] <- sampled.snp
+                    possible.snps.for.mutation <- possible.snps.for.mutation[possible.snps.for.mutation !=
+                                                                                 sampled.snp]
+                }
             }
 
             # substitute in mutations
-            target.chrom[mutate.these] <- mutated.snps
+            target.chrom[1:total.mutations] <- mutated.snps
             sampled.lower.chromosomes[[i]] <- target.chrom
 
         }
 
         ### 8. Combine into new population (i.e., the final collection of chromosomes for the next
         ### generation) print('Step 8/9')
-        chromosome.list <- lapply(c(top.chromosome, sampled.lower.chromosomes), sort)
+        chromosome.list <- lapply(c(top.chromosome, sampled.lower.chromosomes), sort, method = "radix")
 
         ### 9.Increment Iterators print('Step 9/9')
         top.fitness[generation] <- max.fitness
@@ -408,11 +405,11 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         fitness.score.list <- lapply(seq_len(length(chromosome.list)), function(x) {
 
             chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]],
-                case.minus.comp, both.one.mat, chrom.mat, n.different.snps.weight, n.both.one.weight,
-                weight.function, n.case.high.risk.thresh, outlier.sd)
+                case.minus.comp, both.one.mat, chrom.mat, weight.lookup, n.different.snps.weight, n.both.one.weight,
+                n.case.high.risk.thresh, outlier.sd)
 
         })
-        fitness.scores <- sapply(fitness.score.list, function(x) x$fitness.score)
+        fitness.scores <- vapply(fitness.score.list, function(x) x$fitness.score, 1.0)
         chromosome.list <- chromosome.list[order(fitness.scores, decreasing = TRUE)]
 
         ### identify the chromosomes that will migrate to other islands ###
