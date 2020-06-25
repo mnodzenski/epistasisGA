@@ -14,8 +14,7 @@
 #' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.function A function that takes the weighted sum of the number of different SNPs and SNPs both equal to one as an argument, denoted as x,
-#'  and returns a family weight. Defaults to 2^x.
+#' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param chrom.mat A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
@@ -60,7 +59,7 @@
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
                                 target.snps, cases.minus.complements, both.one.mat, chrom.mat, n.different.snps.weight = 2, n.both.one.weight = 1,
-                                weight.function = function(x) 2^x, n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
+                                weight.lookup = c(2,4,8,16,32,64,128,256,512,1024,2048,4096,8192), n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -78,11 +77,12 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   both.one.inf <- t(both.one.mat[informative.families, target.snps])
   both.one <- colSums(both.one.inf)
   weighted.informativeness <- n.both.one.weight * both.one + n.different.snps.weight * total.different.snps[informative.families]
-  family.weights <- weight.function(weighted.informativeness)
-  sum.family.weights <- sum(family.weights)
+  #family.weights <- weight.function(weighted.informativeness)
+  family.weights <- weight.lookup[weighted.informativeness]
+  invsum.family.weights <- 1/sum(family.weights)
 
   ### compute weighted difference vectors for cases vs complements ###
-  dif.vecs <- as.matrix(family.weights * t(cases.minus.complements.inf))/sum.family.weights
+  dif.vecs <- as.matrix((family.weights *invsum.family.weights)*t(cases.minus.complements.inf))
 
   ### take the sum of the case - complement difference vectors over families ###
   sum.dif.vecs <- colSums(dif.vecs)
@@ -91,13 +91,31 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   risk.dirs <- sign(sum.dif.vecs)
   pos.risk <- which(risk.dirs > 0)
   neg.risk <- which(risk.dirs <= 0)
-
   n.target <- length(target.snps)
-  case.high.risk <- (colSums(case.inf[pos.risk, , drop = FALSE] > 0) + colSums(case.inf[neg.risk, ,
-                                                                                        drop = FALSE] < 2)) == n.target
+
+  # Use different cases to cull out useless operations
+  n.pos <- length(pos.risk)
+  n.neg <- length(neg.risk)
+  if (n.neg > 0) {
+    n1 <- case.inf[neg.risk, , drop = FALSE] < 2
+    n2 <- comp.inf[neg.risk, , drop = FALSE] < 2
+  }
+  if (n.pos > 0) {
+    p1 <- case.inf[pos.risk, , drop = FALSE] > 0
+    p2 <- comp.inf[pos.risk, , drop = FALSE] > 0
+  }
+  if (n.pos == 0) {
+    case.high.risk <- colSums(n1) == n.target
+    comp.high.risk <- colSums(n2) == n.target
+  } else if (n.neg == 0) {
+    case.high.risk <- colSums(p1) == n.target
+    comp.high.risk <- colSums(p2) == n.target
+  } else {
+    case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
+    comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
+  }
   n.case.high.risk <- sum(case.high.risk)
-  comp.high.risk <- (colSums(comp.inf[pos.risk, , drop = FALSE] > 0) + colSums(comp.inf[neg.risk, ,
-                                                                                        drop = FALSE] < 2)) == n.target
+  n.comp.high.risk <- sum(comp.high.risk)
   case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
   comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
 
@@ -175,11 +193,11 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
       both.one.inf <- both.one.inf[, informative.families]
       both.one <- colSums(both.one.inf)
       weighted.informativeness <- n.both.one.weight * both.one + n.different.snps.weight * total.different.snps[informative.families]
-      family.weights <- weight.function(weighted.informativeness)
-      sum.family.weights <- sum(family.weights)
+      family.weights <- weight.lookup[weighted.informativeness]
+      invsum.family.weights <- 1/sum(family.weights)
 
-      ### re-compute weighted difference vectors for cases vs complements ###
-      dif.vecs <- as.matrix(family.weights * t(cases.minus.complements.inf))/sum.family.weights
+      ### compute weighted difference vectors for cases vs complements ###
+      dif.vecs <- as.matrix((family.weights *invsum.family.weights)*t(cases.minus.complements.inf))
       sum.dif.vecs <- colSums(dif.vecs)
 
       ### re-compute proposed risk set ###
@@ -187,10 +205,28 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
       pos.risk <- which(risk.dirs > 0)
       neg.risk <- which(risk.dirs <= 0)
 
-      case.high.risk <- (colSums(case.inf[pos.risk, , drop = FALSE] > 0) + colSums(case.inf[neg.risk,
-                                                                                            , drop = FALSE] < 2)) == n.target
-      comp.high.risk <- (colSums(comp.inf[pos.risk, , drop = FALSE] > 0) + colSums(comp.inf[neg.risk,
-                                                                                            , drop = FALSE] < 2)) == n.target
+      n.pos <- length(pos.risk)
+      n.neg <- length(neg.risk)
+      if (n.neg > 0) {
+        n1 <- case.inf[neg.risk, , drop = FALSE] < 2
+        n2 <- comp.inf[neg.risk, , drop = FALSE] < 2
+      }
+      if (n.pos > 0) {
+        p1 <- case.inf[pos.risk, , drop = FALSE] > 0
+        p2 <- comp.inf[pos.risk, , drop = FALSE] > 0
+      }
+      if (n.pos == 0) {
+        case.high.risk <- colSums(n1) == n.target
+        comp.high.risk <- colSums(n2) == n.target
+      } else if (n.neg == 0) {
+        case.high.risk <- colSums(p1) == n.target
+        comp.high.risk <- colSums(p2) == n.target
+      } else {
+        case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
+        comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
+      }
+      n.case.high.risk <- sum(case.high.risk)
+      n.comp.high.risk <- sum(comp.high.risk)
       case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
       comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
 
@@ -198,11 +234,11 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   }
 
   ### count the number of risk alleles in those with the full risk set ###
-  case.high.risk.alleles <- colSums(case.high.inf[pos.risk, , drop = FALSE]) + (colSums(2 - case.high.inf[neg.risk,
-                                                                                                          , drop = FALSE]))
+  case.high.risk.alleles <- colSums(case.high.inf[pos.risk, , drop = FALSE]) +
+    (colSums(2 - case.high.inf[neg.risk, , drop = FALSE]))
   total.case.high.risk.alleles <- sum(case.high.risk.alleles)
-  comp.high.risk.alleles <- colSums(comp.high.inf[pos.risk, , drop = FALSE]) + (colSums(2 - comp.high.inf[neg.risk,
-                                                                                                          , drop = FALSE]))
+  comp.high.risk.alleles <- colSums(comp.high.inf[pos.risk, , drop = FALSE]) +
+    (colSums(2 - comp.high.inf[neg.risk, , drop = FALSE]))
   total.comp.high.risk.alleles <- sum(comp.high.risk.alleles)
 
   ### compute scaling factor ###
@@ -215,7 +251,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   x <- t(as.matrix(cases.minus.complements.inf))
   x.minus.mu.hat <- x - mu.hat.mat
   weighted.x.minus.mu.hat <- family.weights * x.minus.mu.hat
-  cov.mat <- (1/(sum.family.weights)) * crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
+  cov.mat <- (invsum.family.weights) * crossprod(weighted.x.minus.mu.hat, x.minus.mu.hat)
 
   target.chrom.mat <- chrom.mat[target.snps, target.snps]
   cov.mat[!target.chrom.mat] <- 0
@@ -226,7 +262,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
   # compute fitness score
-  pseudo.t2 <- (sum.family.weights/1000) * rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
+  pseudo.t2 <- (1/(invsum.family.weights*1000)) * rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   fitness.score <- (rr^2) * pseudo.t2
 
   return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
