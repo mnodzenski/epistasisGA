@@ -253,7 +253,7 @@ global.test.res$pval
 
 ```
 
-We see the observed Mahalanobis distance for our simple example is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. If we overlay the observed Mahalanobis distance on a boxplot of the permutations, we see the observed distance is a huge outlier, so much so that it's hard to distinguish among the permutation-based distances even when taking the log of the Mahalanobis distance: 
+We see the observed Mahalanobis distance for our simple example is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. If we overlay the observed Mahalanobis distance on a boxplot of the permutations, we see the observed distance is a huge outlier even when taking the log of the Mahalanobis distance: 
 
 ```{r, echo = FALSE}
 library(ggplot2)
