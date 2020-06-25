@@ -167,7 +167,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
     ### iterate over generations ###
     while (generation <= generations & !all.converged) {
 
-        print(paste('generation', generation))
+        #print(paste('generation', generation))
 
         ### 1. compute the fitness score for each set of candidate snps ### print('Step 1/9')
 
@@ -178,7 +178,6 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
                 n.case.high.risk.thresh, outlier.sd)
 
         })
-        print("here")
 
         fitness.scores <- vapply(fitness.score.list, function(x) x$fitness.score, 1.0)
         sum.dif.vecs <- t(vapply(fitness.score.list, function(x) x$sum.dif.vecs, rep(1.0, chromosome.size)))
@@ -356,6 +355,13 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
             if (length(mutated.snps) != length(unique(mutated.snps)) || any(mutated.snps %in% target.chrom)) {
 
                 possible.snps.for.mutation <- snps.for.mutation[!snps.for.mutation %in% target.chrom]
+                ulen.psm <- length(unique(possible.snps.for.mutation))
+                if (ulen.psm < total.mutations){
+
+                    total.mutations <- ulen.psm
+
+                }
+                mutated.snps <- rep(NA, total.mutations)
 
                 # execute mutations
                 for (j in seq_len(total.mutations)) {
