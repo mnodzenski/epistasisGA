@@ -112,7 +112,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     rsids <- annotation.data$RSID
     rsid.dt <- data.table(matrix(rsids[snp.numbers], ncol = chromosome.size,
                                  byrow = FALSE))
-    colnames(rsid.dt) <- colnames(snp.cols)
+    colnames(rsid.dt) <- paste(colnames(snp.cols), "rsid", sep = ".")
 
     #now the risk allele
     diff.cols <- combined.result[ , (chromosome.size + 1):(2*chromosome.size)]
@@ -127,7 +127,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele", colnames(diff.cols))
 
     # put the full result together
-    combined.result <- cbind(cbind(rsid.dt, risk.allele.dt), combined.result[ , -(1:chromosome.size)])
+    combined.result <- cbind(cbind(snp.cols, rsid.dt, risk.allele.dt), combined.result[ , -(1:chromosome.size)])
     combined.result[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(combined.result)),
                   .SDcols = seq_len(chromosome.size)]
 

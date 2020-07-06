@@ -18,6 +18,7 @@
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
+#' @param epi.test A logical indicating whether the function should return the information required to run function \code{epi.test}.
 #' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
 #' @return A list:
 #' \describe{
@@ -45,7 +46,7 @@
 #' data(mom)
 #' comp <- mom + dad - case
 #' case.comp.diff <- case != comp
-#' case.minus.comp <- case - comp
+#' case.minus.comp <- sign(case - comp)
 #' both.one.mat <- case == 1 & comp == 1
 #' library(Matrix)
 #' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
@@ -54,15 +55,16 @@
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
-#'                     case.minus.comp, both.one.mat, chrom.mat,
-#'                     weight.lookup)
+#'                     case.minus.comp, both.one.mat,
+#'                     chrom.mat, weight.lookup)
 #'
 #' @export
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
-                                target.snps, cases.minus.complements, both.one.mat, chrom.mat, weight.lookup,
+                                target.snps, cases.minus.complements, both.one.mat,
+                                chrom.mat, weight.lookup,
                                 n.different.snps.weight = 2, n.both.one.weight = 1,
-                                n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
+                                n.case.high.risk.thresh = 20, outlier.sd = 2.5, epi.test = FALSE) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -71,6 +73,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   ### determine whether families are informative for the set of target.snps ###
   total.different.snps <- colSums(case.comp.diff)
   informative.families <- total.different.snps != 0
+  inf.family.rows <- which(informative.families)
   n.informative.families <- sum(informative.families)
   case.inf <- t(case.genetic.data[informative.families, target.snps])
   comp.inf <- t(complement.genetic.data[informative.families, target.snps])
@@ -123,7 +126,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
   ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
 
-  # initalize vector of pattern of inheritance
+  # initialize vector of pattern of inheritance
   risk.set.alleles <- rep("1+", length(target.snps))
 
   # only applies if we have at least 20 high risk case
@@ -170,6 +173,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
         case.inf[pos.outlier.cols, ][case.inf[pos.outlier.cols, ] == 1] <- 0
         comp.inf[pos.outlier.cols, ][comp.inf[pos.outlier.cols, ] == 1] <- 0
         both.one.inf[pos.outlier.cols, ] <- FALSE
+        #both.one.inf[pos.outlier.cols, ] <- t(both.two.mat[informative.families, target.snps])[pos.outlier.cols, ]
 
       }
 
@@ -178,6 +182,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
         case.inf[neg.outlier.cols, ][case.inf[neg.outlier.cols, ] == 1] <- 2
         comp.inf[neg.outlier.cols, ][comp.inf[neg.outlier.cols, ] == 1] <- 2
         both.one.inf[neg.outlier.cols, ] <- FALSE
+        #both.one.inf[neg.outlier.cols, ] <- t(both.zero.mat[informative.families, target.snps])[neg.outlier.cols, ]
 
       }
 
@@ -186,6 +191,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
       case.comp.diff <- cases.minus.complements != 0
       total.different.snps <- colSums(case.comp.diff)
       informative.families <- total.different.snps != 0
+      inf.family.rows <- inf.family.rows[informative.families]
       n.informative.families <- sum(informative.families)
       case.inf <- case.inf[, informative.families]
       comp.inf <- comp.inf[, informative.families]
@@ -267,8 +273,33 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   pseudo.t2 <- (1/(invsum.family.weights*1000)) * rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
   fitness.score <- (rr^2) * pseudo.t2
 
-  return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
-              risk.set.alleles = risk.set.alleles))
+  # if desired, return the required information for the epistasis test
+  if (epi.test){
+
+    if (any(case.high.risk) & any(comp.high.risk)){
+
+       high.risk.families <- list(cases = inf.family.rows[case.high.risk],
+                                  complements = inf.family.rows[comp.high.risk])
+
+    } else if (any(case.high.risk) & !any(comp.high.risk)){
+
+      high.risk.families <- list(cases = inf.family.rows[case.high.risk])
+
+    } else if (!any(case.high.risk) & any(comp.high.risk)){
+
+      high.risk.families <- list(complements = inf.family.rows[comp.high.risk])
+
+    }
+
+    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
+                risk.set.alleles = risk.set.alleles, high.risk.families = high.risk.families))
+
+  } else {
+
+    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
+                risk.set.alleles = risk.set.alleles))
+
+  }
 
 }
 
