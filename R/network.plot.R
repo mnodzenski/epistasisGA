@@ -51,7 +51,7 @@
 network.plot <- function(results.df, node.shape = "crectangle", weight.fun = "max", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, plot = TRUE) {
 
-    chrom.size <- sum(grepl("snp", colnames(results.df)))/4
+    chrom.size <- sum(grepl("snp", colnames(results.df)))/5
     n.top.chroms <- nrow(results.df)
     results.df$h.score <- results.df$fitness.score * results.df$n.islands.found
     results.df$h.score <- (results.df$h.score)/sd(results.df$h.score)
