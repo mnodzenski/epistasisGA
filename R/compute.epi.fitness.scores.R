@@ -38,6 +38,7 @@
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 #'
 #' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
+#' epi.score.res <- compute.epi.fitness.scores('tmp', pp.list)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -54,7 +55,7 @@ compute.epi.fitness.scores <- function(results.dir, preprocessed.list, n.differe
     # make sure we have already combined.islands
     ci.file.name <- "combined.island.results.rds"
     ci.file <- file.path(dirname(island.names[[1]]), ci.file.name)
-    if (!file.exists(out.file)){
+    if (!file.exists(ci.file)){
 
         stop("combine.islands has not yet been run for this directory")
 
@@ -67,7 +68,7 @@ compute.epi.fitness.scores <- function(results.dir, preprocessed.list, n.differe
     chrom.size <- sum(grepl("snp", colnames(prev.res)))/5
 
     # set up weight lookup
-    max.sum <- max(n.different.snps.weight, n.both.risk.geno.weight)*chromosome.size
+    max.sum <- max(n.different.snps.weight, n.both.risk.geno.weight)*chrom.size
     weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
 
     # recompute fitness scores using epistasis weighting
@@ -76,12 +77,12 @@ compute.epi.fitness.scores <- function(results.dir, preprocessed.list, n.differe
         # pick out the relevant information for each row of the results
         snps <- as.vector(t(prev.res[res.row, 1:chrom.size]))
         diff.vec.cols <- paste0("snp", 1:chrom.size, ".diff.vec")
-        diff.vec <- as.vector(t(prev.res[res.row, diff.vec.cols]))
+        diff.vec <- as.vector(t(prev.res[res.row, ..diff.vec.cols]))
         allele.copy.cols <- paste0("snp", 1:chrom.size, ".allele.copies")
-        allele.copies <- as.vector(t(prev.res[res.row, allele.copy.cols]))
+        allele.copies <- as.vector(t(prev.res[res.row, ..allele.copy.cols]))
 
         # map the original columns to the preprocessed list column
-        target.cols <- match(snp, preprocessed.list$original.col.numbers)
+        target.cols <- match(snps, preprocessed.list$original.col.numbers)
         epi.res <- epi.chrom.fitness.score(preprocessed.list$case.genetic.data,
                                 preprocessed.list$complement.genetic.data,
                                 target.cols, diff.vec, allele.copies,
