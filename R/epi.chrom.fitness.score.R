@@ -115,7 +115,7 @@ epi.chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
   comp.inf <- comp[, informative.families]
   cases.minus.complements.inf <- cases.minus.complements[, informative.families]
 
-  ### compute weights ###
+  ### determine risk genotypes ###
   risk.genotypes <- mapply(function(diff.vec, n.risk.alleles){
 
     if (sign(diff.vec) > 0){
@@ -144,15 +144,19 @@ epi.chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
 
     }
 
-  }, target.snps.sum.diff.vecs, target.snps.risk.alleles)
+  }, target.snps.sum.diff.vecs, target.snps.risk.alleles,
+  SIMPLIFY = FALSE)
+
+  ### compute matrix of both case and complement with risk genotype ###
   both.risk.geno.mat <- matrix(FALSE, nrow = nrow(case.inf), ncol = ncol(case.inf))
-  for (i in 1:ncol(both.risk.geno.mat)){
+  for (i in 1:nrow(both.risk.geno.mat)){
 
     risk.geno <- risk.genotypes[[i]]
     both.risk.geno.mat[i, ] <- case.inf[i, ] == comp.inf[i, ] & case.inf[i, ] %in% risk.geno
 
   }
 
+  ### compute family weights ###
   both.risk.geno <- colSums(both.risk.geno.mat)
   weighted.informativeness <- n.both.risk.geno.weight * both.risk.geno +
     n.different.snps.weight * total.different.snps[informative.families]
@@ -168,65 +172,13 @@ epi.chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
   ### make sure sum.dif.vecs is still consistent with proposed risk directions ###
   ### if not, change risk genotype coding to opposite allele and recompute ###
   ### sum.dif.vecs ###
-  if (! all(sign(dif.vecs) == sign(target.snps.sum.diff.vecs))){
+  if (! all(sign(sum.dif.vecs) == sign(target.snps.sum.diff.vecs))){
 
-    change.these <- which(sign(dif.vecs) != sign(target.snps.sum.diff.vecs))
-    for (snp in change.these){
+    warn.message <- "Risk alleles are not consistent between original and epistasis fitness score approaches."
 
-      if (target.snps.risk.alleles[snp] == "2"){
+  } else {
 
-        case[snp, ] <- case.copy[snp, ]
-        comp[snp, ] <- comp.copy[snp, ]
-        target.snps.risk.alleles[snp] <- "1+"
-
-      }
-      if (sign(dif.vecs)[snp] <= 0){
-
-        new.risk.geno <- c(0,1)
-
-      } else {
-
-        new.risk.geno <- c(1,2)
-
-      }
-      risk.genotypes[[snp]] <- new.risk.geno
-
-    }
-
-    ### compute case comp differences ###
-    case.comp.diff <- case != comp
-
-    ### compute cases minus complements ###
-    cases.minus.complements <- sign(case - comp)
-
-    ### determine whether families are informative for the set of target.snps ###
-    total.different.snps <- colSums(case.comp.diff)
-    informative.families <- total.different.snps != 0
-    inf.family.rows <- which(informative.families)
-    n.informative.families <- sum(informative.families)
-    case.inf <- case[informative.families, ]
-    comp.inf <- comp[informative.families, ]
-    cases.minus.complements.inf <- cases.minus.complements[informative.families, ]
-
-    both.risk.geno.mat <- matrix(FALSE, nrow = nrow(case.inf), ncol = ncol(case.inf))
-    for (i in 1:ncol(both.risk.geno.mat)){
-
-      risk.geno <- risk.genotypes[[i]]
-      both.risk.geno.mat[i, ] <- case.inf[i, ] == comp.inf[i, ] & case.inf[i, ] %in% risk.geno
-
-    }
-
-    both.risk.geno <- colSums(both.risk.geno.mat)
-    weighted.informativeness <- n.both.risk.geno.weight * both.risk.geno +
-      n.different.snps.weight * total.different.snps[informative.families]
-    family.weights <- weight.lookup[weighted.informativeness]
-    invsum.family.weights <- 1/sum(family.weights)
-
-    ### compute weighted difference vectors for cases vs complements ###
-    dif.vecs <- as.matrix((family.weights *invsum.family.weights)*t(cases.minus.complements.inf))
-
-    ### take the sum of the case - complement difference vectors over families ###
-    sum.dif.vecs <- colSums(dif.vecs)
+    warn.message <- ""
 
   }
 
@@ -261,137 +213,6 @@ epi.chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
   n.comp.high.risk <- sum(comp.high.risk)
   case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
   comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
-
-  ### pick out misclassifications via outlier detection, indicating recessive mode of inheritance ####
-
-  # initialize vector of pattern of inheritance
-  risk.set.alleles <- target.snps.risk.alleles
-  already.recessive <- risk.set.alleles == "2"
-
-  # only applies if we have at least 20 high risk case
-  if (n.case.high.risk > n.case.high.risk.thresh) {
-
-    case.high.risk.means <- colMeans(t(case.high.inf))
-    case.high.risk.sd <- colSds(t(as.matrix(case.high.inf)))
-    case.high.risk.sd[is.na(case.high.risk.sd)] <- 0
-    high.outlier.thresh <- case.high.risk.means + outlier.sd * case.high.risk.sd
-    low.outlier.thresh <- case.high.risk.means - outlier.sd * case.high.risk.sd
-    all.high.risk <- t(cbind(case.high.inf, comp.high.inf))
-    n.high.risk <- nrow(all.high.risk)
-    outliers <- rep(FALSE, n.target)
-    if (any(pos.risk)) {
-
-      these.pos <- pos.risk & !already.recessive
-      positive.high.risk <- all.high.risk[, these.pos, drop = FALSE]
-      low.outlier.mat <- matrix(rep(low.outlier.thresh[these.pos], n.high.risk), nrow = n.high.risk,
-                                byrow = TRUE)
-      positive.outliers <- colSums(positive.high.risk < low.outlier.mat) > 0
-      outliers[these.pos] <- positive.outliers
-
-    }
-
-    if (any(neg.risk)) {
-
-      these.neg <- neg.risk & !already.recessive
-      negative.high.risk <- all.high.risk[, these.neg, drop = FALSE]
-      high.outlier.mat <- matrix(rep(high.outlier.thresh[these.neg], n.high.risk), nrow = n.high.risk,
-                                 byrow = TRUE)
-      negative.outliers <- colSums(negative.high.risk > high.outlier.mat) > 0
-      outliers[these.neg] <- negative.outliers
-
-    }
-
-    ### if there are outliers, recompute the weights and associated statistics ###
-    if (any(outliers)) {
-
-      risk.set.alleles[outliers] <- "2"
-      pos.outlier.cols <- pos.risk[outliers[pos.risk]]
-      neg.outlier.cols <- neg.risk[outliers[neg.risk]]
-
-      # recode instances where the model appears to be recessive
-      if (length(pos.outlier.cols) > 0) {
-
-        case.inf[pos.outlier.cols, ][case.inf[pos.outlier.cols, ] == 1] <- 0
-        comp.inf[pos.outlier.cols, ][comp.inf[pos.outlier.cols, ] == 1] <- 0
-        risk.genotypes[pos.outlier.cols] <- 2
-
-      }
-
-      if (length(neg.outlier.cols) > 0) {
-
-        case.inf[neg.outlier.cols, ][case.inf[neg.outlier.cols, ] == 1] <- 2
-        comp.inf[neg.outlier.cols, ][comp.inf[neg.outlier.cols, ] == 1] <- 2
-        risk.genotypes[neg.outlier.cols] <- 0
-
-      }
-
-      ### recompute case comp differences ###
-      case.comp.diff <- case != comp
-
-      ### recompute cases minus complements ###
-      cases.minus.complements <- sign(case - comp)
-
-      ### determine whether families are informative for the set of target.snps ###
-      total.different.snps <- colSums(case.comp.diff)
-      informative.families <- total.different.snps != 0
-      inf.family.rows <- which(informative.families)
-      n.informative.families <- sum(informative.families)
-      case.inf <- case[informative.families, ]
-      comp.inf <- comp[informative.families, ]
-      cases.minus.complements.inf <- cases.minus.complements[informative.families, ]
-
-      both.risk.geno.mat <- matrix(FALSE, nrow = nrow(case.inf), ncol = ncol(case.inf))
-      for (i in 1:ncol(both.risk.geno.mat)){
-
-        risk.geno <- risk.genotypes[[i]]
-        both.risk.geno.mat[i, ] <- case.inf[i, ] == comp.inf[i, ] & case.inf[i, ] %in% risk.geno
-
-      }
-
-      both.risk.geno <- colSums(both.risk.geno.mat)
-      weighted.informativeness <- n.both.risk.geno.weight * both.risk.geno +
-        n.different.snps.weight * total.different.snps[informative.families]
-      family.weights <- weight.lookup[weighted.informativeness]
-      invsum.family.weights <- 1/sum(family.weights)
-
-      ### compute weighted difference vectors for cases vs complements ###
-      dif.vecs <- as.matrix((family.weights *invsum.family.weights)*t(cases.minus.complements.inf))
-
-      ### take the sum of the case - complement difference vectors over families ###
-      sum.dif.vecs <- colSums(dif.vecs)
-
-      ### re-compute proposed risk set ###
-      risk.dirs <- sign(sum.dif.vecs)
-      pos.risk <- which(risk.dirs > 0)
-      neg.risk <- which(risk.dirs <= 0)
-
-      n.pos <- length(pos.risk)
-      n.neg <- length(neg.risk)
-      if (n.neg > 0) {
-        n1 <- case.inf[neg.risk, , drop = FALSE] < 2
-        n2 <- comp.inf[neg.risk, , drop = FALSE] < 2
-      }
-      if (n.pos > 0) {
-        p1 <- case.inf[pos.risk, , drop = FALSE] > 0
-        p2 <- comp.inf[pos.risk, , drop = FALSE] > 0
-      }
-      if (n.pos == 0) {
-        case.high.risk <- colSums(n1) == n.target
-        comp.high.risk <- colSums(n2) == n.target
-      } else if (n.neg == 0) {
-        case.high.risk <- colSums(p1) == n.target
-        comp.high.risk <- colSums(p2) == n.target
-      } else {
-        case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
-        comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
-      }
-      n.case.high.risk <- sum(case.high.risk)
-      n.comp.high.risk <- sum(comp.high.risk)
-      case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
-      comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
-
-    }
-  }
 
   ### count the number of risk alleles in those with the full risk set ###
   case.high.risk.alleles <- colSums(case.high.inf[pos.risk, , drop = FALSE]) +
@@ -444,12 +265,13 @@ epi.chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
     }
 
     return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
-                risk.set.alleles = risk.set.alleles, high.risk.families = high.risk.families))
+                risk.set.alleles = target.snps.risk.alleles, warn.message = warn.message,
+                high.risk.families = high.risk.families))
 
   } else {
 
     return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
-                risk.set.alleles = risk.set.alleles))
+                risk.set.alleles = target.snps.risk.alleles, warn.message = warn.message))
 
   }
 
