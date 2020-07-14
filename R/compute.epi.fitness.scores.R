@@ -110,7 +110,7 @@ compute.epi.fitness.scores <- function(results.dir, preprocessed.list, n.differe
     saveRDS(updated.res,
             file = file.path(dirname(island.names[[1]]), 'epi.combined.island.unique.chromosome.results.rds'))
     saveRDS(full.updated.res,
-            file = file.path(dirname(island.names[[1]]), 'combined.island.unique.chromosome.results.rds'))
+            file = file.path(dirname(island.names[[1]]), 'epi.combined.island.results.rds'))
 
     return(list(all.results = full.updated.res, unique.results = updated.res))
 
