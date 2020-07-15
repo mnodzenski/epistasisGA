@@ -192,13 +192,27 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     ### evolve populations over island clusters ###
 
     # make registry for submitting batch jobs
-    registry <- do.call(makeRegistry, registryargs)
-    registry$cluster.functions <- switch(cluster.type, interactive = batchtools::makeClusterFunctionsInteractive(),
-        socket = batchtools::makeClusterFunctionsSocket(n.workers), multicore = batchtools::makeClusterFunctionsMulticore(n.workers),
-        sge = batchtools::makeClusterFunctionsSGE(template = cluster.template), slurm = batchtools::makeClusterFunctionsSlurm(template = cluster.template),
-        lsf = batchtools::makeClusterFunctionsLSF(template = cluster.template), openlava = batchtools::makeClusterFunctionsOpenLava(template = cluster.template),
-        torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template), default = stop("unsupported cluster type '",
-            cluster, "'"))
+    reg.dir <- file.path(registryargs$file.dir, "registry")
+    reg.dir <- gsub("//", "/", reg.dir, fixed = TRUE)
+    if (!dir.exists(reg.dir)){
+
+        registry <- do.call(makeRegistry, registryargs)
+        registry$cluster.functions <- switch(cluster.type, interactive = batchtools::makeClusterFunctionsInteractive(),
+                                             socket = batchtools::makeClusterFunctionsSocket(n.workers),
+                                             multicore = batchtools::makeClusterFunctionsMulticore(n.workers),
+                                             sge = batchtools::makeClusterFunctionsSGE(template = cluster.template),
+                                             slurm = batchtools::makeClusterFunctionsSlurm(template = cluster.template),
+                                             lsf = batchtools::makeClusterFunctionsLSF(template = cluster.template),
+                                             openlava = batchtools::makeClusterFunctionsOpenLava(template = cluster.template),
+                                             torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
+                                             default = stop("unsupported cluster type '", cluster, "'"))
+    } else {
+
+        warning(paste("Registry already exists, loading from", reg.dir))
+        registry <- loadRegistry(reg.dir, writeable = TRUE)
+        clearRegistry(reg = registry)
+
+    }
 
     # specify number of chunks
     if (is.null(n.chunks)) {
