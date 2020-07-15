@@ -175,8 +175,8 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
 
     } else {
 
-        prev.islands <- list.files(results.dir)
-        prev.islands <- prev.islands[!prev.islands %in% c("Old", "old")]
+        prev.islands <- list.files(results.dir, pattern = "cluster")
+        prev.islands <- prev.islands[!prev.islands %in% c("Old", "old", "combined")]
         prev.clusters <- unique(as.numeric(gsub("cluster|.island[0-9].rds", "", prev.islands)))
         clusters.to.run <- setdiff(clusters.to.run, prev.clusters)
         n.clusters.to.run <- length(clusters.to.run)
