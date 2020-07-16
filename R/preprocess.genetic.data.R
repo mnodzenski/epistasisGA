@@ -15,12 +15,17 @@
 #' Any SNPs with MAF < \code{min.allele.freq} in the parents will be filtered out. Defaults to 0.025.
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 #'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
+#' @param snp.sampling.probs A vector indicating the sampling probabilities of the SNPs in \code{case.genetic.data}. SNPs will be sampled in the
+#' genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
+#' each SNP, and sampling will be proportional to the statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
+#' real numbers. See argument \code{prob} from function \code{sample} for more details.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{case.genetic.data}{The pre-processed version of the case genetic data.}
 #'  \item{complement.genetic.data}{Pre-processed complement genetic data. If mother and father data are input,
 #'  the complement genetic data are first created and then pre-processed.}
-#'  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations.}
+#'  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
+#'  is not specified, and \code{snp.sampling.probs} if specified.}
 #'  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
 #'  \item{chrom.mat}{The pre-processed version of \code{chrom.mat}.}
 #'  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
@@ -48,7 +53,7 @@
 #' @export
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025, bp.param = bpparam()) {
+    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025, bp.param = bpparam(), snp.sampling.probs = NULL) {
 
     # make sure the appropriate genetic data is included
     if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)) {
@@ -99,28 +104,37 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    ### use conditional logistic regression to estimate model of inherritance ###
-    case.status <- c(rep(1, nrow(case.genetic.data)), rep(0, nrow(complement.genetic.data)))
-    ids <- rep(seq_len(nrow(case.genetic.data)), 2)
-    n <- nrow(case.genetic.data)
-    res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data) {
+    if (is.null(snp.sampling.probs)){
 
-        case.snp <- factor(case.genetic.data[, snp], levels = c(0, 1, 2))
-        comp.snp <- factor(complement.genetic.data[, snp], levels = c(0, 1, 2))
+        ### use conditional logistic regression to estimate univariate association ###
+        case.status <- c(rep(1, nrow(case.genetic.data)), rep(0, nrow(complement.genetic.data)))
+        ids <- rep(seq_len(nrow(case.genetic.data)), 2)
+        n <- nrow(case.genetic.data)
+        res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data) {
 
-        # get p-value of association from conditional logistic regression
-        case.comp.geno <- as.numeric(as.character(c(case.snp, comp.snp)))
-        clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
-        clogit.chisq <- summary(clogit.res)$logtest[1]
+            case.snp <- case.genetic.data[, snp]
+            comp.snp <- complement.genetic.data[, snp]
 
-        return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+            # get p-value of association from conditional logistic regression
+            case.comp.geno <- c(case.snp, comp.snp)
+            clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
+            clogit.chisq <- summary(clogit.res)$logtest[1]
 
-    }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, BPPARAM = bp.param)
+            return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+
+        }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, BPPARAM = bp.param)
+        chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+    } else {
+
+        chisq.stats <- snp.sampling.probs[!below.maf.threshold]
+
+    }
 
     # combine results into new dataframes
     case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
     complement.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$comp.snp))))
-    chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
 
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
         chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, chrom.mat = chrom.mat,
