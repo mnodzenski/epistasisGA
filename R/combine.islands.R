@@ -47,7 +47,7 @@
 combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
 
     # list all islands in the results data
-    island.names <- list.files(results.dir, full.names = TRUE)
+    island.names <- list.files(results.dir, pattern = "cluster", full.names = TRUE)
 
     # make sure we haven't already run this function
     out.file.name <- "combined.island.results.rds"
