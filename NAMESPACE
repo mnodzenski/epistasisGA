@@ -2,8 +2,6 @@
 
 export(chrom.fitness.score)
 export(combine.islands)
-export(compute.epi.fitness.scores)
-export(epi.chrom.fitness.score)
 export(epi.test)
 export(evolve.island)
 export(network.plot)
