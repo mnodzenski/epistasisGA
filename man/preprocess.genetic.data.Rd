@@ -11,7 +11,8 @@ preprocess.genetic.data(
   mother.genetic.data = NULL,
   chrom.mat,
   min.allele.freq = 0.025,
-  bp.param = bpparam()
+  bp.param = bpparam(),
+  snp.sampling.probs = NULL
 )
 }
 \arguments{
@@ -34,6 +35,11 @@ Any SNPs with MAF < \code{min.allele.freq} in the parents will be filtered out. 
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
+
+\item{snp.sampling.probs}{A vector indicating the sampling probabilities of the SNPs in \code{case.genetic.data}. SNPs will be sampled in the
+genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
+each SNP, and sampling will be proportional to the statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
+real numbers. See argument \code{prob} from function \code{sample} for more details.}
 }
 \value{
 A list containing the following:
@@ -41,7 +47,8 @@ A list containing the following:
  \item{case.genetic.data}{The pre-processed version of the case genetic data.}
  \item{complement.genetic.data}{Pre-processed complement genetic data. If mother and father data are input,
  the complement genetic data are first created and then pre-processed.}
- \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations.}
+ \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
+ is not specified, and \code{snp.sampling.probs} if specified.}
  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
  \item{chrom.mat}{The pre-processed version of \code{chrom.mat}.}
  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
