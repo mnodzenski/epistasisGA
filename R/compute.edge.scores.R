@@ -33,7 +33,7 @@
 #' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 #'
 #' set.seed(10)
-#' edege.scores <- compute.edge.scores(combined.res$unique.results)
+#' edge.scores <- compute.edge.scores(combined.res$unique.results)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -71,7 +71,7 @@ compute.edge.scores <- function(results.df, score.type = "max") {
 
     } else if (score.type == "logsum"){
 
-        out.dt <- all.edge.weights[ , .(edge.score = 1+log(sum(h.score))), .(V1, V2)]
+        out.dt <- all.edge.weights[ , .(edge.score = log(1 + sum(h.score))), .(V1, V2)]
         setorder(out.dt, -edge.score)
 
     }
