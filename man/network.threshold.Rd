@@ -102,7 +102,7 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3'
                    perm.edge.scores)
 
  ## plot thresholded network
- network.plot(threshold.res)
+ network.plot(threshold.res$network.edges)
 
  lapply(c('tmp_3' ,'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
 
