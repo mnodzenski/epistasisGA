@@ -5,9 +5,10 @@
 \title{A function to plot a network of SNPs with potential multi-SNP effects.}
 \usage{
 network.plot(
-  results.df,
+  results.df = NULL,
+  edge.dt = NULL,
   node.shape = "crectangle",
-  weight.fun = "max",
+  score.type = "max",
   repulse.rad = 1000,
   node.size = 25,
   graph.area = 100,
@@ -16,12 +17,15 @@ network.plot(
 )
 }
 \arguments{
-\item{results.df}{A subset of the \code{all.results} data frame of results from \code{combine.islands} after running \code{run.ga}.}
+\item{results.df}{A subset of the \code{unique.results} data frame of results from \code{combine.islands} after running \code{run.ga}.If not
+specified, \code{edge.dt} must be specified.}
+
+\item{edge.dt}{The data.table returned by function \code{network.threshold}. If not specified, \code{results.df} must instead be specified.}
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.}
 
-\item{weight.fun}{A character string specifying the method for weighting network edges and nodes, with options
-'mean', 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
+\item{score.type}{A character string specifying the method for weighting network edges and nodes, with options
+'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
  weights.}
 
@@ -64,7 +68,7 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 
 set.seed(10)
-network.plot(combined.res$all.results)
+network.plot(combined.res$unique.results)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
