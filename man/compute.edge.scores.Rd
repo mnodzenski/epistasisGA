@@ -44,7 +44,7 @@ run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 
 set.seed(10)
-edege.scores <- compute.edge.scores(combined.res$unique.results)
+edge.scores <- compute.edge.scores(combined.res$unique.results)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
