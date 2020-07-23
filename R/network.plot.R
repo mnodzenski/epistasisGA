@@ -54,7 +54,7 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, plot = TRUE) {
 
     # if not inputting an edge.df, compute it
-    if (is.null(edge.df)){
+    if (is.null(edge.dt)){
 
         edge.dt <- compute.edge.scores(results.df, score.type = score.type)
 
