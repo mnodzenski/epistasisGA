@@ -90,7 +90,7 @@
 #'                    perm.edge.scores)
 #'
 #'  ## plot thresholded network
-#'  network.plot(threshold.res)
+#'  network.plot(edge.dt = threshold.res$network.edges)
 #'
 #'  lapply(c('tmp_3' ,'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
 #'
