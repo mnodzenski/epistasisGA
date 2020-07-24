@@ -11,7 +11,7 @@ evolve.island(
   case.comp.different,
   case.minus.comp,
   both.one.mat,
-  chrom.mat,
+  block.ld.mat,
   n.chromosomes,
   n.candidate.snps,
   chromosome.size,
@@ -45,7 +45,8 @@ evolve.island(
 \arguments{
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.}
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
@@ -59,7 +60,11 @@ where rows correspond to individuals and columns correspond to snps.}
 \item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 
-\item{chrom.mat}{A logical matrix indicating whether the SNPs in \code{case.genetic.data} are located on the same biological chromosome.}
+\item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
+to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
+with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
+to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
+proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.}
 
 \item{n.chromosomes}{An integer specifying the number of chromosomes to use in the GA.}
 
@@ -161,19 +166,19 @@ data(case)
 data(dad)
 data(mom)
 library(Matrix)
-chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
 data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               chrom.mat = chrom.mat[ , 1:10])
+                               block.ld.mat = block.ld.mat[ , 1:10])
 
  case.genetic.data <- data.list$case.genetic.data
  complement.genetic.data <- data.list$complement.genetic.data
  original.col.numbers <- data.list$original.col.numbers
  chisq.stats <- data.list$chisq.stats
- chrom.mat <- data.list$chrom.mat
+ block.ld.mat <- data.list$block.ld.mat
  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
  case.comp.different <- case.minus.comp != 0
  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
@@ -183,7 +188,7 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    complement.genetic.data = complement.genetic.data,
                    case.comp.different = case.comp.different,
                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                   chrom.mat = chrom.mat, n.chromosomes = 10,
+                   block.ld.mat = block.ld.mat, n.chromosomes = 10,
                    n.candidate.snps = ncol(case.genetic.data),
                    chromosome.size = 3, start.generation = 1,
                    snp.chisq = snp.chisq,

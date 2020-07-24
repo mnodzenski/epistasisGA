@@ -55,11 +55,11 @@ These data were simulated based on a case-parent triad study of children with or
 
 ## Pre-process Data
 
-The second step in the analysis pipeline is to pre-process the data. We begin pre-processing by constructing a matrix to indicate whether a given pair of SNPs are located on the same biological chromosome, with `TRUE` indicating presence on the same chromosome and FALSE otherwise. For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the matrix as follows:
+The second step in the analysis pipeline is to pre-process the data. We begin pre-processing by constructing a block diagonal matrix to indicate whether a given pair of SNPs should be considered to be in linkage disequilibrium (LD), where `TRUE` indicates a pair of SNPs are in LD and FALSE otherwise. Below, we default to the assumption that SNPs located on the same biological chromosome are in LD, but users need not make this assumption and are encouraged to more carefully tailor this matrix based on individual circumstances. An important note is that the matrix must be block diagonal (or uniformly set to TRUE), and the ordering of the columns in the input triad data must be consistent with the specified LD structure. For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the matrix as follows:
 
 ```{r}
 library(Matrix)
-chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                                matrix(rep(TRUE, 25^2), nrow = 25),
                                matrix(rep(TRUE, 25^2), nrow = 25),
                                matrix(rep(TRUE, 25^2), nrow = 25))))
@@ -71,7 +71,7 @@ Now, we can execute pre-processing:
 ```{r}
 pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    mother.genetic.data = mom,
-                                   chrom.mat = chrom.mat)
+                                   block.ld.mat = block.ld.mat)
 ```
 
 This function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP based on the observed frequency in the mothers and fathers. The coding is then flipped for any SNPs where the allele count corresponds to the major allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 2.5\% by default, are filtered out. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each SNP assuming a log-additive model using the method of conditioning on the set of transmitted and untransmitted genotypes, regardless of phase, described by @Cordell2002. These statistics are used in GADGET when SNPs are sampled for mutation, with the sampling probability for a given SNP proportional to its $\chi^2$ value. Alternatively, users can manually specify a vector proportional to SNP sampling probabilities using argument `snp.sampling.probs`. This may be of interest to users who wish to incorporate prior biological or expert knowledge into the algorithm to prioritize sampling a subset of particularly interesting SNPs.   
@@ -174,7 +174,7 @@ preprocess.lists <- lapply(perm.data.list, function(permutation){
   
   preprocess.genetic.data(permutation$case,
                           complement.genetic.data = permutation$comp,
-                          chrom.mat = chrom.mat)
+                          block.ld.mat = block.ld.mat)
 })
 
 ```
@@ -346,7 +346,8 @@ We also perform this operation for each set of results from the permuted dataset
 unique.perm.res <- lapply(seq_along(preprocess.lists), function(permutation){
 
   res.dir <- paste0("perm", permutation, "_size3_res")
-  perm.res.file <- file.path(res.dir, "combined.island.unique.chromosome.results.rds")
+  perm.res.file <- file.path(res.dir, 
+                             "combined.island.unique.chromosome.results.rds")
   readRDS(perm.res.file)
   
 })
