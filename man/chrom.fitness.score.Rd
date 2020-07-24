@@ -11,7 +11,7 @@ chrom.fitness.score(
   target.snps,
   cases.minus.complements,
   both.one.mat,
-  chrom.mat,
+  block.ld.mat,
   weight.lookup,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
@@ -21,7 +21,8 @@ chrom.fitness.score(
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.}
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
@@ -37,7 +38,11 @@ where rows correspond to individuals and columns correspond to snps.}
 \item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 
-\item{chrom.mat}{A logical matrix indicating whether the SNPs in \code{case.comp.differences} are located on the same biological chromosome.}
+\item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
+to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
+with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
+to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
+proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
@@ -85,13 +90,13 @@ case.comp.diff <- case != comp
 case.minus.comp <- sign(case - comp)
 both.one.mat <- case == 1 & comp == 1
 library(Matrix)
-chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
                     case.minus.comp, both.one.mat,
-                    chrom.mat, weight.lookup)
+                    block.ld.mat, weight.lookup)
 
 }

@@ -5,6 +5,7 @@
 #'
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+#' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
 #' Columns are SNPs, rows are families.
@@ -13,7 +14,11 @@
 #' @param case.minus.comp A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 #' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
-#' @param chrom.mat A logical matrix indicating whether the SNPs in \code{case.genetic.data} are located on the same biological chromosome.
+#' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
+#'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
+#'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
+#'  to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
+#'  proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.
 #' @param n.chromosomes An integer specifying the number of chromosomes to use in the GA.
 #' @param n.candidate.snps A scalar indicating the number eligible SNPs in the input data, after filtering out low MAF SNPs.
 #' @param chromosome.size An integer specifying the number of SNPs on each chromosome.
@@ -81,19 +86,19 @@
 #' data(dad)
 #' data(mom)
 #' library(Matrix)
-#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                chrom.mat = chrom.mat[ , 1:10])
+#'                                block.ld.mat = block.ld.mat[ , 1:10])
 #'
 #'  case.genetic.data <- data.list$case.genetic.data
 #'  complement.genetic.data <- data.list$complement.genetic.data
 #'  original.col.numbers <- data.list$original.col.numbers
 #'  chisq.stats <- data.list$chisq.stats
-#'  chrom.mat <- data.list$chrom.mat
+#'  block.ld.mat <- data.list$block.ld.mat
 #'  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
 #'  case.comp.different <- case.minus.comp != 0
 #'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
@@ -103,7 +108,7 @@
 #'                    complement.genetic.data = complement.genetic.data,
 #'                    case.comp.different = case.comp.different,
 #'                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-#'                    chrom.mat = chrom.mat, n.chromosomes = 10,
+#'                    block.ld.mat = block.ld.mat, n.chromosomes = 10,
 #'                    n.candidate.snps = ncol(case.genetic.data),
 #'                    chromosome.size = 3, start.generation = 1,
 #'                    snp.chisq = snp.chisq,
@@ -118,7 +123,7 @@
 #' @export
 
 evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genetic.data, case.comp.different,
-    case.minus.comp, both.one.mat, chrom.mat, n.chromosomes, n.candidate.snps, chromosome.size, start.generation,
+    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, n.candidate.snps, chromosome.size, start.generation,
     snp.chisq, original.col.numbers, all.converged = FALSE, n.different.snps.weight = 2, n.both.one.weight = 1,
     weight.lookup, migration.interval = 50, gen.same.fitness = 50,
     max.generations = 500,
@@ -174,7 +179,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         fitness.score.list <- lapply(seq_len(length(chromosome.list)), function(x) {
 
             chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]],
-                case.minus.comp, both.one.mat, chrom.mat, weight.lookup, n.different.snps.weight, n.both.one.weight,
+                case.minus.comp, both.one.mat, block.ld.mat, weight.lookup, n.different.snps.weight, n.both.one.weight,
                 n.case.high.risk.thresh, outlier.sd)
 
         })
@@ -411,7 +416,7 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         fitness.score.list <- lapply(seq_len(length(chromosome.list)), function(x) {
 
             chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different, chromosome.list[[x]],
-                case.minus.comp, both.one.mat, chrom.mat, weight.lookup, n.different.snps.weight, n.both.one.weight,
+                case.minus.comp, both.one.mat, block.ld.mat, weight.lookup, n.different.snps.weight, n.both.one.weight,
                 n.case.high.risk.thresh, outlier.sd)
 
         })
