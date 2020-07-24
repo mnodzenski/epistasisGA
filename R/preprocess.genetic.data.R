@@ -3,6 +3,7 @@
 #' This function performs several pre-processing steps, intended for use before function run.ga.
 #'
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+#' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
 #' Columns are SNPs, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
@@ -10,7 +11,11 @@
 #' Does not need to be specified if \code{complement.genetic.data} is specified.
 #' @param mother.genetic.data The genetic data for the mothers of the cases. Columns are SNPs, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified.
-#' @param chrom.mat A logical matrix indicating whether the SNPs in the input genetic data are located on the same biological chromosome.
+#' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
+#'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
+#'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
+#'  to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
+#'  proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.
 #' @param min.allele.freq The minimum minor allele frequency in the parents required for a SNP to be considered for inclusion in the genetic algorithm.
 #' Any SNPs with MAF < \code{min.allele.freq} in the parents will be filtered out. Defaults to 0.025.
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
@@ -27,7 +32,7 @@
 #'  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
 #'  is not specified, and \code{snp.sampling.probs} if specified.}
 #'  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
-#'  \item{chrom.mat}{The pre-processed version of \code{chrom.mat}.}
+#'  \item{block.ld.mat}{The pre-processed version of \code{block.ld.mat}.}
 #'  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
 #' }
 #'
@@ -37,12 +42,12 @@
 #' data(dad)
 #' data(mom)
 #' library(Matrix)
-#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
-#'                                mother.genetic.data = mom[ , 1:10], chrom.mat = chrom.mat[ , 1:10])
+#'                                mother.genetic.data = mom[ , 1:10], block.ld.mat = block.ld.mat[ , 1:10])
 #'
 #' @importFrom matrixStats colSds rowMaxs
 #' @importFrom data.table data.table rbindlist setorder
@@ -53,7 +58,7 @@
 #' @export
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-    mother.genetic.data = NULL, chrom.mat, min.allele.freq = 0.025, bp.param = bpparam(), snp.sampling.probs = NULL) {
+    mother.genetic.data = NULL, block.ld.mat, min.allele.freq = 0.025, bp.param = bpparam(), snp.sampling.probs = NULL) {
 
     # make sure the appropriate genetic data is included
     if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)) {
@@ -83,7 +88,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         mother.genetic.data <- mother.genetic.data[, !below.maf.threshold]
         case.genetic.data <- case.genetic.data[, !below.maf.threshold]
         complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
-        chrom.mat <- chrom.mat[!below.maf.threshold, !below.maf.threshold]
+        block.ld.mat <- block.ld.mat[!below.maf.threshold, !below.maf.threshold]
 
     } else if (!is.null(complement.genetic.data)) {
 
@@ -100,7 +105,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         ### remove the snps not meeting the required allele frequency threshold ###
         case.genetic.data <- case.genetic.data[, !below.maf.threshold]
         complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
-        chrom.mat <- chrom.mat[!below.maf.threshold, !below.maf.threshold]
+        block.ld.mat <- block.ld.mat[!below.maf.threshold, !below.maf.threshold]
 
     }
 
@@ -137,7 +142,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
 
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
-        chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, chrom.mat = chrom.mat,
+        chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
         minor.allele.vec = minor.alleles))
 
 
