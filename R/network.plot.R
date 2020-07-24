@@ -64,16 +64,16 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
     edge.dt.long <- melt(edge.dt, 3, 1:2, value.name = 'name')
     if (score.type == "max"){
 
-        node.dt <- edge.dt.long[ , .(size = max(edge.score)), .(name)]
+        node.dt <- edge.dt.long[ , list(size = max(edge.score)), by = 'name']
 
     } else if (score.type == "sum"){
 
-        node.dt <- edge.dt.long[ , .(size = sum(edge.score)), .(name)]
+        node.dt <- edge.dt.long[ , list(size = sum(edge.score)), by = 'name']
 
     } else if (score.type == "logsum"){
 
         edge.dt.long[ , edge.score := exp(edge.score) - 1]
-        node.dt <- edge.dt.long[ , .(size = log(1 + sum(edge.score))), .(name)]
+        node.dt <- edge.dt.long[ , list(size = log(1 + sum(edge.score))), by = 'name']
 
     }
 
