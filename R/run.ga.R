@@ -63,13 +63,13 @@
 #' data(dad)
 #' data(mom)
 #' library(Matrix)
-#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                chrom.mat = chrom.mat[ , 1:10])
+#'                                block.ld.mat = block.ld.mat[ , 1:10])
 #' run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
@@ -139,7 +139,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     complement.genetic.data <- data.list$complement.genetic.data
     original.col.numbers <- data.list$original.col.numbers
     chisq.stats <- data.list$chisq.stats
-    chrom.mat <- data.list$chrom.mat
+    block.ld.mat <- data.list$block.ld.mat
 
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
@@ -231,7 +231,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
 
     # write jobs to registry
     ids <- batchMap(function(cluster.number, island.cluster.size, n.migrations, case.genetic.data,
-        complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat, chrom.mat, n.chromosomes,
+        complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes,
         n.candidate.snps, chromosome.size, start.generation, snp.chisq, original.col.numbers, n.different.snps.weight,
         n.both.one.weight, weight.lookup, migration.interval, gen.same.fitness, max.generations,
         tol, n.top.chroms, initial.sample.duplicates, snp.sampling.type, crossover.prop, n.case.high.risk.thresh, outlier.sd) {
@@ -243,7 +243,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
 
                 evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
                   case.comp.different = case.comp.different, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                  chrom.mat = chrom.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
+                  block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
                   chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
                   n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
                   weight.lookup = weight.lookup, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
@@ -279,7 +279,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
                   island <- island.populations[[cluster.idx]]
                   evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
                     complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
-                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, chrom.mat = chrom.mat,
+                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat,
                     n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
                     start.generation = island$generation, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
                     all.converged = all.converged, n.different.snps.weight = n.different.snps.weight,
@@ -313,7 +313,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
 
             island <- evolve.island(n.migrations = NULL, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
                 case.comp.different = case.comp.different, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                chrom.mat = chrom.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
+                block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
                 chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
                 n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
                 weight.lookup = weight.lookup, migration.interval = generations, gen.same.fitness = gen.same.fitness,
@@ -331,7 +331,7 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     }, cluster.number = cluster.ids, more.args = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
         complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
         island.cluster.size = island.cluster.size, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-        chrom.mat = chrom.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
+        block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
         chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, weight.lookup = weight.lookup,
         migration.interval = migration.generations, gen.same.fitness = gen.same.fitness, max.generations = generations,
