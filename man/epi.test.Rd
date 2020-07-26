@@ -2,13 +2,13 @@
 % Please edit documentation in R/epi.test.R
 \name{epi.test}
 \alias{epi.test}
-\title{A function to run a test of the null hypothesis that a collection of SNPs do not exhibit epistasis.}
+\title{A function to run a test of the null hypothesis that a collection of SNPs do not exhibit epistasis, conditional
+upon the observed marginal associations.}
 \usage{
 epi.test(
-  snps,
-  annotation.data,
+  snp.cols,
   preprocessed.list,
-  ld.mat = NULL,
+  n.permutes = 1000,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function.int = 2,
@@ -17,13 +17,11 @@ epi.test(
 )
 }
 \arguments{
-\item{snps}{A character vector of the SNP rsids to be examined (should match up with the rsids in \code{annotation.data}).}
-
-\item{annotation.data}{A data frame containing columns 'RSID', 'REF' and 'ALT'. Column 'RSID' gives the
-RSIDs for the input SNPs, with the rows ordered such that the first RSID entry corresponds to the first SNP
-column in the data passed to function \code{preprocess.genetic.data}, the second RSID corresponds to the second SNP column, etc.}
+\item{snp.cols}{An integer vector specifying the columns in the input data containing the SNPs to be tested.}
 
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
+
+\item{n.permutes}{The number of permutations on which to base the test. Defaults to 1000.}
 
 \item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.}
 
@@ -36,24 +34,18 @@ of the number of different SNPs and SNPs both equal to one as an argument, denot
 
 \item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
 for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
-
-\item{ld.vec}{A logical matrix indicating whether the the SNPs in \code{snps} should be considered to
-be in linkage disequilibrium. If not specified, this defaults to the assumption that SNPs located on the
-same biological chromosome are in LD and those on different chromosomes are not.}
 }
 \value{
-A list of two elements. Note these two objects will also be written to \code{results.dir}
-as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'. Furthermore,
-this function should not be called twice on the same directory (i.e., only combine the islands one time).
+A list of thee elements:
 \describe{
- \item{all.results}{A dataset containing chromosome results across all islands,
- where top chromosomes that evolved on multiple distinct islands appear in multiple rows.}
- \item{unique.results}{A condensed version of \code{all.results} with one row per distinct chromosome
- and an additional variable indicating the number of islands on which that chromosome evolved.}
+ \item{pval}{The p-value of the test.}
+ \item{obs.fitness.score}{The fitness score from the observed data}
+ \item{perm.fitness.scores}{A vector of fitness scores for the permuted datasets.}
 }
 }
 \description{
-This function runs a test of the null hypothesis that a collection of SNPs do not exhibit epistasis.
+This function runs a permutation based test of the null hypothesis that a collection of SNPs do not exhibit epistasis,
+conditional upon the observed marginal associations.
 }
 \examples{
 
@@ -62,20 +54,25 @@ data(dad)
 data(mom)
 data(snp.annotations)
 library(Matrix)
-chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
 
-pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
-                               mother.genetic.data = mom[ , 1:10],
-                               chrom.mat = chrom.mat[ , 1:10])
+pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
+                               mother.genetic.data = mom,
+                               block.ld.mat = block.ld.mat)
 
-run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
-       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3,
+       results.dir = "tmp", cluster.type = "interactive",
+       registryargs = list(file.dir = "tmp_reg", seed = 1300),
+       n.top.chroms = 5, n.islands = 8, island.cluster.size = 4,
+       n.migrations = 2)
 
-combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
+combined.res <- combine.islands('tmp', snp.annotations, pp.list)
+
+top.snps <- as.vector(t(combined.res$unique.results[1, 1:3]))
+epi.test.res <- epi.test(top.snps, pp.list)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
