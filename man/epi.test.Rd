@@ -13,7 +13,8 @@ epi.test(
   n.both.one.weight = 1,
   weight.function.int = 2,
   n.case.high.risk.thresh = 20,
-  outlier.sd = 2.5
+  outlier.sd = 2.5,
+  bp.param = bpparam()
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ of the number of different SNPs and SNPs both equal to one as an argument, denot
 
 \item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
 for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
+
+\item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
+If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
 }
 \value{
 A list of thee elements:
