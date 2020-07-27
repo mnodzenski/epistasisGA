@@ -14,6 +14,8 @@
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
 #' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
+#' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
+#'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -51,12 +53,13 @@
 #' unlink('tmp_reg', recursive = TRUE)
 #'
 #' @importFrom data.table rbindlist setkey setorder `:=`
+#' @importFrom BiocParallel bplapply bpparam
 #' @export
 
 epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, n.case.high.risk.thresh = 20,
-                     outlier.sd = 2.5) {
+                     outlier.sd = 2.5, bp.param = bpparam()) {
 
     ### pick out the target columns in the pre-processed data ###
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -141,7 +144,10 @@ epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     })
 
     ### loop over permuted datasets and compute fitness scores
-    perm.fitness.scores <- vapply(permuted.data, function(permute){
+    perm.fitness.scores <- unlist(bplapply(permuted.data,
+
+        function(permute, target.snps, block.ld.mat, weight.lookup, n.different.snps.weight,
+                 n.both.one.weight, n.case.high.risk.thresh, outlier.sd){
 
         ### grab case and complement data ###
         case.genetic.data <- permute$case
@@ -163,7 +169,10 @@ epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
                                              n.case.high.risk.thresh, outlier.sd)
         return(fitness.score$fitness.score)
 
-    }, 1.0)
+    }, target.snps  = target.snps, block.ld.mat = block.ld.mat, weight.lookup = weight.lookup,
+    n.different.snps.weight =  n.different.snps.weight, n.both.one.weight = n.both.one.weight,
+    n.case.high.risk.thresh = n.case.high.risk.thresh, outlier.sd = outlier.sd,
+    BPPARAM = bp.param))
 
     ### compute p-value ###
     pval <- sum(perm.fitness.scores > obs.fitness.score)/n.permutes
