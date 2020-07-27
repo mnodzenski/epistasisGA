@@ -125,7 +125,6 @@ epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
 
     ### loop over ld blocks and shuffle rows of the case/complement data ###
     permutes <- seq_len(n.permutes)
-    print("permuting data")
     permuted.data <- lapply(permutes, function(permute){
 
         case.permuted <- case.risk
@@ -142,7 +141,6 @@ epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     })
 
     ### loop over permuted datasets and compute fitness scores
-    print("computing permutation fitness scores")
     perm.fitness.scores <- vapply(permuted.data, function(permute){
 
         ### grab case and complement data ###
