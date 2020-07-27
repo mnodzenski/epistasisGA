@@ -313,7 +313,7 @@ epi.test.res <- epi.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is very unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected child.
+The test indicates the observed fitness score is very unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected child, suggesting the SNPs in the top scoring chromosomes functional epistatically. 
 
 ## Visualize Results 
 
