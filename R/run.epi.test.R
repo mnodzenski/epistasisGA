@@ -47,7 +47,7 @@
 #' combined.res <- combine.islands('tmp', snp.annotations, pp.list)
 #'
 #' top.snps <- as.vector(t(combined.res$unique.results[1, 1:3]))
-#' epi.test.res <- epi.test(top.snps, pp.list)
+#' epi.test.res <- run.epi.test(top.snps, pp.list)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -56,7 +56,7 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @export
 
-epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
+run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, n.case.high.risk.thresh = 20,
                      outlier.sd = 2.5, bp.param = bpparam()) {
