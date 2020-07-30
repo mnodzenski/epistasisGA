@@ -309,7 +309,7 @@ Users should also be clear that rejecting the null hypothesis does not necessari
 
 ```{r}
 top.snps <- as.vector(t(chrom4.list[[1]][1, 1:4]))
-epi.test.res <- epi.test(top.snps, pp.list)
+epi.test.res <- run.epi.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
