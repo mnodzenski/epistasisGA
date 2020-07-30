@@ -6,8 +6,8 @@
 #'
 #' @param results.list A list of length d, where d is the number of chromosome sizes to be included in a global test.
 #'  Each element of the list must itself be a list whose first element \code{observed.data} is a data.table containing
-#'  the chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
-#'  is a list containing all permutation results data.tables, again using all chromosome results output by \code{combine.islands}
+#'  the \code{all.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
+#'  is a list containing all permutation results data.tables, again using the \code{all.results} results output by \code{combine.islands}
 #'  for each permutation.
 #' @return A list containing the following:
 #' \describe{
