@@ -217,7 +217,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
     condensed.res <- combine.islands(res.dir, snp.annotations,
                                      perm.data.list)
-    condensed.res$all.results$fitness.score
+    condensed.res$all.results
     
   })
   
@@ -233,12 +233,19 @@ We then use the permutation-based vectors of KS-statistics, with each element co
 
 ```{r}
 # chromosome size 3 results
+
+# function requires a list of vectors of
+# permutation based fitness scores
+chrom3.perm.fs <- lapply(perm.res.list[[1]], 
+                         function(x) x$fitness.score)
 chrom3.list <- list(observed.data = size3.combined.res$all.results$fitness.score,
-                     permutation.list = perm.res.list[[1]])
+                     permutation.list = chrom3.perm.fs)
 
 # chromosome size 4 results
+chrom4.perm.fs <- lapply(perm.res.list[[2]], 
+                         function(x) x$fitness.score)
 chrom4.list <- list(observed.data = size4.combined.res$all.results$fitness.score,
-                     permutation.list = perm.res.list[[2]])
+                     permutation.list = chrom4.perm.fs)
 
 # list of results across chromosome sizes, with each list 
 # element corresponding to a chromosome size
@@ -308,7 +315,7 @@ The `max.obs.fitness` element reports the maximum fitness score in the observed 
 Users should also be clear that rejecting the null hypothesis does not necessarily indicate that a collection of SNPs exhibit epistasis. Indeed, we may reject the null simply because we have identified a single SNP with a non-zero marginal disease association. To that end, we provide a permutation based procedure specifically testing for epistasis among a collection of SNPs conditional on the marginal SNP-disease associations (see [@GADGET2020] for details). To illustrate, in our example, we might be interested in whether the top scoring 4 SNP chromosome had a high fitness score due to epistasis rather than a collection of large marginal associations. We can execute this test as follows:
 
 ```{r}
-top.snps <- as.vector(t(chrom4.list[[1]][1, 1:4]))
+top.snps <- as.vector(t(size4.combined.res$all.results[1, 1:4]))
 epi.test.res <- run.epi.test(top.snps, pp.list)
 epi.test.res$pval
 ```
