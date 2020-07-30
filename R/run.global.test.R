@@ -5,10 +5,10 @@
 #' that the observed fitness score CDF is not more heavy-tailed on the right than the average null CDF
 #'
 #' @param results.list A list of length d, where d is the number of chromosome sizes to be included in a global test.
-#'  Each element of the list must itself be a list whose first element \code{observed.data} is a data.table containing
+#'  Each element of the list must itself be a list whose first element \code{observed.data} is a vector of fitness scores from the
 #'  the \code{all.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
-#'  is a list containing all permutation results data.tables, again using the \code{all.results} results output by \code{combine.islands}
-#'  for each permutation.
+#'  is a list containing vectors of all permutation results fitness scores, again using the \code{all.results} results output by
+#'  \code{combine.islands} for each permutation.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{obs.test.stat}{The observed Mahalanobis distance global test statistic.}
@@ -128,16 +128,16 @@
 #'  ## create list of results
 #'
 #'  #chromosome size 2 results
-#'  chrom2.list <- list(observed.data = combined.res2$all.results,
-#'                     permutation.list = list(p1.combined.res2$all.results,
-#'                                             p2.combined.res2$all.results,
-#'                                             p3.combined.res2$all.results))
+#'  chrom2.list <- list(observed.data = combined.res2$all.results$fitness.score,
+#'                     permutation.list = list(p1.combined.res2$all.results$fitness.score,
+#'                                             p2.combined.res2$all.results$fitness.score,
+#'                                             p3.combined.res2$all.results$fitness.score))
 #'
 #'  #chromosome size 3 results
-#'  chrom3.list <- list(observed.data = combined.res3$all.results,
-#'                     permutation.list = list(p1.combined.res3$all.results,
-#'                                             p2.combined.res3$all.results,
-#'                                             p3.combined.res3$all.results))
+#'  chrom3.list <- list(observed.data = combined.res3$all.results$fitness.score,
+#'                     permutation.list = list(p1.combined.res3$all.results$fitness.score,
+#'                                             p2.combined.res3$all.results$fitness.score,
+#'                                             p3.combined.res3$all.results$fitness.score))
 #'
 #'  final.results <- list(chrom2.list, chrom3.list)
 #'
@@ -169,8 +169,7 @@ run.global.test <- function(results.list) {
         }
 
         # grab the observed data
-        obs.data <- chrom.size.res$observed.data
-        obs.fitness.scores <- obs.data$fitness.score
+        obs.fitness.scores <- chrom.size.res$observed.data
 
         # compute the eCDF for the observed data
         obs.data.seq <- seq(0, max(obs.fitness.scores), length.out = 10000)
@@ -183,7 +182,7 @@ run.global.test <- function(results.list) {
         for (i in seq_len(length(perm.list))) {
 
             perm.res <- perm.list[[i]]
-            perm.ecdf.fun <- ecdf(perm.res$fitness.score)
+            perm.ecdf.fun <- ecdf(perm.res)
             perm.ecdf.mat[i, ] <- perm.ecdf.fun(obs.data.seq)
 
         }
@@ -199,10 +198,11 @@ run.global.test <- function(results.list) {
     })
 
     # grab the observed vector
-    obs.ks.vec <- sapply(chrom.size.ks.list, function(x) x$obs.ks)
+    obs.ks.vec <- vapply(chrom.size.ks.list, function(x) x$obs.ks, 1.0)
 
     # matrix of permutation based vectors
-    perm.ks.mat <- sapply(chrom.size.ks.list, function(x) x$perm.ks)
+    perm.ks.mat <- vapply(chrom.size.ks.list, function(x) x$perm.ks,
+                          rep(1.0, length(chrom.size.ks.list[[1]]$perm.ks)))
 
     # mean permutation based vector
     mean.perm.vec <- colMeans(perm.ks.mat)
@@ -249,40 +249,40 @@ run.global.test <- function(results.list) {
     }
 
     # element wise p-vals
-    element.pvals <- sapply(seq_len(length(obs.elements)), function(element.position) {
+    element.pvals <- vapply(seq_len(length(obs.elements)), function(element.position) {
 
         obs.elem <- obs.elements[element.position]
         perm.elems <- perm.elem.mat[, element.position]
         pval <- sum(perm.elems > obs.elem)/length(perm.elems)
         return(pval)
 
-    })
+    }, 1.0)
 
     # maximum permutation based fitness scores
-    max.perm.fitness <- sapply(results.list, function(chrom.size.res) {
+    max.perm.fitness <- vapply(results.list, function(chrom.size.res) {
 
         perm.list <- chrom.size.res$permutation.list
-        sapply(perm.list, function(permutation) max(permutation$fitness.score))
+        vapply(perm.list, max, 1.0)
 
     })
 
     # maximum observed fitness scores
-    max.obs.fitness <- sapply(results.list, function(chrom.size.res) {
+    max.obs.fitness <- vapply(results.list, function(chrom.size.res) {
 
-        obs.data <- chrom.size.res$observed.data
-        max(obs.data$fitness.score)
+        obs.fitness.scores <- chrom.size.res$observed.data
+        max(obs.fitness.scores)
 
-    })
+    }, 1.0)
 
     # pvals for max order statistics
-    max.order.pvals <- sapply(seq_along(max.obs.fitness), function(chrom.size) {
+    max.order.pvals <- vapply(seq_along(max.obs.fitness), function(chrom.size) {
 
         max.obs <- max.obs.fitness[chrom.size]
         max.perms <- max.perm.fitness[[chrom.size]]
         pval <- sum(max.perms > max.obs)/length(max.perms)
         pval
 
-    })
+    }, 1.0)
 
     # return results list
     res.list <- list(obs.test.stat = obs.mahala, pval = pval, perm.test.stats = perm.mahala, element.test.stats = obs.elements,
