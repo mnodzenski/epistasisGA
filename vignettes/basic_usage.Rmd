@@ -217,7 +217,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
     condensed.res <- combine.islands(res.dir, snp.annotations,
                                      perm.data.list)
-    condensed.res$all.results
+    condensed.res$all.results$fitness.score
     
   })
   
@@ -233,11 +233,11 @@ We then use the permutation-based vectors of KS-statistics, with each element co
 
 ```{r}
 # chromosome size 3 results
-chrom3.list <- list(observed.data = size3.combined.res$all.results,
+chrom3.list <- list(observed.data = size3.combined.res$all.results$fitness.score,
                      permutation.list = perm.res.list[[1]])
 
 # chromosome size 4 results
-chrom4.list <- list(observed.data = size4.combined.res$all.results,
+chrom4.list <- list(observed.data = size4.combined.res$all.results$fitness.score,
                      permutation.list = perm.res.list[[2]])
 
 # list of results across chromosome sizes, with each list 
