@@ -264,7 +264,7 @@ run.global.test <- function(results.list) {
         perm.list <- chrom.size.res$permutation.list
         vapply(perm.list, max, 1.0)
 
-    })
+    }, 1.0)
 
     # maximum observed fitness scores
     max.obs.fitness <- vapply(results.list, function(chrom.size.res) {
