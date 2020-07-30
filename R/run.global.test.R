@@ -264,7 +264,7 @@ run.global.test <- function(results.list) {
         perm.list <- chrom.size.res$permutation.list
         vapply(perm.list, max, 1.0)
 
-    }, 1.0)
+    }, rep(1.0, length(results.list[[1]]$permutation.list)))
 
     # maximum observed fitness scores
     max.obs.fitness <- vapply(results.list, function(chrom.size.res) {
@@ -278,7 +278,7 @@ run.global.test <- function(results.list) {
     max.order.pvals <- vapply(seq_along(max.obs.fitness), function(chrom.size) {
 
         max.obs <- max.obs.fitness[chrom.size]
-        max.perms <- max.perm.fitness[[chrom.size]]
+        max.perms <- max.perm.fitness[ , chrom.size]
         pval <- sum(max.perms > max.obs)/length(max.perms)
         pval
 
