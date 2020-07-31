@@ -81,7 +81,7 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom stats rbinom sd
 #' @importFrom survival clogit
-#' @importFrom batchtools chunk makeRegistry batchMap submitJobs
+#' @importFrom batchtools chunk makeRegistry batchMap submitJobs loadRegistry clearRegistry
 #' @importFrom parallel detectCores
 #' @export
 
