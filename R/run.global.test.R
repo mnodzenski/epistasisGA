@@ -36,7 +36,7 @@
 #' data(snp.annotations)
 #' library(Matrix)
 #' set.seed(1400)
-#' chrom.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
@@ -44,7 +44,7 @@
 # #preprocess data
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                chrom.mat = chrom.mat[ , 1:10])
+#'                                block.ld.mat = block.ld.mat[ , 1:10])
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -71,15 +71,15 @@
 #' #pre-process permuted data
 #' p1.list <- preprocess.genetic.data(perm.data.list[['permutation1']]$case,
 #'                                    complement.genetic.data = perm.data.list[['permutation1']]$comp,
-#'                                    chrom.mat = chrom.mat[ , 1:10])
+#'                                    block.ld.mat = block.ld.mat[ , 1:10])
 #'
 #' p2.list <- preprocess.genetic.data(perm.data.list[['permutation2']]$case,
 #'                                    complement.genetic.data = perm.data.list[['permutation2']]$comp,
-#'                                    chrom.mat = chrom.mat[ , 1:10])
+#'                                    block.ld.mat = block.ld.mat[ , 1:10])
 #'
 #' p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
 #'                                    complement.genetic.data = perm.data.list[['permutation3']]$comp,
-#'                                    chrom.mat = chrom.mat[ , 1:10])
+#'                                    block.ld.mat = block.ld.mat[ , 1:10])
 #'
 #' ##run GA for permuted data
 #'
