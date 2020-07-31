@@ -94,7 +94,8 @@
 #'
 #'  lapply(c('tmp_3' ,'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
 #'
-#' @importFrom  data.table rbindlist
+#' @importFrom data.table rbindlist
+#' @importFrom stats quantile
 #' @export
 
 network.threshold <- function(observed.edges, permutation.edges.list, desired.rFDR = 0.01) {
