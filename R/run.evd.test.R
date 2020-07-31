@@ -11,7 +11,7 @@
 #'  the fitness scores from the \code{unique.results} chromosome results from \code{combine.islands} for a given chromosome size.
 #'  The second element \code{permutation.list} is a list containing all permutation results fitness scores, again using the
 #'  \code{unique.results} results output by \code{combine.islands} for each permutation.
-#'  @param ... Additional arguments to be passed to \code{evd::fgev}.
+#' @param ... Additional arguments to be passed to \code{evd::fgev}.
 #' @return A list of length d, with each element corresponding to a chromosome size, and
 #' each sub-element containing a list with the following:
 #' \describe{

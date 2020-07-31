@@ -13,8 +13,9 @@ run.evd.test(results.list, ...)
 Each element of the list must itself be a list whose first element \code{observed.data} is a vector containing
 the fitness scores from the \code{unique.results} chromosome results from \code{combine.islands} for a given chromosome size.
 The second element \code{permutation.list} is a list containing all permutation results fitness scores, again using the
-\code{unique.results} results output by \code{combine.islands} for each permutation.
-@param ... Additional arguments to be passed to \code{evd::fgev}.}
+\code{unique.results} results output by \code{combine.islands} for each permutation.}
+
+\item{...}{Additional arguments to be passed to \code{evd::fgev}.}
 }
 \value{
 A list of length d, with each element corresponding to a chromosome size, and
