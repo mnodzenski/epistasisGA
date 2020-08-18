@@ -9,7 +9,7 @@ License: GPL-3
 Encoding: UTF-8
 Imports: BiocParallel, data.table, matrixStats, stats, survival, igraph, batchtools, qgraph, grDevices, parallel, evd
 Suggests: Matrix, BiocStyle, knitr, rmarkdown, magrittr, kableExtra, ggplot2
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Depends: R (>= 4.0)
 biocViews: Genetics, SNP, GeneticVariability
 VignetteBuilder: knitr
