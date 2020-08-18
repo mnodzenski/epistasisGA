@@ -107,7 +107,8 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
 
     # starting with the rsids
     chromosome.size <- sum(grepl("snp", colnames(combined.result)))/3
-    snp.cols <- combined.result[ , 1:chromosome.size]
+    choose.these <- seq_len(chromosome.size)
+    snp.cols <- combined.result[ , ..choose.these]
     snp.numbers <- unlist(snp.cols)
     rsids <- annotation.data$RSID
     rsid.dt <- data.table(matrix(rsids[snp.numbers], ncol = chromosome.size,
