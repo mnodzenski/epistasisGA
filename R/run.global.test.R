@@ -9,6 +9,7 @@
 #'  the \code{all.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
 #'  is a list containing vectors of all permutation results fitness scores, again using the \code{all.results} results output by
 #'  \code{combine.islands} for each permutation.
+#' @param n.top.scores The number of top scoring chromosomes to be used in calculating the global test. Defaults to 1000.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{obs.test.stat}{The observed Mahalanobis distance global test statistic.}
@@ -152,7 +153,7 @@
 #' @importFrom stats ecdf
 #' @export
 
-run.global.test <- function(results.list) {
+run.global.test <- function(results.list, n.top.scores = 1000) {
 
     # loop over chromosome sizes
     chrom.size.ks.list <- lapply(results.list, function(chrom.size.res) {
@@ -169,10 +170,14 @@ run.global.test <- function(results.list) {
         }
 
         # grab the observed data
-        obs.fitness.scores <- chrom.size.res$observed.data
+        obs.fitness.scores <- sort(chrom.size.res$observed.data, decreasing = TRUE)[seq_len(n.top.scores)]
 
         # grab permuted data
-        perm.list <- chrom.size.res$permutation.list
+        perm.list <- lapply(chrom.size.res$permutation.list, function(perm.scores){
+
+            sort(perm.scores, decreasing = TRUE)[seq_len(n.top.scores)]
+
+        })
 
         # get list of all unique fitness scores
         all.fitness.scores <- sort(unique(c(obs.fitness.scores, unlist(perm.list))))

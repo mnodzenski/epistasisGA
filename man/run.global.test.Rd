@@ -5,7 +5,7 @@
 \title{A function to run a global test of the null hypothesis that the observed fitness score CDF is not
 more heavy-tailed on the right than the average null CDF across a range of chromosome sizes}
 \usage{
-run.global.test(results.list)
+run.global.test(results.list, n.top.scores = 1000)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
@@ -13,6 +13,8 @@ Each element of the list must itself be a list whose first element \code{observe
 the \code{all.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
 is a list containing vectors of all permutation results fitness scores, again using the \code{all.results} results output by
 \code{combine.islands} for each permutation.}
+
+\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the global test. Defaults to 1000.}
 }
 \value{
 A list containing the following:
