@@ -171,28 +171,41 @@ run.global.test <- function(results.list) {
         # grab the observed data
         obs.fitness.scores <- chrom.size.res$observed.data
 
+        # grab permuted data
+        perm.list <- chrom.size.res$permutation.list
+
+        # get list of all unique fitness scores
+        all.fitness.scores <- sort(unique(c(obs.fitness.scores, unlist(perm.list))))
+
         # compute the eCDF for the observed data
-        obs.data.seq <- seq(0, max(obs.fitness.scores), length.out = 10000)
         obs.ecdf.fun <- ecdf(obs.fitness.scores)
-        obs.ecdf <- obs.ecdf.fun(obs.data.seq)
+        obs.ecdf <- obs.ecdf.fun(all.fitness.scores)
+
+        # compute ecdf for each permutation
+        perm.ecdf.list <- lapply(perm.list, function(permutation){
+
+            ecdf(permutation)
+
+        })
 
         # compute the mean eCDF from the permutation results
-        perm.list <- chrom.size.res$permutation.list
-        perm.ecdf.mat <- matrix(NA, ncol = length(obs.data.seq), nrow = length(perm.list))
+        perm.ecdf.mat <- matrix(NA, ncol = length(all.fitness.scores), nrow = length(perm.list))
         for (i in seq_len(length(perm.list))) {
 
-            perm.res <- perm.list[[i]]
-            perm.ecdf.fun <- ecdf(perm.res)
-            perm.ecdf.mat[i, ] <- perm.ecdf.fun(obs.data.seq)
+            perm.ecdf.fun <- perm.ecdf.list[[i]]
+            perm.ecdf.mat[i, ] <- perm.ecdf.fun(all.fitness.scores)
 
         }
         mean.perm.ecdf <- colMeans(perm.ecdf.mat)
 
         # now get the KS test stat compared with the mean eCDF
         obs.ks <- max(mean.perm.ecdf - obs.ecdf)
-        mean.perm.ecdf.mat <- matrix(rep(mean.perm.ecdf, length(perm.list)), nrow = length(perm.list),
-            byrow = TRUE)
+
+        # now for each of the permutations
+        mean.perm.ecdf.mat <- matrix(rep(mean.perm.ecdf, length(perm.list)),
+                                     nrow = length(perm.list), byrow = TRUE)
         perm.ks <- rowMaxs(mean.perm.ecdf.mat - perm.ecdf.mat)
+
         return(list(obs.ks = obs.ks, perm.ks = perm.ks))
 
     })
@@ -212,15 +225,22 @@ run.global.test <- function(results.list) {
     perm.cov.mat.inv <- solve(perm.cov.mat)
 
     # calculate mahalanobis distance to mean vector for obs data
-    obs.mahala <- as.numeric((obs.ks.vec - mean.perm.vec) %*% perm.cov.mat.inv %*% (obs.ks.vec - mean.perm.vec))
+    obs.mean.dif <- obs.ks.vec - mean.perm.vec
+    obs.mean.dif[obs.mean.dif < 0] <- 0
+    obs.mahala <- as.numeric(obs.mean.dif %*% perm.cov.mat.inv %*% obs.mean.dif)
+    #obs.mahala <- sqrt(sum(obs.mean.dif^2))
+    #obs.mahala <- sqrt(sum((obs.mean.dif*diag(perm.cov.mat.inv))^2))
 
     # now for each of the permutations
     perm.mahala <- rep(NA, nrow(perm.ks.mat))
     for (i in seq_len(nrow(perm.ks.mat))) {
 
         perm.ks.vec <- perm.ks.mat[i, ]
-        perm.mahala[i] <- (perm.ks.vec - mean.perm.vec) %*% perm.cov.mat.inv %*% (perm.ks.vec - mean.perm.vec)
-
+        perm.mean.dif <- perm.ks.vec - mean.perm.vec
+        perm.mean.dif[perm.mean.dif < 0] <- 0
+        #perm.mahala[i] <- sqrt(sum(perm.mean.dif^2))
+        perm.mahala[i] <- perm.mean.dif %*% perm.cov.mat.inv %*% perm.mean.dif
+        #perm.mahala[i] <- sqrt(sum((perm.mean.dif*diag(perm.cov.mat.inv))^2))
     }
 
     # count the number of permutations greater than observed
