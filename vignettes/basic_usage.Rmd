@@ -316,6 +316,7 @@ Users should also be clear that rejecting the null hypothesis does not necessari
 
 ```{r}
 top.snps <- as.vector(t(size4.combined.res$all.results[1, 1:4]))
+set.seed(10)
 epi.test.res <- run.epi.test(top.snps, pp.list)
 epi.test.res$pval
 ```
