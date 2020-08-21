@@ -76,6 +76,7 @@ run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3,
 combined.res <- combine.islands('tmp', snp.annotations, pp.list)
 
 top.snps <- as.vector(t(combined.res$unique.results[1, 1:3]))
+set.seed(10)
 epi.test.res <- run.epi.test(top.snps, pp.list)
 
 unlink('tmp', recursive = TRUE)
