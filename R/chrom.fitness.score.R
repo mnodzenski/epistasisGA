@@ -266,7 +266,10 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
   target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
   cov.mat[!target.block.ld.mat] <- 0
-  sum.dif.vecs <- sum.dif.vecs/sqrt(diag(cov.mat))
+  elem.vars <- sqrt(diag(cov.mat))
+  sum.dif.vecs <- sum.dif.vecs/elem.vars
+  zero.var <- elem.vars == 0
+  sum.dif.vecs[zero.var] <- 10^-10
 
   # compute svd of dif.vec.cov.mat
   cov.mat.svd <- svd(cov.mat)
