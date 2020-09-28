@@ -204,10 +204,14 @@ run.global.test3 <- function(results.list, n.top.scores = 10, type = "ranks") {
     if (type == "sums"){
 
         # compute sds
-        vars <- sqrt(diag(cov(chrom.size.ranks[-1, ])))
+        sds <- sqrt(diag(cov(chrom.size.ranks[-1, ])))
 
-        # divide scores by sds
-        chrom.size.ranks <- sweep(chrom.size.ranks, 2, vars, "/")
+        # compute means
+        means <- colMeans(chrom.size.ranks[-1, ])
+
+        # standardize
+        chrom.size.ranks <- sweep(chrom.size.ranks, 2, means, "-")
+        chrom.size.ranks <- sweep(chrom.size.ranks, 2, sds, "/")
 
     }
 
