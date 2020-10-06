@@ -3,6 +3,7 @@
 export(chrom.fitness.score)
 export(combine.islands)
 export(compute.edge.scores)
+export(compute.edge.scores2)
 export(evolve.island)
 export(network.plot)
 export(network.threshold)
