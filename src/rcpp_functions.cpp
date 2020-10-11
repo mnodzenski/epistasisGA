@@ -192,15 +192,20 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
 
     NumericVector case_high_risk_means = rowMeans(case_high_inf);
     NumericVector case_high_risk_sd = rowSds(case_high_inf);
+    double high_outlier_thresh = case_high_risk_means + outlier_sd * case_high_risk_sd;
+    double low_outlier_thresh = case_high_risk_means - outlier_sd * case_high_risk_sd;
+    IntegerMatrix all_high_risk = transpose(cbind(case_high_inf, comp_high_inf));
+    int n_high_risk = all_high_risk.nrow();
+    LogicalVector outliers(n_target, false);
+
+    if (n_pos > 0){
+
+      IntegerMatrix positive_high_risk =
 
 
+    }
 
 
-    high.outlier.thresh <- case.high.risk.means + outlier.sd * case.high.risk.sd
-    low.outlier.thresh <- case.high.risk.means - outlier.sd * case.high.risk.sd
-    all.high.risk <- t(cbind(case.high.inf, comp.high.inf))
-    n.high.risk <- nrow(all.high.risk)
-    outliers <- rep(FALSE, n.target)
     if (any(pos.risk)) {
 
       positive.high.risk <- all.high.risk[, pos.risk, drop = FALSE]
