@@ -194,7 +194,7 @@ LogicalMatrix check_neg_risk(IntegerMatrix in_mat, NumericVector comp_vals){
 
     for ( int j = 0; j < ncols; j++ ) {
 
-      out_mat(i, j) = in_mat(i, j) > comp_val[j];
+      out_mat(i, j) = in_mat(i, j) > comp_vals[j];
 
     }
 
