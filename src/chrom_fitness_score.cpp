@@ -2,10 +2,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
-using namespace Rcpp;
-
 // [[Rcpp::export]]
 IntegerMatrix sign_subtract_mat(IntegerMatrix x, IntegerMatrix y){
 
@@ -574,14 +570,27 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
     if (n_outliers > 0) {
 
       risk_set_alleles[outliers] = "2";
-      LogicalVector pos_risk_outliers = outliers[pos_risk_int - 1];
-      LogicalVector neg_risk_outliers = outliers[neg_risk_int - 1];
-      IntegerVector pos_outlier_cols = pos_risk_int[pos_risk_outliers];
-      IntegerVector neg_outlier_cols = neg_risk_int[neg_risk_outliers];
+      int n_pos_outliers = 0;
+      IntegerVector pos_outlier_cols = IntegerVector::create(NA_INTEGER);
+      if (sum(pos_risk) > 0){
+
+        LogicalVector pos_risk_outliers = outliers[pos_risk_int - 1];
+        pos_outlier_cols = pos_risk_int[pos_risk_outliers];
+        n_pos_outliers = sum(pos_risk_outliers);
+
+      }
+
+      int n_neg_outliers = 0;
+      IntegerVector neg_outlier_cols = IntegerVector::create(NA_INTEGER);
+      if(sum(neg_risk) > 0){
+
+        LogicalVector neg_risk_outliers = outliers[neg_risk_int - 1];
+        neg_outlier_cols = neg_risk_int[neg_risk_outliers];
+        n_neg_outliers = sum(neg_risk_outliers);
+
+      }
 
       // recode instances where the model appears to be recessive
-      int n_pos_outliers = sum(pos_risk_outliers);
-      int n_neg_outliers = sum(neg_risk_outliers);
       if (n_pos_outliers > 0){
 
         for (int k = 0; k < n_pos_outliers; k++){
@@ -665,28 +674,41 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
       comp_inf = comp_inf_tmp;
       IntegerMatrix both_one_inf_tmp = dif_vec_list["both_one_inf"];
       both_one_inf = both_one_inf_tmp;
-      n_informative_families = dif_vec_list["n_informative_families"];
+      n_informative_families = informative_families.length();
       IntegerMatrix cases_minus_complements_inf_tmp = dif_vec_list["cases_minus_complements_inf"];
-      cases_minus_complements_inf =cases_minus_complements_inf_tmp;
+      cases_minus_complements_inf = cases_minus_complements_inf_tmp;
 
     }
   }
 
   // count the number of risk alleles in those with the full risk set
 
-  //cases
-  IntegerMatrix case_high_inf_pos = subset_int_matrix_rows(case_high_inf, pos_risk_int);
-  IntegerMatrix case_low_inf_pos = two_minus_mat(case_high_inf);
-  case_low_inf_pos = subset_int_matrix_rows(case_low_inf_pos, neg_risk_int);
-  IntegerVector case_high_risk_alleles = colSums(case_high_inf_pos) + colSums(case_low_inf_pos);
-  double total_case_high_risk_alleles = sum(case_high_risk_alleles);
+  double total_case_high_risk_alleles = 0;
+  double total_comp_high_risk_alleles = 0;
+  if (sum(pos_risk) > 0){
 
-  //complements
-  IntegerMatrix comp_high_inf_pos = subset_int_matrix_rows(comp_high_inf, pos_risk_int);
-  IntegerMatrix comp_low_inf_pos = two_minus_mat(comp_high_inf);
-  comp_low_inf_pos =  subset_int_matrix_rows(comp_low_inf_pos, neg_risk_int);
-  IntegerVector comp_high_risk_alleles = colSums(comp_high_inf_pos) + colSums(comp_low_inf_pos);
-  double total_comp_high_risk_alleles = sum(comp_high_risk_alleles);
+    IntegerMatrix case_high_inf_pos = subset_int_matrix_rows(case_high_inf, pos_risk_int);
+    IntegerVector case_pos_alleles = colSums(case_high_inf_pos);
+    total_case_high_risk_alleles += sum(case_pos_alleles);
+
+    IntegerMatrix comp_high_inf_pos = subset_int_matrix_rows(comp_high_inf, pos_risk_int);
+    IntegerVector comp_pos_alleles = colSums(comp_high_inf_pos);
+    total_comp_high_risk_alleles += sum(comp_pos_alleles);
+
+  }
+  if (sum(neg_risk) > 0){
+
+    IntegerMatrix case_low_inf_pos = two_minus_mat(case_high_inf);
+    case_low_inf_pos = subset_int_matrix_rows(case_low_inf_pos, neg_risk_int);
+    IntegerVector case_neg_alleles = colSums(case_low_inf_pos);
+    total_case_high_risk_alleles += sum(case_neg_alleles);
+
+    IntegerMatrix comp_low_inf_pos = two_minus_mat(comp_high_inf);
+    comp_low_inf_pos =  subset_int_matrix_rows(comp_low_inf_pos, neg_risk_int);
+    IntegerVector comp_neg_alleles = colSums(comp_low_inf_pos);
+    total_comp_high_risk_alleles += sum(comp_neg_alleles);
+
+  }
 
   // compute scaling factor
   double rr;
