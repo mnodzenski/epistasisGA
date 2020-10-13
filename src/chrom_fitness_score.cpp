@@ -327,7 +327,7 @@ List find_high_risk(int n_target, int n_pos, int n_neg, LogicalVector neg_risk, 
 
     List res = List::create(Named("case_high_risk") = case_high_risk,
                             Named("comp_high_risk") = comp_high_risk,
-                            Named("pos_risk") = pos_risk,
+                            Named("pos_risk_int") = pos_risk_int,
                             Named("neg_risk_int") = neg_risk_int);
     return(res);
 
@@ -397,7 +397,13 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
   IntegerVector both_one = colSums(both_one_inf);
   IntegerVector total_different_inf = total_different_snps[informative_families_l];
   IntegerVector weighted_informativeness = n_both_one_weight * both_one + n_different_snps_weight * total_different_inf;
-  NumericVector family_weights = weight_lookup[weighted_informativeness - 1];
+  NumericVector family_weights(weighted_informativeness.length());
+  for (int i = 0; i < weighted_informativeness.length(); i++){
+
+    int weight_i = weighted_informativeness[i];
+    family_weights[i] = weight_lookup[weight_i - 1];
+
+  }
   double invsum_family_weights = 1 / sum(family_weights);
 
   // compute weighted difference vectors for cases vs complements
@@ -426,8 +432,10 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 
   int n_case_high_risk = sum(case_high_risk);
   int n_comp_high_risk = sum(comp_high_risk);
-  IntegerVector case_high_risk_int = family_idx[case_high_risk];
-  IntegerVector comp_high_risk_int = family_idx[comp_high_risk];
+
+  IntegerVector inf_family_idx = seq_len(case_high_risk.length());
+  IntegerVector case_high_risk_int = inf_family_idx[case_high_risk];
+  IntegerVector comp_high_risk_int = inf_family_idx[comp_high_risk];
   IntegerMatrix case_high_inf = subset_matrix_cols(case_inf, case_high_risk_int);
   IntegerMatrix comp_high_inf = subset_matrix_cols(comp_inf, comp_high_risk_int);
 
