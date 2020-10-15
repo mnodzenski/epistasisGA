@@ -131,6 +131,6 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix complement_
                           Named("case_high_inf") = case_high_inf,
                           Named("comp_high_inf") = comp_high_inf,
                           Named("informative_families") = informative_families);
-  return(res);
+  return(res)
 
 }

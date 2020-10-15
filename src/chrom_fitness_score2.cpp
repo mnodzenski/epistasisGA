@@ -515,8 +515,11 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
 
   // pick out the differences for the target snps
   arma::uvec target_snps = as<arma::uvec>(snp_cols) - 1;
+  Rcout << "here2";
   case_comp_dif = case_comp_dif.cols(target_snps).t();
   int n_target = target_snps.n_elem;
+
+  Rcout << "here";
 
   // also subset to target cols for the rest of the inputs
   case_genetic_data = case_genetic_data.cols(target_snps).t();
@@ -569,8 +572,10 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
 
       for (int i = 0; i < n_pos; i++){
 
-        arma::uvec this_row(1);
-        this_row.fill(pos_risk(i));
+        IntegerVector this_row_tmp(1);
+        int fill_val = pos_risk(i);
+        this_row_tmp[0] = fill_val;
+        arma::uvec this_row = as<arma::uvec>(this_row_tmp);
         double thresh_val = low_outlier_thresh(i);
 
         // check cases
@@ -591,8 +596,8 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
             // cases
             arma::rowvec case_row = case_genetic_data.rows(this_row);
             arma::uvec case_recode_these = find(case_row == 1);
-            IntegerVector row_start(case_genetic_data.n_cols, this_row(0));
-            arma::uvec row_uvec = as<arma::uvec>(row_start);
+            IntegerVector mat_row_tmp(case_genetic_data.n_cols, fill_val);
+            arma::uvec row_uvec = as<arma::uvec>(mat_row_tmp);
             case_genetic_data.submat(row_uvec, case_recode_these).fill(0);
 
             // complements
@@ -613,8 +618,10 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
 
       for (int i = 0; i < n_neg; i++){
 
-        arma::uvec this_row(1);
-        this_row.fill(neg_risk(i));
+        IntegerVector this_row_tmp(1);
+        int fill_val = neg_risk(i);
+        this_row_tmp[0] = fill_val;
+        arma::uvec this_row = as<arma::uvec>(this_row_tmp);
         double thresh_val = low_outlier_thresh(i);
 
         // check cases
@@ -635,8 +642,8 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
           // cases
           arma::rowvec case_row = case_genetic_data.rows(this_row);
           arma::uvec case_recode_these = find(case_row == 1);
-          IntegerVector row_start(case_genetic_data.n_cols, this_row(0));
-          arma::uvec row_uvec = as<arma::uvec>(row_start);
+          IntegerVector mat_row_tmp(case_genetic_data.n_cols, fill_val);
+          arma::uvec row_uvec = as<arma::uvec>(mat_row_tmp);
           case_genetic_data.submat(row_uvec, case_recode_these).fill(2);
 
           // complements
@@ -741,7 +748,8 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
   }
   arma::mat x = cases_minus_complements.cols(informative_families).t();
   arma::mat x_minus_mu_hat = x - mu_hat_mat;
-  arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat.each_col() %= family_weights;
+  //arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat.each_col() %= family_weights;
+  arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
   arma::mat cov_mat = invsum_family_weights * weighted_x_minus_mu_hat.t() * x_minus_mu_hat;
 
   // set cov elements to zero if SNPs are not in same ld block
@@ -824,6 +832,15 @@ List chrom_fitness_list(arma::mat case_genetic_data, arma::mat complement_geneti
   return(scores);
 
 }
+
+
+// [[Rcpp::export]]
+arma::mat subt(arma::mat case_comp_dif, arma::uvec target_snps){
+
+  return(case_comp_dif.cols(target_snps));
+
+}
+
 
 
 
