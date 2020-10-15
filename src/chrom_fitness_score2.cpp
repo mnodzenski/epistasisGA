@@ -3,23 +3,13 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-IntegerMatrix sign_subtract_mat(IntegerMatrix x, IntegerMatrix y){
+arma::mat mult_rows_by_scalars_arma(arma::mat arma_in_mat, arma::vec arma_scalars){
 
-  int nrow = x.nrow();
-  int ncol = x.ncol();
-  IntegerMatrix out_mat(nrow, ncol);
-  for (int i = 0; i < ncol; i++){
-
-    IntegerMatrix::Column x_col = x(_, i);
-    IntegerMatrix::Column y_col = y(_, i);
-    IntegerMatrix::Column out_col = out_mat(_, i);
-    out_col = sign(x_col - y_col);
-
-  }
-  return(out_mat);
+  //convert to arma versions
+  arma_in_mat.each_col() %= arma_scalars;
+  return(arma_in_mat);
 
 }
-
 
 // [[Rcpp::export]]
 LogicalMatrix subset_matrix_cols_l(LogicalMatrix in_matrix, IntegerVector cols){
@@ -297,17 +287,6 @@ arma::mat mult_rows_by_scalars(IntegerMatrix in_mat, NumericVector scalars){
   return(arma_in_mat);
 }
 
-
-// [[Rcpp::export]]
-arma::mat mult_rows_by_scalars_arma(arma::mat arma_in_mat, arma::vec scalars){
-
-  //convert to arma versions
-  arma::vec arma_scalars = as<arma::vec>(scalars);
-  arma_in_mat.each_col() %= arma_scalars;
-  return(arma_in_mat);
-
-}
-
 // [[Rcpp::export]]
 List find_high_risk(int n_target, int n_pos, int n_neg, arma::uvec neg_risk, arma::uvec pos_risk,
                     arma::mat case_data, arma::mat comp){
@@ -332,7 +311,7 @@ List find_high_risk(int n_target, int n_pos, int n_neg, arma::uvec neg_risk, arm
 
       int this_row = neg_risk[i];
 
-      for (int j = 0; j < comp_data.n_cols; j++){
+      for (int j = 0; j < comp.n_cols; j++){
 
         if (comp(this_row, j) < 2) n2_colsums(j) += 1;
 
@@ -396,7 +375,7 @@ List find_high_risk(int n_target, int n_pos, int n_neg, arma::uvec neg_risk, arm
 
       int this_row = neg_risk[i];
 
-      for (int j = 0; j < comp_data.n_cols; j++){
+      for (int j = 0; j < comp.n_cols; j++){
 
         if (comp(this_row, j) < 2) n2_colsums(j) += 1;
 
@@ -482,7 +461,7 @@ List compute_dif_vecs(arma::mat case_genetic_data, arma::mat comp_genetic_data, 
 
   // compute weights
   arma::rowvec both_one = sum(both_one_mat, 0);
-  arma::rowvec weighted_informativeness = n_both_one_weight * both_one + n_different_snps_weight * total_different;
+  IntegerVector weighted_informativeness = wrap(n_both_one_weight * both_one + n_different_snps_weight * total_different_snps);
   arma::uvec weighted_informativeness_idx = as<arma::uvec>(weighted_informativeness);
   arma::vec family_weights = weight_lookup.elem(weighted_informativeness_idx - 1);
   family_weights.elem(uninformative_families).fill(0);
@@ -490,7 +469,8 @@ List compute_dif_vecs(arma::mat case_genetic_data, arma::mat comp_genetic_data, 
 
   // compute weighted difference vectors for cases vs complements
   arma::vec std_family_weights = family_weights * invsum_family_weights;
-  arma::mat dif_vecs = cases_minus_complements.each_col() %= std_family_weights;
+  //arma::mat dif_vecs = cases_minus_complements.each_col() %= std_family_weights;
+  arma::mat dif_vecs = cases_minus_complements;
 
   // take the sum of the case - complement difference vectors over families
   arma::rowvec sum_dif_vecs = arma::sum(dif_vecs, 1).t();
@@ -501,13 +481,13 @@ List compute_dif_vecs(arma::mat case_genetic_data, arma::mat comp_genetic_data, 
   arma::uvec neg_risk = find(risk_dirs <= 0);
   int n_pos = pos_risk.n_elem;
   int n_neg = neg_risk.n_elem;
-  int n_target = case_comp_dif.n_row;
+  int n_target = case_comp_dif.n_rows;
 
   IntegerVector idx_vec = seq_len(n_target);
 
   //using helper function to pick out high risk families
   List high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk, pos_risk, case_genetic_data,
-                                  comp_genetic_data, idx_vec);
+                                  comp_genetic_data);
   arma::uvec case_high_risk = high_risk["case_high_risk"];
   arma::uvec comp_high_risk = high_risk["comp_high_risk"];
 
@@ -578,7 +558,7 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
 
     int outlier_count = 0;
     arma::mat case_high_inf_mat = case_genetic_data.cols(case_high_inf);
-    arma::mat comp_high_inf_mat = comp_genetic_data.cols(comp_high_inf);
+    arma::mat comp_high_inf_mat = complement_genetic_data.cols(comp_high_inf);
     arma::vec case_high_risk_means = arma::mean(case_high_inf_mat, 1);
     arma::vec case_high_risk_sd = arma::stddev(case_high_inf_mat, 0, 1);
     arma::vec high_outlier_thresh = case_high_risk_means + outlier_sd * case_high_risk_sd;
@@ -611,8 +591,8 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
             // cases
             arma::rowvec case_row = case_genetic_data.rows(this_row);
             arma::uvec case_recode_these = find(case_row == 1);
-            arma::uvec case_row_uvec = ones(case_genetic_data.n_cols);
-            row_uvec.fill(this_row(0));
+            IntegerVector row_start(case_genetic_data.n_cols, this_row(0));
+            arma::uvec row_uvec = as<arma::uvec>(row_start);
             case_genetic_data.submat(row_uvec, case_recode_these).fill(0);
 
             // complements
@@ -655,8 +635,8 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
           // cases
           arma::rowvec case_row = case_genetic_data.rows(this_row);
           arma::uvec case_recode_these = find(case_row == 1);
-          arma::uvec case_row_uvec = ones(case_genetic_data.n_cols);
-          row_uvec.fill(this_row(0));
+          IntegerVector row_start(case_genetic_data.n_cols, this_row(0));
+          arma::uvec row_uvec = as<arma::uvec>(row_start);
           case_genetic_data.submat(row_uvec, case_recode_these).fill(2);
 
           // complements
@@ -683,23 +663,33 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
                                       weight_lookup, n_different_snps_weight, n_both_one_weight, informative_families_iv);
 
       // pick out the required pieces
-      arma::rowvec sum_dif_vecs = dif_vec_list["sum_dif_vecs"];
-      arma::vec family_weights = dif_vec_list["family_weights"];
-      double invsum_family_weights = dif_vec_list["invsum_family_weights"];
-      arma::uvec informative_families = dif_vec_list["informative_families"];
-      int n_pos = dif_vec_list["n_pos"];
-      int n_neg = dif_vec_list["n_neg"];
-      arma::uvec pos_risk = dif_vec_list["pos_risk"];
-      arma::uvec neg_risk = dif_vec_list["neg_risk"];
-      arma::uvec case_high_risk = dif_vec_list["case_high_risk"];
-      arma::uvec comp_high_risk = dif_vec_list["comp_high_risk"];
+      arma::rowvec sum_dif_vecs_tmp = dif_vec_list["sum_dif_vecs"];
+      sum_dif_vecs = sum_dif_vecs_tmp;
+      arma::vec family_weights_tmp = dif_vec_list["family_weights"];
+      family_weights = family_weights_tmp;
+      double invsum_family_weights_tmp = dif_vec_list["invsum_family_weights"];
+      invsum_family_weights = invsum_family_weights_tmp;
+      arma::uvec informative_families_tmp = dif_vec_list["informative_families"];
+      informative_families = informative_families_tmp;
+      int n_pos_tmp = dif_vec_list["n_pos"];
+      n_pos = n_pos_tmp;
+      int n_neg_tmp = dif_vec_list["n_neg"];
+      n_neg = n_neg_tmp;
+      arma::uvec pos_risk_tmp = dif_vec_list["pos_risk"];
+      pos_risk = pos_risk_tmp;
+      arma::uvec neg_risk_tmp = dif_vec_list["neg_risk"];
+      neg_risk = neg_risk_tmp;
+      arma::uvec case_high_risk_tmp = dif_vec_list["case_high_risk"];
+      case_high_risk = case_high_risk_tmp;
+      arma::uvec comp_high_risk_tmp = dif_vec_list["comp_high_risk"];
+      comp_high_risk = comp_high_risk_tmp;
 
-      int n_informative_families = informative_families.n_elem;
-      arma::uvec case_high_inf = intersect(informative_families, case_high_risk);
-      arma::uvec comp_high_inf = intersect(informative_families, comp_high_risk);
+      n_informative_families = informative_families.n_elem;
+      case_high_inf = intersect(informative_families, case_high_risk);
+      comp_high_inf = intersect(informative_families, comp_high_risk);
 
-      int n_case_high_risk = case_high_inf.n_elem;
-      int n_comp_high_risk = comp_high_inf.n_elem;
+      n_case_high_risk = case_high_inf.n_elem;
+      n_comp_high_risk = comp_high_inf.n_elem;
 
     }
   }
@@ -709,7 +699,7 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
   double total_case_high_risk_alleles = 0;
   double total_comp_high_risk_alleles = 0;
   arma::mat case_high_inf_mat = case_genetic_data.cols(case_high_inf);
-  arma::mat comp_high_inf_mat = comp_genetic_data.cols(comp_high_inf);
+  arma::mat comp_high_inf_mat = complement_genetic_data.cols(comp_high_inf);
 
   if (n_pos > 0){
 
@@ -749,7 +739,7 @@ List chrom_fitness_score(arma::mat case_genetic_data, arma::mat complement_genet
   for (int i = 0; i < n_informative_families; i++){
     mu_hat_mat.row(i) = mu_hat;
   }
-  arma::mat x = as<arma::mat>(cases_minus_complements.cols(informative_families)).t();
+  arma::mat x = cases_minus_complements.cols(informative_families).t();
   arma::mat x_minus_mu_hat = x - mu_hat_mat;
   arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat.each_col() %= family_weights;
   arma::mat cov_mat = invsum_family_weights * weighted_x_minus_mu_hat.t() * x_minus_mu_hat;
