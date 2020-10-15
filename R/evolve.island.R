@@ -336,7 +336,15 @@ evolve.island <- function(n.migrations = 20, case.genetic.data, complement.genet
         }
 
         ### 7. Mutate the chromosomes that were not crossed over ### print('Step 7/9')
-        mutation.positions <- (seq_len(length(sampled.lower.chromosomes)))
+        if (cross.over.positions[1] == 0) {
+
+            mutation.positions <- (seq_len(length(sampled.lower.chromosomes)))
+
+        } else {
+
+            mutation.positions <- (seq_len(length(sampled.lower.chromosomes)))[-cross.over.positions]
+
+        }
         snps.for.mutation <- sample(seq_len(n.candidate.snps), n.candidate.snps, prob = snp.chisq,
             replace = TRUE)
         ulen <- length(unique(snps.for.mutation))
