@@ -20,6 +20,7 @@ IntegerMatrix sign_subtract_mat(IntegerMatrix x, IntegerMatrix y){
 
 }
 
+
 // [[Rcpp::export]]
 LogicalMatrix subset_matrix_cols_l(LogicalMatrix in_matrix, IntegerVector cols){
 
@@ -126,7 +127,6 @@ IntegerMatrix subset_int_matrix_rows(IntegerMatrix in_matrix, IntegerVector rows
   }
   return(out_matrix);
 }
-
 
 // [[Rcpp::export]]
 NumericVector rowSds(IntegerMatrix x){
@@ -810,5 +810,26 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 
 }
 
+// [[Rcpp::export]]
+List chrom_fitness_list2(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences,
+                        List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
+                        LogicalMatrix block_ld_mat, NumericVector weight_lookup,
+                        int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                        int n_case_high_risk_thresh = 20, double outlier_sd = 2.5, bool epi_test = false){
+
+  List scores = chromosome_list.length();
+  for (int i = 0; i < chromosome_list.length(); i++){
+
+    IntegerVector target_snps = chromosome_list[i];
+    Function f("chrom.fitness.score");
+    scores[i] = f(case_genetic_data, complement_genetic_data, case_comp_differences,
+                                    target_snps, cases_minus_complements, both_one_mat,
+                                    block_ld_mat, weight_lookup, n_different_snps_weight,
+                                    n_both_one_weight, n_case_high_risk_thresh, outlier_sd, epi_test);
+
+  }
+  return(scores);
+
+}
 
 
