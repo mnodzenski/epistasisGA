@@ -3,6 +3,48 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
+IntegerVector sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
+
+  int n_cols = target_cols.length();
+  int n_rows = target_rows.length();
+  IntegerVector out_vec(n_cols, 0);
+  for (int i = 0; i < n_rows; i++){
+
+    int this_row = target_rows[i] - 1;
+
+    for (int j = 0; j < n_cols; j ++){
+
+      int this_col = target_cols[j] - 1;
+      out_vec[j] += in_mat(this_row, this_col);
+
+    }
+  }
+  return(out_vec);
+}
+
+
+// [[Rcpp::export]]
+IntegerVector sub_rowsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
+
+  int n_cols = target_cols.length();
+  int n_rows = target_rows.length();
+  IntegerVector out_vec(n_rows, 0);
+  for (int i = 0; i < n_rows; i++){
+
+    int this_row = target_rows[i] - 1;
+
+    for (int j = 0; j < n_cols; j ++){
+
+      int this_col = target_cols[j] - 1;
+      out_vec[i] += in_mat(this_row, this_col);
+
+    }
+  }
+  return(out_vec);
+}
+
+
+// [[Rcpp::export]]
 IntegerMatrix sign_subtract_mat(IntegerMatrix x, IntegerMatrix y){
 
   int nrow = x.nrow();
@@ -19,6 +61,41 @@ IntegerMatrix sign_subtract_mat(IntegerMatrix x, IntegerMatrix y){
   return(out_mat);
 
 }
+
+IntegerMatrix subtract_mat(IntegerMatrix x, IntegerMatrix y){
+
+  int nrow = x.nrow();
+  int ncol = x.ncol();
+  IntegerMatrix out_mat(nrow, ncol);
+  for (int i = 0; i < ncol; i++){
+
+    IntegerMatrix::Column x_col = x(_, i);
+    IntegerMatrix::Column y_col = y(_, i);
+    IntegerMatrix::Column out_col = out_mat(_, i);
+    out_col = x_col - y_col;
+
+  }
+  return(out_mat);
+
+}
+
+NumericMatrix subtract_mat_n(NumericMatrix x, NumericMatrix y){
+
+  int nrow = x.nrow();
+  int ncol = x.ncol();
+  NumericMatrix out_mat(nrow, ncol);
+  for (int i = 0; i < ncol; i++){
+
+    NumericMatrix::Column x_col = x(_, i);
+    NumericMatrix::Column y_col = y(_, i);
+    NumericMatrix::Column out_col = out_mat(_, i);
+    out_col = x_col - y_col;
+
+  }
+  return(out_mat);
+
+}
+
 
 
 // [[Rcpp::export]]
@@ -153,10 +230,10 @@ LogicalMatrix comp_mat_gt(IntegerMatrix in_mat, int comp_val){
   int nrows = in_mat.nrow();
   int ncols = in_mat.ncol();
   LogicalMatrix out_mat(nrows, ncols);
-  for ( int i = 0; i < ncols i++ ) {
+  for ( int i = 0; i < ncols; i++ ) {
 
     IntegerMatrix::Column original_col = in_mat(_, i);
-    IntegerMatrix::Column new_col = out_matrix(_, i);
+    LogicalMatrix::Column new_col = out_mat(_, i);
     new_col = original_col > comp_val;
 
   }
@@ -169,10 +246,10 @@ LogicalMatrix comp_mat_lt(IntegerMatrix in_mat, int comp_val){
   int nrows = in_mat.nrow();
   int ncols = in_mat.ncol();
   LogicalMatrix out_mat(nrows, ncols);
-  for ( int i = 0; i < ncols i++ ) {
+  for ( int i = 0; i < ncols; i++ ) {
 
     IntegerMatrix::Column original_col = in_mat(_, i);
-    IntegerMatrix::Column new_col = out_matrix(_, i);
+    LogicalMatrix::Column new_col = out_mat(_, i);
     new_col = original_col <= comp_val;
 
   }
@@ -235,16 +312,16 @@ IntegerMatrix two_minus_mat(IntegerMatrix in_mat){
 
 
 // [[Rcpp::export]]
-LogicalMatrix comp_mat_ne(IntegerMatrix in_mat, int comp_val){
+IntegerMatrix abs_matrix(IntegerMatrix in_mat){
 
   int nrows = in_mat.nrow();
   int ncols = in_mat.ncol();
-  LogicalMatrix out_mat(nrows, ncols);
-  for ( int i = 0; i < ncols i++ ) {
+  IntegerMatrix out_mat(nrows, ncols);
+  for ( int i = 0; i < ncols; i++ ) {
 
     IntegerMatrix::Column original_col = in_mat(_, i);
-    IntegerMatrix::Column new_col = out_matrix(_, i);
-    new_col = original_col != comp_val;
+    IntegerMatrix::Column new_col = out_mat(_, i);
+    new_col = abs(original_col);
 
   }
   return out_mat;
@@ -275,6 +352,7 @@ IntegerMatrix mult_cols_by_scalars(IntegerMatrix in_matrix, NumericVector scalar
   int n_rows = in_matrix.nrow();
   int n_cols = in_matrix.ncol();
   IntegerMatrix out_matrix(n_rows, n_cols);
+  //NumericMatrix in_matrix_n = as<NumericMatrix>(in_matrix);
 
   for (int i = 0; i < n_cols; i++){
     IntegerMatrix::Column original_col = in_matrix(_, i);
@@ -287,9 +365,26 @@ IntegerMatrix mult_cols_by_scalars(IntegerMatrix in_matrix, NumericVector scalar
 }
 
 // [[Rcpp::export]]
+NumericMatrix mult_rows_by_scalars(NumericMatrix in_matrix, NumericVector scalars){
+
+  int n_rows = in_matrix.nrow();
+  int n_cols = in_matrix.ncol();
+  NumericMatrix out_matrix(n_rows, n_cols);
+
+  for (int i = 0; i < n_rows; i++){
+    NumericMatrix::Row original_row = in_matrix(i, _);
+    double scale_val = scalars[i];
+    NumericMatrix::Row new_row = out_matrix(i, _);
+    new_row = scale_val*original_row;
+  }
+  return(out_matrix);
+
+}
+
+// [[Rcpp::export]]
 IntegerVector subset_colsums(LogicalMatrix in_mat, IntegerVector row_idx){
 
-  int n_cols = in_matrix.ncol();
+  int n_cols = in_mat.ncol();
   IntegerVector out_vec(n_cols, 0);
   for (int i = 0; i < n_cols; i++){
     for (int j = 0; j < row_idx.length(); j++){
@@ -301,6 +396,40 @@ IntegerVector subset_colsums(LogicalMatrix in_mat, IntegerVector row_idx){
   }
   return(out_vec);
 }
+
+// [[Rcpp::export]]
+IntegerVector subset_colsums_int(IntegerMatrix in_mat, IntegerVector row_idx){
+
+  int n_cols = in_mat.ncol();
+  IntegerVector out_vec(n_cols, 0);
+  for (int i = 0; i < n_cols; i++){
+    for (int j = 0; j < row_idx.length(); j++){
+
+      int this_row = row_idx[j] - 1;
+      out_vec[i] += in_mat(this_row, i);
+
+    }
+  }
+  return(out_vec);
+}
+
+
+// [[Rcpp::export]]
+IntegerVector subset_rowsums(IntegerMatrix in_mat, IntegerVector row_idx){
+
+  int nrows = row_idx.length();
+  IntegerVector out_vec(nrows);
+  for (int i = 0; i < nrows; i++){
+
+    int this_row = row_idx[i] - 1;
+    IntegerMatrix::Row target = in_mat(this_row, _);
+    out_vec[i] = sum(target);
+
+  }
+  return(out_vec);
+
+}
+
 
 
 // [[Rcpp::export]]
@@ -397,21 +526,34 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
     }
 
   }
+
   LogicalVector uninformative_families_l = total_different_snps == 0;
 
   // compute weights
-  IntegerVector both_one = colSums(both_one);
-  IntegerVector weighted_informativeness = n_both_one_weight * both_one + n_different_snps_weight * total_different;
-  IntegerVector family_weights = weight_lookup[weighted_informativeness - 1];
+  IntegerVector both_one = colSums(both_one_mat);
+  IntegerVector weighted_informativeness = n_both_one_weight * both_one + n_different_snps_weight * total_different_snps;
+  //NumericVector family_weights = weight_lookup[weighted_informativeness - 1];
+  NumericVector family_weights(weighted_informativeness.length());
+  for (int i = 0; i < weighted_informativeness.length(); i++){
+
+    int weight_i = weighted_informativeness[i];
+    family_weights[i] = weight_lookup[weight_i - 1];
+
+  }
   family_weights[uninformative_families_l] = 0;
   double invsum_family_weights = 1 / sum(family_weights);
 
   // compute weighted difference vectors for cases vs complements
-  NumericVector std_family_weights = family_weights * invsum_family_weights;
-  IntegerMatrix dif_vecs = mult_cols_by_scalars(cases_minus_complements, std_family_weights);
+  //NumericVector std_family_weights = family_weights * invsum_family_weights;
+  IntegerMatrix dif_vecs = mult_cols_by_scalars(cases_minus_complements, family_weights);
 
   // take the sum of the case - complement difference vectors over families
-  NumericVector sum_dif_vecs = rowSums(dif_vecs);
+  NumericVector sum_dif_vecs = as<NumericVector>(rowSums(dif_vecs));
+  for (int i = 0; i < sum_dif_vecs.length(); i++){
+
+    sum_dif_vecs[i] *= invsum_family_weights;
+
+  }
 
   // determine how many cases and complements actually have the proposed risk set
   IntegerVector risk_dirs = sign(sum_dif_vecs);
@@ -429,8 +571,8 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
   IntegerVector neg_risk_int = idx_vec[neg_risk];
 
   //using helper function to pick out high risk families
-  List high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data,
-                                  comp, uninformative_families_l);
+  List high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_genetic_data,
+                                  comp_genetic_data, uninformative_families_l);
   LogicalVector case_high_risk = high_risk["case_high_risk"];
   LogicalVector comp_high_risk = high_risk["comp_high_risk"];
 
@@ -519,143 +661,142 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
         int this_row = pos_risk_int[i] - 1;
         double thresh_val = low_outlier_thresh[this_row];
 
-        // check cases for outliers
-        IntegerMatrix::Row case_row = case_high_inf(this_row, _);
-        int case_outliers = sum(case_row > thresh_val);
+        if (thresh_val > 1){
 
-        //check comps for outliers
+          // check cases for outliers
+          IntegerMatrix::Row case_row = case_high_inf(this_row, _);
+          int case_outliers = sum(case_row < thresh_val);
 
+          //check comps for outliers
+          IntegerMatrix::Row comp_row = comp_high_inf(this_row, _);
+          int comp_outliers = sum(comp_row < thresh_val);
+
+          // if there are outliers, recode
+          if ((case_outliers + comp_outliers) > 0){
+
+            // increment outlier count
+            outlier_count += 1;
+
+            // indicate we need two risk alleles
+            risk_set_alleles[this_row] = "2";
+
+            // recode cases
+            IntegerMatrix::Row case_target_row = case_genetic_data(this_row, _);
+            IntegerVector case_new_vals = case_target_row;
+            case_new_vals[case_new_vals == 1] = 0;
+            case_target_row = case_new_vals;
+
+            //then complements
+            IntegerMatrix::Row comp_target_row = complement_genetic_data(this_row, _);
+            IntegerVector comp_new_vals = comp_target_row;
+            comp_new_vals[comp_new_vals == 1] = 0;
+            comp_target_row = comp_new_vals;
+
+            //then the both one matrix
+            IntegerMatrix::Row both_one_target_row = both_one_mat(this_row, _);
+            IntegerVector both_one_new_vals = both_one_target_row;
+            both_one_new_vals[both_one_new_vals == 1] = 0;
+            both_one_target_row = both_one_new_vals;
+
+          }
+
+        }
 
       }
-
-      IntegerMatrix positive_high_risk = subset_matrix_cols(all_high_risk, pos_risk_int);
-      LogicalMatrix positive_outlier_mat = check_pos_risk(positive_high_risk, low_outlier_thresh[pos_risk]);
-      LogicalVector positive_outliers = colSums(positive_outlier_mat) > 0;
-      outliers[pos_risk_int - 1] = positive_outliers;
 
     }
 
     if (n_neg > 0){
 
-      IntegerMatrix negative_high_risk = subset_matrix_cols(all_high_risk, neg_risk_int);
-      LogicalMatrix negative_outlier_mat = check_neg_risk(negative_high_risk, high_outlier_thresh[neg_risk]);
-      LogicalVector negative_outliers = colSums(negative_outlier_mat) > 0;
-      outliers[neg_risk_int - 1] = negative_outliers;
+      IntegerVector n_tmp = seq_len(n_target);
+      IntegerVector neg_risk_int = n_tmp[neg_risk];
+
+      for (int i = 0; i < n_neg; i++){
+
+        int this_row = neg_risk_int[i] - 1;
+        double thresh_val = high_outlier_thresh[this_row];
+
+        if (thresh_val < 1){
+
+          // check cases for outliers
+          IntegerMatrix::Row case_row = case_high_inf(this_row, _);
+          int case_outliers = sum(case_row > thresh_val);
+
+          //check comps for outliers
+          IntegerMatrix::Row comp_row = comp_high_inf(this_row, _);
+          int comp_outliers = sum(comp_row > thresh_val);
+
+          // if there are outliers, recode
+          if ((case_outliers + comp_outliers) > 0){
+
+            // increment outlier count
+            outlier_count += 1;
+
+            // indicate we need two risk alleles
+            risk_set_alleles[this_row] = "2";
+
+            // recode cases
+            IntegerMatrix::Row case_target_row = case_genetic_data(this_row, _);
+            IntegerVector case_new_vals = case_target_row;
+            case_new_vals[case_new_vals == 1] = 2;
+            case_target_row = case_new_vals;
+
+            //then complements
+            IntegerMatrix::Row comp_target_row = complement_genetic_data(this_row, _);
+            IntegerVector comp_new_vals = comp_target_row;
+            comp_new_vals[comp_new_vals == 1] = 2;
+            comp_target_row = comp_new_vals;
+
+            //then the both one matrix
+            IntegerMatrix::Row both_one_target_row = both_one_mat(this_row, _);
+            IntegerVector both_one_new_vals = both_one_target_row;
+            both_one_new_vals[both_one_new_vals == 1] = 0;
+            both_one_target_row = both_one_new_vals;
+
+          }
+
+        }
+
+      }
 
     }
 
     // if there are outliers, recompute the weights and associated statistics
-    int n_outliers = sum(outliers);
-    if (n_outliers > 0) {
-
-      risk_set_alleles[outliers] = "2";
-      int n_pos_outliers = 0;
-      IntegerVector pos_outlier_cols = IntegerVector::create(NA_INTEGER);
-      if (sum(pos_risk) > 0){
-
-        LogicalVector pos_risk_outliers = outliers[pos_risk_int - 1];
-        pos_outlier_cols = pos_risk_int[pos_risk_outliers];
-        n_pos_outliers = sum(pos_risk_outliers);
-
-      }
-
-      int n_neg_outliers = 0;
-      IntegerVector neg_outlier_cols = IntegerVector::create(NA_INTEGER);
-      if(sum(neg_risk) > 0){
-
-        LogicalVector neg_risk_outliers = outliers[neg_risk_int - 1];
-        neg_outlier_cols = neg_risk_int[neg_risk_outliers];
-        n_neg_outliers = sum(neg_risk_outliers);
-
-      }
-
-      // recode instances where the model appears to be recessive
-      if (n_pos_outliers > 0){
-
-        for (int k = 0; k < n_pos_outliers; k++){
-
-          int outlier_idx = pos_outlier_cols[k] - 1;
-
-          // first cases
-          IntegerMatrix::Row case_target_row = case_inf(outlier_idx, _);
-          IntegerVector case_new_vals = case_inf(outlier_idx, _);
-          case_new_vals[case_new_vals == 1] = 0;
-          case_target_row = case_new_vals;
-
-          //then complements
-          IntegerMatrix::Row comp_target_row = comp_inf(outlier_idx, _);
-          IntegerVector comp_new_vals = comp_inf(outlier_idx, _);
-          comp_new_vals[comp_new_vals == 1] = 0;
-          comp_target_row = comp_new_vals;
-
-          //then the both one matrix
-          IntegerMatrix::Row both_one_target_row = both_one_inf(outlier_idx, _);
-          IntegerVector both_one_new_vals(n_informative_families, 0);
-          both_one_target_row = both_one_new_vals;
-
-        }
-
-      }
-      if (n_neg_outliers > 0){
-
-        for (int k = 0; k < n_neg_outliers; k++){
-
-          int outlier_idx = neg_outlier_cols[k] - 1;
-
-          // first cases
-          IntegerMatrix::Row case_target_row = case_inf(outlier_idx, _);
-          IntegerVector case_new_vals = case_inf(outlier_idx, _);
-          case_new_vals[case_new_vals == 1] = 2;
-          case_target_row = case_new_vals;
-
-          //then complements
-          IntegerMatrix::Row comp_target_row = comp_inf(outlier_idx, _);
-          IntegerVector comp_new_vals = comp_inf(outlier_idx, _);
-          comp_new_vals[comp_new_vals == 1] = 2;
-          comp_target_row = comp_new_vals;
-
-          //then the both one matrix
-          IntegerMatrix::Row both_one_target_row = both_one_inf(outlier_idx, _);
-          IntegerVector both_one_new_vals(n_informative_families, 0);
-          both_one_target_row = both_one_new_vals;
-
-        }
-
-      }
+    if (outlier_count > 0) {
 
       //recompute the number of informative families
-      cases_minus_complements = sign_subtract_mat(case_inf, comp_inf);
-      case_comp_dif = comp_mat_ne(cases_minus_complements, 0);
-      dif_vec_list = compute_dif_vecs(case_inf, comp_inf, case_comp_dif, cases_minus_complements, both_one_inf,
+      cases_minus_complements = sign_subtract_mat(case_genetic_data, complement_genetic_data);
+      case_comp_dif = abs_matrix(cases_minus_complements);
+      dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, case_comp_dif, cases_minus_complements, both_one_mat,
                                       weight_lookup, n_different_snps_weight, n_both_one_weight, informative_families);
 
       //pick out required pieces
-      arma::rowvec sum_dif_vecs_tmp = dif_vec_list["sum_dif_vecs"];
+      // the tmp var versions are used because direct reassignment
+      // causes compile errors
+      NumericVector sum_dif_vecs_tmp = dif_vec_list["sum_dif_vecs"];
       sum_dif_vecs = sum_dif_vecs_tmp;
-      family_weights = dif_vec_list["family_weights"];
-      invsum_family_weights = dif_vec_list["invsum_family_weights"];
-      informative_families = dif_vec_list["informative_families"];
-      n_case_high_risk = dif_vec_list["n_case_high_risk"];
-      n_comp_high_risk = dif_vec_list["n_comp_high_risk"];
-      IntegerMatrix case_high_inf_tmp = dif_vec_list["case_high_inf"];
-      case_high_inf = case_high_inf_tmp;
-      IntegerMatrix comp_high_inf_tmp = dif_vec_list["comp_high_inf"];
-      comp_high_inf = comp_high_inf_tmp;
-      n_pos = dif_vec_list["n_pos"];
-      n_neg = dif_vec_list["n_neg"];
-      pos_risk_int = dif_vec_list["pos_risk_int"];
-      pos_risk = dif_vec_list["pos_risk"];
-      neg_risk_int = dif_vec_list["neg_risk_int"];
-      neg_risk = dif_vec_list["neg_risk"];
-      IntegerMatrix case_inf_tmp = dif_vec_list["case_inf"];
-      case_inf = case_inf_tmp;
-      IntegerMatrix comp_inf_tmp = dif_vec_list["comp_inf"];
-      comp_inf = comp_inf_tmp;
-      IntegerMatrix both_one_inf_tmp = dif_vec_list["both_one_inf"];
-      both_one_inf = both_one_inf_tmp;
-      n_informative_families = informative_families.length();
-      IntegerMatrix cases_minus_complements_inf_tmp = dif_vec_list["cases_minus_complements_inf"];
-      cases_minus_complements_inf = cases_minus_complements_inf_tmp;
+      IntegerVector family_weights_tmp = dif_vec_list["family_weights"];
+      family_weights = family_weights_tmp;
+      double invsum_family_weights_tmp = dif_vec_list["invsum_family_weights"];
+      invsum_family_weights = invsum_family_weights_tmp;
+      IntegerVector informative_families_tmp = dif_vec_list["informative_families"];
+      informative_families = informative_families_tmp;
+      int n_pos_tmp = dif_vec_list["n_pos"];
+      n_pos = n_pos_tmp;
+      int n_neg_tmp = dif_vec_list["n_neg"];
+      n_neg = n_neg_tmp;
+      LogicalVector pos_risk_tmp = dif_vec_list["pos_risk"];
+      pos_risk = pos_risk_tmp;
+      LogicalVector neg_risk_tmp = dif_vec_list["neg_risk"];
+      neg_risk = neg_risk_tmp;
+      LogicalVector case_high_risk_tmp = dif_vec_list["case_high_risk"];
+      case_high_risk = case_high_risk_tmp;
+      LogicalVector comp_high_risk_tmp = dif_vec_list["comp_high_risk"];
+      comp_high_risk = comp_high_risk_tmp;
+
+      IntegerVector tmp_idx = seq_len(case_genetic_data.ncol());
+      IntegerVector case_high_risk_int = tmp_idx[case_high_risk];
+      IntegerVector comp_high_risk_int = tmp_idx[comp_high_risk];
 
     }
   }
@@ -664,27 +805,34 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
 
   double total_case_high_risk_alleles = 0;
   double total_comp_high_risk_alleles = 0;
-  if (sum(pos_risk) > 0){
+  IntegerMatrix case_high_inf = subset_matrix_cols(case_genetic_data, case_high_risk_int);
+  IntegerMatrix comp_high_inf = subset_matrix_cols(complement_genetic_data, comp_high_risk_int);
 
-    IntegerMatrix case_high_inf_pos = subset_int_matrix_rows(case_high_inf, pos_risk_int);
-    IntegerVector case_pos_alleles = colSums(case_high_inf_pos);
+  if (n_pos > 0){
+
+    IntegerVector p_tmp = seq_len(n_target);
+    IntegerVector pos_risk_int = p_tmp[pos_risk];
+
+    // high risk case alleles
+    IntegerVector case_pos_alleles = subset_colsums_int(case_high_inf, pos_risk_int);
     total_case_high_risk_alleles += sum(case_pos_alleles);
 
-    IntegerMatrix comp_high_inf_pos = subset_int_matrix_rows(comp_high_inf, pos_risk_int);
-    IntegerVector comp_pos_alleles = colSums(comp_high_inf_pos);
+    // high risk comp alleles
+    IntegerVector comp_pos_alleles = subset_colsums_int(comp_high_inf, pos_risk_int);
     total_comp_high_risk_alleles += sum(comp_pos_alleles);
 
   }
-  if (sum(neg_risk) > 0){
+  if (n_neg > 0){
 
-    IntegerMatrix case_low_inf_pos = two_minus_mat(case_high_inf);
-    case_low_inf_pos = subset_int_matrix_rows(case_low_inf_pos, neg_risk_int);
-    IntegerVector case_neg_alleles = colSums(case_low_inf_pos);
+    IntegerVector n_tmp = seq_len(n_target);
+    IntegerVector neg_risk_int = n_tmp[neg_risk];
+
+    // high risk case alleles
+    IntegerVector case_neg_alleles = subset_colsums_int(case_high_inf, neg_risk_int);
     total_case_high_risk_alleles += sum(case_neg_alleles);
 
-    IntegerMatrix comp_low_inf_pos = two_minus_mat(comp_high_inf);
-    comp_low_inf_pos =  subset_int_matrix_rows(comp_low_inf_pos, neg_risk_int);
-    IntegerVector comp_neg_alleles = colSums(comp_low_inf_pos);
+    // high risk comp alleles
+    IntegerVector comp_neg_alleles = subset_colsums_int(comp_high_inf, neg_risk_int);
     total_comp_high_risk_alleles += sum(comp_neg_alleles);
 
   }
@@ -699,21 +847,36 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
   }
 
   // compute pseudo hotelling t2
-  arma::rowvec mu_hat = sum_dif_vecs;
+ // NumericVector mu_hat = sum_dif_vecs;
+//  NumericMatrix mu_hat_mat(n_informative_families, n_target);
+  //for (int i = 0; i < n_informative_families; i++){
+
+  //  NumericMatrix::Row this_row = mu_hat_mat(i, _);
+//    this_row = mu_hat;
+//  }
+
+  n_informative_families = informative_families.length();
+  arma::rowvec mu_hat = as<arma::rowvec>(sum_dif_vecs);
   arma::mat mu_hat_mat(n_informative_families, n_target);
   for (int i = 0; i < n_informative_families; i++){
     mu_hat_mat.row(i) = mu_hat;
   }
-  arma::mat x = as<arma::mat>(transpose(cases_minus_complements_inf));
+  arma::mat x = as<arma::mat>(transpose(subset_matrix_cols(cases_minus_complements, informative_families)));
+  arma::vec inf_family_weights = as<arma::vec>(family_weights[family_weights > 0]);
+  //NumericVector inf_family_weights = family_weights[family_weights > 0];
+  //NumericMatrix x_minus_mu_hat = subtract_mat_n(as<NumericMatrix>(x), mu_hat_mat);
+  //NumericMatrix weighted_x_minus_mu_hat = mult_rows_by_scalars(x_minus_mu_hat, inf_family_weights);
   arma::mat x_minus_mu_hat = x - mu_hat_mat;
-  arma::mat weighted_x_minus_mu_hat = mult_rows_by_scalars_arma(x_minus_mu_hat, family_weights);
+  arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
+  weighted_x_minus_mu_hat.each_col() %= inf_family_weights;
   arma::mat cov_mat = invsum_family_weights * trans(weighted_x_minus_mu_hat) * x_minus_mu_hat;
 
   // set cov elements to zero if SNPs are not in same ld block
-  LogicalMatrix target_block_ld_mat = subset_matrix_l(block_ld_mat, target_snps, target_snps);
   for (int i = 0; i < n_target; i++){
+    int this_row = target_snps[i] - 1;
     for (int j = 0; j < n_target; j++){
-      if (!target_block_ld_mat(i, j)){
+      int this_col = target_snps[j] - 1;
+      if (block_ld_mat(this_row, this_col) != 1){
 
         cov_mat(i,j) = 0;
 
@@ -722,13 +885,11 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
   }
 
   // get info for function output
-  arma::vec elem_vars = sqrt(cov_mat.diag());
-  sum_dif_vecs = sum_dif_vecs/trans(elem_vars);
+  NumericVector elem_vars = wrap(sqrt(cov_mat.diag()));
+  sum_dif_vecs = sum_dif_vecs/elem_vars;
 
   // if no variance, just make the element small
-  arma::uvec zero_var = find(elem_vars == 0);
-  double rep_val = pow(10, -10);
-  sum_dif_vecs.elem(zero_var).fill(rep_val);
+  sum_dif_vecs[elem_vars == 0] = pow(10, -10);
 
   // compute svd of cov_mat
   arma::mat U, V;
@@ -740,7 +901,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix compleme
   S.elem(zero_sv).fill(sv_rep_val);
 
   // compute fitness score
-  double pseudo_t2 = (1/(1000*invsum_family_weights)) * sum(pow((mu_hat * U), 2) / trans(S));
+  double pseudo_t2 = (1/(1000*invsum_family_weights)) * arma::sum(pow((mu_hat * U), 2) / trans(S));
   double fitness_score = pow(rr, 2) * pseudo_t2;
 
   // if desired, return the required information for the epistasis test
@@ -789,26 +950,6 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 
 }
 
-// [[Rcpp::export]]
-List chrom_fitness_list2(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences,
-                        List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
-                        LogicalMatrix block_ld_mat, NumericVector weight_lookup,
-                        int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        int n_case_high_risk_thresh = 20, double outlier_sd = 2.5, bool epi_test = false){
 
-  List scores = chromosome_list.length();
-  for (int i = 0; i < chromosome_list.length(); i++){
-
-    IntegerVector target_snps = chromosome_list[i];
-    Function f("chrom.fitness.score");
-    scores[i] = f(case_genetic_data, complement_genetic_data, case_comp_differences,
-                                    target_snps, cases_minus_complements, both_one_mat,
-                                    block_ld_mat, weight_lookup, n_different_snps_weight,
-                                    n_both_one_weight, n_case_high_risk_thresh, outlier_sd, epi_test);
-
-  }
-  return(scores);
-
-}
 
 
