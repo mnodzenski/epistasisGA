@@ -3,6 +3,22 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
+Rcpp::IntegerMatrix subset_matrix_cols(Rcpp::IntegerMatrix in_matrix, Rcpp::IntegerVector cols){
+
+  int n_rows = in_matrix.nrow();
+  int n_cols = cols.length();
+  Rcpp::IntegerMatrix out_matrix(n_rows, n_cols);
+
+  for (int i = 0; i < n_cols; i++){
+    Rcpp::IntegerMatrix::Column original_col = in_matrix(_, cols[i]-1);
+    Rcpp::IntegerMatrix::Column new_col = out_matrix(_, i);
+    new_col = original_col;
+  }
+  return(out_matrix);
+}
+
+
+// [[Rcpp::export]]
 int sign_scalar(int x) {
 
   if (x > 0) {
@@ -300,6 +316,7 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
   IntegerVector family_idx = seq_len(total_different_snps.length());
   IntegerVector informative_families = family_idx[informative_families_l];
 
+
   // check prev_informative_families and update inf families if needed
   bool prev_inf = all(is_na(prev_informative_families));
   if (!prev_inf){
@@ -329,22 +346,9 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 
   }
   double invsum_family_weights = 1 / sum(family_weights);
-
-  // compute weighted difference vectors for cases vs complements
-  NumericVector std_family_weights = family_weights * invsum_family_weights;
-  //IntegerVector sum_dif_vecs_start = weighted_sub_colsums(cases_minus_complements, informative_families,
-  //                                                        target_snps, family_weights);
   NumericVector sum_dif_vecs = weighted_sub_colsums(cases_minus_complements, informative_families,
-                                                    target_snps, std_family_weights);
-
-  // take the sum of the case - complement difference vectors over families
-  //NumericVector sum_dif_vecs = as<NumericVector>(sum_dif_vecs_start);
-
-  //for (int i = 0; i < sum_dif_vecs.length(); i++){
-
-  //  sum_dif_vecs[i] *= invsum_family_weights;
-
-  //}
+                                                    target_snps, family_weights);
+  sum_dif_vecs = sum_dif_vecs * invsum_family_weights;
 
   // determine how many cases and complements actually have the proposed risk set
   IntegerVector risk_dirs = sign(sum_dif_vecs);
@@ -384,20 +388,21 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 
 // [[Rcpp::export]]
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
-                         IntegerVector target_snps, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
+                         IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
                          LogicalMatrix block_ld_mat, NumericVector weight_lookup,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          int n_case_high_risk_thresh = 20, double outlier_sd = 2.5, bool epi_test = false) {
 
   // need to deep copy inputs to avoid overwriting
-  IntegerMatrix case_genetic_data = clone(case_genetic_data_in);
-  IntegerMatrix complement_genetic_data = clone(complement_genetic_data_in);
-  IntegerMatrix case_comp_differences = clone(case_comp_differences_in);
-  IntegerMatrix cases_minus_complements = clone(cases_minus_complements_in);
-  IntegerMatrix both_one_mat = both_one_mat_in;
+  IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
+  IntegerMatrix complement_genetic_data = subset_matrix_cols(complement_genetic_data_in, target_snps_in);
+  IntegerMatrix case_comp_differences = subset_matrix_cols(case_comp_differences_in, target_snps_in);
+  IntegerMatrix cases_minus_complements = subset_matrix_cols(cases_minus_complements_in, target_snps_in);
+  IntegerMatrix both_one_mat = subset_matrix_cols(both_one_mat_in, target_snps_in);
 
-  // n target snps
-  int n_target = target_snps.length();
+  // now redefining target snps
+  int n_target = target_snps_in.length();
+  IntegerVector target_snps = seq_len(n_target);
 
   // compute weighted difference vectors, determine risk related alleles
   List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, case_comp_differences,
@@ -498,17 +503,22 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
             for (int n = 0; n < informative_families.length(); n++){
 
               int family_row = informative_families[n] - 1;
+              bool change_difs = false;
 
               // recode cases
               if (case_genetic_data(family_row, this_col) == 1){
 
                 case_genetic_data(family_row, this_col) = 0;
+                change_difs = true;
 
               }
               //recode complements
               if (complement_genetic_data(family_row, this_col) == 1){
 
                 complement_genetic_data(family_row, this_col) = 0;
+                if (!change_difs){
+                  change_difs = true;
+                }
 
               }
               // recode both one
@@ -519,7 +529,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
               }
 
               //recode cases minus complements
-              if ((case_genetic_data(family_row, this_col) == 1) | (complement_genetic_data(family_row, this_col) == 1)){
+              if (change_difs){
 
                 cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
                 case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
@@ -569,6 +579,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
           // otherwise check complements for outliers
           if (neg_outliers == 0){
 
+
             for (int m = 0; m < comp_high_inf_rows.length(); m++){
 
               int this_row = comp_high_inf_rows[m] - 1;
@@ -595,17 +606,22 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
             for (int n = 0; n < informative_families.length(); n++){
 
               int family_row = informative_families[n] - 1;
+              bool change_difs = false;
 
               // recode cases
               if (case_genetic_data(family_row, this_col) == 1){
 
                 case_genetic_data(family_row, this_col) = 2;
+                change_difs = true;
 
               }
               //recode complements
               if (complement_genetic_data(family_row, this_col) == 1){
 
                 complement_genetic_data(family_row, this_col) = 2;
+                if (!change_difs){
+                  change_difs = true;
+                }
 
               }
               // recode both one
@@ -616,7 +632,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
               }
 
               //recode cases minus complements
-              if ((case_genetic_data(family_row, this_col) == 1) | (complement_genetic_data(family_row, this_col) == 1)){
+              if (change_difs){
 
                 cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
                 case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
@@ -703,7 +719,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
   // compute scaling factor
   double rr;
-  if ( (total_case_high_risk_alleles == 0 & total_comp_high_risk_alleles == 0) |
+  if ( (total_case_high_risk_alleles == 0) |
        R_isnancpp(total_case_high_risk_alleles) | R_isnancpp(total_comp_high_risk_alleles)){
     rr = pow(10, -10);
   } else {
@@ -711,14 +727,6 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   }
 
   // compute pseudo hotelling t2
- // NumericVector mu_hat = sum_dif_vecs;
-//  NumericMatrix mu_hat_mat(n_informative_families, n_target);
-  //for (int i = 0; i < n_informative_families; i++){
-
-  //  NumericMatrix::Row this_row = mu_hat_mat(i, _);
-//    this_row = mu_hat;
-//  }
-
   n_informative_families = informative_families.length();
   arma::rowvec mu_hat = as<arma::rowvec>(sum_dif_vecs);
   arma::mat mu_hat_mat(n_informative_families, n_target);
@@ -727,9 +735,6 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   }
   arma::mat x = as<arma::mat>(subset_matrix(cases_minus_complements, informative_families, target_snps));
   arma::vec inf_family_weights = as<arma::vec>(family_weights);
-  //NumericVector inf_family_weights = family_weights[family_weights > 0];
-  //NumericMatrix x_minus_mu_hat = subtract_mat_n(as<NumericMatrix>(x), mu_hat_mat);
-  //NumericMatrix weighted_x_minus_mu_hat = mult_rows_by_scalars(x_minus_mu_hat, inf_family_weights);
   arma::mat x_minus_mu_hat = x - mu_hat_mat;
   arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
   weighted_x_minus_mu_hat.each_col() %= inf_family_weights;
@@ -737,9 +742,9 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
   // set cov elements to zero if SNPs are not in same ld block
   for (int i = 0; i < n_target; i++){
-    int this_row = target_snps[i] - 1;
+    int this_row = target_snps_in[i] - 1;
     for (int j = 0; j < n_target; j++){
-      int this_col = target_snps[j] - 1;
+      int this_col = target_snps_in[j] - 1;
       if (block_ld_mat(this_row, this_col) != 1){
 
         cov_mat(i,j) = 0;
@@ -785,7 +790,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                             Named("sum_dif_vecs") = sum_dif_vecs,
                             Named("rr") = rr,
                             Named("pseudo_t2") = pseudo_t2,
-                            Named("risk_set_alleles") = risk_set_alleles);
+                            Named("risk_set_alleles") = risk_set_alleles,
+                            Named("family_weights") = family_weights);
     return(res);
 
   }
