@@ -2,22 +2,39 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
+// [[Rcpp::export]]
+IntegerVector seq_by2(int l){
+
+  IntegerVector out_vec(l);
+  out_vec[0] = 1;
+  for (int i = 1; i < l; i++){
+
+    out_vec[i] = out_vec[i - 1] + 2;
+
+  }
+  return(out_vec);
+
+}
 
 // [[Rcpp::export]]
-List unique_chrom_list(List& chromosome_list, int chrom_size) {
+LogicalVector unique_chrom_list(List chromosome_list, int chrom_size) {
 
   int in_size = chromosome_list.size();
+  LogicalVector out_vec(in_size, false);
+  out_vec[0] = true;
+  List comp_these = chromosome_list[out_vec];
 
-  List out_list(chromosome_list);
   int s = 1;
   for (int i = 1; i < in_size; i++){
 
     NumericVector xi = chromosome_list[i];
     int l = 0;
 
-    for (int j = 0; j < s; j++){
+    comp_these = chromosome_list[out_vec];
 
-      NumericVector xj = chromosome_list[j];
+    for (int j = 0; j < comp_these.length(); j++){
+
+      NumericVector xj = comp_these[j];
 
       if ((sum(xi == xj) == chrom_size)){
 
@@ -32,12 +49,12 @@ List unique_chrom_list(List& chromosome_list, int chrom_size) {
 
     if (l == s){
 
-      out_list[s] = xi;
+      out_vec[i] = true;
       s++;
 
     }
   }
-  return head(out_list, s);
+  return out_vec;
 }
 
 // [[Rcpp::export]]
@@ -867,7 +884,7 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
                    IntegerVector weight_lookup, int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500, double tol = 10^-6, int n_top_chroms = 100,
                    bool initial_sample_duplicates = false, string snp_sampling_type = "chisq",
-                   double crossover_prop = 0.8, List chromosome_list = NULL, NumericMatrix fitness_score_mat = NULL,
+                   double crossover_prop = 0.8, List chromosome_list = NULL, List fitness_score_list = NULL,
                    NumericVector top_fitness = NULL, bool last_gens_equal = NULL,
                    CharacterVector top_generation_chromosome = NULL, List chromosome_mat_list = NULL,
                    List sum_dif_vec_list = NULL, List risk_allele_vec_list = NULL, int n_case_high_risk_thresh = 20,
@@ -903,8 +920,8 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
 
     }
 
-    NumericMatrix fitness_score_mat(max_generations, n_chromosomes);
-    std::fill(fitness_score_mat(), fitness_score_mat.end(), NumericVector::get_na());
+    List fitness_score_list(max_generations);
+    //std::fill(fitness_score_mat(), fitness_score_mat.end(), NumericVector::get_na());
     NumericVector top_fitness(max_generations);
     bool last_gens_equal = false;
     List top_generation_chromosome(max_generations);
@@ -922,22 +939,22 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
                                                  chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
                                                  n_different_snps_weight, n_both_one_weight, n_case_high_risk_thresh, outlier_sd);
     NumericVector fitness_scores(n_chromosomes);
-    NumericMatrix sum_dif_vecs(n_chromosomes, chromosome_size);
-    IntegerMatrix gen_original_cols(n_chromosomes, chromosome_size);
-    CharacterMatrix risk_allele_vecs(n_chromosomes, chromosome_size);
+    List sum_dif_vecs(n_chromosomes);
+    List gen_original_cols(n_chromosomes);
+    List risk_allele_vecs(n_chromosomes);
 
     for (int i = 0; i < n_chromosomes; i++){
 
       fitness_scores[i] = fitness_score_list[i]["fitness_score"];
-      sum_dif_vecs.row(i) = fitness_score_list[i]["sum_dif_vecs"];
-      risk_allele_vecs.row(i) = fitness_score_list[i]["risk_set_alleles"]
+      sum_dif_vecs[i] = fitness_score_list[i]["sum_dif_vecs"];
+      risk_allele_vecs[i] = fitness_score_list[i]["risk_set_alleles"]
       IntegerVector chrom_col_idx = chromosome_list[i];
-      gen_original_cols.row(i) = original_col_numbers[chrom_col_idx - 1];
+      gen_original_cols[i] = original_col_numbers[chrom_col_idx - 1];
 
     }
 
     // store the fitness scores, elements (snps) of the chromosomes, sum of the difference vectors
-    fitness_score_mat.row(generation) = fitness_scores;
+    fitness_score_list[generation] = fitness_scores;
     chromosome_mat_list[generation] = gen_original_cols;
     sum_dif_vec_list[generation] = sum_dif_vecs;
     risk_allele_vec_list[generation] = risk_allele_vecs;
@@ -945,7 +962,7 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
     // 2. identify the top scoring candidate solution(s) and fitness score
     double max_fitness = max(fitness_scores);
     LogicalVector top_chromosome_idx = fitness_scores == max_fitness;
-    LogicalVector lower_chromosome_idx = fitness_scores == max_fitness;
+    LogicalVector lower_chromosome_idx = fitness_scores != max_fitness;
     IntegerVector top_chromosomes = chromosome_list[top_chromosome_idx];
     IntegerVector lower_chromosomes = chromosome_list[lower_chromosome_idx];
 
@@ -957,12 +974,19 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
       int top_chromosome = top_chromosomes[0];
       IntegerVector duplicate_idx = seq(1, n_top_chroms - 1);
       IntegerVector duplicate_top_chromosomes = top_chromosomes[duplicate_idx];
-      for (int i = 0, i < duplicate_top_chromosomes.length(); i++){
+      int new_len = lower_chromosomes.length() + duplicate_top_chromosomes.length();
+      IntegerVector lower_chromosomes_tmp(new_len);
+      for (int i = 0, i < lower_chromosomes.length(); i++){
 
-        int dup_top_chrom = duplicate_top_chromosomes[i];
-        lower_chromosomes.push_back(dup_top_chrom);
+        lower_chromosomes_tmp[i] = lower_chromosomes[i];
 
       }
+      for (int j = 0; j < duplicate_top_chromosomes.length(); j++){
+
+        lower_chromosomes_tmp[j + lower_chromosomes.length()] = duplicate_top_chromosomes[j];
+
+      }
+      lower_chromosomes = lower_chromosomes_tmp;
 
     } else {
 
@@ -970,45 +994,68 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
 
     }
 
-
     // 3. Sample with replacement from the existing chromosomes, allowing the top
     // scoring chromosome to be sampled, but only sample from the unique chromosomes available
-    Function d("duplicated");
-    LogicalVector dont_sample_these = d(chromosome_list);
-    LogicalVector sample_these = !(dont_sample_these);
+    LogicalVector sample_these = unique_chrom_list(chromosome_list);
     IntegerVector chrom_list_idx = seq_len(n_chromosomes);
     IntegerVector which_sample_these = chrom_list_idx[sample_these];
     NumericVector sample_these_scores = fitness_scores[sample_these];
     IntegerVector sampled_lower_idx = sample(which_sample_these, lower_chromosomes.length(), true, sample_these_scores);
-    List sampled_lower_chromosomes = chromosome_list[sampled_lower_idx];
-    NumericMatrix sampled_lower_dif_vecs = subset_matrix_rows(sum_dif_vecs, sampled_lower_idx);
-    NumericVector sampled_lower_fitness_scores = fitness_scores[sampled_lower_idx];
+    List sampled_lower_chromosomes = chromosome_list[sampled_lower_idx - 1];
+    List sampled_lower_dif_vecs = sum_dif_vecs[sampled_lower_idx - 1];
+    List sampled_lower_fitness_scores = fitness_scores[sampled_lower_idx - 1];
 
     // 4. Determine whether each lower chromosome will be subject to mutation or crossing over
 
     // only allowing cross-overs between distinct chromosomes (i.e, if a chromosome was sampled twice,
     // it can't cross over with itself)
+    IntegerVector unique_lower_idx = unique(sampled_lower_idx);
+    LogicalVector cross_overs(unique_lower_idx.length(), false);
+    int rounded_crosses = round(unique_lower_idx.length() * crossover_prop);
+    IntegerVector possible_crosses = seq_len(unique_lower_idx.length());
+    int n_crosses = round(unique_lower_idx.length() * crossover_prop);
+    if ((rounded_crosses % 2 == 0) | (unique_lower_idx.length() == 1)){
 
-    unique.lower.idx <- unique(sampled.lower.idx)
-      cross.overs <- rep(FALSE, length(unique.lower.idx))
+      IntegerVector cross_these = sample(possible_crosses, n_crosses);
 
-      if (round(length(unique.lower.idx) * crossover.prop)%%2 == 0 | length(unique.lower.idx) ==
-          1) {
+    } else {
 
-        cross.overs[sample(seq_len(length(unique.lower.idx)), size = round(length(unique.lower.idx) *
-          crossover.prop))] <- TRUE
+      int n_crosses = round(unique_lower_idx.length() * crossover_prop) + 1;
 
-      } else {
+    }
+    cross_overs[cross_these - 1] <- true;
 
-        cross.overs[sample(seq_len(length(unique.lower.idx)), size = (round(length(unique.lower.idx) *
-          crossover.prop) + 1))] <- TRUE
+    // 5. Execute crossing over for the relevant chromosomes
+    if (sum(cross_overs) > 1){
+
+      IntegerVector lower_idx_cross_overs = unique_lower_idx[cross_overs];
+      IntegerVector cross_over_positions = match(lower_idx_cross_overs, sampled_lower_idx);
+      int this_length = cross_over_positions.length() / 2;
+      IntegerVector crossover_starts = seq_by2(this_length);
+
+      for (int k = 0; k < crossover_starts.length(); k++){
+
+        // grab pair of chromosomes to cross over
+        int chrom1_sub_idx = crossover_starts[k];
+        int chrom1_idx = cross_over_positions[chrom1_sub_idx - 1];
+        IntegerVector chrom1 = sampled_lower_chromosomes[chrom1_idx - 1];
+        NumericVector chrom1_dif_vecs = sampled_lower_dif_vecs[chrom1_idx - 1];
+        double chrom1_fitness_score = sampled_lower_fitness_scores[chrom1_idx - 1];
+
+        int chrom2_idx = cross_over_positions[chrom1_sub_idx];
+        IntegerVector chrom2 = sampled_lower_chromosomes[chrom2_idx - 1];
+        NumericVector chrom2_dif_vecs = sampled_lower_dif_vecs[chrom2_idx - 1];
+        double chrom2_fitness_score = sampled_lower_fitness_scores[chrom2_idx - 1];
+
+        //check for overlapping snps
+
 
       }
 
-# those not getting crossover will be mutated
-      mutations <- !cross.overs
 
-### 6. Execute crossing over for the relevant chromosomes ### print('Step 6/9')
+    }
+
+
         if (sum(cross.overs) > 1) {
 
           cross.over.positions <- match(unique.lower.idx[cross.overs], sampled.lower.idx)
