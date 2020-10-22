@@ -4,12 +4,7 @@
 \alias{compute.edge.scores2}
 \title{A function to compute edge scores for network plots of results.}
 \usage{
-compute.edge.scores2(
-  results.list,
-  n.top.chroms = 50,
-  score.type = "max",
-  scale.type = "ranks"
-)
+compute.edge.scores2(results.list, n.top.chroms = 50, score.type = "max")
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in the network plot.
@@ -24,10 +19,10 @@ otherwise an error will be returned.}
  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
  weights.}
 
+\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
+
 \item{scale.type}{A character string indicating the method for re-scaling scores across chromosome sizes.
 Defaults to 'ranks' but can also be 'standardize'.}
-
-\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
 }
 \value{
 A data.table where the first two columns represent SNPs and the third column (edge.score)
