@@ -4,7 +4,14 @@
 \alias{compute.edge.scores2}
 \title{A function to compute edge scores for network plots of results.}
 \usage{
-compute.edge.scores2(results.list, n.top.chroms = 50, score.type = "max")
+compute.edge.scores2(
+  results.list,
+  pp.list,
+  n.top.chroms = 50,
+  score.type = "logsum",
+  epi.test.permutes = 100,
+  bp.param = SerialParam()
+)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in the network plot.
@@ -14,15 +21,19 @@ is a list containing vectors of all permutation results fitness scores, again us
 \code{combine.islands} for each permutation. Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 otherwise an error will be returned.}
 
+\item{pp.list}{The list output by \code{preprocess.genetic.data} run on the observed data.}
+
 \item{score.type}{A character string specifying the method for scoring edges, with options
 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
  weights.}
 
-\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
+\item{epi.test.permutes}{The number of permutes used to compute the epistasis test p-values.}
 
-\item{scale.type}{A character string indicating the method for re-scaling scores across chromosome sizes.
-Defaults to 'ranks' but can also be 'standardize'.}
+\item{bp.param}{The \code{bp.param} argument to be passed to \code{run.epi.test}.
+If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
+
+\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
 }
 \value{
 A data.table where the first two columns represent SNPs and the third column (edge.score)
@@ -144,7 +155,7 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3'
  final.results <- list(chrom2.list, chrom3.list)
 
  ## compute edge scores
- edge.dt <- compute.edge.scores2(final.results, 3)
+ edge.dt <- compute.edge.scores2(final.results, pp.list, 3)
 
  lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
           'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
