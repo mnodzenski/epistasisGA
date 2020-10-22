@@ -13,6 +13,7 @@ network.plot(
   node.size = 25,
   graph.area = 100,
   vertex.label.cex = 0.5,
+  edge.width.cex = 1,
   plot = TRUE
 )
 }
@@ -36,6 +37,8 @@ specified, \code{edge.dt} must be specified.}
 \item{graph.area}{A scalar affecting the size of the graph area. Increase to increase graph area.}
 
 \item{vertex.label.cex}{A scalar controlling the size of the vertex label. Increase to increase size.}
+
+\item{edge.width.cex}{A scalar controlling the width of the graph edges. Increase to make edges wider.}
 
 \item{plot}{A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.}
 }
