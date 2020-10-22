@@ -101,7 +101,7 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
                                     n.case.high.risk.thresh, outlier.sd, epi.test = TRUE)
     obs.fitness.score <- fitness.score$fitness.score
 
-    ### restrict the data to families where case or complement has the full risk set ###
+    ### restrict the data to informative families ###
     case.risk <- case.genetic.data[fitness.score$high.risk.families, target.snps]
     comp.risk <- complement.genetic.data[fitness.score$high.risk.families, target.snps]
     n.families <- length(fitness.score$high.risk.families)
