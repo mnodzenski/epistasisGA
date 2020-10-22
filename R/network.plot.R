@@ -14,6 +14,7 @@
 #' @param node.size A scalar affecting the size of the graph nodes. Increase to increase size.
 #' @param graph.area A scalar affecting the size of the graph area. Increase to increase graph area.
 #' @param vertex.label.cex A scalar controlling the size of the vertex label. Increase to increase size.
+#' @param edge.width.cex A scalar controlling the width of the graph edges. Increase to make edges wider.
 #' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -51,7 +52,7 @@
 #' @export
 
 network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crectangle", score.type = "max", repulse.rad = 1000,
-    node.size = 25, graph.area = 100, vertex.label.cex = 0.5, plot = TRUE) {
+    node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE) {
 
     # if not inputting an edge.df, compute it
     if (is.null(edge.dt)){
@@ -87,7 +88,7 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
     colnames(edge.df)[1:2] <- c("from", "to")
     network <- graph.data.frame(edge.df[, 1:2], directed = FALSE, vertices = node.df)
     E(network)$weight <- edge.df$edge.score
-    E(network)$width <- edge.widths
+    E(network)$width <- edge.width.cex*edge.widths
     color_fun <- colorRampPalette(c("white", "grey", "red"))
     required.colors <- as.integer(as.factor(E(network)$weight))
     colors <- color_fun(length(unique(required.colors)))
