@@ -1336,7 +1336,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
   // if the algorithm hasn't hit the max number of generations or converged, return a partial list of
   // the results
-  if (generation < max_generations & !all_converged & n_migrations > 0){
+  if ((generation < max_generations) & !all_converged & (n_migrations > 0)){
 
     // pick out the highest and lowest fitness scores of the new chromosomes
     List chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
@@ -1348,12 +1348,13 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       fitness_scores[i] = chrom_fitness_score_list[i]["fitness_score"];
 
     }
-    IntegerVector chrom_list_order = sort_by_order(seq_len(chromosome_list), fitness_scores, 2);
+
+    IntegerVector chrom_list_order = sort_by_order(seq_len(chromosome_list.length()), fitness_scores, 2);
     chromosome_list = chromosome_list[chrom_list_order - 1];
 
     // identify chromosomes that will migrate to other islands
     IntegerVector migration_idx = seq_len(n_migrations);
-    IntegerVector migrations = chromosome_list[ migration_idx - 1];
+    List migrations = chromosome_list[migration_idx - 1];
 
     // remove the lowest scoring chromosomes in preparation for migration
     IntegerVector keep_these = seq_len(n_chromosomes - n_migrations);
@@ -1418,7 +1419,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     u_chrom_list = u_chrom_list[top_res_idx - 1];
     u_dif_vec_list = u_dif_vec_list[top_res_idx - 1];
     u_risk_allele_list = u_risk_allele_list[top_res_idx - 1];
-    out_fitness_score_vec = u_fitness_score_vec[top_res_idx - 1];
+    NumericVector out_fitness_score_vec = u_fitness_score_vec[top_res_idx - 1];
 
     // put together pieces of results
     IntegerMatrix out_chrom_mat(n_out_res, chromosome_size);
@@ -1426,9 +1427,14 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     CharacterMatrix out_risk_allele_mat(n_out_res, chromosome_size);
     for (int i = 0; i < n_out_res; i++){
 
-      out_chrom_mat(i, _) = u_chrom_list[i];
-      out_dif_vec_mat(i, _) = u_dif_vec_list[i];
-      out_risk_allele_mat(i, _) = u_risk_allele_list[i];
+      IntegerVector chrom_mat_row = u_chrom_list[i];
+      out_chrom_mat(i, _) = chrom_mat_row;
+
+      NumericVector dif_vec_row = u_dif_vec_list[i];
+      out_dif_vec_mat(i, _) = dif_vec_row;
+
+      CharacterVector allele_mat_row = u_risk_allele_list[i];
+      out_risk_allele_mat(i, _) = allele_mat_row;
 
     }
     List res = List::create(Named("top_chromosomes") = out_chrom_mat,
