@@ -142,7 +142,7 @@
 #' @importFrom utils combn
 #' @export
 
-compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "max", scale.type = "ranks") {
+compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "max") {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     n.chroms.vec <- lapply(results.list, function(chrom.size.list){
@@ -169,56 +169,34 @@ compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "
     n.permutes <- length(results.list[[1]]$permutation.list)
 
     ## compute re-scaled fitness score based on ranks compared to permutes
-    if (scale.type == "ranks"){
+    rescaled.results <- lapply(results.list, function(chrom.size.list){
 
-        rescaled.results <- lapply(results.list, function(chrom.size.list){
+        obs.res <- chrom.size.list$observed.data
+        obs.scores <- matrix(rep(sort(obs.res$fitness.score, decreasing = TRUE), n.permutes),
+                             nrow = n.permutes, byrow = TRUE)
+        perm.scores <- do.call(rbind, lapply(chrom.size.list$permutation.list, function(x) sort(x$fitness.score, decreasing = TRUE)))
+        rescaled.scores <- colSums(perm.scores >= obs.scores)/n.permutes
 
-            obs.res <- chrom.size.list$observed.data
-            obs.scores <- matrix(rep(sort(obs.res$fitness.score, decreasing = TRUE), n.permutes),
-                                 nrow = n.permutes, byrow = TRUE)
-            perm.scores <- do.call(rbind, lapply(chrom.size.list$permutation.list, function(x) sort(x$fitness.score, decreasing = TRUE)))
-            rescaled.scores <- colSums(perm.scores >= obs.scores)/n.permutes
+        ## set zeros to small fraction
+        if (any(rescaled.scores == 0)){
+            rescaled.scores[rescaled.scores == 0] <- 1/(n.permutes + 1)
+        }
 
-            ## set zeros to small fraction
-            if (any(rescaled.scores == 0)){
-                rescaled.scores[rescaled.scores == 0] <- 1/n.permutes
-            }
+        ## set 1's to large fraction
+        if (any(rescaled.scores == 1)){
 
-            ## set 1's to large fraction
-            if (any(rescaled.scores == 1)){
+            rescaled.scores[rescaled.scores == 1] <- (n.permutes - 1)/(n.permutes + 1)
 
-                rescaled.scores[rescaled.scores == 1] <- (n.permutes - 1)/n.permutes
+        }
 
-            }
+        ## take -2 log
+        rescaled.scores <- -2*log(rescaled.scores)
 
-            ## take -2 log
-            rescaled.scores <- -2*log(rescaled.scores)
+        ## updated the observed results data.table
+        obs.res$fitness.score <- rescaled.scores
+        return(obs.res)
 
-            ## updated the observed results data.table
-            obs.res$fitness.score <- rescaled.scores
-            return(obs.res)
-
-        })
-
-    } else if (scale.type == "standardize"){
-
-        rescaled.results <- lapply(results.list, function(chrom.size.list){
-
-            obs.res <- chrom.size.list$observed.data
-            obs.scores <- sort(obs.res$fitness.score, decreasing = TRUE)
-            perm.scores <- do.call(rbind, lapply(chrom.size.list$permutation.list, function(x) sort(x$fitness.score, decreasing = TRUE)))
-            perm.sds <- colSds(perm.scores)
-            perm.means <- colMeans(perm.scores)
-            rescaled.scores <- (obs.scores - perm.means)/perm.sds
-
-            ## updated the observed results data.table
-            obs.res$fitness.score <- rescaled.scores
-            return(obs.res)
-
-        })
-
-    }
-
+    })
 
     all.edge.weights <- rbindlist(lapply(rescaled.results, function(chrom.size.res){
 
@@ -235,7 +213,6 @@ compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "
         }))
 
     }))
-
 
     # compute edge score based on score.type
     if (score.type == "max"){
