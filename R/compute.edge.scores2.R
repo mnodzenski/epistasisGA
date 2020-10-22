@@ -179,7 +179,7 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
         # compute permutation epistasis p-values for each of 1:n.top.chroms
         # return 0.5 if we can't do the epistasis test due to all chroms being on
         # same biological chromosome
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        chrom.size <- sum(grepl("snp", colnames(obs.res)))/5
         epi.pvals <- vapply(seq_len(n.top.chroms), function(x){
 
             chrom <- as.vector(t(obs.res[x, seq_len(chrom.size)]))
