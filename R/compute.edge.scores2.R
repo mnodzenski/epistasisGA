@@ -8,13 +8,15 @@
 #'  is a list containing vectors of all permutation results fitness scores, again using the \code{unique.results} results output by
 #'  \code{combine.islands} for each permutation. Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 #'  otherwise an error will be returned.
+#' @param pp.list The list output by \code{preprocess.genetic.data} run on the observed data.
 #' @param n.top.scores The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.
 #' @param score.type A character string specifying the method for scoring edges, with options
 #' 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
 #'  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
 #'  weights.
-#' @param scale.type A character string indicating the method for re-scaling scores across chromosome sizes.
-#' Defaults to 'ranks' but can also be 'standardize'.
+#' @param epi.test.permutes The number of permutes used to compute the epistasis test p-values.
+#' @param bp.param The \code{bp.param} argument to be passed to \code{run.epi.test}.
+#'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @return A data.table where the first two columns represent SNPs and the third column (edge.score)
 #' is the edge score of a chromosome containing those SNPs.
 #'
@@ -132,7 +134,7 @@
 #'  final.results <- list(chrom2.list, chrom3.list)
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.edge.scores2(final.results, 3)
+#'  edge.dt <- compute.edge.scores2(final.results, pp.list, 3)
 #'
 #'  lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
 #'           'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
@@ -142,7 +144,8 @@
 #' @importFrom utils combn
 #' @export
 
-compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "max") {
+compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
+                                 epi.test.permutes = 100, bp.param = SerialParam()) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     n.chroms.vec <- lapply(results.list, function(chrom.size.list){
@@ -171,11 +174,25 @@ compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "
     ## compute re-scaled fitness score based on ranks compared to permutes
     rescaled.results <- lapply(results.list, function(chrom.size.list){
 
-        obs.res <- chrom.size.list$observed.data
+        obs.res <- chrom.size.list$observed.data[seq_len(n.top.chroms), ]
+
+        # compute permutation epistasis p-values for each of 1:n.top.chroms
+        # return 0.5 if we can't do the epistasis test due to all chroms being on
+        # same biological chromosome
+        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        epi.pvals <- vapply(seq_len(n.top.chroms), function(x){
+
+            chrom <- as.vector(t(obs.res[x, seq_len(chrom.size)]))
+            epi.test.pval <- tryCatch(run.epi.test(chrom, pp.list, n.permutes = epi.test.permutes, bp.param = bp.param)$pval,
+                                     error = function(e) 0.5)
+            return(epi.test.pval)
+
+        }, 1.0)
+
         obs.scores <- matrix(rep(sort(obs.res$fitness.score, decreasing = TRUE), n.permutes),
                              nrow = n.permutes, byrow = TRUE)
-        perm.scores <- do.call(rbind, lapply(chrom.size.list$permutation.list, function(x) sort(x$fitness.score, decreasing = TRUE)))
-        rescaled.scores <- colSums(perm.scores >= obs.scores)/n.permutes
+        perm.scores <- do.call(rbind, lapply(chrom.size.list$permutation.list, function(x) sort(x$fitness.score[seq_len(n.top.chroms)], decreasing = TRUE)))
+        rescaled.scores <- colSums(perm.scores >= obs.scores)/(n.permutes + 1)
 
         ## set zeros to small fraction
         if (any(rescaled.scores == 0)){
@@ -185,12 +202,15 @@ compute.edge.scores2 <- function(results.list, n.top.chroms = 50, score.type = "
         ## set 1's to large fraction
         if (any(rescaled.scores == 1)){
 
-            rescaled.scores[rescaled.scores == 1] <- (n.permutes - 1)/(n.permutes + 1)
+            rescaled.scores[rescaled.scores == 1] <- (n.permutes)/(n.permutes + 1)
 
         }
 
         ## take -2 log
         rescaled.scores <- -2*log(rescaled.scores)
+
+        ## weight the re-scaled score by it's 1 - epistasis p-value
+        rescaled.scores <- rescaled.scores*(1 - epi.pvals)
 
         ## updated the observed results data.table
         obs.res$fitness.score <- rescaled.scores
