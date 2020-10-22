@@ -945,7 +945,7 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 List initiate_population(IntegerMatrix case_genetic_data, int n_chromosomes, int chromosome_size,
                          int generation, NumericVector snp_chisq,
                          int max_generations = 500,
-                         bool initial_sample_duplicates = false, String snp_sampling_type = "chisq",
+                         bool initial_sample_duplicates = false,
                          Nullable<List> chromosome_list = R_NilValue,
                          Nullable<List> fitness_score_list = R_NilValue, Nullable<NumericVector> top_fitness = R_NilValue,
                          Nullable<List> top_generation_chromosome = R_NilValue,
@@ -1026,7 +1026,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    bool all_converged = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500, double tol = 10^-6, int n_top_chroms = 100,
-                   bool initial_sample_duplicates = false, String snp_sampling_type = "chisq",
+                   bool initial_sample_duplicates = false,
                    double crossover_prop = 0.8, Nullable<List> chromosome_list_in = R_NilValue,
                    Nullable<List> fitness_score_list_in = R_NilValue, Nullable<NumericVector> top_fitness_in = R_NilValue,
                    bool last_gens_equal = false, Nullable<List> top_generation_chromosome_in = R_NilValue,
@@ -1040,7 +1040,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
   // initialize populations, or grab input population data
   List population = initiate_population(case_genetic_data, n_chromosomes, chromosome_size, generation, snp_chisq,
-                                        max_generations, initial_sample_duplicates, snp_sampling_type, chromosome_list_in,
+                                        max_generations, initial_sample_duplicates, chromosome_list_in,
                                         fitness_score_list_in, top_fitness_in, top_generation_chromosome_in, gen_chromosome_list_in,
                                         sum_dif_vec_list_in, risk_allele_vec_list_in);
   List chromosome_list = population["chromosome_list"];
@@ -1065,9 +1065,14 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
     for (int i = 0; i < n_chromosomes; i++){
 
-      fitness_scores[i] = chrom_fitness_score_list[i]["fitness_score"];
-      sum_dif_vecs[i] = chrom_fitness_score_list[i]["sum_dif_vecs"];
-      risk_allele_vecs[i] = chrom_fitness_score_list[i]["risk_set_alleles"];
+      List chrom_fitness_score_list_i = chrom_fitness_score_list[i];
+      double fs = chrom_fitness_score_list_i["fitness_score"];
+      NumericVector sdv = chrom_fitness_score_list_i["sum_dif_vecs"];
+      CharacterVector rav = chrom_fitness_score_list_i["risk_set_alleles"];
+
+      fitness_scores[i] = fs;
+      sum_dif_vecs[i] = sdv;
+      risk_allele_vecs[i] = rav;
       IntegerVector chrom_col_idx = chromosome_list[i];
       gen_original_cols[i] = original_col_numbers[chrom_col_idx - 1];
 
@@ -1187,22 +1192,22 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
         if (chrom1_fitness_score >= chrom2_fitness_score){
 
           NumericVector c2_not_matching_dif_vecs = chrom2_dif_vecs[c1_c2_not_matching_snp_positions - 1];
-          IntegerVector c1_c2_order = sort_by_order(chrom_positions, abs(c2_not_matching_dif_vecs), 1);
-          c1_c2_not_matching_snp_positions = c1_c2_not_matching_snp_positions[c1_c2_order - 1];
+          //IntegerVector c1_c2_order = sort_by_order(chrom_positions, abs(c2_not_matching_dif_vecs), 1);
+          c1_c2_not_matching_snp_positions = sort_by_order(c1_c2_not_matching_snp_positions, abs(c2_not_matching_dif_vecs), 1);
 
           NumericVector c1_not_matching_dif_vecs = chrom1_dif_vecs[c2_c1_not_matching_snp_positions - 1];
-          IntegerVector c2_c1_order = sort_by_order(chrom_positions, abs(c1_not_matching_dif_vecs), 2);
-          c2_c1_not_matching_snp_positions = c2_c1_not_matching_snp_positions[c2_c1_order - 1];
+          //IntegerVector c2_c1_order = sort_by_order(chrom_positions, abs(c1_not_matching_dif_vecs), 2);
+          c2_c1_not_matching_snp_positions = sort_by_order(c2_c1_not_matching_snp_positions, abs(c1_not_matching_dif_vecs), 2);
 
         } else {
 
           NumericVector c2_not_matching_dif_vecs = chrom2_dif_vecs[c1_c2_not_matching_snp_positions - 1];
-          IntegerVector c1_c2_order = sort_by_order(chrom_positions, abs(c2_not_matching_dif_vecs), 2);
-          c1_c2_not_matching_snp_positions = c1_c2_not_matching_snp_positions[c1_c2_order - 1];
+         // IntegerVector c1_c2_order = sort_by_order(chrom_positions, abs(c2_not_matching_dif_vecs), 2);
+          c1_c2_not_matching_snp_positions = sort_by_order(c1_c2_not_matching_snp_positions, abs(c2_not_matching_dif_vecs), 2);
 
           NumericVector c1_not_matching_dif_vecs = chrom1_dif_vecs[c2_c1_not_matching_snp_positions - 1];
-          IntegerVector c2_c1_order = sort_by_order(chrom_positions, abs(c1_not_matching_dif_vecs), 1);
-          c2_c1_not_matching_snp_positions = c2_c1_not_matching_snp_positions[c2_c1_order - 1];
+          //IntegerVector c2_c1_order = sort_by_order(chrom_positions, abs(c1_not_matching_dif_vecs), 1);
+          c2_c1_not_matching_snp_positions = sort_by_order(c2_c1_not_matching_snp_positions, abs(c1_not_matching_dif_vecs), 1);
 
         }
 
@@ -1249,6 +1254,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       }
 
     }
+
     // 6. mutate chromosomes
     IntegerVector mutation_positions = seq_len(sampled_lower_chromosomes.length());
     IntegerVector candiate_snp_idx = seq_len(case_genetic_data.ncol());
@@ -1345,7 +1351,9 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     NumericVector fitness_scores(n_chromosomes);
     for (int i = 0; i < n_chromosomes; i++){
 
-      fitness_scores[i] = chrom_fitness_score_list[i]["fitness_score"];
+      List chrom_fitness_score_list_i = chrom_fitness_score_list[i];
+      double fs = chrom_fitness_score_list_i["fitness_score"];
+      fitness_scores[i] = fs;
 
     }
 
