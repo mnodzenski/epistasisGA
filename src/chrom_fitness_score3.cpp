@@ -941,29 +941,17 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 
 }
 
-// function to evolve island populations
+// function to initiate island populations
+List initiate_population(IntegerMatrix case_genetic_data, int n_chromosomes, int chromosome_size,
+                         int generation, NumericVector snp_chisq,
+                         int max_generations = 500,
+                         bool initial_sample_duplicates = false, String snp_sampling_type = "chisq",
+                         Nullable<List> chromosome_list = R_NilValue,
+                         Nullable<List> fitness_score_list = R_NilValue, Nullable<NumericVector> top_fitness = R_NilValue,
+                         Nullable<List> top_generation_chromosome = R_NilValue,
+                         Nullable<List> gen_chromosome_list = R_NilValue, Nullable<List> sum_dif_vec_list = R_NilValue,
+                         Nullable<List> risk_allele_vec_list = R_NilValue){
 
-// [[Rcpp::export]]
-List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
-                   IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat,
-                   IntegerMatrix block_ld_mat, int n_chromosomes, int n_candidate_snps, int chromosome_size,
-                   int start_generation, NumericVector snp_chisq, IntegerVector original_col_numbers,
-                   bool all_converged = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                   IntegerVector weight_lookup, int migration_interval = 50, int gen_same_fitness = 50,
-                   int max_generations = 500, double tol = 10^-6, int n_top_chroms = 100,
-                   bool initial_sample_duplicates = false, string snp_sampling_type = "chisq",
-                   double crossover_prop = 0.8, Nullable<List> chromosome_list = R_NilValue,
-                   Nullable<List> fitness_score_list = R_NilValue, Nullable<NumericVector> top_fitness = R_NilValue,
-                   bool last_gens_equal = false, Nullable<List> top_generation_chromosome = R_NilValue,
-                   Nullable<List> gen_chromosome_list = R_NilValue, Nullable<List> sum_dif_vec_list = R_NilValue,
-                   Nullable<List> risk_allele_vec_list = R_NilValue, int n_case_high_risk_thresh = 20,
-                   double outlier_sd = 2.5){
-
-  // initialize groups of candidate solutions if generation 1
-  int generation = start_generation;
-  int generations = min(NumericVector::create(start_generation + migration_interval - 1, max_generations));
-
-  // initiate chromosome list if this is the first generation
   if (generation == 1) {
 
     int n_possible_unique_combn = n_chromosomes * chromosome_size;
@@ -978,7 +966,8 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
 
     for (int i = 0; i < n_chromosomes; i++) {
 
-      IntegerVector snp_idx = sort(sample(all_snps_idx, chromosome_size, false));
+      IntegerVector snp_idx = sample(all_snps_idx, chromosome_size, false);
+      std::sort(snp_idx.begin(), snp_idx.end());
       if (!initial_sample_duplicates) {
 
         LogicalVector not_these = !in(all_snps_idx, snp_idx);
@@ -990,18 +979,80 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
     }
 
     List fitness_score_list(max_generations);
-    //std::fill(fitness_score_mat(), fitness_score_mat.end(), NumericVector::get_na());
     NumericVector top_fitness(max_generations);
-    bool last_gens_equal = false;
     List top_generation_chromosome(max_generations);
     List gen_chromosome_list(max_generations);
     List sum_dif_vec_list(max_generations);
     List risk_allele_vec_list(max_generations);
+    List res = List::create(Named("chromosome_list") = chromosome_list,
+                            Named("fitness_score_list") = fitness_score_list,
+                            Named("top_generation_chromosome") = top_generation_chromosome,
+                            Named("gen_chromosome_list") = gen_chromosome_list,
+                            Named("sum_dif_vec_list") = sum_dif_vec_list,
+                            Named("risk_allele_vec_list") = risk_allele_vec_list,
+                            Named("top_fitness") = top_fitness);
+    return(res);
 
+  } else {
+
+    //otherwise initiate the objects passed as optional arguments
+    List chromosome_list_out(chromosome_list);
+    List fitness_score_list_out(fitness_score_list);
+    List top_generation_chromosome_out(top_generation_chromosome);
+    List gen_chromosome_list_out(gen_chromosome_list);
+    List sum_dif_vec_list_out(sum_dif_vec_list);
+    List risk_allele_vec_list_out(risk_allele_vec_list);
+    NumericVector top_fitness_out(top_fitness);
+    List res = List::create(Named("chromosome_list") = chromosome_list_out,
+                            Named("fitness_score_list") = fitness_score_list_out,
+                            Named("top_generation_chromosome") = top_generation_chromosome_out,
+                            Named("gen_chromosome_list") = gen_chromosome_list_out,
+                            Named("sum_dif_vec_list") = sum_dif_vec_list_out,
+                            Named("risk_allele_vec_list") = risk_allele_vec_list_out,
+                            Named("top_fitness") = top_fitness_out);
+      return(res);
   }
+}
+
+
+
+// function to evolve island populations
+
+// [[Rcpp::export]]
+List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
+                   IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat,
+                   LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup,
+                   int start_generation, NumericVector snp_chisq, IntegerVector original_col_numbers,
+                   bool all_converged = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                   int migration_interval = 50, int gen_same_fitness = 50,
+                   int max_generations = 500, double tol = 10^-6, int n_top_chroms = 100,
+                   bool initial_sample_duplicates = false, String snp_sampling_type = "chisq",
+                   double crossover_prop = 0.8, Nullable<List> chromosome_list_in = R_NilValue,
+                   Nullable<List> fitness_score_list_in = R_NilValue, Nullable<NumericVector> top_fitness_in = R_NilValue,
+                   bool last_gens_equal = false, Nullable<List> top_generation_chromosome_in = R_NilValue,
+                   Nullable<List> gen_chromosome_list_in = R_NilValue, Nullable<List> sum_dif_vec_list_in = R_NilValue,
+                   Nullable<List> risk_allele_vec_list_in = R_NilValue, int n_case_high_risk_thresh = 20,
+                   double outlier_sd = 2.5){
+
+  // initialize groups of candidate solutions if generation 1
+  int generation = start_generation;
+  int generations = min(NumericVector::create(start_generation + migration_interval - 1, max_generations));
+
+  // initialize populations, or grab input population data
+  List population = initiate_population(case_genetic_data, n_chromosomes, chromosome_size, generation, snp_chisq,
+                                        max_generations, initial_sample_duplicates, snp_sampling_type, chromosome_list_in,
+                                        fitness_score_list_in, top_fitness_in, top_generation_chromosome_in, gen_chromosome_list_in,
+                                        sum_dif_vec_list_in, risk_allele_vec_list_in);
+  List chromosome_list = population["chromosome_list"];
+  List fitness_score_list = population["fitness_score_list"];
+  List top_generation_chromosome = population["top_generation_chromosome"];
+  List gen_chromosome_list = population["gen_chromosome_list"];
+  List sum_dif_vec_list = population["sum_dif_vec_list"];
+  List risk_allele_vec_list = population["risk_allele_vec_list"];
+  NumericVector top_fitness = population["top_fitness"];
 
   // iterate over generations
-  while (generation <= generations & !all_converged) {
+  while ((generation <= generations) & !all_converged) {
 
     // 1. compute the fitness score for each set of candidate snps
     List chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
@@ -1016,7 +1067,7 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
 
       fitness_scores[i] = chrom_fitness_score_list[i]["fitness_score"];
       sum_dif_vecs[i] = chrom_fitness_score_list[i]["sum_dif_vecs"];
-      risk_allele_vecs[i] = chrom_fitness_score_list[i]["risk_set_alleles"]
+      risk_allele_vecs[i] = chrom_fitness_score_list[i]["risk_set_alleles"];
       IntegerVector chrom_col_idx = chromosome_list[i];
       gen_original_cols[i] = original_col_numbers[chrom_col_idx - 1];
 
@@ -1050,7 +1101,7 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
         new_lower_chromosomes[i] = lower_chromosomes[i];
 
       }
-      for (int i = 0; i < duplicate_top_chromosomes.length(), i++){
+      for (int i = 0; i < duplicate_top_chromosomes.length(); i++){
 
         new_lower_chromosomes[i + lower_chromosomes.length()] = duplicate_top_chromosomes[i];
 
@@ -1065,14 +1116,14 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
 
     // 3. Sample with replacement from the existing chromosomes, allowing the top
     // scoring chromosome to be sampled, but only sample from the unique chromosomes available
-    LogicalVector sample_these = unique_chrom_list(chromosome_list);
+    LogicalVector sample_these = unique_chrom_list(chromosome_list, chromosome_size);
     IntegerVector chrom_list_idx = seq_len(n_chromosomes);
     IntegerVector which_sample_these = chrom_list_idx[sample_these];
     NumericVector sample_these_scores = fitness_scores[sample_these];
     IntegerVector sampled_lower_idx = sample(which_sample_these, lower_chromosomes.length(), true, sample_these_scores);
     List sampled_lower_chromosomes = chromosome_list[sampled_lower_idx - 1];
     List sampled_lower_dif_vecs = sum_dif_vecs[sampled_lower_idx - 1];
-    List sampled_lower_fitness_scores = fitness_scores[sampled_lower_idx - 1];
+    NumericVector sampled_lower_fitness_scores = fitness_scores[sampled_lower_idx - 1];
 
     // 4. Determine whether each lower chromosome will be subject to mutation or crossing over
 
@@ -1082,17 +1133,18 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
     LogicalVector cross_overs(unique_lower_idx.length(), false);
     int rounded_crosses = round(unique_lower_idx.length() * crossover_prop);
     IntegerVector possible_crosses = seq_len(unique_lower_idx.length());
-    int n_crosses = round(unique_lower_idx.length() * crossover_prop);
+    int n_crosses = 0;
     if ((rounded_crosses % 2 == 0) | (unique_lower_idx.length() == 1)){
 
-      IntegerVector cross_these = sample(possible_crosses, n_crosses, false);
+      n_crosses = round(unique_lower_idx.length() * crossover_prop);
 
     } else {
 
-      int n_crosses = round(unique_lower_idx.length() * crossover_prop) + 1;
+      n_crosses = round(unique_lower_idx.length() * crossover_prop) + 1;
 
     }
-    cross_overs[cross_these - 1] <- true;
+    IntegerVector cross_these = sample(possible_crosses, n_crosses, false);
+    cross_overs[cross_these - 1] = true;
 
     // 5. Execute crossing over for the relevant chromosomes
     IntegerVector cross_over_positions(1, 0);
@@ -1163,7 +1215,8 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
 
         // determine how many snps could be crossed over and also make sure we don't simply swap chromosomes
         IntegerVector possible_cut_points = chrom_positions[chrom1 != chrom2];
-        possible_cut_points = sort_by_order(possible_cut_points, possible_cut_points, 2);
+        std::sort(possible_cut_points.begin(), possible_cut_points.end());
+        std::reverse(possible_cut_points.begin(), possible_cut_points.end());
         int n_possible_crosses = 0;
         if (possible_cut_points.length() == chromosome_size){
 
@@ -1202,7 +1255,7 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
     IntegerVector snps_for_mutation = sample(candiate_snp_idx, candiate_snp_idx.length(),
                                              true, snp_chisq);
     int ulen = unique(snps_for_mutation).length();
-    for (int l = 0; l < mutation_positions.length(), l++){
+    for (int l = 0; l < mutation_positions.length(); l++){
 
       int mutation_position = mutation_positions[l];
 
@@ -1211,7 +1264,7 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
       NumericVector target_dif_vec = sampled_lower_dif_vecs[mutation_position - 1];
 
       // sort the chromosome elements from lowest absolute difference vector to highest
-      IntegerVector target_chrom = sort_by_order(target_chrom, abs(target_dif_vec), 1);
+      target_chrom = sort_by_order(target_chrom, abs(target_dif_vec), 1);
 
       // determine which snps to mutate
       int binom_sample = rbinom(1, chromosome_size, 0.5)[0];
@@ -1248,10 +1301,13 @@ List evolve_island(int n_migrations = 20, IntegerMatrix case_genetic_data, Integ
       sampled_lower_chromosomes[mutation_position - 1] = target_chrom;
     }
     // 7. Combined into new population (i.e., the final collection of chromosomes for the next generation)
-    chromosome_list[0] = sort(top_chromosome);
-    for (int i = 1; i < chromosome_list.length(), i++){
+    std::sort(top_chromosome.begin(), top_chromosome.end());
+    chromosome_list[0] = top_chromosome;
+    for (int i = 1; i < chromosome_list.length(); i++){
 
-      chromosome_list[i] = sort(sampled_lower_chromosomes[i - 1]);
+      IntegerVector sampled_lower_chromosomes_i = sampled_lower_chromosomes[i - 1];
+      std::sort(sampled_lower_chromosomes_i.begin(), sampled_lower_chromosomes_i.end());
+      chromosome_list[i] = sampled_lower_chromosomes_i;
 
     }
 
