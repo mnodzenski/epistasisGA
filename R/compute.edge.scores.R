@@ -66,12 +66,14 @@ compute.edge.scores <- function(results.df, score.type = "max") {
 
     } else if (score.type == "sum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = sum(h.score)), list(V1, V2)]
+        #out.dt <- all.edge.weights[ , list(edge.score = sum(h.score)), list(V1, V2)]
+        out.dt <- all.edge.weights[ , list(edge.score = sum(fitness.score)), list(V1, V2)]
         setorder(out.dt, -edge.score)
 
     } else if (score.type == "logsum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = log(1 + sum(h.score))), list(V1, V2)]
+        #out.dt <- all.edge.weights[ , list(edge.score = log(1 + sum(h.score))), list(V1, V2)]
+        out.dt <- all.edge.weights[ , list(edge.score = log(1 + sum(fitness.score))), list(V1, V2)]
         setorder(out.dt, -edge.score)
 
     }
