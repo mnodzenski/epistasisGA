@@ -209,26 +209,32 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
         ## take -2 log
         rescaled.scores <- -2*log(rescaled.scores)
 
-        ## weight the re-scaled score by it's 1 - epistasis p-value
-        rescaled.scores <- rescaled.scores*(1 - epi.pvals)
-
         ## updated the observed results data.table
         obs.res$fitness.score <- rescaled.scores
+        obs.res$chrom.weight <- 1 - epi.pvals
         return(obs.res)
 
     })
 
-    all.edge.weights <- rbindlist(lapply(rescaled.results, function(chrom.size.res){
+    all.edge.weights <- rbindlist(lapply(seq_along(rescaled.results), function(d){
 
+        chrom.size.res <- rescaled.results[[d]]
         chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
         rbindlist(lapply(seq_len(n.top.chroms), function(res.row) {
 
             chrom.res <- chrom.size.res[res.row, ]
             fs <- chrom.res$fitness.score
-            chrom <- as.vector(t(chrom.res[, 1:chrom.size]))
+            chrom.weight <- chrom.res$chrom.weight
+            these.cols <- seq_len(chrom.size)
+            chrom <- as.vector(t(chrom.res[, ..these.cols]))
             chrom.pairs <- data.table(t(combn(chrom, 2)))
-            chrom.pairs[ , `:=`(fitness.score = fs)]
-            return(chrom.pairs)
+            chrom.pairs[ , `:=`(raw.fitness.score = fs, chrom.weight = chrom.weight,
+                                weighted.fs = chrom.weight*fs)]
+
+            #take weighted average score for each pair
+            out.dt <- chrom.pairs[ , list(fitness.score = sum(raw.fitness.score)/sum(chrom.weight)),
+                                   list(V1, V2)]
+            return(out.dt)
 
         }))
 
@@ -242,12 +248,14 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
 
     } else if (score.type == "sum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = sum(fitness.score)), list(V1, V2)]
+        out.dt <- all.edge.weights[ , list(edge.score = sum(fitness.score)/length(results.list)),
+                                    list(V1, V2)]
         setorder(out.dt, -edge.score)
 
     } else if (score.type == "logsum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = log(1 + sum(fitness.score))), list(V1, V2)]
+        out.dt <- all.edge.weights[ , list(edge.score = log(1 + (sum(fitness.score)/length(results.list)))),
+                                    list(V1, V2)]
         setorder(out.dt, -edge.score)
 
     }
