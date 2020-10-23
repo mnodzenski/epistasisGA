@@ -149,5 +149,4 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    weight.lookup = weight.lookup, n.migrations = 2,
                    migration.interval = 5, max.generations = 10)
 unlink('tmp', recursive = TRUE)
-
 }
