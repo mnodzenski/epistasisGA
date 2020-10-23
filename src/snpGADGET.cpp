@@ -1478,7 +1478,8 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     List res = List::create(Named("top_chromosomes") = out_chrom_mat,
                             Named("sum_dif_vecs") = out_dif_vec_mat,
                             Named("risk_alleles") = out_risk_allele_mat,
-                            Named("raw_fitness_scores") = out_fitness_score_vec);
+                            Named("raw_fitness_scores") = out_fitness_score_vec,
+                            Named("n_generations") = last_generation);
     return(res);
 
   }
@@ -1488,7 +1489,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 // Function to put all the pieces together and run GADGET
 ////////////////////////////////////////////////////////////
 
-List run_GADGET(int cluster_number, int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data,
+List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data,
                 IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp,
                 IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size,
                 NumericVector weight_lookup, NumericVector snp_chisq, IntegerVector original_col_numbers,
@@ -1590,7 +1591,7 @@ List run_GADGET(int cluster_number, int island_cluster_size, int n_migrations, I
 
       // check for hitting max generation
       List check_max = island_populations[0];
-      if (check_max.length() == 4){
+      if (check_max.length() == 5){
 
         max_generations = true;
 
@@ -1603,7 +1604,8 @@ List run_GADGET(int cluster_number, int island_cluster_size, int n_migrations, I
   } else {
 
     // otherwise, if no migrations are desired, just run GADGET straight through
-    List res = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
+    List island_popultations(1);
+    List island_population = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                              case_comp_different, case_minus_comp, both_one_mat,
                                              block_ld_mat, n_chromosomes, chromosome_size, weight_lookup,
                                              1, snp_chisq, original_col_numbers,
@@ -1611,7 +1613,8 @@ List run_GADGET(int cluster_number, int island_cluster_size, int n_migrations, I
                                              max_generations, gen_same_fitness, max_generations, tol, n_top_chroms,
                                              initial_sample_duplicates, crossover_prop, n_case_high_risk_thresh,
                                              outlier_sd, last_gens_equal);
-    return(res);
+    island_popultations[0] = island_population;
+    return(island_population);
 
   }
 
