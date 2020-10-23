@@ -2,34 +2,30 @@
 % Please edit documentation in R/run.global.test.R
 \name{run.global.test}
 \alias{run.global.test}
-\title{A function to run a global test of the null hypothesis that the observed fitness score CDF is not
-more heavy-tailed on the right than the average null CDF across a range of chromosome sizes}
+\title{A function to run a global test of the null hypothesis that there are no joint SNP-disease associations
+across a range of chromosome sizes}
 \usage{
-run.global.test(results.list, n.top.scores = 1000)
+run.global.test(results.list, n.top.scores = 10)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
 Each element of the list must itself be a list whose first element \code{observed.data} is a vector of fitness scores from the
-the \code{all.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
-is a list containing vectors of all permutation results fitness scores, again using the \code{all.results} results output by
+the \code{unique.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
+is a list containing vectors of all permutation results fitness scores, again using the \code{unique.results} results output by
 \code{combine.islands} for each permutation.}
 
-\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the global test. Defaults to 1000.}
+\item{n.top.scores}{The number of top scoring chromosomes, for each chromosome size, to be used in calculating the global test. Defaults to 10.}
 }
 \value{
 A list containing the following:
 \describe{
- \item{obs.test.stat}{The observed Mahalanobis distance global test statistic.}
+ \item{obs.test.stat}{The observed sum of Kolmogorov-Smirnov statistics.}
+ \item{perm.test.stats}{A vector of sums of Kolmogorov-Smirnov statistics for each of the permuted datasets.}
  \item{pval}{The p-value for the global test.}
- \item{perm.test.stats}{A vector of Mahalanobis distance global test statistics for the permuted datasets.}
- \item{element.test.stats}{A vector of test statistics for the observed data, where each element of the vector
- corresponds to a specific chromosome size.}
- \item{element.pvals}{A vector of p-values corresponding to the test statistics in \code{element.test.stats}.}
- \item{perm.elem.test.stat.mat}{A matrix of test statistics for each of the permutation datasets.
- The rows of the matrix correspond to different permutations, and the columns correspond to chromosome sizes.}
- \item{obs.ks.vec}{A vector of observed Kolmogorov Smirnov test statistics for each chromosome size.}
- \item{perm.ks.mat}{A matrix of Kolmogorov Smirnov test statistics for the permutation datasets, where rows correspond to
+ \item{obs.vec}{A vector of observed test statistics for each chromosome size.}
+ \item{perm.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
  permutations and columns correspond to chromosome sizes.}
+ \item{marginal.pvals}{A vector containing marignal p-values for each chromosome size.}
  \item{max.obs.fitness}{A vector of the maximum fitness score for each chromosome size in the observed data.}
  \item{max.perm.fitness}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
  \item{max.order.pvals}{A vector of p-values for the maximum observed order statistics for each chromosome size.
@@ -37,8 +33,8 @@ A list containing the following:
 }
 }
 \description{
-This function runs a global test across chromosome sizes of the null hypothesis
-that the observed fitness score CDF is not more heavy-tailed on the right than the average null CDF
+This function runs a global test of the null hypothesis that there are no joint SNP-disease associations
+across a range of chromosome sizes
 }
 \examples{
 
@@ -139,16 +135,16 @@ run.ga(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3'
  ## create list of results
 
  #chromosome size 2 results
- chrom2.list <- list(observed.data = combined.res2$all.results$fitness.score,
-                    permutation.list = list(p1.combined.res2$all.results$fitness.score,
-                                            p2.combined.res2$all.results$fitness.score,
-                                            p3.combined.res2$all.results$fitness.score))
+ chrom2.list <- list(observed.data = combined.res2$unique.results$fitness.score,
+                    permutation.list = list(p1.combined.res2$unique.results$fitness.score,
+                                            p2.combined.res2$unique.results$fitness.score,
+                                            p3.combined.res2$unique.results$fitness.score))
 
  #chromosome size 3 results
- chrom3.list <- list(observed.data = combined.res3$all.results$fitness.score,
-                    permutation.list = list(p1.combined.res3$all.results$fitness.score,
-                                            p2.combined.res3$all.results$fitness.score,
-                                            p3.combined.res3$all.results$fitness.score))
+ chrom3.list <- list(observed.data = combined.res3$unique.results$fitness.score,
+                    permutation.list = list(p1.combined.res3$unique.results$fitness.score,
+                                            p2.combined.res3$unique.results$fitness.score,
+                                            p3.combined.res3$unique.results$fitness.score))
 
  final.results <- list(chrom2.list, chrom3.list)
 
