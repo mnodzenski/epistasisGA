@@ -87,7 +87,7 @@
 #'                    weight.lookup = weight.lookup, n.migrations = 2,
 #'                    migration.interval = 5, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
-#'
+#' @useDynLib snpGADGET
 #' @export
 
 GADGET <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
