@@ -1489,6 +1489,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 // Function to put all the pieces together and run GADGET
 ////////////////////////////////////////////////////////////
 
+// [[Rcpp::export]]
 List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data,
                 IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp,
                 IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size,

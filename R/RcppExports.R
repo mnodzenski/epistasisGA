@@ -13,6 +13,10 @@ concat <- function(x, y) {
     .Call('_snpGADGET_concat', PACKAGE = 'snpGADGET', x, y)
 }
 
+concat_list <- function(x, y) {
+    .Call('_snpGADGET_concat_list', PACKAGE = 'snpGADGET', x, y)
+}
+
 sort_by_order <- function(x, y, sort_type) {
     .Call('_snpGADGET_sort_by_order', PACKAGE = 'snpGADGET', x, y, sort_type)
 }
@@ -89,7 +93,11 @@ chrom_fitness_list <- function(case_genetic_data, complement_genetic_data, case_
     .Call('_snpGADGET_chrom_fitness_list', PACKAGE = 'snpGADGET', case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, n_different_snps_weight, n_both_one_weight, n_case_high_risk_thresh, outlier_sd, epi_test)
 }
 
-evolve_island <- function(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, start_generation, snp_chisq, original_col_numbers, all_converged = FALSE, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 10^-6, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, chromosome_list_in = NULL, fitness_score_list_in = NULL, top_fitness_in = NULL, last_gens_equal = FALSE, top_generation_chromosome_in = NULL, gen_chromosome_list_in = NULL, sum_dif_vec_list_in = NULL, risk_allele_vec_list_in = NULL, n_case_high_risk_thresh = 20L, outlier_sd = 2.5) {
-    .Call('_snpGADGET_evolve_island', PACKAGE = 'snpGADGET', n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, start_generation, snp_chisq, original_col_numbers, all_converged, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, chromosome_list_in, fitness_score_list_in, top_fitness_in, last_gens_equal, top_generation_chromosome_in, gen_chromosome_list_in, sum_dif_vec_list_in, risk_allele_vec_list_in, n_case_high_risk_thresh, outlier_sd)
+evolve_island <- function(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, start_generation, snp_chisq, original_col_numbers, all_converged = FALSE, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 0.000001, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, n_case_high_risk_thresh = 20L, outlier_sd = 2.5, last_gens_equal = FALSE, chromosome_list_in = NULL, fitness_score_list_in = NULL, top_fitness_in = NULL, top_generation_chromosome_in = NULL, gen_chromosome_list_in = NULL, sum_dif_vec_list_in = NULL, risk_allele_vec_list_in = NULL) {
+    .Call('_snpGADGET_evolve_island', PACKAGE = 'snpGADGET', n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, start_generation, snp_chisq, original_col_numbers, all_converged, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, n_case_high_risk_thresh, outlier_sd, last_gens_equal, chromosome_list_in, fitness_score_list_in, top_fitness_in, top_generation_chromosome_in, gen_chromosome_list_in, sum_dif_vec_list_in, risk_allele_vec_list_in)
+}
+
+run_GADGET <- function(island_cluster_size, n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 0.000001, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, n_case_high_risk_thresh = 20L, outlier_sd = 2.5, last_gens_equal = FALSE) {
+    .Call('_snpGADGET_run_GADGET', PACKAGE = 'snpGADGET', island_cluster_size, n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, n_case_high_risk_thresh, outlier_sd, last_gens_equal)
 }
 
