@@ -114,3 +114,41 @@ See the package vignette for an example and the documentation for \code{chrom.fi
 This function runs the GADGET method on a given cluster of islands. It is a wrapper for
 the underlying C++ function run_GADGET.
 }
+\examples{
+
+set.seed(10)
+data(case)
+data(dad)
+data(mom)
+library(Matrix)
+block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
+                              matrix(rep(TRUE, 25^2), nrow = 25),
+                              matrix(rep(TRUE, 25^2), nrow = 25),
+                              matrix(rep(TRUE, 25^2), nrow = 25))))
+data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+                               mother.genetic.data = mom[ , 1:10],
+                               block.ld.mat = block.ld.mat[ , 1:10])
+
+ case.genetic.data <- data.list$case.genetic.data
+ complement.genetic.data <- data.list$complement.genetic.data
+ original.col.numbers <- data.list$original.col.numbers
+ chisq.stats <- data.list$chisq.stats
+ block.ld.mat <- data.list$block.ld.mat
+ case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
+ case.comp.different <- case.minus.comp != 0
+ both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
+ snp.chisq <- sqrt(chisq.stats)
+ weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
+ dir.create('tmp')
+ GADGET(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
+                   complement.genetic.data = complement.genetic.data,
+                   case.comp.different = case.comp.different,
+                   case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                   block.ld.mat = block.ld.mat, n.chromosomes = 10,
+                   chromosome.size = 3, snp.chisq = snp.chisq,
+                   original.col.numbers = original.col.numbers,
+                   weight.lookup = weight.lookup, n.migrations = 2,
+                   migration.interval = 5, max.generations = 10)
+unlink('tmp', recursive = TRUE)
+
+}
