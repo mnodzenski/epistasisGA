@@ -43,7 +43,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // concat_list
-IntegerVector concat_list(List x, List y);
+List concat_list(List x, List y);
 RcppExport SEXP _snpGADGET_concat_list(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -328,6 +328,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// initiate_population
+List initiate_population(IntegerMatrix case_genetic_data, int n_chromosomes, int chromosome_size, int generation, NumericVector snp_chisq, int max_generations, bool initial_sample_duplicates, Nullable<List> chromosome_list, Nullable<List> fitness_score_list, Nullable<NumericVector> top_fitness, Nullable<List> top_generation_chromosome, Nullable<List> gen_chromosome_list, Nullable<List> sum_dif_vec_list, Nullable<List> risk_allele_vec_list);
+RcppExport SEXP _snpGADGET_initiate_population(SEXP case_genetic_dataSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP generationSEXP, SEXP snp_chisqSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP chromosome_listSEXP, SEXP fitness_score_listSEXP, SEXP top_fitnessSEXP, SEXP top_generation_chromosomeSEXP, SEXP gen_chromosome_listSEXP, SEXP sum_dif_vec_listSEXP, SEXP risk_allele_vec_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case_genetic_data(case_genetic_dataSEXP);
+    Rcpp::traits::input_parameter< int >::type n_chromosomes(n_chromosomesSEXP);
+    Rcpp::traits::input_parameter< int >::type chromosome_size(chromosome_sizeSEXP);
+    Rcpp::traits::input_parameter< int >::type generation(generationSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type snp_chisq(snp_chisqSEXP);
+    Rcpp::traits::input_parameter< int >::type max_generations(max_generationsSEXP);
+    Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type chromosome_list(chromosome_listSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type fitness_score_list(fitness_score_listSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type top_fitness(top_fitnessSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type top_generation_chromosome(top_generation_chromosomeSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type gen_chromosome_list(gen_chromosome_listSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type sum_dif_vec_list(sum_dif_vec_listSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type risk_allele_vec_list(risk_allele_vec_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(initiate_population(case_genetic_data, n_chromosomes, chromosome_size, generation, snp_chisq, max_generations, initial_sample_duplicates, chromosome_list, fitness_score_list, top_fitness, top_generation_chromosome, gen_chromosome_list, sum_dif_vec_list, risk_allele_vec_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 // evolve_island
 List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup, int start_generation, NumericVector snp_chisq, IntegerVector original_col_numbers, bool all_converged, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, int n_case_high_risk_thresh, double outlier_sd, bool last_gens_equal, Nullable<List> chromosome_list_in, Nullable<List> fitness_score_list_in, Nullable<NumericVector> top_fitness_in, Nullable<List> top_generation_chromosome_in, Nullable<List> gen_chromosome_list_in, Nullable<List> sum_dif_vec_list_in, Nullable<List> risk_allele_vec_list_in);
 RcppExport SEXP _snpGADGET_evolve_island(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP start_generationSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP all_convergedSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP n_case_high_risk_threshSEXP, SEXP outlier_sdSEXP, SEXP last_gens_equalSEXP, SEXP chromosome_list_inSEXP, SEXP fitness_score_list_inSEXP, SEXP top_fitness_inSEXP, SEXP top_generation_chromosome_inSEXP, SEXP gen_chromosome_list_inSEXP, SEXP sum_dif_vec_list_inSEXP, SEXP risk_allele_vec_list_inSEXP) {
@@ -431,6 +455,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_snpGADGET_compute_dif_vecs", (DL_FUNC) &_snpGADGET_compute_dif_vecs, 10},
     {"_snpGADGET_chrom_fitness_score", (DL_FUNC) &_snpGADGET_chrom_fitness_score, 13},
     {"_snpGADGET_chrom_fitness_list", (DL_FUNC) &_snpGADGET_chrom_fitness_list, 13},
+    {"_snpGADGET_initiate_population", (DL_FUNC) &_snpGADGET_initiate_population, 14},
     {"_snpGADGET_evolve_island", (DL_FUNC) &_snpGADGET_evolve_island, 33},
     {"_snpGADGET_run_GADGET", (DL_FUNC) &_snpGADGET_run_GADGET, 25},
     {NULL, NULL, 0}

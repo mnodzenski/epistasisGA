@@ -49,9 +49,9 @@ IntegerVector concat(IntegerVector x, IntegerVector y){
 }
 
 // [[Rcpp::export]]
-IntegerVector concat_list(List x, List y){
+List concat_list(List x, List y){
 
-  IntegerVector out_list(x.length() + y.length());
+  List out_list(x.length() + y.length());
   IntegerVector x_pos = seq_len(x.length());
   out_list[x_pos - 1] = x;
   IntegerVector y_pos = seq(x.length() + 1, out_list.length());
@@ -971,7 +971,7 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 ///////////////////////////////////////////
 // function to initiate island populations
 ///////////////////////////////////////////
-
+// [[Rcpp::export]]
 List initiate_population(IntegerMatrix case_genetic_data, int n_chromosomes, int chromosome_size,
                          int generation, NumericVector snp_chisq,
                          int max_generations = 500,
@@ -1372,7 +1372,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
   // if the algorithm hasn't hit the max number of generations or converged, return a partial list of
   // the results
-  if ((generation < max_generations) & !all_converged & (n_migrations > 0)){
+  if ((generation < max_generations) & (!all_converged) & (n_migrations > 0)){
 
     // pick out the highest and lowest fitness scores of the new chromosomes
     List chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
@@ -1519,31 +1519,34 @@ List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_ge
 
     // start process of migrating chromosomes among island and then checking for convergence
     bool all_converged = false;
-    bool max_generations  = false;
-    while (!max_generations){
+    bool stop_iterations = false;
+    while (!stop_iterations){
 
       // migrate top chromosomes among islands
       for (int i = 0; i < island_cluster_size; i++){
 
+        List first_island = island_populations[i];
+
         if (i == 0){
 
           List second_island = island_populations[island_cluster_size - 1];
-          List first_island = island_populations[i];
           List second_island_migrations = second_island["migrations"];
           List first_island_chrom_list = first_island["chromosome_list"];
-          first_island_chrom_list = concat_list(first_island_chrom_list, second_island_migrations);
+          List first_island_new_chrom_list = concat_list(first_island_chrom_list, second_island_migrations);
+          first_island["chromosome_list"] = first_island_new_chrom_list;
 
         } else {
 
           List second_island = island_populations[i-1];
-          List first_island = island_populations[i];
           List second_island_migrations = second_island["migrations"];
           List first_island_chrom_list = first_island["chromosome_list"];
-          first_island_chrom_list = concat_list(first_island_chrom_list, second_island_migrations);
+          List first_island_new_chrom_list = concat_list(first_island_chrom_list, second_island_migrations);
+          first_island["chromosome_list"] = first_island_new_chrom_list;
 
         }
 
       }
+
       // evolve islands using the new populations
       for (int i = 0; i < island_cluster_size; i++){
 
@@ -1555,7 +1558,7 @@ List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_ge
         List top_generation_chromosome_i = island_i["top_generation_chromosome"];
         List gen_chromosome_list_i = island_i["gen_chromosome_list"];
         List sum_dif_vec_list_i = island_i["sum_dif_vec_list"];
-        List risk_allele_vec_list_i = island_i["risk_allele_vec_list_i"];
+        List risk_allele_vec_list_i = island_i["risk_allele_vec_list"];
         bool last_gens_equal_i = island_i["last_gens_equal"];
 
         List island_population_i = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
@@ -1571,30 +1574,33 @@ List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_ge
         island_populations[i] = island_population_i;
 
       }
-      // check for convergence
-      int n_converged = 0;
-      for (int i = 0; i < island_cluster_size; i++){
+      // check to see if we've output results
+      List check_res = island_populations[0];
+      if (check_res.length() == 5){
 
-        List island_i = island_populations[i];
-        bool last_gens_equal_i = island_i["last_gens_equal"];
-        if (last_gens_equal_i){
+        stop_iterations = true;
 
-          n_converged += 1;
+      }
+      // otherwise, check to see if all islands converged
+      if (!stop_iterations){
+
+        int n_converged = 0;
+        for (int i = 0; i < island_cluster_size; i++){
+
+          List island_i = island_populations[i];
+          bool last_gens_equal_i = island_i["last_gens_equal"];
+          if (last_gens_equal_i){
+
+            n_converged += 1;
+
+          }
 
         }
+        if (n_converged == island_cluster_size){
 
-      }
-      if (n_converged == island_cluster_size){
+          all_converged = true;
 
-        all_converged = true;
-
-      }
-
-      // check for hitting max generation
-      List check_max = island_populations[0];
-      if (check_max.length() == 5){
-
-        max_generations = true;
+        }
 
       }
 
