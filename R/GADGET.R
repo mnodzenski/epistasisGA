@@ -87,6 +87,7 @@
 #'                    weight.lookup = weight.lookup, n.migrations = 2,
 #'                    migration.interval = 5, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
+#' @importFrom data.table as.data.table setorder
 #' @useDynLib snpGADGET
 #' @export
 
