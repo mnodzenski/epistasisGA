@@ -77,7 +77,7 @@
 #'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 #'  snp.chisq <- sqrt(chisq.stats)
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
-#'  dir.create("tmp)
+#'  dir.create('tmp')
 #'  GADGET(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
 #'                    complement.genetic.data = complement.genetic.data,
 #'                    case.comp.different = case.comp.different,
@@ -88,6 +88,7 @@
 #'                    weight.lookup = weight.lookup, n.migrations = 2,
 #'                    migration.interval = 5, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
+#'
 #' @importFrom data.table as.data.table setorder
 #' @useDynLib snpGADGET
 #' @export
