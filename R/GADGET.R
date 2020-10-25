@@ -77,6 +77,7 @@
 #'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 #'  snp.chisq <- sqrt(chisq.stats)
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
+#'  dir.create("tmp)
 #'  GADGET(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
 #'                    complement.genetic.data = complement.genetic.data,
 #'                    case.comp.different = case.comp.different,
@@ -114,11 +115,11 @@ GADGET <- function(cluster.number, results.dir , case.genetic.data, complement.g
         #pick out the pieces from rcpp output
         island.res <- rcpp.res[[island.number]]
         top.chroms <- as.data.table(island.res[["top_chromosomes"]])
-        colnames(top.chroms) <- paste("snp", seq_len(chromosome.size), sep = ".")
+        colnames(top.chroms) <- paste(paste0("snp", seq_len(chromosome.size)), sep = ".")
         sum.dif.vecs <- as.data.table(island.res[["sum_dif_vecs"]])
-        colnames(sum.dif.vecs) <- paste("snp", seq_len(chromosome.size), "diff.vec", sep = ".")
+        colnames(sum.dif.vecs) <- paste(paste0("snp", seq_len(chromosome.size)), "diff.vec", sep = ".")
         risk.alleles <- as.data.table(island.res[["risk_alleles"]])
-        colnames(risk.alleles) <- paste("snp", seq_len(chromosome.size), "allele.copies", sep = ".")
+        colnames(risk.alleles) <- paste(paste0("snp", seq_len(chromosome.size)), "allele.copies", sep = ".")
         raw.fitness.scores <- as.data.table(island.res[["raw_fitness_scores"]])
         colnames(raw.fitness.scores) <- "raw.fitness.score"
         n.generations <- island.res[["n_generations"]]
