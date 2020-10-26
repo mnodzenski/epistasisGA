@@ -70,7 +70,7 @@
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
 #'                                block.ld.mat = block.ld.mat[ , 1:10])
-#' run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
+#' run.ga.original(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 #'
@@ -85,7 +85,7 @@
 #' @importFrom parallel detectCores
 #' @export
 
-run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
+run.ga.original <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
@@ -135,18 +135,18 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
 
     #### grab the analysis data ###
-    case.genetic.data <- as.matrix(data.list$case.genetic.data)
-    complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
+    case.genetic.data <- data.list$case.genetic.data
+    complement.genetic.data <- data.list$complement.genetic.data
     original.col.numbers <- data.list$original.col.numbers
     chisq.stats <- data.list$chisq.stats
-    block.ld.mat <- as.matrix(data.list$block.ld.mat)
+    block.ld.mat <- data.list$block.ld.mat
 
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
     chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
 
     ### Compute matrices of differences between cases and complements ###
-    case.minus.comp <- sign(case.genetic.data - complement.genetic.data)
+    case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
     case.comp.different <- case.minus.comp != 0
 
     ### Compute matrix indicating whether both the case and control have 1 copy of the minor allele ###
@@ -230,14 +230,114 @@ run.ga <- function(data.list, n.chromosomes, chromosome.size, results.dir, clust
     }
 
     # write jobs to registry
-    ids <- batchMap(GADGET, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
-        case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
-        case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes,
-        chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
-        island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
+    ids <- batchMap(function(cluster.number, island.cluster.size, n.migrations, case.genetic.data,
+        complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes,
+        n.candidate.snps, chromosome.size, start.generation, snp.chisq, original.col.numbers, n.different.snps.weight,
+        n.both.one.weight, weight.lookup, migration.interval, gen.same.fitness, max.generations,
+        tol, n.top.chroms, initial.sample.duplicates, snp.sampling.type, crossover.prop, n.case.high.risk.thresh, outlier.sd) {
+
+        if (island.cluster.size > 1) {
+
+            ## initialize populations in the island cluster ##
+            island.populations <- lapply(seq_len(island.cluster.size), function(cluster.idx) {
+
+                evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
+                  case.comp.different = case.comp.different, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                  block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
+                  chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
+                  n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
+                  weight.lookup = weight.lookup, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
+                  max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                  snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                  outlier.sd = outlier.sd)
+
+            })
+
+            ### if we do not get convergence for all islands, migrate chromosomes ###
+            all.converged <- FALSE
+            max.generations <- FALSE
+            while (!max.generations) {
+
+                for (island in seq_len(island.cluster.size)) {
+
+                  if (island == 1) {
+
+                    island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
+                      island.populations[[island.cluster.size]]$migrations)
+
+                  } else {
+
+                    island.populations[[island]]$chromosome.list <- c(island.populations[[island]]$chromosome.list,
+                      island.populations[[island - 1]]$migrations)
+
+                  }
+                }
+
+                ## evolving islands using the existing populations ##
+                island.populations <- lapply(seq_len(island.cluster.size), function(cluster.idx) {
+
+                  island <- island.populations[[cluster.idx]]
+                  evolve.island(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+                    complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
+                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat,
+                    n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data), chromosome.size = chromosome.size,
+                    start.generation = island$generation, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
+                    all.converged = all.converged, n.different.snps.weight = n.different.snps.weight,
+                    n.both.one.weight = n.both.one.weight, weight.lookup = weight.lookup, migration.interval = migration.generations,
+                    gen.same.fitness = gen.same.fitness, max.generations = generations, tol = tol,
+                    n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                    snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, chromosome.list = island$chromosome.list,
+                    fitness.score.mat = island$fitness.score.mat, top.fitness = island$top.fitness,
+                    last.gens.equal = island$last.gens.equal, top.generation.chromosome = island$top.generation.chromosome,
+                    chromosome.mat.list = island$chromosome.mat.list, sum.dif.vec.list = island$sum.dif.vec.list,
+                    risk.allele.vec.list = island$risk.allele.vec.list, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                    outlier.sd = outlier.sd)
+
+                })
+                all.converged <- all(unlist(lapply(island.populations, function(x) x$last.gens.equal)))
+                max.generations <- "top.chromosome.results" %in% names(island.populations[[1]])
+
+            }
+
+            ### write results to file
+            lapply(seq_len(island.cluster.size), function(cluster.idx) {
+
+                island <- island.populations[[cluster.idx]]
+                out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.idx,
+                  ".rds"))
+                saveRDS(island, out.file)
+
+            })
+
+        } else {
+
+            island <- evolve.island(n.migrations = NULL, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
+                case.comp.different = case.comp.different, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+                block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
+                chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
+                n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
+                weight.lookup = weight.lookup, migration.interval = generations, gen.same.fitness = gen.same.fitness,
+                max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+                snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
+                outlier.sd = outlier.sd)
+
+            ### write results to file
+            out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", cluster.number,
+                ".rds"))
+            saveRDS(island, out.file)
+
+        }
+
+    }, cluster.number = cluster.ids, more.args = list(n.migrations = n.migrations, case.genetic.data = case.genetic.data,
+        complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
+        island.cluster.size = island.cluster.size, case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
+        block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes, n.candidate.snps = ncol(case.genetic.data),
+        chromosome.size = chromosome.size, start.generation = 1, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers,
+        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, weight.lookup = weight.lookup,
         migration.interval = migration.generations, gen.same.fitness = gen.same.fitness, max.generations = generations,
         tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh, outlier.sd = outlier.sd),
+        snp.sampling.type = snp.sampling.type, crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh,
+        outlier.sd = outlier.sd),
         reg = registry)
 
     # chunk the jobs
