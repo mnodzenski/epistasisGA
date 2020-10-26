@@ -108,7 +108,7 @@ GADGET <- function(cluster.number, results.dir , case.genetic.data, complement.g
                            n.different.snps.weight, n.both.one.weight, migration.interval,
                            gen.same.fitness, max.generations, tol, n.top.chroms,
                            initial.sample.duplicates, crossover.prop, n.case.high.risk.thresh,
-                           outlier.sd, FALSE)
+                           outlier.sd)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
