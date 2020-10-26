@@ -1571,10 +1571,10 @@ List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_ge
   } else {
 
     // otherwise, if no migrations are desired, just run GADGET straight through
-    List island_popultations(1);
-    List island_population_i = initiate_population(case_genetic_data, n_migrations, n_chromosomes, chromosome_size,
+    List island_populations(1);
+    List island_population_i = initiate_population(case_genetic_data, 0, n_chromosomes, chromosome_size,
                                                    snp_chisq, max_generations, initial_sample_duplicates);
-    List island_population = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
+    List island_population = evolve_island(0, case_genetic_data, complement_genetic_data,
                                            case_comp_different, case_minus_comp, both_one_mat,
                                            block_ld_mat, n_chromosomes, chromosome_size, weight_lookup,
                                            snp_chisq, original_col_numbers, island_population_i,
@@ -1582,8 +1582,8 @@ List run_GADGET(int island_cluster_size, int n_migrations, IntegerMatrix case_ge
                                            migration_interval, gen_same_fitness,
                                            max_generations, tol, n_top_chroms, initial_sample_duplicates,
                                            crossover_prop, n_case_high_risk_thresh, outlier_sd);
-    island_popultations[0] = island_population;
-    return(island_population);
+    island_populations[0] = island_population;
+    return(island_populations);
 
   }
 
