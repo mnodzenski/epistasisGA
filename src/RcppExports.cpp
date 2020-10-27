@@ -345,6 +345,41 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// evolve_island2
+List evolve_island2(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup, NumericVector snp_chisq, IntegerVector original_col_numbers, List population, bool all_converged, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, int n_case_high_risk_thresh, double outlier_sd);
+RcppExport SEXP _snpGADGET_evolve_island2(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP populationSEXP, SEXP all_convergedSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP n_case_high_risk_threshSEXP, SEXP outlier_sdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n_migrations(n_migrationsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case_genetic_data(case_genetic_dataSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type complement_genetic_data(complement_genetic_dataSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case_comp_different(case_comp_differentSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case_minus_comp(case_minus_compSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type both_one_mat(both_one_matSEXP);
+    Rcpp::traits::input_parameter< LogicalMatrix >::type block_ld_mat(block_ld_matSEXP);
+    Rcpp::traits::input_parameter< int >::type n_chromosomes(n_chromosomesSEXP);
+    Rcpp::traits::input_parameter< int >::type chromosome_size(chromosome_sizeSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weight_lookup(weight_lookupSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type snp_chisq(snp_chisqSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type original_col_numbers(original_col_numbersSEXP);
+    Rcpp::traits::input_parameter< List >::type population(populationSEXP);
+    Rcpp::traits::input_parameter< bool >::type all_converged(all_convergedSEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type migration_interval(migration_intervalSEXP);
+    Rcpp::traits::input_parameter< int >::type gen_same_fitness(gen_same_fitnessSEXP);
+    Rcpp::traits::input_parameter< int >::type max_generations(max_generationsSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type n_top_chroms(n_top_chromsSEXP);
+    Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
+    Rcpp::traits::input_parameter< double >::type crossover_prop(crossover_propSEXP);
+    Rcpp::traits::input_parameter< int >::type n_case_high_risk_thresh(n_case_high_risk_threshSEXP);
+    Rcpp::traits::input_parameter< double >::type outlier_sd(outlier_sdSEXP);
+    rcpp_result_gen = Rcpp::wrap(evolve_island2(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, population, all_converged, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, n_case_high_risk_thresh, outlier_sd));
+    return rcpp_result_gen;
+END_RCPP
+}
 // evolve_island
 List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup, NumericVector snp_chisq, IntegerVector original_col_numbers, List population, bool all_converged, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, int n_case_high_risk_thresh, double outlier_sd);
 RcppExport SEXP _snpGADGET_evolve_island(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP populationSEXP, SEXP all_convergedSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP n_case_high_risk_threshSEXP, SEXP outlier_sdSEXP) {
@@ -440,6 +475,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_snpGADGET_chrom_fitness_score", (DL_FUNC) &_snpGADGET_chrom_fitness_score, 13},
     {"_snpGADGET_chrom_fitness_list", (DL_FUNC) &_snpGADGET_chrom_fitness_list, 13},
     {"_snpGADGET_initiate_population", (DL_FUNC) &_snpGADGET_initiate_population, 7},
+    {"_snpGADGET_evolve_island2", (DL_FUNC) &_snpGADGET_evolve_island2, 25},
     {"_snpGADGET_evolve_island", (DL_FUNC) &_snpGADGET_evolve_island, 25},
     {"_snpGADGET_run_GADGET", (DL_FUNC) &_snpGADGET_run_GADGET, 24},
     {NULL, NULL, 0}
