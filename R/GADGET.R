@@ -89,7 +89,7 @@
 #'                    migration.interval = 5, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
 #'
-#' @importFrom data.table as.data.table setorder
+#' @importFrom data.table as.data.table setorder setDT rbindlist transpose
 #' @useDynLib snpGADGET
 #' @export
 
@@ -114,27 +114,34 @@ GADGET <- function(cluster.number, results.dir , case.genetic.data, complement.g
     lapply(seq_along(rcpp.res), function(island.number){
 
         #pick out the pieces from rcpp output
-        island.res <- rcpp.res[[island.number]]
-        top.chroms <- as.data.table(island.res[["top_chromosomes"]])
-        colnames(top.chroms) <- paste(paste0("snp", seq_len(chromosome.size)), sep = ".")
-        sum.dif.vecs <- as.data.table(island.res[["sum_dif_vecs"]])
-        colnames(sum.dif.vecs) <- paste(paste0("snp", seq_len(chromosome.size)), "diff.vec", sep = ".")
-        risk.alleles <- as.data.table(island.res[["risk_alleles"]])
-        colnames(risk.alleles) <- paste(paste0("snp", seq_len(chromosome.size)), "allele.copies", sep = ".")
-        raw.fitness.scores <- as.data.table(island.res[["raw_fitness_scores"]])
-        colnames(raw.fitness.scores) <- "raw.fitness.score"
-        n.generations <- island.res[["n_generations"]]
+        n.generations <- rcpp.res[[island.number]][["generation"]]
+        fitness.score.vec <- unlist(rcpp.res[[island.number]][["fitness_score_list"]][seq_len(n.generations)])
+        all.chrom.dt <- rbindlist(lapply(rcpp.res[[island.number]][["gen_chromosome_list"]][seq_len(n.generations)],
+                                    function(gen.list) transpose(setDT(gen.list))))
+        sum.dif.vec.dt <- rbindlist(lapply(rcpp.res[[island.number]][["sum_dif_vec_list"]][seq_len(n.generations)],
+                                        function(gen.list) transpose(setDT(gen.list))))
+        risk.allele.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_allele_vec_list"]][seq_len(n.generations)],
+                                        function(gen.list) transpose(setDT(gen.list))))
 
-        # put together data.table
-        res.dt <- cbind(top.chroms, sum.dif.vecs, risk.alleles, raw.fitness.scores)
-        res.dt[ , `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(res.dt)),
-                .SDcols = (1 + chromosome.size):(2 * chromosome.size)]
-        res.dt[, `:=`(fitness.score, min.elem * raw.fitness.score)]
-        setorder(res.dt, -fitness.score)
-        final.dt <- res.dt[seq_len(n.top.chroms), ]
+        unique.chromosome.dt <- unique(all.chrom.dt)
+        colnames(unique.chromosome.dt) <- paste0("snp", seq_len(ncol(unique.chromosome.dt)))
+        unique.chrom.dif.vec.dt <- sum.dif.vec.dt[!duplicated(all.chrom.dt), ]
+        unique.chrom.risk.allele.vec.dt <-  risk.allele.dt[!duplicated(all.chrom.dt), ]
+        colnames(unique.chrom.dif.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
+                                                    ".diff.vec")
+        colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
+                                                            ".allele.copies")
+        unique.fitness.score.vec <- fitness.score.vec[!duplicated(all.chrom.dt)]
+        unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
+        unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
+        unique.results[, `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(unique.results)),
+                       .SDcols = (1 + chromosome.size):(2 * chromosome.size)]
+        unique.results[, `:=`(fitness.score, min.elem * raw.fitness.score)]
+        setorder(unique.results, -fitness.score)
+        final.result <- unique.results[seq_len(n.top.chroms), ]
 
         #output list
-        final.list <- list(top.chromosome.results = final.dt, n.generations = n.generations)
+        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations)
 
         #write to file
         out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", island.number,".rds"))
