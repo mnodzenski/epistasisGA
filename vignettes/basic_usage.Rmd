@@ -382,14 +382,10 @@ perm.edge.scores <- lapply(unique.perm.res, function(perm.res){
 
 Next, we identify a threshold score, t, such that the mean fraction of SNP-pair scores exceeding t across permuted datasets divided by the fraction of scores exceeding t in the observed data is not greater than a desired threshold using function `network.threshold`. We refer to this ratio as the rank based false disovery rate, or rFDR and default to a desired rFDR threshold of 0.01. If `network.threshold` cannot identify a t that produces the exact desired rFDR, it will find the t that yields the closest value to the desired rFDR that does not exceed it. The function will return the achieved rFDR, threshold value, and a data.table containing the SNP pairs whose scores exceed the identified threshold in the observed data. 
 
-```{r}
-threshold.res <- network.threshold(obs.edge.scores, perm.edge.scores, 
-                                   desired.rFDR = 0.01)
-```
 
 Finally, we may plot the thresholded SNP pairs in a network plot:
 
-```{r}
+```{r, eval = FALSE}
 set.seed(20)
 network.plot(edge.dt = threshold.res$network.edges, graph.area = 200,
              node.size = 40, vertex.label.cex = 0.6)
