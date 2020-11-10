@@ -176,7 +176,7 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     BPPARAM = bp.param))
 
     ### compute p-value ###
-    pval <- sum(perm.fitness.scores >= obs.fitness.score)/n.permutes
+    pval <- sum(perm.fitness.scores >= obs.fitness.score)/(n.permutes + 1)
 
     ### return result ###
     return(list(pval = pval, obs.fitness.score = obs.fitness.score, perm.fitness.scores = perm.fitness.scores))
