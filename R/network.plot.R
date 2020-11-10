@@ -22,6 +22,7 @@
 #' @param node.color.ramp A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
 #' closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
 #' scoring nodes are whiter, and high scoring edges are greener.
+#' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
 #'
@@ -59,7 +60,7 @@
 
 network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crectangle", score.type = "max", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
-    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("white", "grey", "green")) {
+    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("white", "grey", "green"), ...) {
 
     # if not inputting an edge.df, compute it
     if (is.null(edge.dt)){
@@ -115,7 +116,7 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
         net.edges <- get.edgelist(network, names = FALSE)
         coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
-        plot(network, layout = coords, vertex.label.cex = vertex.label.cex, asp = 0)
+        plot(network, layout = coords, vertex.label.cex = vertex.label.cex, asp = 0, ...)
 
     # otherwise, return igraph object
     } else {
