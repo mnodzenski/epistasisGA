@@ -65,7 +65,7 @@
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                block.ld.mat = block.ld.mat[ , 1:10])
+#'                                block.ld.mat = block.ld.mat[1:10, 1:10])
 #'
 #'  case.genetic.data <- data.list$case.genetic.data
 #'  complement.genetic.data <- data.list$complement.genetic.data
