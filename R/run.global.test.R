@@ -197,7 +197,7 @@ run.global.test <- function(results.list, n.top.scores = 10) {
         chrom.size.res <- chrom.size.ranks[, x]
         obs.test.stat <- chrom.size.res[1]
         perm.test.stats <- chrom.size.res[-1]
-        pval <- sum(perm.test.stats >= obs.test.stat)/length(perm.test.stats)
+        pval <- sum(perm.test.stats >= obs.test.stat)/(length(perm.test.stats) + 1)
         pval
 
     }, 1.0)
@@ -223,7 +223,7 @@ run.global.test <- function(results.list, n.top.scores = 10) {
 
         max.obs <- max.obs.fitness[chrom.size]
         max.perms <- max.perm.fitness[ , chrom.size]
-        pval <- sum(max.perms >= max.obs)/length(max.perms)
+        pval <- sum(max.perms >= max.obs)/(length(max.perms) + 1)
         pval
 
     }, 1.0)
