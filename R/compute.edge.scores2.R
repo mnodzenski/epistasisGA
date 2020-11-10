@@ -232,7 +232,7 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
                                 weighted.fs = chrom.weight*fs)]
 
             #take weighted average score for each pair
-            out.dt <- chrom.pairs[ , list(fitness.score = sum(raw.fitness.score)/sum(chrom.weight)),
+            out.dt <- chrom.pairs[ , list(fitness.score = sum(weighted.fs)/sum(chrom.weight)),
                                    list(V1, V2)]
             return(out.dt)
 
