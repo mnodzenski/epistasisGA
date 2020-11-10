@@ -14,7 +14,9 @@ network.plot(
   graph.area = 100,
   vertex.label.cex = 0.5,
   edge.width.cex = 1,
-  plot = TRUE
+  plot = TRUE,
+  edge.color.ramp = c("white", "grey", "red"),
+  node.color.ramp = c("white", "grey", "green")
 )
 }
 \arguments{
@@ -41,6 +43,14 @@ specified, \code{edge.dt} must be specified.}
 \item{edge.width.cex}{A scalar controlling the width of the graph edges. Increase to make edges wider.}
 
 \item{plot}{A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.}
+
+\item{edge.color.ramp}{A character vector of colors. The coloring of the network edges will be shown on a gradient, with the lower scoring edge weights
+closer to the first color specified in \code{edge.color.ramp}, and higher scoring weights closer to the last color specified. By default, the
+low scoring edges are whiter, and high scoring edges are redder.}
+
+\item{node.color.ramp}{A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
+closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
+scoring nodes are whiter, and high scoring edges are greener.}
 }
 \value{
 An igraph object, if \code{plot} is set to FALSE.
