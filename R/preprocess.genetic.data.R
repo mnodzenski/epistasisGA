@@ -137,11 +137,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    # combine results into new dataframes
-    case.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$case.snp))))
-    complement.genetic.data <- do.call("cbind", lapply(res.list, function(x) as.numeric(as.character(x$comp.snp))))
-
-
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
         chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
         minor.allele.vec = minor.alleles))
