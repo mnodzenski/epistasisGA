@@ -36,7 +36,7 @@
 # #preprocess data
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                block.ld.mat = block.ld.mat[ , 1:10])
+#'                                block.ld.mat = block.ld.mat[1:10 , 1:10])
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -142,6 +142,7 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom matrixStats colSds
 #' @importFrom utils combn
+#' @importFrom BiocParallel SerialParam
 #' @export
 
 compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
@@ -182,9 +183,22 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
         chrom.size <- sum(grepl("snp", colnames(obs.res)))/5
         epi.pvals <- vapply(seq_len(n.top.chroms), function(x){
 
-            chrom <- as.vector(t(obs.res[x, seq_len(chrom.size)]))
+            these.cols <- seq_len(chrom.size)
+            chrom <- as.vector(t(obs.res[x, ..these.cols]))
             epi.test.pval <- tryCatch(run.epi.test(chrom, pp.list, n.permutes = epi.test.permutes, bp.param = bp.param)$pval,
-                                     error = function(e) 0.5)
+                                     error = function(e) {
+
+                                         if (e == "cannot run test, all SNPs are in LD"){
+
+                                             0.5
+
+                                         } else {
+
+                                             stop(e)
+
+                                         }
+
+                                     })
             return(epi.test.pval)
 
         }, 1.0)
