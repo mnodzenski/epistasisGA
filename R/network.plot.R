@@ -56,6 +56,7 @@
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
 #' @importFrom grDevices adjustcolor colorRampPalette
 #' @importFrom data.table melt
+#' @importFrom fields image.plot
 #' @export
 
 network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crectangle", score.type = "max", repulse.rad = 1000,
@@ -117,6 +118,8 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
         coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
         plot(network, layout = coords, vertex.label.cex = vertex.label.cex, asp = 0, ...)
+        image.plot(legend.only = TRUE, zlim = range(V(network)$size), col = color_fun(500),
+                  legend.lab = "SNP Score", legend.cex = 1.5, legend.line = 2.5)
 
     # otherwise, return igraph object
     } else {
