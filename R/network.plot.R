@@ -16,6 +16,12 @@
 #' @param vertex.label.cex A scalar controlling the size of the vertex label. Increase to increase size.
 #' @param edge.width.cex A scalar controlling the width of the graph edges. Increase to make edges wider.
 #' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.
+#' @param edge.color.ramp A character vector of colors. The coloring of the network edges will be shown on a gradient, with the lower scoring edge weights
+#' closer to the first color specified in \code{edge.color.ramp}, and higher scoring weights closer to the last color specified. By default, the
+#' low scoring edges are whiter, and high scoring edges are redder.
+#' @param node.color.ramp A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
+#' closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
+#' scoring nodes are whiter, and high scoring edges are greener.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
 #'
@@ -52,7 +58,8 @@
 #' @export
 
 network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crectangle", score.type = "max", repulse.rad = 1000,
-    node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE) {
+    node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
+    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("white", "grey", "green")) {
 
     # if not inputting an edge.df, compute it
     if (is.null(edge.dt)){
@@ -89,14 +96,14 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
     network <- graph.data.frame(edge.df[, 1:2], directed = FALSE, vertices = node.df)
     E(network)$weight <- edge.df$edge.score
     E(network)$width <- edge.width.cex*edge.widths
-    color_fun <- colorRampPalette(c("white", "grey", "red"))
+    color_fun <- colorRampPalette(edge.color.ramp)
     required.colors <- as.integer(as.factor(E(network)$weight))
     colors <- color_fun(length(unique(required.colors)))
     edge.colors <- sapply(seq_len(length(edge.widths)), function(x) adjustcolor(colors[required.colors][x],
         alpha.f = edge.widths[x]))
     E(network)$color <- edge.colors
 
-    color_fun <- colorRampPalette(c("white", "grey", "green"))
+    color_fun <- colorRampPalette(node.color.ramp)
     required.colors <- as.integer(as.factor(V(network)$size))
     colors <- color_fun(length(unique(required.colors)))
     V(network)$color <- colors[required.colors]
