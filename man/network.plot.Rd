@@ -16,7 +16,8 @@ network.plot(
   edge.width.cex = 1,
   plot = TRUE,
   edge.color.ramp = c("white", "grey", "red"),
-  node.color.ramp = c("white", "grey", "green")
+  node.color.ramp = c("white", "grey", "green"),
+  ...
 )
 }
 \arguments{
@@ -51,6 +52,8 @@ low scoring edges are whiter, and high scoring edges are redder.}
 \item{node.color.ramp}{A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
 closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
 scoring nodes are whiter, and high scoring edges are greener.}
+
+\item{...}{Additional arguments to be passed to \code{plot.igraph}.}
 }
 \value{
 An igraph object, if \code{plot} is set to FALSE.
