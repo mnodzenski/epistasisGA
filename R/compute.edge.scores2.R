@@ -188,7 +188,8 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
             epi.test.pval <- tryCatch(run.epi.test(chrom, pp.list, n.permutes = epi.test.permutes, bp.param = bp.param)$pval,
                                      error = function(e) {
 
-                                         if (e == "cannot run test, all SNPs are in LD"){
+                                         error.message = conditionMessage(e)
+                                         if (error.message == "cannot run test, all SNPs are in LD"){
 
                                              0.5
 
