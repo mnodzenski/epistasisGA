@@ -59,7 +59,7 @@
 #' @importFrom fields image.plot
 #' @export
 
-network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crectangle", score.type = "max", repulse.rad = 1000,
+network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "circle", score.type = "max", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
     edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("white", "grey", "green"), ...) {
 
@@ -68,10 +68,15 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
 
         edge.dt <- compute.edge.scores(results.df, score.type = score.type)
 
+    } else {
+
+        #otherwise subset to target cols
+        edge.dt <- edge.dt[ , c(3, 4, 5)]
+
     }
 
     #compute node scores
-    edge.dt.long <- melt(edge.dt, 3, 1:2, value.name = 'name')
+    edge.dt.long <- melt(edge.dt, 3, c(1, 2), value.name = 'name')
     if (score.type == "max"){
 
         node.dt <- edge.dt.long[ , list(size = max(edge.score)), by = 'name']
@@ -110,6 +115,7 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
     colors <- color_fun(length(unique(required.colors)))
     V(network)$color <- colors[required.colors]
     V(network)$shape <- node.shape
+    V(network)$label.cex <- vertex.label.cex*node.df$size/node.size
 
     # if desired, plot
     if (plot) {
@@ -117,7 +123,7 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "crecta
         net.edges <- get.edgelist(network, names = FALSE)
         coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
-        plot(network, layout = coords, vertex.label.cex = vertex.label.cex, asp = 0, ...)
+        plot(network, layout = coords, asp = 0, ...)
         image.plot(legend.only = TRUE, zlim = range(V(network)$size), col = color_fun(500),
                   legend.lab = "SNP Score", legend.cex = 1.5, legend.line = 2.5)
 

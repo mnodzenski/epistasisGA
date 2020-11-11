@@ -7,7 +7,7 @@
 network.plot(
   results.df = NULL,
   edge.dt = NULL,
-  node.shape = "crectangle",
+  node.shape = "circle",
   score.type = "max",
   repulse.rad = 1000,
   node.size = 25,
