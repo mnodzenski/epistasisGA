@@ -54,19 +54,12 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     out.file <- file.path(dirname(island.names[[1]]), out.file.name)
     if (file.exists(out.file)){
 
-        stop("combine.islands has already been run for this directory")
+        message("combine.islands has already been run for this directory")
 
     }
 
     # grab the vector indicating which SNPs had coding flipped
     flipped.vec <- !preprocessed.list$minor.allele.vec
-
-    # stop if the islands have already been combined
-    if (any(grepl("combined.island", island.names))) {
-
-        stop("Islands have already been combined")
-
-    }
 
     # stop if the annotation data is not formatted correctly
     if (any(! c("RSID", "REF", "ALT") %in% colnames(annotation.data))){
