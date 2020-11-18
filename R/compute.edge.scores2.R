@@ -82,6 +82,10 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
 
     })
 
+    # find the correct columns in the pre-processed data
+    case <- pp.list$case.genetic.data
+    comp <- pp.list$complement.genetic.data
+
     ## compute re-scaled fitness score based on ranks compared to permutes
     all.edge.weights <- rbindlist(bplapply(results.list, function(obs.res){
 
@@ -103,11 +107,12 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
         allele.copy.cols <- seq(chrom.size*4 + 1, chrom.size*5)
         allele.copies <- obs.res[, ..allele.copy.cols]
 
-        # now score all pairs
+        # loop over chromosomes
         pair.idx.mat <- t(combn(seq_len(chrom.size), 2))
         scored.pairs <- rbindlist(lapply(seq_len(n.top.chroms), function(x){
 
             target.chrom <- as.vector(t(chrom.nums[x, ]))
+            target.cols  <- match(target.chrom, pp.list$original.col.numbers)
             target.chrom.mat <- t(apply(pair.idx.mat, 1, function(y) target.chrom[y]))
 
             target.dv <- as.vector(t(dif.vecs[x, ]))
@@ -119,77 +124,129 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
             target.ac <- as.vector(t(allele.copies[x, ]))
             target.ac.mat <- t(apply(pair.idx.mat, 1, function(y) target.ac[y]))
 
+            #figure out who has all risk genotypes
+            risk.genotypes <- ifelse(target.dv <= 0 & target.ac == "1+", 1,
+                                     ifelse(target.dv <= 0 & target.ac == "2", 0,
+                                            ifelse(target.dv > 0 & target.ac == "1+", 1, 2)))
+
+            risk.dirs <- sign(target.dv)
+            pos.risk <- which(risk.dirs > 0)
+            pos.risk.cols <- target.cols[pos.risk]
+            print(pos.risk.cols)
+            neg.risk <- which(risk.dirs <= 0)
+            neg.risk.cols <- target.cols[neg.risk]
+            n.pos <- length(pos.risk)
+            n.neg <- length(neg.risk)
+
+            if (n.neg > 0) {
+
+                neg.risk.genotypes <- risk.genotypes[neg.risk]
+                neg.risk.geno.mat <- matrix(rep(neg.risk.genotypes, each = nrow(case)),
+                                            ncol = n.neg, byrow = FALSE)
+                n1 <- rowSums(case[, neg.risk.cols, drop = FALSE] <= neg.risk.geno.mat)
+                n2 <- rowSums(comp[, neg.risk.cols, drop = FALSE] <= neg.risk.geno.mat)
+            }
+            if (n.pos > 0) {
+
+                pos.risk.genotypes <- risk.genotypes[pos.risk]
+                pos.risk.geno.mat <- matrix(rep(pos.risk.genotypes, each = nrow(case)),
+                                            ncol = n.pos, byrow = FALSE)
+                p1 <- rowSums(case[, pos.risk.cols, drop = FALSE] <= pos.risk.geno.mat)
+                p2 <- rowSums(comp[, pos.risk.cols, drop = FALSE] <= pos.risk.geno.mat)
+
+            }
+            if (n.pos == 0) {
+                case.high.risk <- n1 == chrom.size
+                comp.high.risk <- n2 == chrom.size
+            } else if (n.neg == 0) {
+                case.high.risk <- p1 == chrom.size
+                comp.high.risk <- p2 == chrom.size
+            } else {
+                case.high.risk <- p1 + n1 == chrom.size
+                comp.high.risk <- p2 + n2 == chrom.size
+            }
+
+            both.high.risk <- case.high.risk & comp.high.risk
+            these.families <- (case.high.risk | comp.high.risk) & !both.high.risk
+            n.families <- sum(these.families)
+
             # looping over pairs
-            pair.score <- vapply(seq_len(nrow(target.chrom.mat)), function(z){
+            if ( n.families > 0){
 
-                # pick out the chromosome
-                target.pair <- target.chrom.mat[z, ]
-                target.pair.dv <- target.dv.mat[z, ]
-                target.pair.ac <- target.ac.mat[z, ]
+                pair.score <- vapply(seq_len(nrow(target.chrom.mat)), function(z){
 
-                # determine risk genotypes
-                risk.genotypes <- ifelse(target.pair.dv <= 0 & target.pair.ac == "1+", 1,
-                                         ifelse(target.pair.dv <= 0 & target.pair.ac == "2", 0,
-                                                ifelse(target.pair.dv > 0 & target.pair.ac == "1+", 1, 2)))
+                    # pick out the chromosome
+                    target.pair <- target.chrom.mat[z, ]
+                    target.pair.dv <- target.dv.mat[z, ]
+                    target.pair.ac <- target.ac.mat[z, ]
 
-                # find the correct columns in the pre-processed data
-                case <- pp.list$case.genetic.data
-                comp <- pp.list$complement.genetic.data
-                target.pair.cols <- match(target.pair, pp.list$original.col.numbers)
+                    # determine risk genotypes
+                    risk.genotypes <- ifelse(target.pair.dv <= 0 & target.pair.ac == "1+", 1,
+                                             ifelse(target.pair.dv <= 0 & target.pair.ac == "2", 0,
+                                                    ifelse(target.pair.dv > 0 & target.pair.ac == "1+", 1, 2)))
 
-                # determine cases and comps with risk genotypes
-                risk.dirs <- sign(target.pair.dv)
-                pos.risk <- which(risk.dirs > 0)
-                pos.risk.cols <- target.pair.cols[pos.risk]
-                neg.risk <- which(risk.dirs <= 0)
-                neg.risk.cols <- target.pair.cols[neg.risk]
-                n.pos <- length(pos.risk)
-                n.neg <- length(neg.risk)
+                    target.pair.cols <- match(target.pair, pp.list$original.col.numbers)
 
-                if (n.neg > 0) {
+                    # determine cases and comps with risk genotypes
+                    risk.dirs <- sign(target.pair.dv)
+                    pos.risk <- which(risk.dirs > 0)
+                    pos.risk.cols <- target.pair.cols[pos.risk]
+                    neg.risk <- which(risk.dirs <= 0)
+                    neg.risk.cols <- target.pair.cols[neg.risk]
+                    n.pos <- length(pos.risk)
+                    n.neg <- length(neg.risk)
 
-                    neg.risk.genotypes <- risk.genotypes[neg.risk]
-                    neg.risk.geno.mat <- matrix(rep(neg.risk.genotypes, each = nrow(case)),
-                                                ncol = n.neg, byrow = FALSE)
-                    n1 <- rowSums(case[, neg.risk.cols, drop = FALSE] <= neg.risk.geno.mat)
-                    n2 <- rowSums(comp[, neg.risk.cols, drop = FALSE] <= neg.risk.geno.mat)
-                }
-                if (n.pos > 0) {
+                    if (n.neg > 0) {
 
-                    pos.risk.genotypes <- risk.genotypes[pos.risk]
-                    pos.risk.geno.mat <- matrix(rep(pos.risk.genotypes, each = nrow(case)),
-                                                ncol = n.pos, byrow = FALSE)
-                    p1 <- rowSums(case[, pos.risk.cols, drop = FALSE] <= pos.risk.geno.mat)
-                    p2 <- rowSums(comp[, pos.risk.cols, drop = FALSE] <= pos.risk.geno.mat)
+                        neg.risk.genotypes <- risk.genotypes[neg.risk]
+                        neg.risk.geno.mat <- matrix(rep(neg.risk.genotypes, each = n.families),
+                                                    ncol = n.neg, byrow = FALSE)
+                        n1 <- rowSums(case[these.families, neg.risk.cols, drop = FALSE] <= neg.risk.geno.mat)
+                        n2 <- rowSums(comp[these.families, neg.risk.cols, drop = FALSE] <= neg.risk.geno.mat)
+                    }
+                    if (n.pos > 0) {
 
-                }
-                if (n.pos == 0) {
-                    case.high.risk <- n1 == 2
-                    comp.high.risk <- n2 == 2
-                } else if (n.neg == 0) {
-                    case.high.risk <- p1 == 2
-                    comp.high.risk <- p2 == 2
-                } else {
-                    case.high.risk <- p1 + n1 == 2
-                    comp.high.risk <- p2 + n2 == 2
-                }
+                        pos.risk.genotypes <- risk.genotypes[pos.risk]
+                        pos.risk.geno.mat <- matrix(rep(pos.risk.genotypes, each = n.families),
+                                                    ncol = n.pos, byrow = FALSE)
+                        p1 <- rowSums(case[these.families, pos.risk.cols, drop = FALSE] <= pos.risk.geno.mat)
+                        p2 <- rowSums(comp[these.families, pos.risk.cols, drop = FALSE] <= pos.risk.geno.mat)
 
-                both.high.risk <- case.high.risk & comp.high.risk
-                n.case.high.risk <- sum(case.high.risk[!both.high.risk])
-                n.comp.high.risk <- sum(comp.high.risk[!both.high.risk])
-                n <- n.case.high.risk + n.comp.high.risk
-                phat <- n.case.high.risk/n
-                if (n == 0){
-                    phat <- 0.5
-                } else if (phat == 1){
-                    phat <- 1-(10^-8)
-                } else if (phat == 0){
-                    phat <- 10^-8
-                }
-                zscore <- (phat - 0.5)/sqrt(phat*(1-phat)/n)
-                return(zscore)
+                    }
+                    if (n.pos == 0) {
+                        case.high.risk <- n1 == 2
+                        comp.high.risk <- n2 == 2
+                    } else if (n.neg == 0) {
+                        case.high.risk <- p1 == 2
+                        comp.high.risk <- p2 == 2
+                    } else {
+                        case.high.risk <- p1 + n1 == 2
+                        comp.high.risk <- p2 + n2 == 2
+                    }
 
-            }, 1.0)
+                    both.high.risk <- case.high.risk & comp.high.risk
+                    n.case.high.risk <- sum(case.high.risk[!both.high.risk])
+                    n.comp.high.risk <- sum(comp.high.risk[!both.high.risk])
+                    n <- n.case.high.risk + n.comp.high.risk
+                    phat <- n.case.high.risk/n
+                    if (n == 0){
+                        phat <- 0.5
+                    } else if (phat == 1){
+                        phat <- 1-(10^-8)
+                    } else if (phat == 0){
+                        phat <- 10^-8
+                    }
+                    zscore <- (phat - 0.5)/sqrt(phat*(1-phat)/n)
+                    return(zscore)
+
+                }, 1.0)
+
+            } else {
+
+                pair.score <- 0.5
+
+            }
+
             target.pair.dt <- data.table(cbind(target.chrom.mat, target.rsid.mat))
             target.pair.dt$score <- pair.score
             if (!is.null(zscore.thresh)){
