@@ -68,7 +68,7 @@
 #' @export
 
 compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
-                                 bp.param = SerialParam()) {
+                                 bp.param = SerialParam(), zscore.thresh = NULL) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     n.chroms.vec <- lapply(results.list, function(chrom.size.list){
@@ -179,10 +179,11 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
                 n.comp.high.risk <- sum(comp.high.risk[!both.high.risk])
                 n <- n.case.high.risk + n.comp.high.risk
                 phat <- n.case.high.risk/n
-                if (phat == 1){
+                if (n == 0){
+                    phat <- 0.5
+                } else if (phat == 1){
                     phat <- 1-(10^-8)
-                }
-                if (phat == 0){
+                } else if (phat == 0){
                     phat <- 10^-8
                 }
                 zscore <- (phat - 0.5)/sqrt(phat*(1-phat)/n)
@@ -191,6 +192,12 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
             }, 1.0)
             target.pair.dt <- data.table(cbind(target.chrom.mat, target.rsid.mat))
             target.pair.dt$score <- pair.score
+            if (!is.null(zscore.thresh)){
+
+                target.pair.dt <- target.pair.dt[target.pair.dt$score >= zscore.thresh, ]
+
+            }
+
             return(target.pair.dt)
 
         }))
