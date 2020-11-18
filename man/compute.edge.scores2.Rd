@@ -9,7 +9,8 @@ compute.edge.scores2(
   pp.list,
   n.top.chroms = 50,
   score.type = "logsum",
-  bp.param = SerialParam()
+  bp.param = SerialParam(),
+  zscore.thresh = NULL
 )
 }
 \arguments{
