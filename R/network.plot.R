@@ -124,8 +124,12 @@ network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "circle
         coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
         plot(network, layout = coords, asp = 0, ...)
-        image.plot(legend.only = TRUE, zlim = range(V(network)$size), col = color_fun(500),
-                  legend.lab = "SNP Score", legend.cex = 1.5, legend.line = 2.5)
+        if (length(unique(edge.colors)) > 1){
+
+            image.plot(legend.only = TRUE, zlim = range(V(network)$size), col = color_fun(500),
+                       legend.lab = "SNP Score", legend.cex = 1.5, legend.line = 2.5)
+
+        }
 
     # otherwise, return igraph object
     } else {
