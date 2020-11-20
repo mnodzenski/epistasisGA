@@ -10,7 +10,8 @@ compute.edge.scores2(
   n.top.chroms = 50,
   score.type = "logsum",
   epi.test.permutes = 100,
-  bp.param = SerialParam()
+  bp.param = SerialParam(),
+  pval.thresh = 1
 )
 }
 \arguments{
@@ -30,6 +31,10 @@ otherwise an error will be returned.}
 
 \item{bp.param}{The \code{bp.param} argument to be passed to \code{run.epi.test}.
 If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
+
+\item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
+chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
+will be excluded from network plots. The argument defaults to 1, allowing all chromosomes to contribute.}
 
 \item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
 }
