@@ -15,6 +15,9 @@
 #' @param epi.test.permutes The number of permutes used to compute the epistasis test p-values.
 #' @param bp.param The \code{bp.param} argument to be passed to \code{run.epi.test}.
 #'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
+#' @param pval.thresh A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
+#' chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
+#' will be excluded from network plots. The argument defaults to 1, allowing all chromosomes to contribute.
 #' @return A data.table where the first four columns represent SNPs and the fifth column (edge.score)
 #' is the edge score of a chromosome containing those SNPs.
 #'
@@ -69,7 +72,7 @@
 #' @export
 
 compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
-                                 epi.test.permutes = 100, bp.param = SerialParam()) {
+                                 epi.test.permutes = 100, bp.param = SerialParam(), pval.thresh = 1) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     n.chroms.vec <- lapply(results.list, function(chrom.size.data){
@@ -128,9 +131,16 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
 
         ## update the observed results data.table
         obs.res$fitness.score <- rescaled.scores
+        obs.res <- obs.res[epi.pvals <= pval.thresh, ]
         return(obs.res)
 
     })
+
+    #make sure we have some edges
+    n.edges <- vapply(rescaled.results, nrow, 1)
+    if (sum(n.edges) == 0){
+        stop("No SNP pairs meet p-value threshold")
+    }
 
     all.edge.weights <- rbindlist(lapply(seq_along(rescaled.results), function(d){
 
@@ -167,6 +177,9 @@ compute.edge.scores2 <- function(results.list, pp.list, n.top.chroms = 50, score
         }))
 
     }))
+
+    # remove the NA's
+    all.edge.weights <- all.edge.weights[!is.na(all.edge.weights$fitness.score), ]
 
     # compute edge score based on score.type
     if (score.type == "max"){
