@@ -5,7 +5,7 @@
 \title{A function to run a global test of the null hypothesis that there are no joint SNP-disease associations
 across a range of chromosome sizes}
 \usage{
-run.global.test(results.list, n.top.scores = 10)
+run.global.test(results.list, n.top.scores = 30)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
@@ -14,13 +14,13 @@ the \code{unique.results} chromosome results from \code{combine.islands} for a g
 is a list containing vectors of all permutation results fitness scores, again using the \code{unique.results} results output by
 \code{combine.islands} for each permutation.}
 
-\item{n.top.scores}{The number of top scoring chromosomes, for each chromosome size, to be used in calculating the global test. Defaults to 10.}
+\item{n.top.scores}{The number of top scoring chromosomes, for each chromosome size, to be used in calculating the global test. Defaults to 30.}
 }
 \value{
 A list containing the following:
 \describe{
- \item{obs.test.stat}{The observed sum of Kolmogorov-Smirnov statistics.}
- \item{perm.test.stats}{A vector of sums of Kolmogorov-Smirnov statistics for each of the permuted datasets.}
+ \item{obs.test.stat}{The observed test statistic.}
+ \item{perm.test.stats}{A vector of test statistics from permuted data.}
  \item{pval}{The p-value for the global test.}
  \item{obs.vec}{A vector of observed test statistics for each chromosome size.}
  \item{perm.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
