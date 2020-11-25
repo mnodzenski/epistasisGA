@@ -109,7 +109,7 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     ### restrict the data to informative families ###
     case.risk <- case.genetic.data[fitness.score$inf.families, target.snps]
     comp.risk <- complement.genetic.data[fitness.score$inf.families, target.snps]
-    n.families <- length(fitness.score$high.risk.families)
+    n.families <- length(fitness.score$inf.families)
 
     ### identify ld blocks for the target snps ###
     remaining.snps <- seq_len(length(target.snps))
@@ -152,7 +152,7 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     ### loop over permuted datasets and compute fitness scores
     perm.fitness.scores <- unlist(bplapply(permuted.data,
 
-        function(permute, target.snps, block.ld.mat, weight.lookup, n.different.snps.weight,
+        function(permute, target.snps, target.block.ld.mat, weight.lookup, n.different.snps.weight,
                  n.both.one.weight, n.case.high.risk.thresh, outlier.sd){
 
         ### grab case and complement data ###
@@ -170,12 +170,12 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
         ### compute fitness score ###
         fitness.score <- chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
                                              seq_len(length(target.snps)), case.minus.comp, both.one.mat,
-                                             block.ld.mat, weight.lookup,
+                                             target.block.ld.mat, weight.lookup,
                                              n.different.snps.weight, n.both.one.weight,
                                              n.case.high.risk.thresh, outlier.sd)
         return(fitness.score$fitness.score)
 
-    }, target.snps  = target.snps, block.ld.mat = block.ld.mat, weight.lookup = weight.lookup,
+    }, target.snps  = target.snps, target.block.ld.mat = target.block.ld.mat, weight.lookup = weight.lookup,
     n.different.snps.weight =  n.different.snps.weight, n.both.one.weight = n.both.one.weight,
     n.case.high.risk.thresh = n.case.high.risk.thresh, outlier.sd = outlier.sd,
     BPPARAM = bp.param))
