@@ -22,8 +22,8 @@ A list containing the following:
  \item{obs.test.stat}{The observed test statistic.}
  \item{perm.test.stats}{A vector of test statistics from permuted data.}
  \item{pval}{The p-value for the global test.}
- \item{obs.vec}{A vector of observed test statistics for each chromosome size.}
- \item{perm.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
+ \item{obs.marginal.test.stats}{A vector of observed test statistics for each chromosome size.}
+ \item{perm.marginal.test.stats.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
  permutations and columns correspond to chromosome sizes.}
  \item{marginal.pvals}{A vector containing marignal p-values for each chromosome size.}
  \item{max.obs.fitness}{A vector of the maximum fitness score for each chromosome size in the observed data.}
