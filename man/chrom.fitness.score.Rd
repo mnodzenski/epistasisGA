@@ -26,7 +26,8 @@ The ordering of the columns must be consistent with the LD structure specified i
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-Columns are SNPs, rows are families.}
+Columns are SNPs, rows are families. If using affected/unaffected sibling pairs, this should contain
+the unaffected sibling genotypes.}
 
 \item{case.comp.differences}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
 where rows correspond to individuals and columns correspond to snps.}
@@ -46,9 +47,11 @@ proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set 
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.}
+\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement or unaffected sibling
+is multiplied in computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.}
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+is multiplied in computing the family weights. Defaults to 1.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 

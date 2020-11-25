@@ -24,12 +24,15 @@ run.epi.test(
 
 \item{n.permutes}{The number of permutations on which to base the test. Defaults to 1000.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.}
+\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement or unaffected sibling
+is multiplied in computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.}
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+is multiplied in computing the family weights. Defaults to 1.}
 
-\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
-of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
+\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
+of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
+returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
 
 \item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 
