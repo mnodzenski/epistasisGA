@@ -3,6 +3,11 @@
 #' This function plots a network of SNPs with potential multi-SNP effects.
 #'
 #' @param edge.dt The data.table returned by function \code{compute.edge.scores}.
+#' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
+#' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
+#' graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
+#' for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
+#' Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.
 #' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.
 #' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
 #'  increase to move nodes closer together.
@@ -73,7 +78,7 @@
 #' @importFrom fields image.plot
 #' @export
 
-network.plot <- function(edge.dt, node.shape = "circle", repulse.rad = 1000,
+network.plot <- function(edge.dt, score.type = "logsum", node.shape = "circle", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
     edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("yellow", "orange", "red"), ...) {
 
