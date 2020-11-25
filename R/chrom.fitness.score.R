@@ -42,6 +42,7 @@
 #'   indicates 2 copies are needed. The risk allele can be determined based on the signs of the elements
 #'   of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
 #'   the risk allele, while a positive value implicates the minor allele.}
+#'   \item{inf.families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
 #' }
 #'
 #' @examples
@@ -284,7 +285,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
     high.risk.families <- inf.family.rows
     return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
-                risk.set.alleles = risk.set.alleles, high.risk.families = high.risk.families))
+                risk.set.alleles = risk.set.alleles, inf.families = inf.family.rows))
 
   } else {
 
