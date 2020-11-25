@@ -22,6 +22,9 @@
 #' @param node.color.ramp A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
 #' closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
 #' scoring nodes are whiter, and high scoring edges are greener.
+#' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
+#' @param legend.cex Argument passed to \code{fields::image.plot} to control legend appearance.
+#' @param legend.line Argument passed to \code{fields::image.plot} to control legend appearance.
 #' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -80,7 +83,8 @@
 
 network.plot <- function(edge.dt, score.type = "logsum", node.shape = "circle", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
-    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("yellow", "orange", "red"), ...) {
+    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("yellow", "orange", "red"),
+    plot.legend = TRUE, legend.cex = 1.5, legend.line = 2.5, ...) {
 
     #subset to target cols
     edge.dt <- edge.dt[ , c(3, 4, 5)]
@@ -134,10 +138,10 @@ network.plot <- function(edge.dt, score.type = "logsum", node.shape = "circle", 
         coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
         plot(network, layout = coords, asp = 0, ...)
-        if (length(unique(edge.colors)) > 1){
+        if (length(unique(edge.colors)) > 1 & plot.legend){
 
             image.plot(legend.only = TRUE, zlim = range(V(network)$size), col = color_fun(500),
-                       legend.lab = "SNP Score", legend.cex = 1.5, legend.line = 2.5)
+                       legend.lab = "SNP Score", legend.cex = legend.cex, legend.line = legend.line)
 
         }
 
