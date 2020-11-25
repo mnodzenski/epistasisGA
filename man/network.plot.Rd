@@ -5,10 +5,8 @@
 \title{A function to plot a network of SNPs with potential multi-SNP effects.}
 \usage{
 network.plot(
-  results.df = NULL,
-  edge.dt = NULL,
+  edge.dt,
   node.shape = "circle",
-  score.type = "max",
   repulse.rad = 1000,
   node.size = 25,
   graph.area = 100,
@@ -16,24 +14,17 @@ network.plot(
   edge.width.cex = 1,
   plot = TRUE,
   edge.color.ramp = c("white", "grey", "red"),
-  node.color.ramp = c("white", "grey", "green"),
+  node.color.ramp = c("yellow", "orange", "red"),
   ...
 )
 }
 \arguments{
-\item{results.df}{A subset of the \code{unique.results} data frame of results from \code{combine.islands} after running \code{run.ga}.If not
-specified, \code{edge.dt} must be specified.}
-
-\item{edge.dt}{The data.table returned by function \code{network.threshold}. If not specified, \code{results.df} must instead be specified.}
+\item{edge.dt}{The data.table returned by function \code{compute.edge.scores}.}
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.}
 
-\item{score.type}{A character string specifying the method for weighting network edges and nodes, with options
-'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
- Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
- weights.}
-
-\item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes, increase to move nodes closer together.}
+\item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
+increase to move nodes closer together.}
 
 \item{node.size}{A scalar affecting the size of the graph nodes. Increase to increase size.}
 
@@ -68,25 +59,44 @@ data(dad)
 data(mom)
 data(snp.annotations)
 library(Matrix)
+set.seed(1400)
 block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
 
-pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
-                               mother.genetic.data = mom[ , 1:10],
-                               block.ld.mat = block.ld.mat[ , 1:10])
+#preprocess data
+target.snps <- c(1:3, 30:32, 60:62, 85)
+pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
+                               mother.genetic.data = mom[ , target.snps],
+                               block.ld.mat = block.ld.mat[target.snps , target.snps])
+## run GA for observed data
 
-run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
+#observed data chromosome size 2
+run.ga(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list)
+ unlink('tmp_reg', recursive = TRUE)
 
-combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
+ #observed data chromosome size 3
+ run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
+       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+ combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list)
+ unlink('tmp_reg', recursive = TRUE)
 
+ ## create list of results
+ final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
+
+ ## compute edge scores
+ set.seed(20)
+ edge.dt <- compute.edge.scores(final.results, pp.list, 3)
+
+## plot
 set.seed(10)
-network.plot(combined.res$unique.results)
+network.plot(edge.dt)
 
-unlink('tmp', recursive = TRUE)
-unlink('tmp_reg', recursive = TRUE)
+ lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 
 }
