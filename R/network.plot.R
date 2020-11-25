@@ -2,15 +2,10 @@
 #'
 #' This function plots a network of SNPs with potential multi-SNP effects.
 #'
-#' @param results.df A subset of the \code{unique.results} data frame of results from \code{combine.islands} after running \code{run.ga}.If not
-#' specified, \code{edge.dt} must be specified.
-#' @param edge.dt The data.table returned by function \code{network.threshold}. If not specified, \code{results.df} must instead be specified.
+#' @param edge.dt The data.table returned by function \code{compute.edge.scores}.
 #' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.
-#' @param score.type A character string specifying the method for weighting network edges and nodes, with options
-#' 'max', 'sum', or 'logsum'. The default is 'max', but 'logsum' may also be particularly useful.
-#'  Note that "logsum" is actually the log of one plus the sum of the fitness scores to avoid nodes or edges having negative
-#'  weights.
-#' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes, increase to move nodes closer together.
+#' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
+#'  increase to move nodes closer together.
 #' @param node.size A scalar affecting the size of the graph nodes. Increase to increase size.
 #' @param graph.area A scalar affecting the size of the graph area. Increase to increase graph area.
 #' @param vertex.label.cex A scalar controlling the size of the vertex label. Increase to increase size.
@@ -31,26 +26,45 @@
 #' data(mom)
 #' data(snp.annotations)
 #' library(Matrix)
+#' set.seed(1400)
 #' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #'
-#' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
-#'                                mother.genetic.data = mom[ , 1:10],
-#'                                block.ld.mat = block.ld.mat[ , 1:10])
+#' #preprocess data
+#' target.snps <- c(1:3, 30:32, 60:62, 85)
+#' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
+#'                                mother.genetic.data = mom[ , target.snps],
+#'                                block.ld.mat = block.ld.mat[target.snps , target.snps])
+#' ## run GA for observed data
 #'
-#' run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
+#' #observed data chromosome size 2
+#' run.ga(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list)
+#'  unlink('tmp_reg', recursive = TRUE)
 #'
-#' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
+#'  #observed data chromosome size 3
+#'  run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
+#'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list)
+#'  unlink('tmp_reg', recursive = TRUE)
 #'
+#'  ## create list of results
+#'  final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
+#'
+#'  ## compute edge scores
+#'  set.seed(20)
+#'  edge.dt <- compute.edge.scores(final.results, pp.list, 3)
+#'
+#' ## plot
 #' set.seed(10)
-#' network.plot(combined.res$unique.results)
+#' network.plot(edge.dt)
 #'
-#' unlink('tmp', recursive = TRUE)
-#' unlink('tmp_reg', recursive = TRUE)
+#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
@@ -59,21 +73,12 @@
 #' @importFrom fields image.plot
 #' @export
 
-network.plot <- function(results.df = NULL, edge.dt = NULL, node.shape = "circle", score.type = "max", repulse.rad = 1000,
+network.plot <- function(edge.dt, node.shape = "circle", repulse.rad = 1000,
     node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
-    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("white", "grey", "green"), ...) {
+    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("yellow", "orange", "red"), ...) {
 
-    # if not inputting an edge.df, compute it
-    if (is.null(edge.dt)){
-
-        edge.dt <- compute.edge.scores(results.df, score.type = score.type)
-
-    } else {
-
-        #otherwise subset to target cols
-        edge.dt <- edge.dt[ , c(3, 4, 5)]
-
-    }
+    #subset to target cols
+    edge.dt <- edge.dt[ , c(3, 4, 5)]
 
     #compute node scores
     edge.dt.long <- melt(edge.dt, 3, c(1, 2), value.name = 'name')
