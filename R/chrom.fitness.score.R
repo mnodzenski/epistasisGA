@@ -6,7 +6,8 @@
 #' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-#' Columns are SNPs, rows are families.
+#' Columns are SNPs, rows are families. If using affected/unaffected sibling pairs, this should contain
+#' the unaffected sibling genotypes.
 #' @param case.comp.differences A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
 #' where rows correspond to individuals and columns correspond to snps.
 #' @param target.snps A numeric vector of the columns corresponding to the collection of SNPs, or chromosome, for which the fitness score will be computed.
@@ -19,8 +20,10 @@
 #'  to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
 #'  proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
-#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
-#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
+#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement or unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 1.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epi.test}.

@@ -43,7 +43,8 @@ The ordering of the columns must be consistent with the LD structure specified i
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-Columns are SNPs, rows are families.}
+Columns are SNPs, rows are families. If using affected/unaffected sibling pairs, this should contain
+the unaffected sibling genotypes.}
 
 \item{case.comp.different}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
 where rows correspond to individuals and columns correspond to snps.}

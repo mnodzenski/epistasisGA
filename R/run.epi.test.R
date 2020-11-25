@@ -7,10 +7,13 @@
 #' @param snp.cols An integer vector specifying the columns in the input data containing the SNPs to be tested.
 #' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
 #' @param n.permutes The number of permutations on which to base the test. Defaults to 1000.
-#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
-#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
-#' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
-#' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
+#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement or unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+#' is multiplied in computing the family weights. Defaults to 1.
+#' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
+#' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
+#' returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
 #' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
