@@ -15,8 +15,8 @@
 #'  \item{obs.test.stat}{The observed test statistic.}
 #'  \item{perm.test.stats}{A vector of test statistics from permuted data.}
 #'  \item{pval}{The p-value for the global test.}
-#'  \item{obs.vec}{A vector of observed test statistics for each chromosome size.}
-#'  \item{perm.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
+#'  \item{obs.marginal.test.stats}{A vector of observed test statistics for each chromosome size.}
+#'  \item{perm.marginal.test.stats.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
 #'  permutations and columns correspond to chromosome sizes.}
 #'  \item{marginal.pvals}{A vector containing marignal p-values for each chromosome size.}
 #'  \item{max.obs.fitness}{A vector of the maximum fitness score for each chromosome size in the observed data.}
@@ -182,6 +182,8 @@ run.global.test <- function(results.list, n.top.scores = 30) {
         return(data.frame(score = -2*log(unif.ranks)))
 
     }))
+    colnames(chrom.size.ranks) <- NULL
+    rownames(chrom.size.ranks) <- NULL
 
     #sum ranks across chromosome sizes
     global.scores <- rowSums(chrom.size.ranks)
@@ -210,6 +212,7 @@ run.global.test <- function(results.list, n.top.scores = 30) {
 
     }, rep(1.0, length(results.list[[1]]$permutation.list)))
 
+
     # maximum observed fitness scores
     max.obs.fitness <- vapply(results.list, function(chrom.size.res) {
 
@@ -230,7 +233,7 @@ run.global.test <- function(results.list, n.top.scores = 30) {
 
     # return results list
     res.list <- list(obs.test.stat = obs.test.stat,  perm.test.stats = perm.test.stats, pval = global.pval,
-                     obs.vec = chrom.size.ranks[1, ], perm.mat = chrom.size.ranks[-1, ],
+                     obs.marginal.test.stats = chrom.size.ranks[1, ], perm.marginal.test.stats.mat = chrom.size.ranks[-1, ],
                      marginal.pvals = marginal.pvals,
                      max.obs.fitness = max.obs.fitness, max.perm.fitness = max.perm.fitness,
                      max.order.pvals = max.order.pvals)
