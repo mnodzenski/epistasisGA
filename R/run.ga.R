@@ -21,8 +21,10 @@
 #' that users of HPC clusters that support array jobs specify \code{chunks.as.arrayjobs = TRUE} in argument \code{resources}. For those users, the setup will
 #' submit an array of \code{n.islands}\\\code{island.cluster.size} jobs to the cluster. For HPC clusters that do not support array jobs, the default setting
 #' should not be used. See \code{batchtools::submitJobs} for more information on job chunking.
-#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
-#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
+#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement or unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param generations The maximum number of generations for which the GA will run. Defaults to 500.

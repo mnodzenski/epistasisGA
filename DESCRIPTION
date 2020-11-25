@@ -1,11 +1,11 @@
 Package: snpGADGET
 Type: Package
-Title: An R package to identify multi-snp effects in case-parent triad studies using 
-        a Genetic Algorithm 
+Title: An R package to identify multi-snp effects in nuclear family studies using 
+        the GADGETS method
 Version: 0.99.0
 Author: Michael Nodzenski
 Maintainer: Michael Nodzenski <michael.nodzenski@gmail.com>
-Description: Runs a genetic algorithm to identify multi-snp effects in case-parent triad studies. 
+Description: Runs the GADGETS method to identify multi-snp effects in nuclear family studies. 
 License: GPL-3
 Encoding: UTF-8
 Imports: BiocParallel, data.table, matrixStats, stats, survival, igraph, batchtools,
