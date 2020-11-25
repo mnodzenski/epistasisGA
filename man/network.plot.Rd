@@ -16,6 +16,9 @@ network.plot(
   plot = TRUE,
   edge.color.ramp = c("white", "grey", "red"),
   node.color.ramp = c("yellow", "orange", "red"),
+  plot.legend = TRUE,
+  legend.cex = 1.5,
+  legend.line = 2.5,
   ...
 )
 }
@@ -50,6 +53,12 @@ low scoring edges are whiter, and high scoring edges are redder.}
 \item{node.color.ramp}{A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
 closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
 scoring nodes are whiter, and high scoring edges are greener.}
+
+\item{plot.legend}{A boolean indicating whether a legend should be plotted. Defaults to TRUE.}
+
+\item{legend.cex}{Argument passed to \code{fields::image.plot} to control legend appearance.}
+
+\item{legend.line}{Argument passed to \code{fields::image.plot} to control legend appearance.}
 
 \item{...}{Additional arguments to be passed to \code{plot.igraph}.}
 }
