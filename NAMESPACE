@@ -3,7 +3,7 @@
 export(GADGET)
 export(chrom.fitness.score)
 export(combine.islands)
-export(compute.edge.scores)
+export(compute.pair.scores)
 export(evolve.island)
 export(network.plot)
 export(permute.dataset)
