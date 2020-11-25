@@ -75,6 +75,7 @@ A list:
   indicates 2 copies are needed. The risk allele can be determined based on the signs of the elements
   of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
   the risk allele, while a positive value implicates the minor allele.}
+  \item{inf.families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
 }
 }
 \description{

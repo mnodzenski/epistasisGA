@@ -99,11 +99,13 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
                                     block.ld.mat, weight.lookup,
                                     n.different.snps.weight, n.both.one.weight,
                                     n.case.high.risk.thresh, outlier.sd, epi.test = TRUE)
+
+    ### uses informative families already, so no need to recompute the observed fitness score here ###
     obs.fitness.score <- fitness.score$fitness.score
 
     ### restrict the data to informative families ###
-    case.risk <- case.genetic.data[fitness.score$high.risk.families, target.snps]
-    comp.risk <- complement.genetic.data[fitness.score$high.risk.families, target.snps]
+    case.risk <- case.genetic.data[fitness.score$inf.families, target.snps]
+    comp.risk <- complement.genetic.data[fitness.score$inf.families, target.snps]
     n.families <- length(fitness.score$high.risk.families)
 
     ### identify ld blocks for the target snps ###
