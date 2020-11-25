@@ -9,11 +9,11 @@
 #'  the \code{unique.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
 #'  is a list containing vectors of all permutation results fitness scores, again using the \code{unique.results} results output by
 #'  \code{combine.islands} for each permutation.
-#' @param n.top.scores The number of top scoring chromosomes, for each chromosome size, to be used in calculating the global test. Defaults to 10.
+#' @param n.top.scores The number of top scoring chromosomes, for each chromosome size, to be used in calculating the global test. Defaults to 30.
 #' @return A list containing the following:
 #' \describe{
-#'  \item{obs.test.stat}{The observed sum of Kolmogorov-Smirnov statistics.}
-#'  \item{perm.test.stats}{A vector of sums of Kolmogorov-Smirnov statistics for each of the permuted datasets.}
+#'  \item{obs.test.stat}{The observed test statistic.}
+#'  \item{perm.test.stats}{A vector of test statistics from permuted data.}
 #'  \item{pval}{The p-value for the global test.}
 #'  \item{obs.vec}{A vector of observed test statistics for each chromosome size.}
 #'  \item{perm.mat}{A matrix of test statistics for the permutation datasets, where rows correspond to
@@ -146,7 +146,7 @@
 #'
 #' @export
 
-run.global.test <- function(results.list, n.top.scores = 10) {
+run.global.test <- function(results.list, n.top.scores = 30) {
 
     # loop over chromosome sizes
     chrom.size.ranks <- do.call(cbind, lapply(results.list, function(chrom.size.res) {
@@ -189,7 +189,7 @@ run.global.test <- function(results.list, n.top.scores = 10) {
     # pval
     obs.test.stat <- global.scores[1]
     perm.test.stats <- global.scores[-1]
-    global.pval <- sum(perm.test.stats >= obs.test.stat)/length(perm.test.stats)
+    global.pval <- sum(perm.test.stats >= obs.test.stat)/(length(perm.test.stats) + 1)
 
     # also look at element-wise results
     marginal.pvals <- vapply(seq_len(ncol(chrom.size.ranks)), function(x){
