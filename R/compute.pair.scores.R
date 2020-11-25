@@ -61,7 +61,7 @@
 #'  final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.edge.scores(final.results, pp.list, 3)
+#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
@@ -71,7 +71,7 @@
 #' @importFrom BiocParallel SerialParam
 #' @export
 
-compute.edge.scores <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
+compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
                                  epi.test.permutes = 100, bp.param = SerialParam(), pval.thresh = 0.05) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
