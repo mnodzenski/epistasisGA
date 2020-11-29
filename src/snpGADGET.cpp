@@ -527,12 +527,347 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
   return(res);
 }
 
-///////////////////////////////////////////
-// Function to computes the fitness score
-//////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////
+// Function to compute the fitness score
+///////////////////////////////////////////////////////////////
+
+List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
+                                  IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
+                                  LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
+                                  int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                                  double recode_threshold = 4, bool epi_test = false) {
+
+  // need to deep copy inputs to avoid overwriting
+  IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
+  IntegerMatrix complement_genetic_data = subset_matrix_cols(complement_genetic_data_in, target_snps_in);
+  IntegerMatrix case_comp_differences = subset_matrix_cols(case_comp_differences_in, target_snps_in);
+  IntegerMatrix cases_minus_complements = subset_matrix_cols(cases_minus_complements_in, target_snps_in);
+  IntegerMatrix both_one_mat = subset_matrix_cols(both_one_mat_in, target_snps_in);
+
+  // now redefining target snps
+  int n_target = target_snps_in.length();
+  IntegerVector target_snps = seq_len(n_target);
+
+  // compute weighted difference vectors, determine risk related alleles
+  List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, case_comp_differences,
+                                       target_snps, cases_minus_complements, both_one_mat,
+                                       weight_lookup, n_different_snps_weight, n_both_one_weight);
+
+  // pick out the required pieces from function output
+  NumericVector sum_dif_vecs = dif_vec_list["sum_dif_vecs"];
+  NumericVector family_weights = dif_vec_list["family_weights"];
+  double invsum_family_weights = dif_vec_list["invsum_family_weights"];
+  IntegerVector informative_families = dif_vec_list["informative_families"];
+  int n_pos = dif_vec_list["n_pos"];
+  int n_neg = dif_vec_list["n_neg"];
+  LogicalVector pos_risk = dif_vec_list["pos_risk"];
+  LogicalVector neg_risk = dif_vec_list["neg_risk"];
+  LogicalVector case_high_risk = dif_vec_list["case_high_risk"];
+  LogicalVector comp_high_risk = dif_vec_list["comp_high_risk"];
+  int n_informative_families = informative_families.length();
+  int n_case_high_risk = sum(case_high_risk);
+
+  // initialize vector of pattern of inheritance
+  CharacterVector risk_set_alleles(target_snps.length(), "1+");
+
+  // examine recessive SNPs
+  IntegerVector case_high_inf_rows = informative_families[case_high_risk];
+  IntegerVector comp_high_inf_rows = informative_families[comp_high_risk];
+  int recessive_count = 0;
+
+  if (n_pos > 0){
+
+    IntegerVector p_tmp = seq_len(n_target);
+    IntegerVector pos_risk_idx = p_tmp[pos_risk];
+    IntegerVector pos_cols = target_snps[pos_risk];
+    IntegerVector original_pos_cols = target_snps_in[pos_risk];
+    NumericVector prop2 = sub_colmeans(case2_mat, case_high_inf_rows, original_pos_cols - 1);
+
+    for (int i = 0; i < n_pos; i++){
+
+      int this_col = pos_cols[i] - 1;
+      double phat = prop2[i];
+      double test_stat = (phat - 0.5)/sqrt((0.5*0.5/n_case_high_risk));
+
+      // if test stat exceeds threshold, recode
+      if (test_stat >= recode_threshold){
+
+        // increment the counter
+        recessive_count += 1;
+
+        // indicate we need two risk alleles
+        int this_index = pos_risk_idx[i] - 1;
+        risk_set_alleles[this_index] = "2";
+
+        // loop over informative families
+        for (int n = 0; n < informative_families.length(); n++){
+
+          int family_row = informative_families[n] - 1;
+          bool change_difs = false;
+
+          // recode cases
+          if (case_genetic_data(family_row, this_col) == 1){
+
+            case_genetic_data(family_row, this_col) = 0;
+            change_difs = true;
+
+          }
+          //recode complements
+          if (complement_genetic_data(family_row, this_col) == 1){
+
+            complement_genetic_data(family_row, this_col) = 0;
+            if (!change_difs){
+              change_difs = true;
+            }
+
+          }
+          // recode both one
+          if (both_one_mat(family_row, this_col) == 1){
+
+            both_one_mat(family_row, this_col) = 0;
+
+          }
+
+          //recode cases minus complements
+          if (change_difs){
+
+            cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
+            case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+  if (n_neg > 0){
+
+    IntegerVector n_tmp = seq_len(n_target);
+    IntegerVector neg_risk_idx = n_tmp[neg_risk];
+    IntegerVector neg_cols = target_snps[neg_risk];
+    IntegerVector original_neg_cols = target_snps_in[neg_risk];
+    NumericVector prop0 = sub_colmeans(case0_mat, case_high_inf_rows, original_neg_cols - 1);
+
+    for (int i = 0; i < n_neg; i++){
+
+      int this_col = neg_cols[i] - 1;
+      double phat = prop0[i];
+      double test_stat = (phat - 0.5)/sqrt((0.5*0.5/n_case_high_risk));
+
+      // if test stat exceeds threshold, recode
+      if (test_stat >= recode_threshold){
+
+        // increment the counter
+        recessive_count += 1;
+
+        // indicate we need two risk alleles
+        int this_index = neg_risk_idx[i] - 1;
+        risk_set_alleles[this_index] = "2";
+
+        // loop over informative families
+        for (int n = 0; n < informative_families.length(); n++){
+
+          int family_row = informative_families[n] - 1;
+          bool change_difs = false;
+
+          // recode cases
+          if (case_genetic_data(family_row, this_col) == 1){
+
+            case_genetic_data(family_row, this_col) = 2;
+            change_difs = true;
+
+          }
+          //recode complements
+          if (complement_genetic_data(family_row, this_col) == 1){
+
+            complement_genetic_data(family_row, this_col) = 2;
+            if (!change_difs){
+              change_difs = true;
+            }
+
+          }
+          // recode both one
+          if (both_one_mat(family_row, this_col) == 1){
+
+            both_one_mat(family_row, this_col) = 0;
+
+          }
+
+          //recode cases minus complements
+          if (change_difs){
+
+            cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
+            case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+  // if there are recessive snps, recompute the weights and associated statistics
+  if (recessive_count > 0) {
+
+    //recompute the number of informative families
+    List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, case_comp_differences, target_snps,
+                                         cases_minus_complements, both_one_mat,
+                                         weight_lookup, n_different_snps_weight, n_both_one_weight, informative_families);
+
+    //pick out required pieces
+    // the tmp var versions are used because direct reassignment
+    // causes compile errors
+    NumericVector sum_dif_vecs_tmp = dif_vec_list["sum_dif_vecs"];
+    sum_dif_vecs = sum_dif_vecs_tmp;
+    NumericVector family_weights_tmp = dif_vec_list["family_weights"];
+    family_weights = family_weights_tmp;
+    double invsum_family_weights_tmp = dif_vec_list["invsum_family_weights"];
+    invsum_family_weights = invsum_family_weights_tmp;
+    IntegerVector informative_families_tmp = dif_vec_list["informative_families"];
+    informative_families = informative_families_tmp;
+    int n_pos_tmp = dif_vec_list["n_pos"];
+    n_pos = n_pos_tmp;
+    int n_neg_tmp = dif_vec_list["n_neg"];
+    n_neg = n_neg_tmp;
+    LogicalVector pos_risk_tmp = dif_vec_list["pos_risk"];
+    pos_risk = pos_risk_tmp;
+    LogicalVector neg_risk_tmp = dif_vec_list["neg_risk"];
+    neg_risk = neg_risk_tmp;
+    LogicalVector case_high_risk_tmp = dif_vec_list["case_high_risk"];
+    case_high_risk = case_high_risk_tmp;
+    LogicalVector comp_high_risk_tmp = dif_vec_list["comp_high_risk"];
+    comp_high_risk = comp_high_risk_tmp;
+
+  }
+
+  // count the number of risk alleles in those with the full risk set
+  double total_case_high_risk_alleles = 0;
+  double total_comp_high_risk_alleles = 0;
+  IntegerVector case_high_risk_int = informative_families[case_high_risk];
+  IntegerVector comp_high_risk_int = informative_families[comp_high_risk];
+
+  if (n_pos > 0){
+
+    IntegerVector pos_cols = target_snps[pos_risk];
+
+    // high risk case alleles
+    IntegerVector case_pos_alleles = sub_colsums(case_genetic_data, case_high_risk_int, pos_cols);
+    total_case_high_risk_alleles += sum(case_pos_alleles);
+
+    // high risk comp alleles
+    IntegerVector comp_pos_alleles = sub_colsums(complement_genetic_data, comp_high_risk_int, pos_cols);
+    total_comp_high_risk_alleles += sum(comp_pos_alleles);
+
+  }
+  if (n_neg > 0){
+
+    IntegerVector neg_cols = target_snps[neg_risk];
+
+    // high risk case alleles
+    IntegerVector case_neg_alleles = sub_colsums_2minus(case_genetic_data, case_high_risk_int, neg_cols);
+    total_case_high_risk_alleles += sum(case_neg_alleles);
+
+    // high risk comp alleles
+    IntegerVector comp_neg_alleles = sub_colsums_2minus(complement_genetic_data, comp_high_risk_int, neg_cols);
+    total_comp_high_risk_alleles += sum(comp_neg_alleles);
+
+  }
+
+  // compute scaling factor
+  double rr;
+  if ( (total_case_high_risk_alleles == 0) |
+       R_isnancpp(total_case_high_risk_alleles) | R_isnancpp(total_comp_high_risk_alleles)){
+    rr = pow(10, -10);
+  } else {
+    rr = total_case_high_risk_alleles/(total_case_high_risk_alleles + total_comp_high_risk_alleles);
+  }
+
+  // compute pseudo hotelling t2
+  n_informative_families = informative_families.length();
+  arma::rowvec mu_hat = as<arma::rowvec>(sum_dif_vecs);
+  arma::mat mu_hat_mat(n_informative_families, n_target);
+  for (int i = 0; i < n_informative_families; i++){
+    mu_hat_mat.row(i) = mu_hat;
+  }
+  arma::mat x = as<arma::mat>(subset_matrix(cases_minus_complements, informative_families, target_snps));
+  arma::vec inf_family_weights = as<arma::vec>(family_weights);
+  arma::mat x_minus_mu_hat = x - mu_hat_mat;
+  arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
+  weighted_x_minus_mu_hat.each_col() %= inf_family_weights;
+  arma::mat cov_mat = invsum_family_weights * trans(weighted_x_minus_mu_hat) * x_minus_mu_hat;
+
+  // set cov elements to zero if SNPs are not in same ld block
+  for (int i = 0; i < n_target; i++){
+    int this_row = target_snps_in[i] - 1;
+    for (int j = 0; j < n_target; j++){
+      int this_col = target_snps_in[j] - 1;
+      if (block_ld_mat(this_row, this_col) != 1){
+
+        cov_mat(i,j) = 0;
+
+      }
+    }
+  }
+
+  // get info for function output
+  NumericVector elem_vars = wrap(sqrt(cov_mat.diag()));
+  sum_dif_vecs = sum_dif_vecs/elem_vars;
+
+  // if no variance, just make the element small
+  sum_dif_vecs[elem_vars == 0] = pow(10, -10);
+
+  // compute svd of cov_mat
+  arma::mat U, V;
+  arma::vec S;
+  arma::svd(U, S, V, cov_mat, "dc");
+  double lower_limit = std::numeric_limits<double>::epsilon();
+  arma::uvec zero_sv = find(S < sqrt(lower_limit));
+  double sv_rep_val = pow(10, 10);
+  S.elem(zero_sv).fill(sv_rep_val);
+
+  // compute fitness score
+  double pseudo_t2 = (1/(1000*invsum_family_weights)) * arma::sum(pow((mu_hat * U), 2) / trans(S));
+  double fitness_score = pow(rr, 2) * pseudo_t2;
+
+  // if desired, return the required information for the epistasis test
+  if (epi_test){
+
+    List res = List::create(Named("fitness_score") = fitness_score,
+                            Named("sum_dif_vecs") = sum_dif_vecs,
+                            Named("rr") = rr,
+                            Named("pseudo_t2") = pseudo_t2,
+                            Named("risk_set_alleles") = risk_set_alleles,
+                            Named("high_risk_families") = informative_families);
+    return(res);
+
+  } else {
+
+    List res = List::create(Named("fitness_score") = fitness_score,
+                            Named("sum_dif_vecs") = sum_dif_vecs,
+                            Named("rr") = rr,
+                            Named("pseudo_t2") = pseudo_t2,
+                            Named("risk_set_alleles") = risk_set_alleles,
+                            Named("family_weights") = family_weights);
+    return(res);
+
+  }
+
+}
+
+////////////////////////////////////////////////////////////////
+// Function to compute the fitness score (original version)
+///////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
+List chrom_fitness_score_original(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
                          IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
                          LogicalMatrix block_ld_mat, NumericVector weight_lookup,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
