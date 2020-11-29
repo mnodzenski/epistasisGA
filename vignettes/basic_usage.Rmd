@@ -25,7 +25,7 @@ vignette: >
 knitr::opts_chunk$set(tidy = FALSE,
                       cache = FALSE,
                       dev = "png",
-                      message = FALSE, error = FALSE, warning = TRUE)
+                      message = FALSE, error = FALSE, warning = FALSE)
 ```	
 
 # Introduction 
@@ -291,15 +291,15 @@ In cases where the p-value is zero, users may wish to report the p-value as $\fr
 
 Regardless of result, it is crucial that users are clear about what the test implies. The null hypothesis is that the observed test statistic is drawn from the null distribution, i.e., that the global patterns of transmissions to cases are not systematically different from those to the corresponding complements or unaffected siblings. In situations where we reject the null hypothesis, of course the conclusion is the observed test statistic is very different from from the null distribution. However, to best characterize results, it is incumbent on users to closely examine results beyond the global test. In particular, we would like to be able to identify the specific subsets of SNPs that are collectively related to risk.
 
-To that end, `run.global.test` provides additional, chromosome size specific information that users are encouraged to examine. First, users may look at the `element.test.stats` and `element.pvals` objects from the `run.global.test` output:
+To that end, `run.global.test` provides additional, chromosome size specific information that users are encouraged to examine. First, users may look at the `obs.marginal.test.stats` and `marginal.pvals` objects from the `run.global.test` output:
 
 ```{r}
-global.test.res$element.test.stats
-global.test.res$element.pvals
+global.test.res$obs.marginal.test.stats
+global.test.res$marginal.pvals
 
 ```
 
-The `element.test.stats` object reports the fitness score sums for each chromosome size for the observed data. The `element.pvals` object reports the proportion of permutation based fitness score sum statistics, $T_d$ that exceed the observed statistic for each chromosome size. In this case, we see that none of the permutation based statistics exceeded the observed value for either chromosome size. 
+The `obs.marginal.test.stats` object reports the fitness score sums for each chromosome size for the observed data. The `marginal.pvals` object reports the proportion of permutation based fitness score sum statistics, $T_d$ that exceed the observed statistic for each chromosome size. In this case, we see that none of the permutation based statistics exceeded the observed value for either chromosome size. 
 
 Second, users may also wish to examine the `max.obs.fitness` and `max.order.pvals` elements of the output:
 
@@ -340,9 +340,10 @@ pair.scores <- compute.pair.scores(obs.res.list, pp.list, 5)
 
 Next, we input these pair scores into function `network.plot`:
 
-```{r}
+```{r, fig.width = 14, fig.height = 12}
 network.plot(pair.scores, graph.area = 200,
-             node.size = 40, vertex.label.cex = 0.7)
+             node.size = 40, vertex.label.cex = 2, 
+             legend.cex = 0.8, legend.line = 2)
 ```
 
 By default, the thickness of the SNP-to-SNP line segments in these plots is proportional to the graphical score for that pair, and the radius of the node circle is proportional to the sum of the graphical scores for all pairs that include that SNP.  
