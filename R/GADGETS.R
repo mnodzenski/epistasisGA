@@ -78,17 +78,20 @@
 #'  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
 #'  case.comp.different <- case.minus.comp != 0
 #'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
+#'  case2.mat <- case.genetic.data == 2
+#'  case0.mat <- case.genetic.data == 0
 #'  snp.chisq <- sqrt(chisq.stats)
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  dir.create('tmp')
-#'  GADGET(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
+#'  GADGETS(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
 #'                    complement.genetic.data = complement.genetic.data,
 #'                    case.comp.different = case.comp.different,
 #'                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
 #'                    block.ld.mat = block.ld.mat, n.chromosomes = 10,
 #'                    chromosome.size = 3, snp.chisq = snp.chisq,
 #'                    original.col.numbers = original.col.numbers,
-#'                    weight.lookup = weight.lookup, n.migrations = 2,
+#'                    weight.lookup = weight.lookup, case2.mat = case2.mat,
+#'                    case0.mat = case0.mat, n.migrations = 2,
 #'                    migration.interval = 5, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
 #'
@@ -96,18 +99,19 @@
 #' @useDynLib snpGADGET
 #' @export
 
-GADGET <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
+GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
                    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                   snp.chisq, original.col.numbers, weight.lookup, island.cluster.size = 4, n.migrations = 20,
-                   n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50,
-                   max.generations = 500, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
-                   crossover.prop = 0.8, n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
+                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
+                   n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
+                   gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
+                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, n.case.high.risk.thresh = 20,
+                   outlier.sd = 2.5) {
 
     ### run rcpp version of GADGET ##
-    rcpp.res <- run_GADGET(island.cluster.size, n.migrations, case.genetic.data,
+    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
                            complement.genetic.data, case.comp.different, case.minus.comp,
                            both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                           weight.lookup, snp.chisq, original.col.numbers,
+                           weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
                            gen.same.fitness, max.generations, tol, n.top.chroms,
                            initial.sample.duplicates, crossover.prop, n.case.high.risk.thresh,
