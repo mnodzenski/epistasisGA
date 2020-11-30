@@ -1,7 +1,7 @@
-#' A function to run the GADGET method
+#' A function to run the GADGETS method
 #'
-#' This function runs the GADGET method on a given cluster of islands. It is a wrapper for
-#' the underlying C++ function run_GADGET.
+#' This function runs the GADGETS method on a given cluster of islands. It is a wrapper for
+#' the underlying Rcpp function run_GADGETS.
 #'
 #' @param cluster.number An integer indicating the cluster number (used for labeling the output file).
 #' @param results.dir The directory to which island results will be saved.
@@ -44,9 +44,8 @@
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 #' The remaining proportion will be mutated. Defaults to 0.8.
-#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
-#' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
-#' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
+#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+#' See the GADGET paper for specific details.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
@@ -104,8 +103,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, n.case.high.risk.thresh = 20,
-                   outlier.sd = 2.5) {
+                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 4) {
 
     ### run rcpp version of GADGET ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
@@ -114,8 +112,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                            weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
                            gen.same.fitness, max.generations, tol, n.top.chroms,
-                           initial.sample.duplicates, crossover.prop, n.case.high.risk.thresh,
-                           outlier.sd)
+                           initial.sample.duplicates, crossover.prop, recode.threshold)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){

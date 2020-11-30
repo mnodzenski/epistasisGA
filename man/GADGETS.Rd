@@ -2,7 +2,7 @@
 % Please edit documentation in R/GADGETS.R
 \name{GADGETS}
 \alias{GADGETS}
-\title{A function to run the GADGET method}
+\title{A function to run the GADGETS method}
 \usage{
 GADGETS(
   cluster.number,
@@ -31,8 +31,7 @@ GADGETS(
   n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   crossover.prop = 0.8,
-  n.case.high.risk.thresh = 20,
-  outlier.sd = 2.5
+  recode.threshold = 4
 )
 }
 \arguments{
@@ -103,10 +102,8 @@ considered to be sufficient to stop the algorithm.}
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 The remaining proportion will be mutated. Defaults to 0.8.}
 
-\item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
-
-\item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
-for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
+\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+See the GADGET paper for specific details.}
 }
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
@@ -118,8 +115,8 @@ See the package vignette for an example and the documentation for \code{chrom.fi
 }
 }
 \description{
-This function runs the GADGET method on a given cluster of islands. It is a wrapper for
-the underlying C++ function run_GADGET.
+This function runs the GADGETS method on a given cluster of islands. It is a wrapper for
+the underlying Rcpp function run_GADGETS.
 }
 \examples{
 

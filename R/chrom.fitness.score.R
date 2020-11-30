@@ -26,7 +26,6 @@
 #'  is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 1.
-#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
 #' See the GADGET paper for specific details.
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epi.test}.
@@ -79,7 +78,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 target.snps, cases.minus.complements, both.one.mat,
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1,
-                                n.case.high.risk.thresh = 20, recode.threshold = 4, epi.test = FALSE) {
+                                recode.threshold = 4, epi.test = FALSE) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]

@@ -17,7 +17,6 @@ chrom.fitness.score(
   case0.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  n.case.high.risk.thresh = 20,
   recode.threshold = 4,
   epi.test = FALSE
 )
@@ -58,8 +57,6 @@ is multiplied in computing the family weights. Defaults to 2.}
 
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
-
-\item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.}
 
 \item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
 See the GADGET paper for specific details.}
