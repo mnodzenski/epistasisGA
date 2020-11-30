@@ -47,10 +47,8 @@
 #' @param migration.generations An integer equal to the number of generations between migrations among islands of a distinct cluster.
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
-#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance. Defaults to 20.
-#' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
-#' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
-#'
+#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+#' See the GADGET paper for specific details.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
@@ -92,7 +90,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, n.case.high.risk.thresh = 20, outlier.sd = 2.5) {
+    n.migrations = 20, recode.threshold = 4) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations) {
@@ -154,7 +152,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### Compute matrix indicating whether both the case and control have 1 copy of the minor allele ###
     both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
-    ### compute matrices of whether cases carry 2 or 0 copuies of minor allele
+    ### compute matrices of whether cases carry 2 or 0 copies of minor allele
     case2.mat <- case.genetic.data == 2
     case0.mat <- case.genetic.data == 0
 
@@ -243,7 +241,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
         max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, n.case.high.risk.thresh = n.case.high.risk.thresh, outlier.sd = outlier.sd), reg = registry)
+        crossover.prop = crossover.prop, recode.threshold = recode.threshold), reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]

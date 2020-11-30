@@ -29,8 +29,7 @@ run.gadgets(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  n.case.high.risk.thresh = 20,
-  outlier.sd = 2.5
+  recode.threshold = 4
 )
 }
 \arguments{
@@ -103,10 +102,8 @@ Argument \code{generations} must be an integer multiple of this value. Defaults 
 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 
-\item{n.case.high.risk.thresh}{The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance. Defaults to 20.}
-
-\item{outlier.sd}{The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
-for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
+\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+See the GADGET paper for specific details.}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:
