@@ -577,64 +577,68 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   IntegerVector comp_high_inf_rows = informative_families[comp_high_risk];
   int recessive_count = 0;
 
-  if (n_pos > 0){
+  if (n_case_high_risk > 0){
 
-    IntegerVector p_tmp = seq_len(n_target);
-    IntegerVector pos_risk_idx = p_tmp[pos_risk];
-    IntegerVector pos_cols = target_snps[pos_risk];
-    IntegerVector original_pos_cols = target_snps_in[pos_risk];
-    NumericVector prop2 = sub_colmeans(case2_mat, case_high_inf_rows, original_pos_cols);
+    if (n_pos > 0){
 
-    for (int i = 0; i < n_pos; i++){
+      IntegerVector p_tmp = seq_len(n_target);
+      IntegerVector pos_risk_idx = p_tmp[pos_risk];
+      IntegerVector pos_cols = target_snps[pos_risk];
+      IntegerVector original_pos_cols = target_snps_in[pos_risk];
+      NumericVector prop2 = sub_colmeans(case2_mat, case_high_inf_rows, original_pos_cols);
 
-      int this_col = pos_cols[i] - 1;
-      double phat = prop2[i];
-      double test_stat = (phat - 0.5)/sqrt((0.5*0.5/n_case_high_risk));
+      for (int i = 0; i < n_pos; i++){
 
-      // if test stat exceeds threshold, recode
-      if (test_stat >= recode_threshold){
+        int this_col = pos_cols[i] - 1;
+        double phat = prop2[i];
+        double test_stat = (phat - 0.5)/sqrt((0.5*0.5/n_case_high_risk));
 
-        // increment the counter
-        recessive_count += 1;
+        // if test stat exceeds threshold, recode
+        if (test_stat >= recode_threshold){
 
-        // indicate we need two risk alleles
-        int this_index = pos_risk_idx[i] - 1;
-        risk_set_alleles[this_index] = "2";
+          // increment the counter
+          recessive_count += 1;
 
-        // loop over informative families
-        for (int n = 0; n < informative_families.length(); n++){
+          // indicate we need two risk alleles
+          int this_index = pos_risk_idx[i] - 1;
+          risk_set_alleles[this_index] = "2";
 
-          int family_row = informative_families[n] - 1;
-          bool change_difs = false;
+          // loop over informative families
+          for (int n = 0; n < informative_families.length(); n++){
 
-          // recode cases
-          if (case_genetic_data(family_row, this_col) == 1){
+            int family_row = informative_families[n] - 1;
+            bool change_difs = false;
 
-            case_genetic_data(family_row, this_col) = 0;
-            change_difs = true;
+            // recode cases
+            if (case_genetic_data(family_row, this_col) == 1){
 
-          }
-          //recode complements
-          if (complement_genetic_data(family_row, this_col) == 1){
-
-            complement_genetic_data(family_row, this_col) = 0;
-            if (!change_difs){
+              case_genetic_data(family_row, this_col) = 0;
               change_difs = true;
+
+            }
+            //recode complements
+            if (complement_genetic_data(family_row, this_col) == 1){
+
+              complement_genetic_data(family_row, this_col) = 0;
+              if (!change_difs){
+                change_difs = true;
+              }
+
+            }
+            // recode both one
+            if (both_one_mat(family_row, this_col) == 1){
+
+              both_one_mat(family_row, this_col) = 0;
+
             }
 
-          }
-          // recode both one
-          if (both_one_mat(family_row, this_col) == 1){
+            //recode cases minus complements
+            if (change_difs){
 
-            both_one_mat(family_row, this_col) = 0;
+              cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
+              case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
 
-          }
-
-          //recode cases minus complements
-          if (change_difs){
-
-            cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
-            case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
+            }
 
           }
 
@@ -644,66 +648,66 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
     }
 
-  }
+    if (n_neg > 0){
 
-  if (n_neg > 0){
+      IntegerVector n_tmp = seq_len(n_target);
+      IntegerVector neg_risk_idx = n_tmp[neg_risk];
+      IntegerVector neg_cols = target_snps[neg_risk];
+      IntegerVector original_neg_cols = target_snps_in[neg_risk];
+      NumericVector prop0 = sub_colmeans(case0_mat, case_high_inf_rows, original_neg_cols);
 
-    IntegerVector n_tmp = seq_len(n_target);
-    IntegerVector neg_risk_idx = n_tmp[neg_risk];
-    IntegerVector neg_cols = target_snps[neg_risk];
-    IntegerVector original_neg_cols = target_snps_in[neg_risk];
-    NumericVector prop0 = sub_colmeans(case0_mat, case_high_inf_rows, original_neg_cols);
+      for (int i = 0; i < n_neg; i++){
 
-    for (int i = 0; i < n_neg; i++){
+        int this_col = neg_cols[i] - 1;
+        double phat = prop0[i];
+        double test_stat = (phat - 0.5)/sqrt((0.5*0.5/n_case_high_risk));
 
-      int this_col = neg_cols[i] - 1;
-      double phat = prop0[i];
-      double test_stat = (phat - 0.5)/sqrt((0.5*0.5/n_case_high_risk));
+        // if test stat exceeds threshold, recode
+        if (test_stat >= recode_threshold){
 
-      // if test stat exceeds threshold, recode
-      if (test_stat >= recode_threshold){
+          // increment the counter
+          recessive_count += 1;
 
-        // increment the counter
-        recessive_count += 1;
+          // indicate we need two risk alleles
+          int this_index = neg_risk_idx[i] - 1;
+          risk_set_alleles[this_index] = "2";
 
-        // indicate we need two risk alleles
-        int this_index = neg_risk_idx[i] - 1;
-        risk_set_alleles[this_index] = "2";
+          // loop over informative families
+          for (int n = 0; n < informative_families.length(); n++){
 
-        // loop over informative families
-        for (int n = 0; n < informative_families.length(); n++){
+            int family_row = informative_families[n] - 1;
+            bool change_difs = false;
 
-          int family_row = informative_families[n] - 1;
-          bool change_difs = false;
+            // recode cases
+            if (case_genetic_data(family_row, this_col) == 1){
 
-          // recode cases
-          if (case_genetic_data(family_row, this_col) == 1){
-
-            case_genetic_data(family_row, this_col) = 2;
-            change_difs = true;
-
-          }
-          //recode complements
-          if (complement_genetic_data(family_row, this_col) == 1){
-
-            complement_genetic_data(family_row, this_col) = 2;
-            if (!change_difs){
+              case_genetic_data(family_row, this_col) = 2;
               change_difs = true;
+
+            }
+            //recode complements
+            if (complement_genetic_data(family_row, this_col) == 1){
+
+              complement_genetic_data(family_row, this_col) = 2;
+              if (!change_difs){
+                change_difs = true;
+              }
+
+            }
+            // recode both one
+            if (both_one_mat(family_row, this_col) == 1){
+
+              both_one_mat(family_row, this_col) = 0;
+
             }
 
-          }
-          // recode both one
-          if (both_one_mat(family_row, this_col) == 1){
+            //recode cases minus complements
+            if (change_difs){
 
-            both_one_mat(family_row, this_col) = 0;
+              cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
+              case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
 
-          }
-
-          //recode cases minus complements
-          if (change_difs){
-
-            cases_minus_complements(family_row, this_col) = sign_scalar(case_genetic_data(family_row, this_col) - complement_genetic_data(family_row, this_col));
-            case_comp_differences(family_row, this_col) = abs(cases_minus_complements(family_row, this_col));
+            }
 
           }
 
@@ -752,34 +756,37 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   // count the number of risk alleles in those with the full risk set
   double total_case_high_risk_alleles = 0;
   double total_comp_high_risk_alleles = 0;
-  IntegerVector case_high_risk_int = informative_families[case_high_risk];
-  IntegerVector comp_high_risk_int = informative_families[comp_high_risk];
+  if (n_case_high_risk > 0){
 
-  if (n_pos > 0){
+    IntegerVector case_high_risk_int = informative_families[case_high_risk];
+    IntegerVector comp_high_risk_int = informative_families[comp_high_risk];
 
-    IntegerVector pos_cols = target_snps[pos_risk];
+    if (n_pos > 0){
 
-    // high risk case alleles
-    IntegerVector case_pos_alleles = sub_colsums(case_genetic_data, case_high_risk_int, pos_cols);
-    total_case_high_risk_alleles += sum(case_pos_alleles);
+      IntegerVector pos_cols = target_snps[pos_risk];
 
-    // high risk comp alleles
-    IntegerVector comp_pos_alleles = sub_colsums(complement_genetic_data, comp_high_risk_int, pos_cols);
-    total_comp_high_risk_alleles += sum(comp_pos_alleles);
+      // high risk case alleles
+      IntegerVector case_pos_alleles = sub_colsums(case_genetic_data, case_high_risk_int, pos_cols);
+      total_case_high_risk_alleles += sum(case_pos_alleles);
 
-  }
-  if (n_neg > 0){
+      // high risk comp alleles
+      IntegerVector comp_pos_alleles = sub_colsums(complement_genetic_data, comp_high_risk_int, pos_cols);
+      total_comp_high_risk_alleles += sum(comp_pos_alleles);
 
-    IntegerVector neg_cols = target_snps[neg_risk];
+    }
+    if (n_neg > 0){
 
-    // high risk case alleles
-    IntegerVector case_neg_alleles = sub_colsums_2minus(case_genetic_data, case_high_risk_int, neg_cols);
-    total_case_high_risk_alleles += sum(case_neg_alleles);
+      IntegerVector neg_cols = target_snps[neg_risk];
 
-    // high risk comp alleles
-    IntegerVector comp_neg_alleles = sub_colsums_2minus(complement_genetic_data, comp_high_risk_int, neg_cols);
-    total_comp_high_risk_alleles += sum(comp_neg_alleles);
+      // high risk case alleles
+      IntegerVector case_neg_alleles = sub_colsums_2minus(case_genetic_data, case_high_risk_int, neg_cols);
+      total_case_high_risk_alleles += sum(case_neg_alleles);
 
+      // high risk comp alleles
+      IntegerVector comp_neg_alleles = sub_colsums_2minus(complement_genetic_data, comp_high_risk_int, neg_cols);
+      total_comp_high_risk_alleles += sum(comp_neg_alleles);
+
+    }
   }
 
   // compute scaling factor
