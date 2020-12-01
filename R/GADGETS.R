@@ -44,7 +44,7 @@
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 #' The remaining proportion will be mutated. Defaults to 0.8.
-#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
 #' See the GADGET paper for specific details.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
@@ -103,7 +103,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 4) {
+                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3) {
 
     ### run rcpp version of GADGET ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,

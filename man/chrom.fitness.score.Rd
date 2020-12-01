@@ -17,7 +17,7 @@ chrom.fitness.score(
   case0.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  recode.threshold = 4,
+  recode.threshold = 3,
   epi.test = FALSE
 )
 }
@@ -58,7 +58,7 @@ is multiplied in computing the family weights. Defaults to 2.}
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
 
-\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
 See the GADGET paper for specific details.}
 
 \item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epi.test}.
