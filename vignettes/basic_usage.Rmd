@@ -1,5 +1,5 @@
 ---
-title: "Use of the GADGETS package to identify multi-SNP effects in nuclear families"
+title: "Use of the epistasisGA package to identify multi-SNP effects in nuclear families"
 author: 
 - name: Michael Nodzenski
   affiliation: 
@@ -8,7 +8,7 @@ author:
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
 date: "November 23, 2020"
-package: snpGADGET
+package: epistasisGA
 output: 
   BiocStyle::html_document:
     toc_float: true
@@ -78,17 +78,17 @@ This function performs a few disparate tasks that users should note. First, it i
 
 ## Run GADGETS on Observed Data
 
-We now use GADGETS to identify interesting collections of SNPs that appear to be jointly risk-related using the `run.ga` function. The method requires a number of tuning parameters, but the function defaults are a good starting point. More information regarding these parameters can be found in the package documentation and the paper describing the method [@GADGET2020]. Briefly, the GADGETS method requires the user to pre-specify the number of SNPs that may be jointly associated with disease status. This is controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, typically 2-6. For this simple example, however, we will only examine sizes 3 and 4.  
-Note that `run.ga` does not output results directly to the R session, it will instead write results to the directory specified in `results.dir`. Furthermore, as mentioned previously, GADGETS uses a technique known as an 'island model' to identify potentially interesting collections of SNPs. Each 'island' corresponds to a separately initialized population of `n.chromosomes` chromosomes, with each chromosome comprised of `chromosome.size` SNPs and each island randomly assigned to cluster of `island.cluster.size` islands. When GADGETS is run, each island's population evolves independently for intervals of a pre-specified number of generations (controlled by argument `migration.generations`) after which the top `n.migrations` chromosomes from each island 'migrate' to other islands in the cluster. This continues until each island in the cluster converges or the maximum number of generations (argument `generations`) is reached. Island clusters evolve completely independently from one another and, where computational resources permit, in parallel. Results for each island (argument `n.islands`) are written separately to `results.dir`. 
+We now use GADGETS to identify interesting collections of SNPs that appear to be jointly risk-related using the `run.gadgets` function. The method requires a number of tuning parameters, but the function defaults are a good starting point. More information regarding these parameters can be found in the package documentation and the paper describing the method [@GADGET2020]. Briefly, the GADGETS method requires the user to pre-specify the number of SNPs that may be jointly associated with disease status. This is controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, typically 2-6. For this simple example, however, we will only examine sizes 3 and 4.  
+Note that `run.gadgets` does not output results directly to the R session, it will instead write results to the directory specified in `results.dir`. Furthermore, as mentioned previously, GADGETS uses a technique known as an 'island model' to identify potentially interesting collections of SNPs. Each 'island' corresponds to a separately initialized population of `n.chromosomes` chromosomes, with each chromosome comprised of `chromosome.size` SNPs and each island randomly assigned to cluster of `island.cluster.size` islands. When GADGETS is run, each island's population evolves independently for intervals of a pre-specified number of generations (controlled by argument `migration.generations`) after which the top `n.migrations` chromosomes from each island 'migrate' to other islands in the cluster. This continues until each island in the cluster converges or the maximum number of generations (argument `generations`) is reached. Island clusters evolve completely independently from one another and, where computational resources permit, in parallel. Results for each island (argument `n.islands`) are written separately to `results.dir`. 
 
 ```{r, message = FALSE}
-run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3, 
+run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, 
        results.dir = "size3_res", cluster.type = "interactive",
        registryargs = list(file.dir = "size3_reg", seed = 1300),
        n.top.chroms = 5, n.islands = 8, island.cluster.size = 4, 
        n.migrations = 2)
 
-run.ga(pp.list, n.chromosomes = 5, chromosome.size = 4, 
+run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 4, 
        results.dir = "size4_res", cluster.type = "interactive", 
        registryargs = list(file.dir = "size4_reg", seed = 1400),
        n.top.chroms = 5, n.islands = 8, island.cluster.size = 4, 
@@ -102,7 +102,7 @@ The `cluster.type` and `registry.args` parameters are also important. For the ab
 ```{r, eval=F}
 library(BiocParallel)
 fname <- batchtoolsTemplate("slurm")
-run.ga(pp.list, n.chromosomes = 20, chromosome.size = 3, 
+run.gadgets(pp.list, n.chromosomes = 20, chromosome.size = 3, 
        results.dir = "size3_res", cluster.type = "slurm", 
        registryargs = list(file.dir = "size3_reg", seed = 1300),
        cluster.template = fname, 
@@ -112,11 +112,11 @@ run.ga(pp.list, n.chromosomes = 20, chromosome.size = 3,
 
 ```
 
-The `cluster.template` must be properly calibrated to the user's HPC cluster. Packages `r CRANpkg("batchtools")` and `r Biocpkg("BiocParallel")` both contain good documentation on how to construct these files. It is also possible to run `run.ga` on a single machine with multiple cores (see `run.ga` documentation). 
+The `cluster.template` must be properly calibrated to the user's HPC cluster. Packages `r CRANpkg("batchtools")` and `r Biocpkg("BiocParallel")` both contain good documentation on how to construct these files. It is also possible to run `run.gadgets` on a single machine with multiple cores (see `run.gadgets` documentation). 
 
-Regardless of the chosen `cluster.type`, `run.ga` uses the functionality from package `r CRANpkg("batchtools")` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.ga` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `r Biocpkg("BiocParallel")`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `r CRANpkg("batchtools")`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` distinct sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.ga` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
+Regardless of the chosen `cluster.type`, `run.gadgets` uses the functionality from package `r CRANpkg("batchtools")` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.gadgets` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `r Biocpkg("BiocParallel")`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `r CRANpkg("batchtools")`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` distinct sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.gadgets` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
 
-Once users have confirmed `run.ga` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`.  
+Once users have confirmed `run.gadgets` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`.  
 
 ```{r}
 data(snp.annotations)
@@ -196,7 +196,7 @@ lapply(chrom.sizes, function(chrom.size){
     seed.val <- chrom.size*seeds[permutation]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
     reg.dir <- paste0("perm", permutation, "_size", chrom.size, "_reg")
-    run.ga(perm.data.list, n.chromosomes = 5, 
+    run.gadgets(perm.data.list, n.chromosomes = 5, 
            chromosome.size = chrom.size,
            results.dir = res.dir, cluster.type = "interactive", 
            registryargs = list(file.dir = reg.dir, seed = seed.val),
@@ -228,7 +228,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
 
 Now we are ready to more formally examine whether our results are consistent with what would be expected under the null hypothesis of no association between the input variants and disease status. Our first step is to run a global test across all chromosome sizes examining whether the fitness scores from the observed data are drawn from the distribution expected under the null. The details of the global test are described in [@GADGET2020]. Briefly, for each chromosome size separately, we sum the fitness scores of the top $k$ chromosomes for the observed data and each permuted dataset. We then rank the observed sum compared to the corresponding chromosome size specific sums for the permutes. Letting $R_d$ denote the rank for chromosome size $d$, with 1 denoting the smallest rank, and with $N$ denoting the the number of permutes plus 1, we compute $T_d = -2ln((N - R_d + 0.5)/N)$. The test is based on summing $T_d$ over chromosome sizes, $T = \sum_d{T_d}$. We also compute this statistic for each permuted dataset and compute a permutation-based p-value using the $N$ values for $T$. Intuitively, this test assesses whether the top-scoring chromosomes are consistently higher than null data across chromosome sizes. 
 
-A key feature of this approach is the test does not require adjustment for multiple comparisons despite the very large number of combinations being considered by the GA. The test is implemented in function `run.global.test`, with $k$ specified by argument `n.top.scores`. We generally specify `n.top.scores = 30`, but for this illustrative example, we only use 10:
+A key feature of this approach is the test does not require adjustment for multiple comparisons despite the very large number of combinations being considered by the GA. The test is implemented in function `global.test`, with $k$ specified by argument `n.top.scores`. We generally specify `n.top.scores = 30`, but for this illustrative example, we only use 10:
 
 ```{r}
 # chromosome size 3 results
@@ -251,7 +251,7 @@ chrom4.list <- list(observed.data = size4.combined.res$all.results$fitness.score
 final.results <- list(chrom3.list, chrom4.list)
 
 # run global test
-global.test.res <- run.global.test(final.results, n.top.scores = 10)
+global.test.res <- global.test(final.results, n.top.scores = 10)
 
 # look at the global test Mahalanobis distance and p-value 
 global.test.res$obs.test.stat
@@ -291,7 +291,7 @@ In cases where the p-value is zero, users may wish to report the p-value as $\fr
 
 Regardless of result, it is crucial that users are clear about what the test implies. The null hypothesis is that the observed test statistic is drawn from the null distribution, i.e., that the global patterns of transmissions to cases are not systematically different from those to the corresponding complements or unaffected siblings. In situations where we reject the null hypothesis, of course the conclusion is the observed test statistic is very different from from the null distribution. However, to best characterize results, it is incumbent on users to closely examine results beyond the global test. In particular, we would like to be able to identify the specific subsets of SNPs that are collectively related to risk.
 
-To that end, `run.global.test` provides additional, chromosome size specific information that users are encouraged to examine. First, users may look at the `obs.marginal.test.stats` and `marginal.pvals` objects from the `run.global.test` output:
+To that end, `global.test` provides additional, chromosome size specific information that users are encouraged to examine. First, users may look at the `obs.marginal.test.stats` and `marginal.pvals` objects from the `global.test` output:
 
 ```{r}
 global.test.res$obs.marginal.test.stats
@@ -316,13 +316,13 @@ Users should also be clear that rejecting the null hypothesis does not necessari
 ```{r}
 top.snps <- as.vector(t(size4.combined.res$all.results[1, 1:4]))
 set.seed(10)
-epi.test.res <- run.epi.test(top.snps, pp.list)
+epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is very unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this p-value. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting, even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. Alternatively, a comparison against similar calculations based on permuted data would provide a valid test of epistasis. 
+The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this p-value. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting, even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. Alternatively, a comparison against similar calculations based on permuted data would provide a valid test of epistasis. 
 
-Users may also experience an error when executing `run.epi.test` specifying "cannot run test, all SNPs are in LD". The epistasis test can only be computed if at least two SNPs are located in different LD blocks, otherwise other methods, not provided in this package, are required. 
+Users may also experience an error when executing `epistasis.test` specifying "cannot run test, all SNPs are in LD". The epistasis test can only be computed if at least two SNPs are located in different LD blocks, otherwise other methods, not provided in this package, are required. 
 
 ## Visualize Results 
 
