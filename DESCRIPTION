@@ -1,4 +1,4 @@
-Package: snpGADGET
+Package: epistasisGA
 Type: Package
 Title: An R package to identify multi-snp effects in nuclear family studies using 
         the GADGETS method
