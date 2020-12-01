@@ -1,9 +1,9 @@
-#' \code{snpGADGET} package
+#' \code{epistasisGA} package
 #'
-#' A package implementing a genetic algorithm to detect multi-SNP effects in case-parent triad studies.
+#' A package implementing the GADGETS method to detect multi-SNP effects in case-parent triad studies.
 #'
 #' @docType package
-#' @name snpGADGET
+#' @name epistasisGA
 NULL
 
 ## quiets concerns of R CMD check re visible bindings of global vars created via data table
