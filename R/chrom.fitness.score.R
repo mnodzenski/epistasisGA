@@ -144,104 +144,107 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   risk.set.alleles <- rep("1+", length(target.snps))
   recessive <- rep(FALSE, n.target)
 
-  # compute proportion of 2's in cases with full risk set, compare to 0.5
-  if (any(pos.risk)) {
+  if (n.case.high.risk > 0){
 
-    phat <- colSums(case2.mat[which(informative.families)[case.high.risk], target.snps[pos.risk], drop = FALSE])/n.case.high.risk
-    test.stat <- (phat - 0.5)/sqrt((0.5*0.5/n.case.high.risk))
-    positive.recessive <- test.stat >= recode.threshold
-    recessive[pos.risk] <- positive.recessive
+    # compute proportion of 2's in cases with full risk set, compare to 0.5
+    if (any(pos.risk)) {
+
+      phat <- colSums(case2.mat[which(informative.families)[case.high.risk], target.snps[pos.risk], drop = FALSE])/n.case.high.risk
+      test.stat <- (phat - 0.5)/sqrt((0.5*0.5/n.case.high.risk))
+      positive.recessive <- test.stat >= recode.threshold
+      recessive[pos.risk] <- positive.recessive
+
+    }
+
+    # compute proportion of 0's in cases with full risk set, compare to 0.5
+    if (any(neg.risk)) {
+
+      phat <- colSums(case0.mat[which(informative.families)[case.high.risk], target.snps[neg.risk], drop = FALSE])/n.case.high.risk
+      test.stat <- (phat - 0.5)/sqrt((0.5*0.5/n.case.high.risk))
+      negative.recessive <- test.stat >= recode.threshold
+      recessive[neg.risk] <- negative.recessive
+
+    }
+
+    ### if there are recessive SNPs, recompute the weights and associated statistics ###
+    if (any(recessive)) {
+
+      risk.set.alleles[recessive] <- "2"
+      pos.outlier.cols <- pos.risk[recessive[pos.risk]]
+      neg.outlier.cols <- neg.risk[recessive[neg.risk]]
+
+      # recode instances where the model appears to be recessive
+      if (length(pos.outlier.cols) > 0) {
+
+        case.inf[pos.outlier.cols, ][case.inf[pos.outlier.cols, ] == 1] <- 0
+        comp.inf[pos.outlier.cols, ][comp.inf[pos.outlier.cols, ] == 1] <- 0
+        both.one.inf[pos.outlier.cols, ] <- FALSE
+
+      }
+
+      if (length(neg.outlier.cols) > 0) {
+
+        case.inf[neg.outlier.cols, ][case.inf[neg.outlier.cols, ] == 1] <- 2
+        comp.inf[neg.outlier.cols, ][comp.inf[neg.outlier.cols, ] == 1] <- 2
+        both.one.inf[neg.outlier.cols, ] <- FALSE
+
+      }
+
+      # recompute the number of informative families
+      cases.minus.complements <- sign(case.inf - comp.inf)
+      case.comp.diff <- cases.minus.complements != 0
+      total.different.snps <- colSums(case.comp.diff)
+      informative.families <- total.different.snps != 0
+      inf.family.rows <- inf.family.rows[informative.families]
+      n.informative.families <- sum(informative.families)
+      case.inf <- case.inf[, informative.families]
+      comp.inf <- comp.inf[, informative.families]
+      cases.minus.complements.inf <- cases.minus.complements[, informative.families]
+
+      ### re-compute weights ###
+      both.one.inf <- both.one.inf[, informative.families]
+      both.one <- colSums(both.one.inf)
+      weighted.informativeness <- n.both.one.weight * both.one + n.different.snps.weight * total.different.snps[informative.families]
+      family.weights <- weight.lookup[weighted.informativeness]
+      invsum.family.weights <- 1/sum(family.weights)
+
+      ### compute weighted difference vectors for cases vs complements ###
+      dif.vecs <- as.matrix((family.weights *invsum.family.weights)*t(cases.minus.complements.inf))
+      sum.dif.vecs <- colSums(dif.vecs)
+
+      ### re-compute proposed risk set ###
+      risk.dirs <- sign(sum.dif.vecs)
+      pos.risk <- which(risk.dirs > 0)
+      neg.risk <- which(risk.dirs <= 0)
+
+      n.pos <- length(pos.risk)
+      n.neg <- length(neg.risk)
+      if (n.neg > 0) {
+        n1 <- case.inf[neg.risk, , drop = FALSE] < 2
+        n2 <- comp.inf[neg.risk, , drop = FALSE] < 2
+      }
+      if (n.pos > 0) {
+        p1 <- case.inf[pos.risk, , drop = FALSE] > 0
+        p2 <- comp.inf[pos.risk, , drop = FALSE] > 0
+      }
+      if (n.pos == 0) {
+        case.high.risk <- colSums(n1) == n.target
+        comp.high.risk <- colSums(n2) == n.target
+      } else if (n.neg == 0) {
+        case.high.risk <- colSums(p1) == n.target
+        comp.high.risk <- colSums(p2) == n.target
+      } else {
+        case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
+        comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
+      }
+      n.case.high.risk <- sum(case.high.risk)
+      n.comp.high.risk <- sum(comp.high.risk)
+      case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
+      comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
+
+    }
 
   }
-
-  # compute proportion of 0's in cases with full risk set, compare to 0.5
-  if (any(neg.risk)) {
-
-    phat <- colSums(case0.mat[which(informative.families)[case.high.risk], target.snps[neg.risk], drop = FALSE])/n.case.high.risk
-    test.stat <- (phat - 0.5)/sqrt((0.5*0.5/n.case.high.risk))
-    negative.recessive <- test.stat >= recode.threshold
-    recessive[neg.risk] <- negative.recessive
-
-  }
-
-  ### if there are recessive SNPs, recompute the weights and associated statistics ###
-  if (any(recessive)) {
-
-    risk.set.alleles[recessive] <- "2"
-    pos.outlier.cols <- pos.risk[recessive[pos.risk]]
-    neg.outlier.cols <- neg.risk[recessive[neg.risk]]
-
-    # recode instances where the model appears to be recessive
-    if (length(pos.outlier.cols) > 0) {
-
-      case.inf[pos.outlier.cols, ][case.inf[pos.outlier.cols, ] == 1] <- 0
-      comp.inf[pos.outlier.cols, ][comp.inf[pos.outlier.cols, ] == 1] <- 0
-      both.one.inf[pos.outlier.cols, ] <- FALSE
-
-    }
-
-    if (length(neg.outlier.cols) > 0) {
-
-      case.inf[neg.outlier.cols, ][case.inf[neg.outlier.cols, ] == 1] <- 2
-      comp.inf[neg.outlier.cols, ][comp.inf[neg.outlier.cols, ] == 1] <- 2
-      both.one.inf[neg.outlier.cols, ] <- FALSE
-
-    }
-
-    # recompute the number of informative families
-    cases.minus.complements <- sign(case.inf - comp.inf)
-    case.comp.diff <- cases.minus.complements != 0
-    total.different.snps <- colSums(case.comp.diff)
-    informative.families <- total.different.snps != 0
-    inf.family.rows <- inf.family.rows[informative.families]
-    n.informative.families <- sum(informative.families)
-    case.inf <- case.inf[, informative.families]
-    comp.inf <- comp.inf[, informative.families]
-    cases.minus.complements.inf <- cases.minus.complements[, informative.families]
-
-    ### re-compute weights ###
-    both.one.inf <- both.one.inf[, informative.families]
-    both.one <- colSums(both.one.inf)
-    weighted.informativeness <- n.both.one.weight * both.one + n.different.snps.weight * total.different.snps[informative.families]
-    family.weights <- weight.lookup[weighted.informativeness]
-    invsum.family.weights <- 1/sum(family.weights)
-
-    ### compute weighted difference vectors for cases vs complements ###
-    dif.vecs <- as.matrix((family.weights *invsum.family.weights)*t(cases.minus.complements.inf))
-    sum.dif.vecs <- colSums(dif.vecs)
-
-    ### re-compute proposed risk set ###
-    risk.dirs <- sign(sum.dif.vecs)
-    pos.risk <- which(risk.dirs > 0)
-    neg.risk <- which(risk.dirs <= 0)
-
-    n.pos <- length(pos.risk)
-    n.neg <- length(neg.risk)
-    if (n.neg > 0) {
-      n1 <- case.inf[neg.risk, , drop = FALSE] < 2
-      n2 <- comp.inf[neg.risk, , drop = FALSE] < 2
-    }
-    if (n.pos > 0) {
-      p1 <- case.inf[pos.risk, , drop = FALSE] > 0
-      p2 <- comp.inf[pos.risk, , drop = FALSE] > 0
-    }
-    if (n.pos == 0) {
-      case.high.risk <- colSums(n1) == n.target
-      comp.high.risk <- colSums(n2) == n.target
-    } else if (n.neg == 0) {
-      case.high.risk <- colSums(p1) == n.target
-      comp.high.risk <- colSums(p2) == n.target
-    } else {
-      case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
-      comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
-    }
-    n.case.high.risk <- sum(case.high.risk)
-    n.comp.high.risk <- sum(comp.high.risk)
-    case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
-    comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
-
-  }
-
 
   ### count the number of risk alleles in those with the full risk set ###
   case.high.risk.alleles <- colSums(case.high.inf[pos.risk, , drop = FALSE]) +
