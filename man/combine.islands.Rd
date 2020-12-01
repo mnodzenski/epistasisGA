@@ -45,7 +45,7 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                mother.genetic.data = mom[ , 1:10],
                                block.ld.mat = block.ld.mat[ , 1:10])
 
-run.ga(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
+run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
 

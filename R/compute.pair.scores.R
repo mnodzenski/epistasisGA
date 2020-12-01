@@ -7,7 +7,7 @@
 #'  Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 #'  otherwise an error will be returned.
 #' @param pp.list The list output by \code{preprocess.genetic.data} run on the observed data.
-#' @param n.top.scores The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.
+#' @param n.top.chroms The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
 #' graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
@@ -61,7 +61,7 @@
 #'  final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3)
+#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
