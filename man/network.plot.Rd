@@ -107,7 +107,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
 
  ## compute edge scores
  set.seed(20)
- edge.dt <- compute.pair.scores(final.results, pp.list, 3)
+ edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
 
 ## plot
 set.seed(10)

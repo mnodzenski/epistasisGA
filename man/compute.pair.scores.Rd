@@ -22,6 +22,8 @@ otherwise an error will be returned.}
 
 \item{pp.list}{The list output by \code{preprocess.genetic.data} run on the observed data.}
 
+\item{n.top.chroms}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
+
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
 graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
@@ -36,8 +38,6 @@ If using a cluster computer, this parameter needs to be set with care. See \code
 \item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
 will be excluded from network plots. The argument defaults to 0.05.}
-
-\item{n.top.scores}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
 }
 \value{
 A data.table where the first four columns represent SNPs and the fifth column (edge.score)
@@ -85,7 +85,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
  final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
 
  ## compute edge scores
- edge.dt <- compute.pair.scores(final.results, pp.list, 3)
+ edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
 
  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 

@@ -133,8 +133,8 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                                mother.genetic.data = mom[ , 1:10],
                                block.ld.mat = block.ld.mat[1:10, 1:10])
 
- case.genetic.data <- data.list$case.genetic.data
- complement.genetic.data <- data.list$complement.genetic.data
+ case.genetic.data <- as.matrix(data.list$case.genetic.data)
+ complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
  original.col.numbers <- data.list$original.col.numbers
  chisq.stats <- data.list$chisq.stats
  block.ld.mat <- data.list$block.ld.mat
