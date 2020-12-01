@@ -253,7 +253,7 @@ final.results <- list(chrom3.list, chrom4.list)
 # run global test
 global.test.res <- global.test(final.results, n.top.scores = 10)
 
-# look at the global test Mahalanobis distance and p-value 
+# look at the global test stat and p-value 
 global.test.res$obs.test.stat
 global.test.res$pval
 
