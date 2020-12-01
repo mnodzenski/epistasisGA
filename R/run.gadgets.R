@@ -47,7 +47,7 @@
 #' @param migration.generations An integer equal to the number of generations between migrations among islands of a distinct cluster.
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
-#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 4.
+#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
 #' See the GADGET paper for specific details.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
@@ -90,7 +90,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recode.threshold = 4) {
+    n.migrations = 20, recode.threshold = 3) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations) {
