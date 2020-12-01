@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // scalar_min
 int scalar_min(int x, int y);
-RcppExport SEXP _snpGADGET_scalar_min(SEXP xSEXP, SEXP ySEXP) {
+RcppExport SEXP _epistasisGA_scalar_min(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,7 +20,7 @@ END_RCPP
 }
 // scalar_max
 int scalar_max(int x, int y);
-RcppExport SEXP _snpGADGET_scalar_max(SEXP xSEXP, SEXP ySEXP) {
+RcppExport SEXP _epistasisGA_scalar_max(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,7 +32,7 @@ END_RCPP
 }
 // concat
 IntegerVector concat(IntegerVector x, IntegerVector y);
-RcppExport SEXP _snpGADGET_concat(SEXP xSEXP, SEXP ySEXP) {
+RcppExport SEXP _epistasisGA_concat(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -44,7 +44,7 @@ END_RCPP
 }
 // concat_list
 List concat_list(List x, List y);
-RcppExport SEXP _snpGADGET_concat_list(SEXP xSEXP, SEXP ySEXP) {
+RcppExport SEXP _epistasisGA_concat_list(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,7 +56,7 @@ END_RCPP
 }
 // sort_by_order
 IntegerVector sort_by_order(IntegerVector x, NumericVector y, int sort_type);
-RcppExport SEXP _snpGADGET_sort_by_order(SEXP xSEXP, SEXP ySEXP, SEXP sort_typeSEXP) {
+RcppExport SEXP _epistasisGA_sort_by_order(SEXP xSEXP, SEXP ySEXP, SEXP sort_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,7 +69,7 @@ END_RCPP
 }
 // seq_by2
 IntegerVector seq_by2(int l);
-RcppExport SEXP _snpGADGET_seq_by2(SEXP lSEXP) {
+RcppExport SEXP _epistasisGA_seq_by2(SEXP lSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -80,7 +80,7 @@ END_RCPP
 }
 // unique_chrom_list
 LogicalVector unique_chrom_list(List chromosome_list, int chrom_size);
-RcppExport SEXP _snpGADGET_unique_chrom_list(SEXP chromosome_listSEXP, SEXP chrom_sizeSEXP) {
+RcppExport SEXP _epistasisGA_unique_chrom_list(SEXP chromosome_listSEXP, SEXP chrom_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -92,7 +92,7 @@ END_RCPP
 }
 // subset_matrix_cols
 Rcpp::IntegerMatrix subset_matrix_cols(Rcpp::IntegerMatrix in_matrix, Rcpp::IntegerVector cols);
-RcppExport SEXP _snpGADGET_subset_matrix_cols(SEXP in_matrixSEXP, SEXP colsSEXP) {
+RcppExport SEXP _epistasisGA_subset_matrix_cols(SEXP in_matrixSEXP, SEXP colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -104,7 +104,7 @@ END_RCPP
 }
 // sign_scalar
 int sign_scalar(int x);
-RcppExport SEXP _snpGADGET_sign_scalar(SEXP xSEXP) {
+RcppExport SEXP _epistasisGA_sign_scalar(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -115,7 +115,7 @@ END_RCPP
 }
 // subset_matrix
 IntegerMatrix subset_matrix(IntegerMatrix in_matrix, IntegerVector rows, IntegerVector cols);
-RcppExport SEXP _snpGADGET_subset_matrix(SEXP in_matrixSEXP, SEXP rowsSEXP, SEXP colsSEXP) {
+RcppExport SEXP _epistasisGA_subset_matrix(SEXP in_matrixSEXP, SEXP rowsSEXP, SEXP colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -128,7 +128,7 @@ END_RCPP
 }
 // weighted_sub_colsums
 NumericVector weighted_sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols, NumericVector row_weights);
-RcppExport SEXP _snpGADGET_weighted_sub_colsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP, SEXP row_weightsSEXP) {
+RcppExport SEXP _epistasisGA_weighted_sub_colsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP, SEXP row_weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -142,7 +142,7 @@ END_RCPP
 }
 // sub_rowsums_start
 IntegerVector sub_rowsums_start(IntegerMatrix in_mat, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_sub_rowsums_start(SEXP in_matSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_sub_rowsums_start(SEXP in_matSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -154,7 +154,7 @@ END_RCPP
 }
 // sub_colsums
 IntegerVector sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_sub_colsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_sub_colsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -167,7 +167,7 @@ END_RCPP
 }
 // sub_colsums_2minus
 IntegerVector sub_colsums_2minus(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_sub_colsums_2minus(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_sub_colsums_2minus(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -180,7 +180,7 @@ END_RCPP
 }
 // sub_rowsums
 IntegerVector sub_rowsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_sub_rowsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_sub_rowsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -193,7 +193,7 @@ END_RCPP
 }
 // n_pos_high_risk
 IntegerVector n_pos_high_risk(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_n_pos_high_risk(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_n_pos_high_risk(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -206,7 +206,7 @@ END_RCPP
 }
 // n_neg_high_risk
 IntegerVector n_neg_high_risk(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_n_neg_high_risk(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_n_neg_high_risk(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -219,7 +219,7 @@ END_RCPP
 }
 // sub_colmeans
 NumericVector sub_colmeans(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_sub_colmeans(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_sub_colmeans(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -232,7 +232,7 @@ END_RCPP
 }
 // sub_colsds
 NumericVector sub_colsds(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _snpGADGET_sub_colsds(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
+RcppExport SEXP _epistasisGA_sub_colsds(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -245,7 +245,7 @@ END_RCPP
 }
 // find_high_risk
 List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_int, IntegerVector pos_risk_int, IntegerMatrix case_data, IntegerMatrix comp, IntegerVector informative_families, IntegerVector target_snps);
-RcppExport SEXP _snpGADGET_find_high_risk(SEXP n_targetSEXP, SEXP n_posSEXP, SEXP n_negSEXP, SEXP neg_risk_intSEXP, SEXP pos_risk_intSEXP, SEXP case_dataSEXP, SEXP compSEXP, SEXP informative_familiesSEXP, SEXP target_snpsSEXP) {
+RcppExport SEXP _epistasisGA_find_high_risk(SEXP n_targetSEXP, SEXP n_posSEXP, SEXP n_negSEXP, SEXP neg_risk_intSEXP, SEXP pos_risk_intSEXP, SEXP case_dataSEXP, SEXP compSEXP, SEXP informative_familiesSEXP, SEXP target_snpsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -264,7 +264,7 @@ END_RCPP
 }
 // compute_dif_vecs
 List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_genetic_data, IntegerMatrix case_comp_dif, IntegerVector target_snps, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat, NumericVector weight_lookup, int n_different_snps_weight, int n_both_one_weight, IntegerVector prev_informative_families);
-RcppExport SEXP _snpGADGET_compute_dif_vecs(SEXP case_genetic_dataSEXP, SEXP comp_genetic_dataSEXP, SEXP case_comp_difSEXP, SEXP target_snpsSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP weight_lookupSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP prev_informative_familiesSEXP) {
+RcppExport SEXP _epistasisGA_compute_dif_vecs(SEXP case_genetic_dataSEXP, SEXP comp_genetic_dataSEXP, SEXP case_comp_difSEXP, SEXP target_snpsSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP weight_lookupSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP prev_informative_familiesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -284,7 +284,7 @@ END_RCPP
 }
 // chrom_fitness_score
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in, IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, int n_different_snps_weight, int n_both_one_weight, double recode_threshold, bool epi_test);
-RcppExport SEXP _snpGADGET_chrom_fitness_score(SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_differences_inSEXP, SEXP target_snps_inSEXP, SEXP cases_minus_complements_inSEXP, SEXP both_one_mat_inSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP) {
+RcppExport SEXP _epistasisGA_chrom_fitness_score(SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_differences_inSEXP, SEXP target_snps_inSEXP, SEXP cases_minus_complements_inSEXP, SEXP both_one_mat_inSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -308,7 +308,7 @@ END_RCPP
 }
 // chrom_fitness_score_original
 List chrom_fitness_score_original(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in, IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in, LogicalMatrix block_ld_mat, NumericVector weight_lookup, int n_different_snps_weight, int n_both_one_weight, int n_case_high_risk_thresh, double outlier_sd, bool epi_test);
-RcppExport SEXP _snpGADGET_chrom_fitness_score_original(SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_differences_inSEXP, SEXP target_snps_inSEXP, SEXP cases_minus_complements_inSEXP, SEXP both_one_mat_inSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP n_case_high_risk_threshSEXP, SEXP outlier_sdSEXP, SEXP epi_testSEXP) {
+RcppExport SEXP _epistasisGA_chrom_fitness_score_original(SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_differences_inSEXP, SEXP target_snps_inSEXP, SEXP cases_minus_complements_inSEXP, SEXP both_one_mat_inSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP n_case_high_risk_threshSEXP, SEXP outlier_sdSEXP, SEXP epi_testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -331,7 +331,7 @@ END_RCPP
 }
 // chrom_fitness_list
 List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences, List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, int n_different_snps_weight, int n_both_one_weight, double recode_threshold, bool epi_test);
-RcppExport SEXP _snpGADGET_chrom_fitness_list(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differencesSEXP, SEXP chromosome_listSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP) {
+RcppExport SEXP _epistasisGA_chrom_fitness_list(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differencesSEXP, SEXP chromosome_listSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -355,7 +355,7 @@ END_RCPP
 }
 // initiate_population
 List initiate_population(IntegerMatrix case_genetic_data, int n_migrations, int n_chromosomes, int chromosome_size, NumericVector snp_chisq, int max_generations, bool initial_sample_duplicates);
-RcppExport SEXP _snpGADGET_initiate_population(SEXP case_genetic_dataSEXP, SEXP n_migrationsSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP snp_chisqSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP) {
+RcppExport SEXP _epistasisGA_initiate_population(SEXP case_genetic_dataSEXP, SEXP n_migrationsSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP snp_chisqSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -372,7 +372,7 @@ END_RCPP
 }
 // evolve_island
 List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, NumericVector snp_chisq, IntegerVector original_col_numbers, List population, bool all_converged, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, double recode_threshold);
-RcppExport SEXP _snpGADGET_evolve_island(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP populationSEXP, SEXP all_convergedSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recode_thresholdSEXP) {
+RcppExport SEXP _epistasisGA_evolve_island(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP populationSEXP, SEXP all_convergedSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recode_thresholdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -408,7 +408,7 @@ END_RCPP
 }
 // run_GADGETS
 List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, NumericVector snp_chisq, IntegerVector original_col_numbers, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, double recode_threshold);
-RcppExport SEXP _snpGADGET_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recode_thresholdSEXP) {
+RcppExport SEXP _epistasisGA_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recode_thresholdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -443,37 +443,37 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_snpGADGET_scalar_min", (DL_FUNC) &_snpGADGET_scalar_min, 2},
-    {"_snpGADGET_scalar_max", (DL_FUNC) &_snpGADGET_scalar_max, 2},
-    {"_snpGADGET_concat", (DL_FUNC) &_snpGADGET_concat, 2},
-    {"_snpGADGET_concat_list", (DL_FUNC) &_snpGADGET_concat_list, 2},
-    {"_snpGADGET_sort_by_order", (DL_FUNC) &_snpGADGET_sort_by_order, 3},
-    {"_snpGADGET_seq_by2", (DL_FUNC) &_snpGADGET_seq_by2, 1},
-    {"_snpGADGET_unique_chrom_list", (DL_FUNC) &_snpGADGET_unique_chrom_list, 2},
-    {"_snpGADGET_subset_matrix_cols", (DL_FUNC) &_snpGADGET_subset_matrix_cols, 2},
-    {"_snpGADGET_sign_scalar", (DL_FUNC) &_snpGADGET_sign_scalar, 1},
-    {"_snpGADGET_subset_matrix", (DL_FUNC) &_snpGADGET_subset_matrix, 3},
-    {"_snpGADGET_weighted_sub_colsums", (DL_FUNC) &_snpGADGET_weighted_sub_colsums, 4},
-    {"_snpGADGET_sub_rowsums_start", (DL_FUNC) &_snpGADGET_sub_rowsums_start, 2},
-    {"_snpGADGET_sub_colsums", (DL_FUNC) &_snpGADGET_sub_colsums, 3},
-    {"_snpGADGET_sub_colsums_2minus", (DL_FUNC) &_snpGADGET_sub_colsums_2minus, 3},
-    {"_snpGADGET_sub_rowsums", (DL_FUNC) &_snpGADGET_sub_rowsums, 3},
-    {"_snpGADGET_n_pos_high_risk", (DL_FUNC) &_snpGADGET_n_pos_high_risk, 3},
-    {"_snpGADGET_n_neg_high_risk", (DL_FUNC) &_snpGADGET_n_neg_high_risk, 3},
-    {"_snpGADGET_sub_colmeans", (DL_FUNC) &_snpGADGET_sub_colmeans, 3},
-    {"_snpGADGET_sub_colsds", (DL_FUNC) &_snpGADGET_sub_colsds, 3},
-    {"_snpGADGET_find_high_risk", (DL_FUNC) &_snpGADGET_find_high_risk, 9},
-    {"_snpGADGET_compute_dif_vecs", (DL_FUNC) &_snpGADGET_compute_dif_vecs, 10},
-    {"_snpGADGET_chrom_fitness_score", (DL_FUNC) &_snpGADGET_chrom_fitness_score, 14},
-    {"_snpGADGET_chrom_fitness_score_original", (DL_FUNC) &_snpGADGET_chrom_fitness_score_original, 13},
-    {"_snpGADGET_chrom_fitness_list", (DL_FUNC) &_snpGADGET_chrom_fitness_list, 14},
-    {"_snpGADGET_initiate_population", (DL_FUNC) &_snpGADGET_initiate_population, 7},
-    {"_snpGADGET_evolve_island", (DL_FUNC) &_snpGADGET_evolve_island, 26},
-    {"_snpGADGET_run_GADGETS", (DL_FUNC) &_snpGADGET_run_GADGETS, 25},
+    {"_epistasisGA_scalar_min", (DL_FUNC) &_epistasisGA_scalar_min, 2},
+    {"_epistasisGA_scalar_max", (DL_FUNC) &_epistasisGA_scalar_max, 2},
+    {"_epistasisGA_concat", (DL_FUNC) &_epistasisGA_concat, 2},
+    {"_epistasisGA_concat_list", (DL_FUNC) &_epistasisGA_concat_list, 2},
+    {"_epistasisGA_sort_by_order", (DL_FUNC) &_epistasisGA_sort_by_order, 3},
+    {"_epistasisGA_seq_by2", (DL_FUNC) &_epistasisGA_seq_by2, 1},
+    {"_epistasisGA_unique_chrom_list", (DL_FUNC) &_epistasisGA_unique_chrom_list, 2},
+    {"_epistasisGA_subset_matrix_cols", (DL_FUNC) &_epistasisGA_subset_matrix_cols, 2},
+    {"_epistasisGA_sign_scalar", (DL_FUNC) &_epistasisGA_sign_scalar, 1},
+    {"_epistasisGA_subset_matrix", (DL_FUNC) &_epistasisGA_subset_matrix, 3},
+    {"_epistasisGA_weighted_sub_colsums", (DL_FUNC) &_epistasisGA_weighted_sub_colsums, 4},
+    {"_epistasisGA_sub_rowsums_start", (DL_FUNC) &_epistasisGA_sub_rowsums_start, 2},
+    {"_epistasisGA_sub_colsums", (DL_FUNC) &_epistasisGA_sub_colsums, 3},
+    {"_epistasisGA_sub_colsums_2minus", (DL_FUNC) &_epistasisGA_sub_colsums_2minus, 3},
+    {"_epistasisGA_sub_rowsums", (DL_FUNC) &_epistasisGA_sub_rowsums, 3},
+    {"_epistasisGA_n_pos_high_risk", (DL_FUNC) &_epistasisGA_n_pos_high_risk, 3},
+    {"_epistasisGA_n_neg_high_risk", (DL_FUNC) &_epistasisGA_n_neg_high_risk, 3},
+    {"_epistasisGA_sub_colmeans", (DL_FUNC) &_epistasisGA_sub_colmeans, 3},
+    {"_epistasisGA_sub_colsds", (DL_FUNC) &_epistasisGA_sub_colsds, 3},
+    {"_epistasisGA_find_high_risk", (DL_FUNC) &_epistasisGA_find_high_risk, 9},
+    {"_epistasisGA_compute_dif_vecs", (DL_FUNC) &_epistasisGA_compute_dif_vecs, 10},
+    {"_epistasisGA_chrom_fitness_score", (DL_FUNC) &_epistasisGA_chrom_fitness_score, 14},
+    {"_epistasisGA_chrom_fitness_score_original", (DL_FUNC) &_epistasisGA_chrom_fitness_score_original, 13},
+    {"_epistasisGA_chrom_fitness_list", (DL_FUNC) &_epistasisGA_chrom_fitness_list, 14},
+    {"_epistasisGA_initiate_population", (DL_FUNC) &_epistasisGA_initiate_population, 7},
+    {"_epistasisGA_evolve_island", (DL_FUNC) &_epistasisGA_evolve_island, 26},
+    {"_epistasisGA_run_GADGETS", (DL_FUNC) &_epistasisGA_run_GADGETS, 25},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_snpGADGET(DllInfo *dll) {
+RcppExport void R_init_epistasisGA(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
