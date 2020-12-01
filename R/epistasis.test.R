@@ -14,9 +14,8 @@
 #' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
 #' returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
-#' @param n.case.high.risk.thresh The number of cases with the provisional high risk set required to check for recessive patterns of allele inheritance.
-#' @param outlier.sd The number of standard deviations from the mean allele count used to determine whether recessive allele coding is appropriate
-#' for a given SNP. See the GADGET paper for specific details on the implementation of this argument.
+#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+#' See the GADGET paper for specific details.
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 #'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @return A list of thee elements:
@@ -41,7 +40,7 @@
 #'                                mother.genetic.data = mom,
 #'                                block.ld.mat = block.ld.mat)
 #'
-#' run.ga(pp.list, n.chromosomes = 5, chromosome.size = 3,
+#' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
 #'        results.dir = "tmp", cluster.type = "interactive",
 #'        registryargs = list(file.dir = "tmp_reg", seed = 1300),
 #'        n.top.chroms = 5, n.islands = 8, island.cluster.size = 4,
@@ -51,7 +50,7 @@
 #'
 #' top.snps <- as.vector(t(combined.res$unique.results[1, 1:3]))
 #' set.seed(10)
-#' epi.test.res <- run.epi.test(top.snps, pp.list)
+#' epi.test.res <- epistasis.test(top.snps, pp.list)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -60,10 +59,10 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @export
 
-run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
+epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
-                     weight.function.int = 2, n.case.high.risk.thresh = 20,
-                     outlier.sd = 2.5, bp.param = bpparam()) {
+                     weight.function.int = 2, recode.threshold = 3,
+                     bp.param = bpparam()) {
 
     ### pick out the target columns in the pre-processed data ###
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -96,19 +95,23 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     ### number of copies of the minor allele ###
     both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
+    ### compute matrices indicating whether case carries two copies of the risk allele
+    case2.mat <- case.genetic.data == 2
+    case0.mat <- case.genetic.data == 0
+
     ### compute fitness score and find the families with the full risk set ###
     fitness.score <- chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
                                     target.snps, case.minus.comp, both.one.mat,
-                                    block.ld.mat, weight.lookup,
+                                    block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                     n.different.snps.weight, n.both.one.weight,
-                                    n.case.high.risk.thresh, outlier.sd, epi.test = TRUE)
+                                    recode.threshold, epi.test = TRUE)
 
     ### uses informative families already, so no need to recompute the observed fitness score here ###
-    obs.fitness.score <- fitness.score$fitness.score
+    obs.fitness.score <- fitness.score$fitness.score*min(abs(fitness.score$sum.dif.vecs))
 
     ### restrict the data to informative families ###
-    case.risk <- case.genetic.data[fitness.score$inf.families, target.snps]
-    comp.risk <- complement.genetic.data[fitness.score$inf.families, target.snps]
+    case.inf <- case.genetic.data[fitness.score$inf.families, target.snps]
+    comp.inf <- complement.genetic.data[fitness.score$inf.families, target.snps]
     n.families <- length(fitness.score$inf.families)
 
     ### identify ld blocks for the target snps ###
@@ -136,8 +139,8 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     permutes <- seq_len(n.permutes)
     permuted.data <- lapply(permutes, function(permute){
 
-        case.permuted <- case.risk
-        comp.permuted <- comp.risk
+        case.permuted <- case.inf
+        comp.permuted <- comp.inf
         for (block.snps in ld.blocks){
 
             this.order <- sample(seq_len(n.families), n.families)
@@ -153,7 +156,7 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     perm.fitness.scores <- unlist(bplapply(permuted.data,
 
         function(permute, target.snps, target.block.ld.mat, weight.lookup, n.different.snps.weight,
-                 n.both.one.weight, n.case.high.risk.thresh, outlier.sd){
+                 n.both.one.weight, recode.threshold){
 
         ### grab case and complement data ###
         case.genetic.data <- permute$case
@@ -167,18 +170,22 @@ run.epi.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
         ### number of copies of the minor allele ###
         both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 
+        ### compute matrices indicating whether case carries two copies of the risk allele
+        case2.mat <- case.genetic.data == 2
+        case0.mat <- case.genetic.data == 0
+
         ### compute fitness score ###
         fitness.score <- chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
                                              seq_len(length(target.snps)), case.minus.comp, both.one.mat,
-                                             target.block.ld.mat, weight.lookup,
+                                             target.block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                              n.different.snps.weight, n.both.one.weight,
-                                             n.case.high.risk.thresh, outlier.sd)
-        return(fitness.score$fitness.score)
+                                             recode.threshold)
+        fs <- fitness.score$fitness.score*min(abs(fitness.score$sum.dif.vecs))
+        return(fs)
 
     }, target.snps  = target.snps, target.block.ld.mat = target.block.ld.mat, weight.lookup = weight.lookup,
     n.different.snps.weight =  n.different.snps.weight, n.both.one.weight = n.both.one.weight,
-    n.case.high.risk.thresh = n.case.high.risk.thresh, outlier.sd = outlier.sd,
-    BPPARAM = bp.param))
+    recode.threshold = recode.threshold, BPPARAM = bp.param))
 
     ### compute p-value ###
     pval <- sum(perm.fitness.scores >= obs.fitness.score)/(n.permutes + 1)
