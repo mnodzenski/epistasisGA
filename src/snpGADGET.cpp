@@ -532,11 +532,12 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 // Function to compute the fitness score
 ///////////////////////////////////////////////////////////////
 
+// [[Rcpp::export]]
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
                                   IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
                                   LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                                   int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                  double recode_threshold = 4, bool epi_test = false) {
+                                  double recode_threshold = 4.0, bool epi_test = false) {
 
   // need to deep copy inputs to avoid overwriting
   IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
@@ -582,7 +583,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
     IntegerVector pos_risk_idx = p_tmp[pos_risk];
     IntegerVector pos_cols = target_snps[pos_risk];
     IntegerVector original_pos_cols = target_snps_in[pos_risk];
-    NumericVector prop2 = sub_colmeans(case2_mat, case_high_inf_rows, original_pos_cols - 1);
+    NumericVector prop2 = sub_colmeans(case2_mat, case_high_inf_rows, original_pos_cols);
 
     for (int i = 0; i < n_pos; i++){
 
@@ -651,7 +652,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
     IntegerVector neg_risk_idx = n_tmp[neg_risk];
     IntegerVector neg_cols = target_snps[neg_risk];
     IntegerVector original_neg_cols = target_snps_in[neg_risk];
-    NumericVector prop0 = sub_colmeans(case0_mat, case_high_inf_rows, original_neg_cols - 1);
+    NumericVector prop0 = sub_colmeans(case0_mat, case_high_inf_rows, original_neg_cols);
 
     for (int i = 0; i < n_neg; i++){
 
@@ -845,7 +846,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                             Named("rr") = rr,
                             Named("pseudo_t2") = pseudo_t2,
                             Named("risk_set_alleles") = risk_set_alleles,
-                            Named("high_risk_families") = informative_families);
+                            Named("inf_families") = informative_families);
     return(res);
 
   } else {
@@ -854,8 +855,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                             Named("sum_dif_vecs") = sum_dif_vecs,
                             Named("rr") = rr,
                             Named("pseudo_t2") = pseudo_t2,
-                            Named("risk_set_alleles") = risk_set_alleles,
-                            Named("family_weights") = family_weights);
+                            Named("risk_set_alleles") = risk_set_alleles);
     return(res);
 
   }
@@ -1287,7 +1287,7 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
                         List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
                         LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        double recode_threshold = 4, bool epi_test = false){
+                        double recode_threshold = 4.0, bool epi_test = false){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
@@ -1371,7 +1371,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
                    bool initial_sample_duplicates = false,
-                   double crossover_prop = 0.8, double recode_threshold = 4){
+                   double crossover_prop = 0.8, double recode_threshold = 4.0){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -1738,7 +1738,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                 NumericVector snp_chisq, IntegerVector original_col_numbers,
                 int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                 int gen_same_fitness = 50, int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
-                bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recode_threshold = 4){
+                bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recode_threshold = 4.0){
 
   if (island_cluster_size > 1){
 
