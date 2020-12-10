@@ -178,14 +178,14 @@ global.test <- function(results.list, n.top.scores = 30) {
         n.ranks <- length(all.scores)
         unif.ranks <- (n.ranks - score.ranks + 0.5)/n.ranks
 
-        # return ranks
+        # return transformed scores
         return(data.frame(score = -2*log(unif.ranks)))
 
     }))
     colnames(chrom.size.ranks) <- NULL
     rownames(chrom.size.ranks) <- NULL
 
-    #sum ranks across chromosome sizes
+    #sum scores across chromosome sizes
     global.scores <- rowSums(chrom.size.ranks)
 
     # pval

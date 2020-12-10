@@ -15,7 +15,7 @@
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
 #' returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-#' See the GADGET paper for specific details.
+#' See the GADGETS paper for specific details.
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 #'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @return A list of thee elements:

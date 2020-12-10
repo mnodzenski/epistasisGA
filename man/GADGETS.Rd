@@ -39,12 +39,12 @@ GADGETS(
 
 \item{results.dir}{The directory to which island results will be saved.}
 
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
 The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-Columns are SNPs, rows are families. If using affected/unaffected sibling pairs, this should contain
+Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
 the unaffected sibling genotypes.}
 
 \item{case.comp.different}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
@@ -65,10 +65,12 @@ proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set 
 
 \item{chromosome.size}{An integer specifying the number of SNPs on each chromosome.}
 
-\item{snp.chisq}{A vector of chi-square statistics corresponding to marginal SNP-disease associations for each column in \code{case.genetic.data}.}
+\item{snp.chisq}{A vector of statistics to be used in sampling SNPs for mutation. By default, these are the square roots of
+the chi-square marginal SNP-disease association statistics for each column in \code{case.genetic.data}, but can also be manually
+specified or uniformly 1 (totally random sampling).}
 
-\item{original.col.numbers}{A vector of integers indicating the original column number of each SNP in \code{case.genetic.data},
-needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
+\item{original.col.numbers}{A vector of integers indicating the original column number of each SNP in \code{case.genetic.data}.
+This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
@@ -76,7 +78,7 @@ needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
 
 \item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
 
-\item{island.cluster.size}{An integer specifying the number of islands in the cluster. See code{run.ga} for additional details.}
+\item{island.cluster.size}{An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 
@@ -97,13 +99,13 @@ considered to be sufficient to stop the algorithm.}
 \item{n.top.chroms}{The number of top scoring chromosomes according to fitness score to return. Defaults to 100.}
 
 \item{initial.sample.duplicates}{A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
-(the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.}
+(the same SNP may appear in more than one chromosome thereafter, regardless). Defaults to FALSE.}
 
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 The remaining proportion will be mutated. Defaults to 0.8.}
 
 \item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-See the GADGET paper for specific details.}
+See the GADGETS paper for specific details.}
 }
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
