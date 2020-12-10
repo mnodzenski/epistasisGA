@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "December 1, 2020"
+date: "December 10, 2020"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -16,7 +16,7 @@ output:
   BiocStyle::pdf_document: default
 bibliography: library.bib
 vignette: >
-  %\VignetteIndexEntry{Basic Usage}
+  %\VignetteIndexEntry{GADGETS Usage}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}  
 ---

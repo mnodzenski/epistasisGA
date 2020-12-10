@@ -5,11 +5,11 @@
 #'
 #' @param cluster.number An integer indicating the cluster number (used for labeling the output file).
 #' @param results.dir The directory to which island results will be saved.
-#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
 #' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-#' Columns are SNPs, rows are families. If using affected/unaffected sibling pairs, this should contain
+#' Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
 #' the unaffected sibling genotypes.
 #' @param case.comp.different A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
 #' where rows correspond to individuals and columns correspond to snps.
@@ -23,13 +23,15 @@
 #'  proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.
 #' @param n.chromosomes An integer specifying the number of chromosomes to use in the GA.
 #' @param chromosome.size An integer specifying the number of SNPs on each chromosome.
-#' @param snp.chisq A vector of chi-square statistics corresponding to marginal SNP-disease associations for each column in \code{case.genetic.data}.
-#' @param original.col.numbers A vector of integers indicating the original column number of each SNP in \code{case.genetic.data},
-#' needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.
+#' @param snp.chisq A vector of statistics to be used in sampling SNPs for mutation. By default, these are the square roots of
+#' the chi-square marginal SNP-disease association statistics for each column in \code{case.genetic.data}, but can also be manually
+#' specified or uniformly 1 (totally random sampling).
+#' @param original.col.numbers A vector of integers indicating the original column number of each SNP in \code{case.genetic.data}.
+#' This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param case2.mat A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.
 #' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
-#' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.ga} for additional details.
+#' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
@@ -41,11 +43,11 @@
 #' considered to be sufficient to stop the algorithm.
 #' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
-#'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
+#'  (the same SNP may appear in more than one chromosome thereafter, regardless). Defaults to FALSE.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 #' The remaining proportion will be mutated. Defaults to 0.8.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-#' See the GADGET paper for specific details.
+#' See the GADGETS paper for specific details.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
