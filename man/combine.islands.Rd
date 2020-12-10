@@ -7,7 +7,7 @@
 combine.islands(results.dir, annotation.data, preprocessed.list)
 }
 \arguments{
-\item{results.dir}{The directory in which individual island results from \code{run.ga} are saved.}
+\item{results.dir}{The directory in which individual island results from \code{run.gadgets} are saved.}
 
 \item{annotation.data}{A data frame containing columns 'RSID', 'REF' and 'ALT'. Column 'RSID' gives the
 RSIDs for the input SNPs, with the rows ordered such that the first RSID entry corresponds to the first SNP
@@ -17,8 +17,7 @@ column in the data passed to function \code{preprocess.genetic.data}, the second
 }
 \value{
 A list of two elements. Note these two objects will also be written to \code{results.dir}
-as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'. Furthermore,
-this function should not be called twice on the same directory (i.e., only combine the islands one time).
+as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'.
 \describe{
  \item{all.results}{A dataset containing chromosome results across all islands,
  where top chromosomes that evolved on multiple distinct islands appear in multiple rows.}
