@@ -89,10 +89,6 @@ chrom_fitness_score <- function(case_genetic_data_in, complement_genetic_data_in
     .Call('_epistasisGA_chrom_fitness_score', PACKAGE = 'epistasisGA', case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold, epi_test)
 }
 
-chrom_fitness_score_original <- function(case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, n_different_snps_weight = 2L, n_both_one_weight = 1L, n_case_high_risk_thresh = 20L, outlier_sd = 2.5, epi_test = FALSE) {
-    .Call('_epistasisGA_chrom_fitness_score_original', PACKAGE = 'epistasisGA', case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, n_different_snps_weight, n_both_one_weight, n_case_high_risk_thresh, outlier_sd, epi_test)
-}
-
 chrom_fitness_list <- function(case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight = 2L, n_both_one_weight = 1L, recode_threshold = 4.0, epi_test = FALSE) {
     .Call('_epistasisGA_chrom_fitness_list', PACKAGE = 'epistasisGA', case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold, epi_test)
 }
