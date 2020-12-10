@@ -347,7 +347,7 @@ network.plot(pair.scores, graph.area = 200,
              legend.cex = 0.8, legend.line = 2)
 ```
 
-By default, the thickness of the SNP-to-SNP line segments in these plots is proportional to the graphical score for that pair, and the radius of the node circle is proportional to the sum of the graphical scores for all pairs that include that SNP.  
+By default, the thickness of the SNP-to-SNP line segments in these plots is proportional to the log of the graphical score for that pair, and the area of the node circle is proportional to the log of the sum of the graphical scores for all pairs that include that SNP.  
 
 # Cleanup and sessionInfo() {.unnumbered}
 
