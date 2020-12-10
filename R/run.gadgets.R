@@ -34,9 +34,10 @@
 #' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
-#' @param snp.sampling.type A string indicating how SNPs are to be sampled for mutations. Options are 'chisq' or 'random'. The 'chisq' option takes
+#' @param snp.sampling.type A string indicating how SNPs are to be sampled for mutations. Options are 'chisq', 'random', or 'manual'. The 'chisq' option takes
 #' into account the marginal association between a SNP and disease status, with larger marginal associations corresponding to higher sampling probabilities.
-#' The 'random'  option gives each SNP the same sampling probability regardless of marginal association. Defaults to 'chisq'.
+#' The 'random'  option gives each SNP the same sampling probability regardless of marginal association. The 'manual' option should be used when
+#' \code{snp.sampling.probs} are manually input into function \code{preprocess.genetic.data}. Defaults to 'chisq'.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 #' The remaining proportion will be mutated. Defaults to 0.8.
 #' @param n.islands An integer indicating the number of islands to be used in the GA. Defaults to 1000.
@@ -165,8 +166,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
         snp.chisq <- rep(1, ncol(case.minus.comp))
 
-    }
+    } else if (snp.sampling.type == "manual"){
 
+        snp.chisq <- chisq.stats
+
+    }
 
     ### determine if islands have already been evolved
     clusters <- seq(1, n.islands, by = island.cluster.size)

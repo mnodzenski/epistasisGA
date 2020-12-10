@@ -22,12 +22,12 @@ chrom.fitness.score(
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios. Columns are SNPs, and rows are individuals.
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
 The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-Columns are SNPs, rows are families. If using affected/unaffected sibling pairs, this should contain
+Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
 the unaffected sibling genotypes.}
 
 \item{case.comp.differences}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
@@ -59,10 +59,10 @@ is multiplied in computing the family weights. Defaults to 2.}
 is multiplied in computing the family weights. Defaults to 1.}
 
 \item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-See the GADGET paper for specific details.}
+See the GADGETS paper for specific details.}
 
-\item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epi.test}.
-for a given SNP. See the GADGET paper for specific details on the implementation of this argument.}
+\item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
+for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.}
 }
 \value{
 A list:

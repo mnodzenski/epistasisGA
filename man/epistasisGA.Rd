@@ -5,5 +5,5 @@
 \alias{epistasisGA}
 \title{\code{epistasisGA} package}
 \description{
-A package implementing the GADGETS method to detect multi-SNP effects in case-parent triad studies.
+A package implementing the GADGETS method to detect multi-SNP effects in case-parent triad or affected/unaffected sibling studies.
 }
