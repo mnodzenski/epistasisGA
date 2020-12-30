@@ -3,6 +3,7 @@
 #' This function plots a network of SNPs with potential multi-SNP effects.
 #'
 #' @param edge.dt The data.table returned by function \code{compute.edge.scores}.
+#' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
 #' graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
@@ -25,6 +26,9 @@
 #' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
 #' @param legend.cex Argument passed to \code{fields::image.plot} to control legend appearance.
 #' @param legend.line Argument passed to \code{fields::image.plot} to control legend appearance.
+#' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold above which a pair of
+#' SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
+#' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.5.
 #' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -70,7 +74,7 @@
 #'
 #' ## plot
 #' set.seed(10)
-#' network.plot(edge.dt)
+#' network.plot(edge.dt, pp.list)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
@@ -79,12 +83,45 @@
 #' @importFrom grDevices adjustcolor colorRampPalette
 #' @importFrom data.table melt
 #' @importFrom fields image.plot
+#' @importFrom stats cor
 #' @export
 
-network.plot <- function(edge.dt, score.type = "logsum", node.shape = "circle", repulse.rad = 1000,
-    node.size = 25, graph.area = 100, vertex.label.cex = 0.5, edge.width.cex = 1, plot = TRUE,
-    edge.color.ramp = c("white", "grey", "red"), node.color.ramp = c("yellow", "orange", "red"),
-    plot.legend = TRUE, legend.cex = 1.5, legend.line = 2.5, ...) {
+network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node.shape = "circle",
+                         repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
+                         edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("white", "grey", "red"),
+                         node.color.ramp = c("yellow", "orange", "red"), plot.legend = TRUE,
+                         legend.cex = 1.5, legend.line = 2.5, high.ld.threshold = 0.5, ...) {
+
+    #compute r2 vals for snps in the same ld block, assign 0 otherwise
+    original.col.numbers <- preprocessed.list$original.col.numbers
+    r2.vals <- vapply(seq(1, nrow(edge.dt)), function(x){
+
+        # pick out the snp pair in the preprocessed list
+        snp.pair <- as.vector(t(edge.dt[x, c(1, 2)]))
+        target.snps <- which(original.col.numbers %in% snp.pair)
+
+        # check if snps are located in same ld block
+        block.ld.mat <- preprocessed.list$block.ld.mat
+        target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
+        same.ld.block <- target.block.ld.mat[2, 1]
+
+        # if not on same ld block, compute r2
+        if (!same.ld.block){
+
+            return(0.0)
+
+        } else {
+
+            case.genetic.data <- preprocessed.list$case.genetic.data
+            snp1 <- target.snps[1]
+            snp2 <- target.snps[2]
+            r2 <- cor(case.genetic.data[ , snp1], case.genetic.data[ , snp2])^2
+            return(r2)
+
+        }
+
+    }, 1.0)
+
 
     #subset to target cols
     edge.dt <- edge.dt[ , c(3, 4, 5)]
@@ -130,6 +167,8 @@ network.plot <- function(edge.dt, score.type = "logsum", node.shape = "circle", 
     V(network)$color <- colors[required.colors]
     V(network)$shape <- node.shape
     V(network)$label.cex <- vertex.label.cex*node.df$size/node.size
+
+    E(network)$lty <- ifelse(r2.vals >= high.ld.threshold, 2, 1)
 
     # if desired, plot
     if (plot) {
