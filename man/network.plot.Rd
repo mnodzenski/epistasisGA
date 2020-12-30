@@ -6,6 +6,7 @@
 \usage{
 network.plot(
   edge.dt,
+  preprocessed.list,
   score.type = "logsum",
   node.shape = "circle",
   repulse.rad = 1000,
@@ -19,11 +20,14 @@ network.plot(
   plot.legend = TRUE,
   legend.cex = 1.5,
   legend.line = 2.5,
+  high.ld.threshold = 0.5,
   ...
 )
 }
 \arguments{
 \item{edge.dt}{The data.table returned by function \code{compute.edge.scores}.}
+
+\item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
 
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
@@ -59,6 +63,10 @@ scoring nodes are whiter, and high scoring edges are greener.}
 \item{legend.cex}{Argument passed to \code{fields::image.plot} to control legend appearance.}
 
 \item{legend.line}{Argument passed to \code{fields::image.plot} to control legend appearance.}
+
+\item{high.ld.threshold}{A numeric value between 0 and 1, indicating the r^2 threshold above which a pair of
+SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
+between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.5.}
 
 \item{...}{Additional arguments to be passed to \code{plot.igraph}.}
 }
@@ -111,7 +119,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
 
 ## plot
 set.seed(10)
-network.plot(edge.dt)
+network.plot(edge.dt, pp.list)
 
  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 
