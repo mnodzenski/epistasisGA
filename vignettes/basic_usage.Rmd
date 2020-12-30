@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "December 10, 2020"
+date: "December 30, 2020"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -342,7 +342,7 @@ pair.scores <- compute.pair.scores(obs.res.list, pp.list, 5)
 Next, we input these pair scores into function `network.plot`:
 
 ```{r, fig.width = 14, fig.height = 12}
-network.plot(pair.scores, graph.area = 200,
+network.plot(pair.scores, pp.list, graph.area = 200,
              node.size = 40, vertex.label.cex = 2, 
              legend.cex = 0.8, legend.line = 2)
 ```
