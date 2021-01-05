@@ -15,12 +15,13 @@ network.plot(
   vertex.label.cex = 0.5,
   edge.width.cex = 1,
   plot = TRUE,
-  edge.color.ramp = c("white", "grey", "red"),
+  edge.color.ramp = c("blue", "green"),
   node.color.ramp = c("yellow", "orange", "red"),
   plot.legend = TRUE,
-  legend.cex = 1.5,
-  legend.line = 2.5,
-  high.ld.threshold = 0.25,
+  high.ld.threshold = 0.1,
+  plot.margins = c(2, 1, 2, 1),
+  legend.title.cex = 1.75,
+  legend.axis.cex = 1.75,
   ...
 )
 }
@@ -60,13 +61,17 @@ scoring nodes are whiter, and high scoring edges are greener.}
 
 \item{plot.legend}{A boolean indicating whether a legend should be plotted. Defaults to TRUE.}
 
-\item{legend.cex}{Argument passed to \code{fields::image.plot} to control legend appearance.}
-
-\item{legend.line}{Argument passed to \code{fields::image.plot} to control legend appearance.}
-
 \item{high.ld.threshold}{A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
 above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
 between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.25.}
+
+\item{plot.margins}{A vector of length 4 passed to \code{par(mar = )}. Defaults to c(2, 1, 2, 1).}
+
+\item{legend.title.cex}{A numeric value controlling the size of the legend titles. Defaults to 1.75. Increase
+to increase font size, decrease to decrease font size.}
+
+\item{legend.axis.cex}{A numeric value controlling the size of the legend axis labels. Defaults to 1.75. Increase
+to increase font size, decrease to decrease font size.}
 
 \item{...}{Additional arguments to be passed to \code{plot.igraph}.}
 }
