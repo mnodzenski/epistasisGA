@@ -24,11 +24,14 @@
 #' closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
 #' scoring nodes are whiter, and high scoring edges are greener.
 #' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
-#' @param legend.cex Argument passed to \code{fields::image.plot} to control legend appearance.
-#' @param legend.line Argument passed to \code{fields::image.plot} to control legend appearance.
 #' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
 #' above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
 #' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.25.
+#' @param plot.margins A vector of length 4 passed to \code{par(mar = )}. Defaults to c(2, 1, 2, 1).
+#' @param legend.title.cex A numeric value controlling the size of the legend titles. Defaults to 1.75. Increase
+#' to increase font size, decrease to decrease font size.
+#' @param legend.axis.cex A numeric value controlling the size of the legend axis labels. Defaults to 1.75. Increase
+#' to increase font size, decrease to decrease font size.
 #' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -80,17 +83,18 @@
 #'
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
-#' @importFrom grDevices adjustcolor colorRampPalette
+#' @importFrom grDevices adjustcolor colorRampPalette as.raster
 #' @importFrom data.table melt
-#' @importFrom fields image.plot
 #' @importFrom stats cor
+#' @importFrom graphics rasterImage axis layout par
 #' @export
 
 network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node.shape = "circle",
                          repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
-                         edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("white", "grey", "red"),
+                         edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("blue", "green"),
                          node.color.ramp = c("yellow", "orange", "red"), plot.legend = TRUE,
-                         legend.cex = 1.5, legend.line = 2.5, high.ld.threshold = 0.25, ...) {
+                         high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
+                         legend.axis.cex = 1.75, ...) {
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -147,6 +151,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
     edge.df <- as.data.frame(edge.dt)
     edge.widths <- edge.df$edge.score/max(edge.df$edge.score)
     node.df <- as.data.frame(node.dt)
+    node.size.raw <- node.df$size/max(node.df$size)
     node.df$size <- node.size*(node.df$size/max(node.df$size))
 
     # prepare for plotting
@@ -154,17 +159,18 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
     network <- graph.data.frame(edge.df[, 1:2], directed = FALSE, vertices = node.df)
     E(network)$weight <- edge.df$edge.score
     E(network)$width <- edge.width.cex*edge.widths
-    color_fun <- colorRampPalette(edge.color.ramp)
-    required.colors <- as.integer(as.factor(E(network)$weight))
-    colors <- color_fun(length(unique(required.colors)))
-    edge.colors <- sapply(seq_len(length(edge.widths)), function(x) adjustcolor(colors[required.colors][x],
-        alpha.f = edge.widths[x]))
+    color_fun_e <- colorRampPalette(edge.color.ramp)
+    edge.required.colors <- as.integer(as.factor(E(network)$weight))
+    raw.edge.colors <- color_fun_e(length(unique(edge.required.colors)))
+    edge.colors <- sapply(seq_len(length(edge.widths)),
+                          function(x) adjustcolor(raw.edge.colors[edge.required.colors][x],
+                                                  alpha.f = edge.widths[x]))
     E(network)$color <- edge.colors
 
-    color_fun <- colorRampPalette(node.color.ramp)
-    required.colors <- as.integer(as.factor(V(network)$size))
-    colors <- color_fun(length(unique(required.colors)))
-    V(network)$color <- colors[required.colors]
+    color_fun_n <- colorRampPalette(node.color.ramp)
+    node.required.colors <- as.integer(as.factor(V(network)$size))
+    node.colors <- color_fun_n(length(unique(node.required.colors)))
+    V(network)$color <- node.colors[node.required.colors]
     V(network)$shape <- node.shape
     V(network)$label.cex <- vertex.label.cex*node.df$size/node.size
 
@@ -176,13 +182,33 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
         net.edges <- get.edgelist(network, names = FALSE)
         coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
-        plot(network, layout = coords, asp = 0, ...)
+
         if (length(unique(edge.colors)) > 1 & plot.legend){
 
-            image.plot(legend.only = TRUE, zlim = range(V(network)$size), col = color_fun(500),
-                       legend.lab = "SNP Score", legend.cex = legend.cex, legend.line = legend.line)
+            par(mar = plot.margins)
+            layout(matrix(c(1, 1, 2, 3), ncol = 2, byrow = F), widths = c(3.5,0.5), heights = c(1,1))
+            plot(network, layout = coords, asp = 0, ...)
+
+            node_legend <- as.raster(matrix(rev(node.colors), ncol = 1))
+            plot(c(0,2),c(0,1),type = 'n', axes = F, xlab = '', ylab = '', main = 'SNP-Score',
+                 cex.main = legend.title.cex)
+            rasterImage(node_legend, 0.75, 0, 1, 1)
+            n.legend.labels <- round(seq(min(node.size.raw), max(node.size.raw), length.out = 5), digits = 1)
+            axis(side = 4, at = seq(0, 1, length.out = 5), labels = n.legend.labels, pos = 1, cex.axis = legend.axis.cex)
+
+            edge_legend <- as.raster(matrix(rev(raw.edge.colors), ncol=1))
+            plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Pair-Score',
+                 cex.main = legend.title.cex)
+            rasterImage(edge_legend, 0.75, 0, 1, 1)
+            e.legend.labels <- round(seq(min(edge.widths), max(edge.widths), length.out = 5), digits = 1)
+            axis(side = 4, at = seq(0, 1, length.out = 5), labels = e.legend.labels, pos = 1, cex.axis = legend.axis.cex)
+
+        } else {
+
+            plot(network, layout = coords, asp = 0, ...)
 
         }
+
 
     # otherwise, return igraph object
     } else {
