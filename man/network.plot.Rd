@@ -20,7 +20,7 @@ network.plot(
   plot.legend = TRUE,
   legend.cex = 1.5,
   legend.line = 2.5,
-  high.ld.threshold = 0.5,
+  high.ld.threshold = 0.25,
   ...
 )
 }
@@ -64,9 +64,9 @@ scoring nodes are whiter, and high scoring edges are greener.}
 
 \item{legend.line}{Argument passed to \code{fields::image.plot} to control legend appearance.}
 
-\item{high.ld.threshold}{A numeric value between 0 and 1, indicating the r^2 threshold above which a pair of
-SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
-between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.5.}
+\item{high.ld.threshold}{A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
+above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
+between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.25.}
 
 \item{...}{Additional arguments to be passed to \code{plot.igraph}.}
 }

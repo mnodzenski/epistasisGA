@@ -26,9 +26,9 @@
 #' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
 #' @param legend.cex Argument passed to \code{fields::image.plot} to control legend appearance.
 #' @param legend.line Argument passed to \code{fields::image.plot} to control legend appearance.
-#' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold above which a pair of
-#' SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
-#' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.5.
+#' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
+#' above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
+#' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.25.
 #' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -90,7 +90,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
                          repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
                          edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("white", "grey", "red"),
                          node.color.ramp = c("yellow", "orange", "red"), plot.legend = TRUE,
-                         legend.cex = 1.5, legend.line = 2.5, high.ld.threshold = 0.5, ...) {
+                         legend.cex = 1.5, legend.line = 2.5, high.ld.threshold = 0.25, ...) {
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -112,10 +112,10 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
 
         } else {
 
-            case.genetic.data <- preprocessed.list$case.genetic.data
+            comp.genetic.data <- preprocessed.list$complement.genetic.data
             snp1 <- target.snps[1]
             snp2 <- target.snps[2]
-            r2 <- cor(case.genetic.data[ , snp1], case.genetic.data[ , snp2])^2
+            r2 <- cor(comp.genetic.data[ , snp1], comp.genetic.data[ , snp2])^2
             return(r2)
 
         }
