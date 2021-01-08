@@ -9,7 +9,7 @@
 #' graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
 #' for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
 #' Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.
-#' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.
+#' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.
 #' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
 #'  increase to move nodes closer together.
 #' @param node.size A scalar affecting the size of the graph nodes. Increase to increase size.
@@ -19,10 +19,10 @@
 #' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.
 #' @param edge.color.ramp A character vector of colors. The coloring of the network edges will be shown on a gradient, with the lower scoring edge weights
 #' closer to the first color specified in \code{edge.color.ramp}, and higher scoring weights closer to the last color specified. By default, the
-#' low scoring edges are whiter, and high scoring edges are redder.
+#' low scoring edges are light blue, and high scoring edges are dark blue.
 #' @param node.color.ramp A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
 #' closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
-#' scoring nodes are whiter, and high scoring edges are greener.
+#' scoring nodes are whiter, and high scoring edges are redder.
 #' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
 #' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
 #' above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
@@ -91,8 +91,8 @@
 
 network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node.shape = "circle",
                          repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
-                         edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("blue", "green"),
-                         node.color.ramp = c("yellow", "orange", "red"), plot.legend = TRUE,
+                         edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("lightblue", "blue"),
+                         node.color.ramp = c("white", "red"), plot.legend = TRUE,
                          high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
                          legend.axis.cex = 1.75, ...) {
 
