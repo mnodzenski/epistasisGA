@@ -15,8 +15,8 @@ network.plot(
   vertex.label.cex = 0.5,
   edge.width.cex = 1,
   plot = TRUE,
-  edge.color.ramp = c("blue", "green"),
-  node.color.ramp = c("yellow", "orange", "red"),
+  edge.color.ramp = c("lightblue", "blue"),
+  node.color.ramp = c("white", "red"),
   plot.legend = TRUE,
   high.ld.threshold = 0.1,
   plot.margins = c(2, 1, 2, 1),
@@ -36,7 +36,7 @@ graphical scores of chromosomes containing that pair across chromosome sizes. Pa
 for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
 Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.}
 
-\item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes.}
+\item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.}
 
 \item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
 increase to move nodes closer together.}
@@ -53,11 +53,11 @@ increase to move nodes closer together.}
 
 \item{edge.color.ramp}{A character vector of colors. The coloring of the network edges will be shown on a gradient, with the lower scoring edge weights
 closer to the first color specified in \code{edge.color.ramp}, and higher scoring weights closer to the last color specified. By default, the
-low scoring edges are whiter, and high scoring edges are redder.}
+low scoring edges are light blue, and high scoring edges are dark blue.}
 
 \item{node.color.ramp}{A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
 closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
-scoring nodes are whiter, and high scoring edges are greener.}
+scoring nodes are whiter, and high scoring edges are redder.}
 
 \item{plot.legend}{A boolean indicating whether a legend should be plotted. Defaults to TRUE.}
 
