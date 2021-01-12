@@ -26,7 +26,9 @@ network.plot(
 )
 }
 \arguments{
-\item{edge.dt}{The data.table returned by function \code{compute.edge.scores}.}
+\item{edge.dt}{The data.table returned by function \code{compute.edge.scores}, or a subset of it. By default, the SNPs
+will be labeled with their RSIDs, listed in columns 3 and 4. Users can create custom labels by changing the values in these
+two columns.}
 
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
 

@@ -2,7 +2,9 @@
 #'
 #' This function plots a network of SNPs with potential multi-SNP effects.
 #'
-#' @param edge.dt The data.table returned by function \code{compute.edge.scores}.
+#' @param edge.dt The data.table returned by function \code{compute.edge.scores}, or a subset of it. By default, the SNPs
+#' will be labeled with their RSIDs, listed in columns 3 and 4. Users can create custom labels by changing the values in these
+#' two columns.
 #' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
@@ -128,10 +130,15 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
 
 
     #subset to target cols
-    edge.dt <- edge.dt[ , c(3, 4, 5)]
+    edge.label.dt <- edge.dt[ , c(3, 4, 5)]
+    edge.dt <- edge.dt[ , c(1, 2, 5)]
 
     #compute node scores
     edge.dt.long <- melt(edge.dt, 3, c(1, 2), value.name = 'name')
+    edge.label.dt.long <- melt(edge.label.dt, 3, c(1, 2), value.name = 'label')
+    node.labels <- as.character(edge.label.dt.long$label)
+    names(node.labels) <- as.character(edge.dt.long$name)
+
     if (score.type == "max"){
 
         node.dt <- edge.dt.long[ , list(size = max(edge.score)), by = 'name']
@@ -173,6 +180,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
     V(network)$color <- node.colors[node.required.colors]
     V(network)$shape <- node.shape
     V(network)$label.cex <- vertex.label.cex*node.df$size/node.size
+    V(network)$label <- node.labels[V(network)$name]
 
     E(network)$lty <- ifelse(r2.vals >= high.ld.threshold, 2, 1)
 
