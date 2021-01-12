@@ -182,7 +182,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
     V(network)$label.cex <- vertex.label.cex*node.df$size/node.size
     V(network)$label <- node.labels[V(network)$name]
 
-    E(network)$lty <- ifelse(r2.vals >= high.ld.threshold, 2, 1)
+    E(network)$lty <- ifelse(r2.vals >= high.ld.threshold, 3, 1)
 
     # if desired, plot
     if (plot) {
