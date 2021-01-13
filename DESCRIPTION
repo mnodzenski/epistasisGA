@@ -3,7 +3,7 @@ Type: Package
 Title: An R package to identify multi-snp effects in nuclear family studies using 
         the GADGETS method
 Version: 0.99.0
-Author: Michael Nodzenski
+Author: Michael Nodzenski, Juno M. Krahn
 Maintainer: Michael Nodzenski <michael.nodzenski@gmail.com>
 Description: Runs the GADGETS method to identify multi-snp effects in nuclear family studies. 
 License: GPL-3
