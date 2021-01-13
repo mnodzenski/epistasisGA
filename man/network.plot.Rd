@@ -13,7 +13,7 @@ network.plot(
   node.size = 25,
   graph.area = 100,
   vertex.label.cex = 0.5,
-  edge.width.cex = 1,
+  edge.width.cex = 12,
   plot = TRUE,
   edge.color.ramp = c("lightblue", "blue"),
   node.color.ramp = c("white", "red"),
