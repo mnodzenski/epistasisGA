@@ -13,6 +13,6 @@ data(snp.annotations)
 \description{
 A data.frame containing the RSID, REF allele and ALT allele
 for each SNP in the example datasets. The SNPs are in the same
-order as they appear in the example datasets.
+order as they appear in the example dataset columns.
 }
 \keyword{datasets}

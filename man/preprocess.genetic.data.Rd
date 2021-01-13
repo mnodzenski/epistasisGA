@@ -2,7 +2,7 @@
 % Please edit documentation in R/preprocess.genetic.data.R
 \name{preprocess.genetic.data}
 \alias{preprocess.genetic.data}
-\title{A function to pre-process case-parent triad data.}
+\title{A function to pre-process case-parent triad of affected/unaffected sibling data.}
 \usage{
 preprocess.genetic.data(
   case.genetic.data,
@@ -20,7 +20,8 @@ preprocess.genetic.data(
 The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
-\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts, or the unaffected siblings.
+\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
+this should be the genotypes for the unaffected siblings.
 Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
 
 \item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
@@ -59,7 +60,7 @@ A list containing the following:
 }
 }
 \description{
-This function performs several pre-processing steps, intended for use before function run.ga.
+This function performs several pre-processing steps, intended for use before function run.gadgets.
 }
 \examples{
 
