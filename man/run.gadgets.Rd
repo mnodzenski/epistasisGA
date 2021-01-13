@@ -104,7 +104,7 @@ Argument \code{generations} must be an integer multiple of this value. Defaults 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 
 \item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-See the GADGET paper for specific details.}
+See the GADGETS paper for specific details.}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:
