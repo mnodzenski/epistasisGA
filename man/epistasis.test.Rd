@@ -3,7 +3,7 @@
 \name{epistasis.test}
 \alias{epistasis.test}
 \title{A function to run a test of the null hypothesis that a collection of SNPs do not exhibit epistasis, conditional
-upon the observed marginal associations.}
+upon observed marginal SNP-disease associations.}
 \usage{
 epistasis.test(
   snp.cols,
@@ -23,10 +23,10 @@ epistasis.test(
 
 \item{n.permutes}{The number of permutations on which to base the test. Defaults to 1000.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement or unaffected sibling
+\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
 
 \item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
@@ -49,7 +49,7 @@ A list of thee elements:
 }
 \description{
 This function runs a permutation based test of the null hypothesis that a collection of SNPs do not exhibit epistasis,
-conditional upon the observed marginal associations.
+conditional upon observed marginal SNP-disease associations.
 }
 \examples{
 

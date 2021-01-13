@@ -1,11 +1,12 @@
-#' A function to pre-process case-parent triad data.
+#' A function to pre-process case-parent triad of affected/unaffected sibling data.
 #'
-#' This function performs several pre-processing steps, intended for use before function run.ga.
+#' This function performs several pre-processing steps, intended for use before function run.gadgets.
 #'
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
 #' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
-#' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts, or the unaffected siblings.
+#' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
+#' this should be the genotypes for the unaffected siblings.
 #' Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
 #' @param father.genetic.data The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified.

@@ -1,6 +1,6 @@
-#' A function to combine results for individual islands into a single dataset.
+#' A function to combine GADGETS results for individual islands into a single dataset.
 #'
-#' This function combines results for individual islands into a single dataset.
+#' This function combines GADGETS results for individual islands into a single dataset.
 #'
 #' @param results.dir The directory in which individual island results from \code{run.gadgets} are saved.
 #' @param annotation.data A data frame containing columns 'RSID', 'REF' and 'ALT'. Column 'RSID' gives the
