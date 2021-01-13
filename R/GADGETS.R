@@ -19,13 +19,12 @@
 #' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 #'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 #'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-#'  to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
-#'  proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.
+#'  to be in LD if they are located on the same biological chromosome.
 #' @param n.chromosomes An integer specifying the number of chromosomes to use in the GA.
 #' @param chromosome.size An integer specifying the number of SNPs on each chromosome.
 #' @param snp.chisq A vector of statistics to be used in sampling SNPs for mutation. By default, these are the square roots of
 #' the chi-square marginal SNP-disease association statistics for each column in \code{case.genetic.data}, but can also be manually
-#' specified or uniformly 1 (totally random sampling).
+#' specified or uniformly 1 (corresponding to totally random sampling).
 #' @param original.col.numbers A vector of integers indicating the original column number of each SNP in \code{case.genetic.data}.
 #' This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
@@ -35,10 +34,10 @@
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.
-#' @param migration.interval The interval of generations for which the GA will run prior to migration of top chromosomes among islands in a cluster. Defaults to 50.
-#' In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations.
+#' @param migration.interval The interval of generations for which GADGETS will run prior to migration of top chromosomes among islands in a cluster. Defaults to 50.
+#' In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations. We also check for convergence at each of these intervals.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
-#' @param max.generations The maximum number of generations for which the GA will run. Defaults to 500.
+#' @param max.generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
 #' considered to be sufficient to stop the algorithm.
 #' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.

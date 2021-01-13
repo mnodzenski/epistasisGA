@@ -2,7 +2,7 @@
 % Please edit documentation in R/combine.islands.R
 \name{combine.islands}
 \alias{combine.islands}
-\title{A function to combine results for individual islands into a single dataset.}
+\title{A function to combine GADGETS results for individual islands into a single dataset.}
 \usage{
 combine.islands(results.dir, annotation.data, preprocessed.list)
 }
@@ -28,7 +28,7 @@ as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.
 }
 }
 \description{
-This function combines results for individual islands into a single dataset.
+This function combines GADGETS results for individual islands into a single dataset.
 }
 \examples{
 

@@ -22,7 +22,8 @@ chrom.fitness.score(
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
+ Columns are SNP allele counts, and rows are individuals.
 The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
@@ -43,8 +44,7 @@ equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 \item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
-proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.}
+to be in LD if they are located on the same biological chromosome.}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
@@ -52,10 +52,10 @@ proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set 
 
 \item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement or unaffected sibling
+\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
 
 \item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
@@ -68,7 +68,8 @@ for a given SNP. See the GADGETS paper for specific details on the implementatio
 A list:
 \describe{
  \item{fitness.score}{The chromosome fitness score.}
- \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome.
+ \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome,
+ with each element divided by it's pseudo-standard error.
  The magnitudes of these values are not particularly important, but the sign is useful.
  A positive value for a given SNP indicates the minor allele is positively associated with
  disease status, while a negative value implies the reference (‘wild type’) allele is
