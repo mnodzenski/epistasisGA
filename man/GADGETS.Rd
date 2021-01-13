@@ -58,8 +58,7 @@ equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 \item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-to be in LD if they are located on the same biological chromosome. If investigating maternal effects, where SNPs are being used as a
-proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set to TRUE.}
+to be in LD if they are located on the same biological chromosome.}
 
 \item{n.chromosomes}{An integer specifying the number of chromosomes to use in the GA.}
 
@@ -67,7 +66,7 @@ proxy for a prenatal exposure, every entry of \code{block.ld.mat} should be set 
 
 \item{snp.chisq}{A vector of statistics to be used in sampling SNPs for mutation. By default, these are the square roots of
 the chi-square marginal SNP-disease association statistics for each column in \code{case.genetic.data}, but can also be manually
-specified or uniformly 1 (totally random sampling).}
+specified or uniformly 1 (corresponding to totally random sampling).}
 
 \item{original.col.numbers}{A vector of integers indicating the original column number of each SNP in \code{case.genetic.data}.
 This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
@@ -86,12 +85,12 @@ This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.
 
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement is multiplied in computing the family weights. Defaults to 1.}
 
-\item{migration.interval}{The interval of generations for which the GA will run prior to migration of top chromosomes among islands in a cluster. Defaults to 50.
-In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations.}
+\item{migration.interval}{The interval of generations for which GADGETS will run prior to migration of top chromosomes among islands in a cluster. Defaults to 50.
+In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations. We also check for convergence at each of these intervals.}
 
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.}
 
-\item{max.generations}{The maximum number of generations for which the GA will run. Defaults to 500.}
+\item{max.generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
 
 \item{tol}{The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
 considered to be sufficient to stop the algorithm.}

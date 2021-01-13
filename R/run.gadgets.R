@@ -1,10 +1,10 @@
-#' A function to run a genetic algorithm to detect multi-SNP effects in case-parent triad studies.
+#' A function to run the GADGETS algorithm to detect multi-SNP effects in case-parent triad studies.
 #'
-#' This function runs a genetic algorithm to detect multi-SNP effects in case-parent triad studies.
+#' This function runs the GADGETS algorithm to detect multi-SNP effects in case-parent triad studies.
 #'
 #' @param data.list The output list from \code{preprocess.genetic.data}.
-#' @param n.chromosomes An integer specifying the number of chromosomes to use in the GA.
-#' @param chromosome.size An integer specifying the number of SNPs on each chromosome.
+#' @param n.chromosomes An integer specifying the number of chromosomes to use for each island in GADGETS.
+#' @param chromosome.size An integer specifying the number of SNPs in each chromosome.
 #' @param results.dir The directory to which island results will be saved.
 #' @param cluster.type A character string indicating the type of cluster on which to evolve solutions in parallel.
 #' Supported options are interactive, socket, multicore, sge, slurm, lsf, openlava, or torque. See the documentation for package batchtools for more information.
@@ -17,8 +17,8 @@
 #' @param n.chunks An integer specifying the number of chunks jobs running island clusters should be split into when dispatching jobs using \code{batchtools}.
 #' For multicore or socket \code{cluster.type}, this defaults to \code{n.workers}, resulting in the total number of island cluster jobs
 #' (equal to \code{n.islands}\\\code{island.cluster.size}) being split into \code{n.chunks} chunks.
-#' All job chunks then run in parallel, with jobs within a chunk running sequentially. For other cluster types, this defaults to 1 chunk, with the expectation
-#' that users of HPC clusters that support array jobs specify \code{chunks.as.arrayjobs = TRUE} in argument \code{resources}. For those users, the setup will
+#' All chunks then run in parallel, with jobs within a chunk running sequentially. For other cluster types, this defaults to 1 chunk, with the recommendation
+#' that users of HPC clusters which support array jobs specify \code{chunks.as.arrayjobs = TRUE} in argument \code{resources}. For those users, the setup will
 #' submit an array of \code{n.islands}\\\code{island.cluster.size} jobs to the cluster. For HPC clusters that do not support array jobs, the default setting
 #' should not be used. See \code{batchtools::submitJobs} for more information on job chunking.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement or unaffected sibling
@@ -27,7 +27,7 @@
 #'  is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
-#' @param generations The maximum number of generations for which the GA will run. Defaults to 500.
+#' @param generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
 #' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
 #' considered to be sufficient to stop the algorithm.
@@ -40,7 +40,7 @@
 #' \code{snp.sampling.probs} are manually input into function \code{preprocess.genetic.data}. Defaults to 'chisq'.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 #' The remaining proportion will be mutated. Defaults to 0.8.
-#' @param n.islands An integer indicating the number of islands to be used in the GA. Defaults to 1000.
+#' @param n.islands An integer indicating the number of islands to be used. Defaults to 1000.
 #' @param island.cluster.size An integer specifying the number of islands in a given cluster. Must evenly divide \code{n.islands} and defaults to 4.
 #' More specifically, under the default settings, the 1000 \code{n.islands} are split into 250 distinct clusters each containing 4 islands (\code{island.cluster.size}).
 #' Within a cluster, migrations of top chromosomes from one cluster island to another are periodically permitted (controlled by \code{migration.generations}), and distinct
@@ -49,7 +49,6 @@
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-#' See the GADGETS paper for specific details.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,

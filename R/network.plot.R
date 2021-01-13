@@ -28,7 +28,7 @@
 #' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
 #' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
 #' above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
-#' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.25.
+#' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.1.
 #' @param plot.margins A vector of length 4 passed to \code{par(mar = )}. Defaults to c(2, 1, 2, 1).
 #' @param legend.title.cex A numeric value controlling the size of the legend titles. Defaults to 1.75. Increase
 #' to increase font size, decrease to decrease font size.

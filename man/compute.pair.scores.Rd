@@ -26,18 +26,19 @@ otherwise an error will be returned.}
 
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
-graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
-for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
-Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.}
+graphical scores of chromosomes containing that pair across chromosome sizes. The choice of 'logsum' rather than 'sum'
+may be useful in cases where there are multiple risk-sets, and one is found much more frequently. However, it may be of interest to examine
+plots using both \code{score.type} approaches. Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or
+edges having negative weights.}
 
-\item{epi.test.permutes}{The number of permutes used to compute the epistasis test p-values.}
+\item{epi.test.permutes}{The number of permutes used to compute the epistasis test p-values. Defaults to 100.}
 
 \item{bp.param}{The \code{bp.param} argument to be passed to \code{run.epi.test}.
 If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
 
 \item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
-will be excluded from network plots. The argument defaults to 0.05.}
+will not contribute to network plots. The argument defaults to 0.05.}
 }
 \value{
 A data.table where the first four columns represent SNPs and the fifth column (edge.score)

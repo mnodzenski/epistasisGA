@@ -65,7 +65,7 @@ scoring nodes are whiter, and high scoring edges are redder.}
 
 \item{high.ld.threshold}{A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
 above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
-between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.25.}
+between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.1.}
 
 \item{plot.margins}{A vector of length 4 passed to \code{par(mar = )}. Defaults to c(2, 1, 2, 1).}
 
