@@ -18,7 +18,7 @@ installed using `devtools` using the following commands:
 
 ``` r
 library(devtools)
-devtools::install_github("mnodzenski/epistasisGA", build_vignettes = TRUE)
+devtools::install_github("mnodzenski/epistasisGA", build_vignettes = TRUE, dependencies = TRUE)
 ```
 
 ## Vignette
