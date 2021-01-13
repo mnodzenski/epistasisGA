@@ -18,10 +18,7 @@ installed using `devtools` using the following commands:
 
 ``` r
 library(devtools)
-#> Warning: package 'devtools' was built under R version 4.0.2
-#> Loading required package: usethis
-#> Warning: package 'usethis' was built under R version 4.0.2
-#devtools::install_github("mnodzenski/epistasisGA", build_vignettes = TRUE)
+devtools::install_github("mnodzenski/epistasisGA", build_vignettes = TRUE)
 ```
 
 ## Vignette
@@ -32,5 +29,4 @@ command and clicking on the resulting HTML link:
 
 ``` r
 browseVignettes("epistasisGA")
-#> No vignettes found by browseVignettes("epistasisGA")
 ```
