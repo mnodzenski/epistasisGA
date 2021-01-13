@@ -101,6 +101,8 @@ The population size argument, `n.chromosomes`, does not have a default, so users
 The `cluster.type` and `registry.args` parameters are also important. For the above example, the "interactive" cluster type indicates that all islands run sequentially in the R session. However this is not how we anticipate `run.gadgets` will be used in most cases. Rather, we strongly recommend this function be used with high performance computing clusters to avoid prohibitively long run-times. An example (not run) of this type of command is given below: 
 
 ```{r, eval=F}
+### FOR ILLUSTRATION ONLY, DO NOT TRY TO RUN THIS CHUNK ###
+
 library(BiocParallel)
 fname <- batchtoolsTemplate("slurm")
 run.gadgets(pp.list, n.chromosomes = 20, chromosome.size = 3, 
