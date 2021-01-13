@@ -93,7 +93,7 @@
 
 network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node.shape = "circle",
                          repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
-                         edge.width.cex = 1, plot = TRUE, edge.color.ramp = c("lightblue", "blue"),
+                         edge.width.cex = 12, plot = TRUE, edge.color.ramp = c("lightblue", "blue"),
                          node.color.ramp = c("white", "red"), plot.legend = TRUE,
                          high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
                          legend.axis.cex = 1.75, ...) {
