@@ -13,8 +13,17 @@ sibling studies.
 
 ## Installation
 
-epistasisGA is available through github as an R package. It can be
-installed using `devtools` using the following commands:
+epistasisGA is available through github as an R package. The main
+functions of the package rely on C++ code via the Rcpp and RcppArmadillo
+packages. These packages require a suitable compiler for installation.
+The requirements for different operating systems are described in
+section 1.3 of the Rcpp package FAQs:
+<https://cran.r-project.org/web/packages/Rcpp/vignettes/Rcpp-FAQ.pdf>.
+Further details for macOS users can be found in the ‘R Administration’
+manual, Appendix C.3:
+<https://cran.r-project.org/doc/manuals/r-release/R-admin.html#macOS>.
+After ensuring these prerequisites are installed, epistasisGA can be
+installed using the `devtools` package with the following commands:
 
 ``` r
 library(devtools)
