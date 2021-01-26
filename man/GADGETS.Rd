@@ -31,7 +31,8 @@ GADGETS(
   n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   crossover.prop = 0.8,
-  recode.threshold = 3
+  recode.threshold = 3,
+  exposure = NULL
 )
 }
 \arguments{
@@ -105,6 +106,9 @@ The remaining proportion will be mutated. Defaults to 0.8.}
 
 \item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
 See the GADGETS paper for specific details.}
+
+\item{exposure}{A categorical vector corresponding to environmental exposures of the cases. Defaults to NULL. If specified, this function will search for
+gene-environment interactions.}
 }
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:

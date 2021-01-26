@@ -49,6 +49,7 @@
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+#' @param cat.environmental.exposures A matrix of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
@@ -90,7 +91,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recode.threshold = 3) {
+    n.migrations = 20, recode.threshold = 3, cat.environmental.exposures = NULL) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations) {
@@ -127,6 +128,52 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     if (as.integer(weight.function.int) != weight.function.int){
 
         stop("weight.function.int must be an integer")
+
+    }
+
+    ### if environmental exposures are provided, make sure they are stored in a data.frame ###
+    ### and make a new omnibus exposure variable ###
+    if (!is.null(cat.environmental.exposures)){
+
+        if (class(cat.environmental.exposures) != "data.frame"){
+
+            stop("cat.environmental.exposures must be a data.frame")
+
+        }
+
+        # make sure the variables are actually categorical
+        categorical <- vapply(cat.environmental.exposures, class, character(1L))
+
+        # if stored as a numeric, make sure the column values are equivalent to integers
+        numeric.cols <- which(categorical == "numeric")
+        non.cat.cols <- vapply(numeric.cols, function(x){
+
+            !all(cat.environmental.exposures$x == as.integer(cat.environmental.exposures$x))
+
+        }, logical(1))
+        if (any(non.cat.cols)){
+
+            stop("all cat.environmental.exposure columns must be categorical variables")
+
+        }
+
+        # now make an omnibus, factor variable containing categorical exposure groups
+        exposure <- interaction(cat.environmental.exposures)
+
+        # get rid of any levels with only one case
+        cases.per.level <- vapply(unique(exposure), function(exp.level){
+
+            these.rows <- exposure == exp.level
+            sum(these.rows)
+
+        }, 1)
+
+        one.case.levels <- unique(exposure)[cases.per.level == 1]
+        exposure <- exposure[exposure != one.case.levels]
+
+    } else {
+
+        exposure <- NULL
 
     }
 
@@ -244,7 +291,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
         max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recode.threshold = recode.threshold), reg = registry)
+        crossover.prop = crossover.prop, recode.threshold = recode.threshold, exposure = exposure), reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]

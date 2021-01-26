@@ -47,6 +47,8 @@
 #' The remaining proportion will be mutated. Defaults to 0.8.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
 #' See the GADGETS paper for specific details.
+#' @param exposure A categorical vector corresponding to environmental exposures of the cases. Defaults to NULL. If specified, this function will search for
+#' gene-environment interactions.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
@@ -104,7 +106,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3) {
+                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3, exposure = NULL) {
 
     ### run rcpp version of GADGET ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
@@ -113,7 +115,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                            weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
                            gen.same.fitness, max.generations, tol, n.top.chroms,
-                           initial.sample.duplicates, crossover.prop, recode.threshold)
+                           initial.sample.duplicates, crossover.prop, recode.threshold, exposure)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
