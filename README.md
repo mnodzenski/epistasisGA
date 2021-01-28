@@ -22,8 +22,11 @@ section 1.3 of the Rcpp package FAQs:
 Further details for macOS users can be found in the ‘R Administration’
 manual, Appendix C.3:
 <https://cran.r-project.org/doc/manuals/r-release/R-admin.html#macOS>.
-After ensuring these prerequisites are installed, epistasisGA can be
-installed using the `devtools` package with the following commands:
+Additionally, to build the package vignette, Pandoc is required. To
+install Pandoc, please follow the instructions here:
+<https://pkgs.rstudio.com/rmarkdown/articles/pandoc.html>. After
+ensuring these prerequisites are installed, epistasisGA can be installed
+using the `devtools` package with the following commands:
 
 ``` r
 library(devtools)
