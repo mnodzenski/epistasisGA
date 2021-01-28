@@ -123,8 +123,6 @@ GxE.fitness.score <- function(case.genetic.data, complement.genetic.data, case.c
     # cov mat
     sigma.x <- exp1.list$sigma*(exp1.list$w)
     sigma.y <- exp2.list$sigma*(exp2.list$w)
-    #w1.star <- exp1.list$w*(exp1.list$q^2)
-    #w2.star <- exp2.list$w*(exp2.list$q^2)
     w1 <- exp1.list$w
     w2 <- exp2.list$w
     q1 <- exp1.list$q
@@ -138,7 +136,7 @@ GxE.fitness.score <- function(case.genetic.data, complement.genetic.data, case.c
     # two sample hotelling stat, using adjusted mean difference
     weight.scalar <- (w1*w2)/(w1 + w2)
     adj.xbar.minus.ybar <- q1*xbar - q2*ybar
-    s <- weight.scalar*rowSums((t(adj.xbar.minus.ybar) %*% sigma.hat.svd$u)^2/sigma.hat.svd$d)
+    s <- (weight.scalar/1000)*rowSums((t(adj.xbar.minus.ybar) %*% sigma.hat.svd$u)^2/sigma.hat.svd$d)
 
     # return two-sample hotelling, difference vectors/se's
     se <- sqrt(diag(sigma.hat))

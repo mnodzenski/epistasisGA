@@ -102,6 +102,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// subset_matrix_rows
+Rcpp::IntegerMatrix subset_matrix_rows(Rcpp::IntegerMatrix in_matrix, Rcpp::IntegerVector rows);
+RcppExport SEXP _epistasisGA_subset_matrix_rows(SEXP in_matrixSEXP, SEXP rowsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type in_matrix(in_matrixSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type rows(rowsSEXP);
+    rcpp_result_gen = Rcpp::wrap(subset_matrix_rows(in_matrix, rows));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sign_scalar
 int sign_scalar(int x);
 RcppExport SEXP _epistasisGA_sign_scalar(SEXP xSEXP) {
@@ -283,8 +295,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // chrom_fitness_score
-List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in, IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, int n_different_snps_weight, int n_both_one_weight, double recode_threshold, bool epi_test);
-RcppExport SEXP _epistasisGA_chrom_fitness_score(SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_differences_inSEXP, SEXP target_snps_inSEXP, SEXP cases_minus_complements_inSEXP, SEXP both_one_mat_inSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP) {
+List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in, IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat_in, IntegerMatrix case0_mat_in, int n_different_snps_weight, int n_both_one_weight, double recode_threshold, bool epi_test, Rcpp::Nullable<Rcpp::IntegerVector> exposure_in);
+RcppExport SEXP _epistasisGA_chrom_fitness_score(SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_differences_inSEXP, SEXP target_snps_inSEXP, SEXP cases_minus_complements_inSEXP, SEXP both_one_mat_inSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_mat_inSEXP, SEXP case0_mat_inSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP, SEXP exposure_inSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -296,19 +308,44 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerMatrix >::type both_one_mat_in(both_one_mat_inSEXP);
     Rcpp::traits::input_parameter< LogicalMatrix >::type block_ld_mat(block_ld_matSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type weight_lookup(weight_lookupSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type case2_mat(case2_matSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type case0_mat(case0_matSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case2_mat_in(case2_mat_inSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case0_mat_in(case0_mat_inSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< double >::type recode_threshold(recode_thresholdSEXP);
     Rcpp::traits::input_parameter< bool >::type epi_test(epi_testSEXP);
-    rcpp_result_gen = Rcpp::wrap(chrom_fitness_score(case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold, epi_test));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type exposure_in(exposure_inSEXP);
+    rcpp_result_gen = Rcpp::wrap(chrom_fitness_score(case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, case2_mat_in, case0_mat_in, n_different_snps_weight, n_both_one_weight, recode_threshold, epi_test, exposure_in));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GxE_fitness_score
+List GxE_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences, IntegerVector target_snps, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, CharacterVector exposure, int n_different_snps_weight, int n_both_one_weight, double recode_threshold);
+RcppExport SEXP _epistasisGA_GxE_fitness_score(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differencesSEXP, SEXP target_snpsSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP exposureSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case_genetic_data(case_genetic_dataSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type complement_genetic_data(complement_genetic_dataSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case_comp_differences(case_comp_differencesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type target_snps(target_snpsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type cases_minus_complements(cases_minus_complementsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type both_one_mat(both_one_matSEXP);
+    Rcpp::traits::input_parameter< LogicalMatrix >::type block_ld_mat(block_ld_matSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weight_lookup(weight_lookupSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case2_mat(case2_matSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type case0_mat(case0_matSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type exposure(exposureSEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type recode_threshold(recode_thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences, target_snps, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, exposure, n_different_snps_weight, n_both_one_weight, recode_threshold));
     return rcpp_result_gen;
 END_RCPP
 }
 // chrom_fitness_list
-List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences, List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, int n_different_snps_weight, int n_both_one_weight, double recode_threshold, bool epi_test);
-RcppExport SEXP _epistasisGA_chrom_fitness_list(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differencesSEXP, SEXP chromosome_listSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP) {
+List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences, List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat, int n_different_snps_weight, int n_both_one_weight, double recode_threshold, bool epi_test, Rcpp::Nullable<Rcpp::CharacterVector> exposure_in);
+RcppExport SEXP _epistasisGA_chrom_fitness_list(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differencesSEXP, SEXP chromosome_listSEXP, SEXP cases_minus_complementsSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recode_thresholdSEXP, SEXP epi_testSEXP, SEXP exposure_inSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -326,7 +363,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< double >::type recode_threshold(recode_thresholdSEXP);
     Rcpp::traits::input_parameter< bool >::type epi_test(epi_testSEXP);
-    rcpp_result_gen = Rcpp::wrap(chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold, epi_test));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::CharacterVector> >::type exposure_in(exposure_inSEXP);
+    rcpp_result_gen = Rcpp::wrap(chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold, epi_test, exposure_in));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -418,6 +456,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_vec
+NumericVector test_vec(arma::rowvec xbar1, arma::rowvec xbar2);
+RcppExport SEXP _epistasisGA_test_vec(SEXP xbar1SEXP, SEXP xbar2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::rowvec >::type xbar1(xbar1SEXP);
+    Rcpp::traits::input_parameter< arma::rowvec >::type xbar2(xbar2SEXP);
+    rcpp_result_gen = Rcpp::wrap(test_vec(xbar1, xbar2));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_scalar_min", (DL_FUNC) &_epistasisGA_scalar_min, 2},
@@ -428,6 +478,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_seq_by2", (DL_FUNC) &_epistasisGA_seq_by2, 1},
     {"_epistasisGA_unique_chrom_list", (DL_FUNC) &_epistasisGA_unique_chrom_list, 2},
     {"_epistasisGA_subset_matrix_cols", (DL_FUNC) &_epistasisGA_subset_matrix_cols, 2},
+    {"_epistasisGA_subset_matrix_rows", (DL_FUNC) &_epistasisGA_subset_matrix_rows, 2},
     {"_epistasisGA_sign_scalar", (DL_FUNC) &_epistasisGA_sign_scalar, 1},
     {"_epistasisGA_subset_matrix", (DL_FUNC) &_epistasisGA_subset_matrix, 3},
     {"_epistasisGA_weighted_sub_colsums", (DL_FUNC) &_epistasisGA_weighted_sub_colsums, 4},
@@ -441,11 +492,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_sub_colsds", (DL_FUNC) &_epistasisGA_sub_colsds, 3},
     {"_epistasisGA_find_high_risk", (DL_FUNC) &_epistasisGA_find_high_risk, 9},
     {"_epistasisGA_compute_dif_vecs", (DL_FUNC) &_epistasisGA_compute_dif_vecs, 10},
-    {"_epistasisGA_chrom_fitness_score", (DL_FUNC) &_epistasisGA_chrom_fitness_score, 14},
-    {"_epistasisGA_chrom_fitness_list", (DL_FUNC) &_epistasisGA_chrom_fitness_list, 14},
+    {"_epistasisGA_chrom_fitness_score", (DL_FUNC) &_epistasisGA_chrom_fitness_score, 15},
+    {"_epistasisGA_GxE_fitness_score", (DL_FUNC) &_epistasisGA_GxE_fitness_score, 14},
+    {"_epistasisGA_chrom_fitness_list", (DL_FUNC) &_epistasisGA_chrom_fitness_list, 15},
     {"_epistasisGA_initiate_population", (DL_FUNC) &_epistasisGA_initiate_population, 7},
     {"_epistasisGA_evolve_island", (DL_FUNC) &_epistasisGA_evolve_island, 26},
     {"_epistasisGA_run_GADGETS", (DL_FUNC) &_epistasisGA_run_GADGETS, 25},
+    {"_epistasisGA_test_vec", (DL_FUNC) &_epistasisGA_test_vec, 2},
     {NULL, NULL, 0}
 };
 

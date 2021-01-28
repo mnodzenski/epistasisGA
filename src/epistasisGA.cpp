@@ -563,11 +563,12 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   IntegerMatrix both_one_mat;
   IntegerMatrix case2_mat;
   IntegerMatrix case0_mat;
+  IntegerVector exposure;
 
   // subset to target rows if exposure provided
   if (exposure_in.isNotNull()){
 
-    exposure(exposure_in);
+    exposure = exposure_in;
     case_genetic_data = subset_matrix(case_genetic_data_in, exposure, target_snps_in);
     complement_genetic_data = subset_matrix(complement_genetic_data_in, exposure, target_snps_in);
     case_comp_differences = subset_matrix(case_comp_differences_in, exposure, target_snps_in);
@@ -902,7 +903,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
     List res = List::create(Named("fitness_score") = fitness_score,
                             Named("xbar") = mu_hat,
-                            Named("sigma_hat") = cov_mat,
+                            Named("sigma") = cov_mat,
                             Named("q") = rr,
                             Named("w") = 1/invsum_family_weights,
                             Named("risk_set_alleles") = risk_set_alleles);
@@ -927,19 +928,24 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 /////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List GxE_chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
-                             IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
+List GxE_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences,
+                             IntegerVector target_snps, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
                              LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                              CharacterVector exposure, int n_different_snps_weight = 2, int n_both_one_weight = 1, double recode_threshold = 3.0){
 
   // divide the input data based on exposure and get components for fitness score //
-  IntegerVector exposure_levels = unique(exposure);
+  CharacterVector exposure_levels = unique(exposure);
   IntegerVector in_rows = seq_len(exposure.length());
   List score_by_exposure(exposure_levels.length());
   for (int i = 0; i < score_by_exposure.length(); i++){
 
     String exposure_level = exposure_levels[i];
-    LogicalVector these_rows = exposure == exposure_level;
+    LogicalVector these_rows(exposure.length());
+    for (int i = 0; i < exposure.length(); i++){
+
+      these_rows[i] = exposure[i] == exposure_level;
+
+    }
     IntegerVector exposure_rows = in_rows[these_rows];
     score_by_exposure[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
                                                target_snps, cases_minus_complements, both_one_mat,
@@ -952,6 +958,8 @@ List GxE_chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix c
   int n_pairs = Rf_choose(exposure_levels.length(), 2);
   List pair_scores_list(n_pairs);
   int pos = 0;
+  int max_score_pos = 0;
+  double max_score;
   for (int i = 0; i < exposure_levels.length() - 1; i++){
 
     for (int j = i + 1; j < exposure_levels.length(); j++){
@@ -985,10 +993,10 @@ List GxE_chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix c
 
       // two sample modified hotelling stat //
       double weight_scalar = (w1*w2)/(w1 + w2);
-      double s = weight_scalar * arma::sum(pow((xbar_diff * U), 2) / trans(S));
+      double s = (weight_scalar / 1000) * arma::sum(pow((xbar_diff * U), 2) / trans(S));
 
       // prepare results
-       NumericVector se = wrap(sqrt(sigma_hat.diag())));
+       NumericVector se = wrap(sqrt(sigma_hat.diag()));
        NumericVector xbar_diff_n = wrap(xbar_diff);
        NumericVector std_diff_vecs = xbar_diff_n/se;
        std_diff_vecs[se == 0] = pow(10, -10);
@@ -1001,39 +1009,64 @@ List GxE_chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix c
        String low_risk_exposure;
        NumericVector diff_vec_signs;
 
-       if (s1 >= s2){
+       if (s2 >= s1){
 
-
-
-       } else {
-
-
-
-       }
-
-# also use the allele coding for the higher scoring set
-       if (exp2.list$fitness.score >= exp1.list$fitness.score){
-
-         risk.set.alleles <- exp2.list$risk.set.alleles
-         high.risk.exposure <- unique(exposure)[exp2]
-         low.risk.exposure <- unique(exposure)[exp1]
-         diff.vec.signs <- sign(ybar)
+         risk_set_alleles = exp2_list["risk_set_alleles"];
+         high_risk_exposure = exposure_levels[j];
+         low_risk_exposure = exposure_levels[i];
+         diff_vec_signs = sign(xbar2);
 
        } else {
 
-         risk.set.alleles <- exp1.list$risk.set.alleles
-         high.risk.exposure <- unique(exposure)[exp1]
-         low.risk.exposure <- unique(exposure)[exp2]
-         diff.vec.signs <- sign(xbar)
+         risk_set_alleles = exp1_list["risk_set_alleles"];
+         high_risk_exposure = exposure_levels[i];
+         low_risk_exposure = exposure_levels[j];
+         diff_vec_signs = sign(xbar1);
 
        }
 
+       pair_scores_list[pos] = List::create(Named("s") = s,
+                                             Named("std_diff_vecs") = std_diff_vecs,
+                                             Named("diff_vec_signs") = diff_vec_signs,
+                                             Named("risk_set_alleles") = risk_set_alleles,
+                                             Named("high_risk_exposure") = high_risk_exposure,
+                                             Named("low_risk_exposure") = low_risk_exposure);
+       if (pos == 0){
 
-      pos += 1;
+          max_score = s;
+
+       }
+
+       if (pos > 0){
+
+         if (s > max_score){
+
+           max_score_pos = pos;
+
+         }
+
+       }
+       pos += 1;
 
     }
 
   }
+
+  // return the largest pairwise stat as the fitness score //
+  List max_score_res = pair_scores_list[max_score_pos];
+  double fitness_score = max_score_res["s"];
+  NumericVector std_diff_vecs = max_score_res["std_diff_vecs"];
+  IntegerVector diff_vec_signs = max_score_res["diff_vec_signs"];
+  CharacterVector risk_set_alleles = max_score_res["risk_set_alleles"];
+  String high_risk_exposure = max_score_res["high_risk_exposure"];
+  String low_risk_exposure = max_score_res["low_risk_exposure"];
+  List res = List::create(Named("fitness_score") = fitness_score,
+                          Named("sum_dif_vecs") = std_diff_vecs,
+                          Named("risk_set_signs") = diff_vec_signs,
+                          Named("risk_set_alleles") = risk_set_alleles,
+                          Named("high_risk_exposure") = high_risk_exposure,
+                          Named("low_risk_exposure") = low_risk_exposure);
+  return(res);
 
 }
 
@@ -1046,21 +1079,36 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
                         List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
                         LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        double recode_threshold = 4.0, bool epi_test = false, Rcpp::Nullable<Rcpp::IntegerVector> exposure = R_NilValue){
+                        double recode_threshold = 3.0, bool epi_test = false, Rcpp::Nullable<Rcpp::CharacterVector> exposure_in = R_NilValue){
 
   List scores = chromosome_list.length();
 
   if (exposure_in.isNotNull()){
 
-  for (int i = 0; i < chromosome_list.length(); i++){
+    CharacterVector exposure(exposure_in);
+    for (int i = 0; i < chromosome_list.length(); i++){
 
-    IntegerVector target_snps = chromosome_list[i];
-    scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
+      IntegerVector target_snps = chromosome_list[i];
+      scores[i] = GxE_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
                                     target_snps, cases_minus_complements, both_one_mat,
-                                    block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight,
-                                    n_both_one_weight, recode_threshold, epi_test);
+                                    block_ld_mat, weight_lookup, case2_mat, case0_mat, exposure,
+                                    n_different_snps_weight, n_both_one_weight, recode_threshold);
+    }
+
+  } else {
+
+    for (int i = 0; i < chromosome_list.length(); i++){
+
+      IntegerVector target_snps = chromosome_list[i];
+      scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
+                                      target_snps, cases_minus_complements, both_one_mat,
+                                      block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight,
+                                      n_both_one_weight, recode_threshold, epi_test);
+
+    }
 
   }
+
   return(scores);
 
 }
