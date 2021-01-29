@@ -550,44 +550,17 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 // [[Rcpp::export]]
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerMatrix case_comp_differences_in,
                                   IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
-                                  LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat_in, IntegerMatrix case0_mat_in,
+                                  LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                                   int n_different_snps_weight = 2, int n_both_one_weight = 1,
                                   double recode_threshold = 3.0, bool epi_test = false,
-                                  Rcpp::Nullable<Rcpp::IntegerVector> exposure_in = R_NilValue) {
+                                  bool GxE = false) {
 
   // need to deep copy inputs to avoid overwriting
-  IntegerMatrix case_genetic_data;
-  IntegerMatrix complement_genetic_data;
-  IntegerMatrix case_comp_differences;
-  IntegerMatrix cases_minus_complements;
-  IntegerMatrix both_one_mat;
-  IntegerMatrix case2_mat;
-  IntegerMatrix case0_mat;
-  IntegerVector exposure;
-
-  // subset to target rows if exposure provided
-  if (exposure_in.isNotNull()){
-
-    exposure = exposure_in;
-    case_genetic_data = subset_matrix(case_genetic_data_in, exposure, target_snps_in);
-    complement_genetic_data = subset_matrix(complement_genetic_data_in, exposure, target_snps_in);
-    case_comp_differences = subset_matrix(case_comp_differences_in, exposure, target_snps_in);
-    cases_minus_complements = subset_matrix(cases_minus_complements_in, exposure, target_snps_in);
-    both_one_mat = subset_matrix(both_one_mat_in, exposure, target_snps_in);
-    case2_mat = subset_matrix_rows(case2_mat_in, exposure);
-    case0_mat = subset_matrix_rows(case0_mat_in, exposure);
-
-  } else {
-
-    case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
-    complement_genetic_data = subset_matrix_cols(complement_genetic_data_in, target_snps_in);
-    case_comp_differences = subset_matrix_cols(case_comp_differences_in, target_snps_in);
-    cases_minus_complements = subset_matrix_cols(cases_minus_complements_in, target_snps_in);
-    both_one_mat = subset_matrix_cols(both_one_mat_in, target_snps_in);
-    case2_mat = case2_mat_in;
-    case0_mat = case0_mat_in;
-
-  }
+  IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
+  IntegerMatrix complement_genetic_data = subset_matrix_cols(complement_genetic_data_in, target_snps_in);
+  IntegerMatrix case_comp_differences = subset_matrix_cols(case_comp_differences_in, target_snps_in);
+  IntegerMatrix cases_minus_complements = subset_matrix_cols(cases_minus_complements_in, target_snps_in);
+  IntegerMatrix both_one_mat = subset_matrix_cols(both_one_mat_in, target_snps_in);
 
   // now redefining target snps
   int n_target = target_snps_in.length();
@@ -899,7 +872,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                             Named("inf_families") = informative_families);
     return(res);
 
-  } else if (exposure_in.isNotNull()){
+  } else if (GxE){
 
     List res = List::create(Named("fitness_score") = fitness_score,
                             Named("xbar") = mu_hat,
@@ -928,29 +901,30 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 /////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List GxE_fitness_score(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_differences,
-                             IntegerVector target_snps, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
-                             LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
-                             CharacterVector exposure, int n_different_snps_weight = 2, int n_both_one_weight = 1, double recode_threshold = 3.0){
+List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
+                       ListOf<IntegerMatrix> case_comp_differences_list, IntegerVector target_snps,
+                       ListOf<IntegerMatrix> cases_minus_complements_list, ListOf<IntegerMatrix> both_one_mat_list,
+                       LogicalMatrix block_ld_mat, NumericVector weight_lookup, ListOf<IntegerMatrix> case2_mat_list,
+                       ListOf<IntegerMatrix> case0_mat_list, CharacterVector exposure, int n_different_snps_weight = 2,
+                       int n_both_one_weight = 1, double recode_threshold = 3.0){
 
   // divide the input data based on exposure and get components for fitness score //
   CharacterVector exposure_levels = unique(exposure);
-  IntegerVector in_rows = seq_len(exposure.length());
   List score_by_exposure(exposure_levels.length());
+
   for (int i = 0; i < score_by_exposure.length(); i++){
 
-    String exposure_level = exposure_levels[i];
-    LogicalVector these_rows(exposure.length());
-    for (int i = 0; i < exposure.length(); i++){
-
-      these_rows[i] = exposure[i] == exposure_level;
-
-    }
-    IntegerVector exposure_rows = in_rows[these_rows];
+    IntegerMatrix case_genetic_data = case_genetic_data_list[i];
+    IntegerMatrix complement_genetic_data = complement_genetic_data_list[i];
+    IntegerMatrix case_comp_differences = case_comp_differences_list[i];
+    IntegerMatrix cases_minus_complements = cases_minus_complements_list[i];
+    IntegerMatrix both_one_mat = both_one_mat_list[i];
+    IntegerMatrix case2_mat = case2_mat_list[i];
+    IntegerMatrix case0_mat = case0_mat_list[i];
     score_by_exposure[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
                                                target_snps, cases_minus_complements, both_one_mat,
                                                block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight,
-                                               n_both_one_weight, recode_threshold, false, exposure_rows);
+                                               n_both_one_weight, recode_threshold, false, true);
 
   }
 
@@ -1079,39 +1053,46 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
                         List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
                         LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        double recode_threshold = 3.0, bool epi_test = false, Rcpp::Nullable<Rcpp::CharacterVector> exposure_in = R_NilValue){
+                        double recode_threshold = 3.0, bool epi_test = false){
 
   List scores = chromosome_list.length();
+  for (int i = 0; i < chromosome_list.length(); i++){
 
-  if (exposure_in.isNotNull()){
-
-    CharacterVector exposure(exposure_in);
-    for (int i = 0; i < chromosome_list.length(); i++){
-
-      IntegerVector target_snps = chromosome_list[i];
-      scores[i] = GxE_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
+    IntegerVector target_snps = chromosome_list[i];
+    scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
                                     target_snps, cases_minus_complements, both_one_mat,
-                                    block_ld_mat, weight_lookup, case2_mat, case0_mat, exposure,
-                                    n_different_snps_weight, n_both_one_weight, recode_threshold);
-    }
-
-  } else {
-
-    for (int i = 0; i < chromosome_list.length(); i++){
-
-      IntegerVector target_snps = chromosome_list[i];
-      scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
-                                      target_snps, cases_minus_complements, both_one_mat,
-                                      block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight,
-                                      n_both_one_weight, recode_threshold, epi_test);
-
-    }
+                                    block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight,
+                                    n_both_one_weight, recode_threshold, epi_test);
 
   }
-
   return(scores);
 
 }
+
+///////////////////////////////////////////////////////////////////////////
+// Helper function to apply the GxE fitness score to a list of chromosomes
+///////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List case_comp_differences_list,
+                        List chromosome_list, List cases_minus_complements_list, List both_one_mat_list,
+                        LogicalMatrix block_ld_mat, NumericVector weight_lookup, List case2_mat_list, List case0_mat_list,
+                        CharacterVector exposure, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                        double recode_threshold = 3.0){
+
+  List scores = chromosome_list.length();
+  for (int i = 0; i < chromosome_list.length(); i++){
+
+    IntegerVector target_snps = chromosome_list[i];
+    scores[i] = GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list,
+                                  target_snps, cases_minus_complements_list, both_one_mat_list,
+                                  block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, exposure,
+                                  n_different_snps_weight, n_both_one_weight, recode_threshold);
+  }
+  return(scores);
+
+}
+
 
 ///////////////////////////////////////////
 // function to initiate island populations
