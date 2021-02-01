@@ -106,7 +106,9 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3, exposure = NULL) {
+                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3, exposure = NULL,
+                   case.genetic.data.list = NULL, complement.genetic.data.list = NULL, case.comp.different.list = NULL,
+                   case.minus.comp.list = NULL, both.one.mat.list = NULL, case2.mat.list = NULL, case0.mat.list = NULL) {
 
     ### run rcpp version of GADGET ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
@@ -115,7 +117,9 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                            weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
                            gen.same.fitness, max.generations, tol, n.top.chroms,
-                           initial.sample.duplicates, crossover.prop, recode.threshold, exposure)
+                           initial.sample.duplicates, crossover.prop, recode.threshold, exposure,
+                           case.genetic.data.list, complement.genetic.data.list, case.comp.different.list,
+                           case.minus.comp.list, both.one.mat.list, case2.mat.list, case0.mat.list)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
