@@ -110,21 +110,21 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    case.genetic.data.list = NULL, complement.genetic.data.list = NULL, case.comp.different.list = NULL,
                    case.minus.comp.list = NULL, both.one.mat.list = NULL, case2.mat.list = NULL, case0.mat.list = NULL) {
 
-    ### run rcpp version of GADGET ##
-    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
-                           complement.genetic.data, case.comp.different, case.minus.comp,
-                           both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                           weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
-                           n.different.snps.weight, n.both.one.weight, migration.interval,
-                           gen.same.fitness, max.generations, tol, n.top.chroms,
-                           initial.sample.duplicates, crossover.prop, recode.threshold, exposure,
-                           case.genetic.data.list, complement.genetic.data.list, case.comp.different.list,
-                           case.minus.comp.list, both.one.mat.list, case2.mat.list, case0.mat.list)
+    ### run rcpp version of GADGETS ##
+    rcpp.res <- run_GADGETS(island.cluster.size, block.ld.mat, n.chromosomes, chromosome.size,
+                            weight.lookup, n.migrations, snp.chisq, original.col.numbers, case.genetic.data,
+                            complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat,
+                            case2.mat, case0.mat, case.genetic.data.list, complement.genetic.data.list,
+                            case.comp.different.list, case.minus.comp.list, both.one.mat.list, case2.mat.list,
+                            case0.mat.list, exposure, n.different.snps.weight, n.both.one.weight, migration.interval,
+                            gen.same.fitness, max.generations, tol, n.top.chroms, initial.sample.duplicates,
+                            crossover.prop, recode.threshold)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
 
         #pick out the pieces from rcpp output
+        rcpp.res.length <- length(rcpp.res)
         n.generations <- rcpp.res[[island.number]][["generation"]]
         fitness.score.vec <- unlist(rcpp.res[[island.number]][["fitness_score_list"]][seq_len(n.generations)])
         all.chrom.dt <- rbindlist(lapply(rcpp.res[[island.number]][["gen_chromosome_list"]][seq_len(n.generations)],
@@ -134,6 +134,16 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
         risk.allele.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_allele_vec_list"]][seq_len(n.generations)],
                                         function(gen.list) transpose(setDT(gen.list))))
 
+        if (rcpp.res.length == 10){
+
+            risk.set.sign.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_set_sign_list"]][seq_len(n.generations)],
+                                               function(gen.list) transpose(setDT(gen.list))))
+            high.risk.exposure.vec <- unlist(rcpp.res[[island.number]][["high_risk_exposure_list"]][seq_len(n.generations)])
+            low.risk.exposure.vec <- unlist(rcpp.res[[island.number]][["low_risk_exposure_list"]][seq_len(n.generations)])
+
+
+        }
+
         unique.chromosome.dt <- unique(all.chrom.dt)
         colnames(unique.chromosome.dt) <- paste0("snp", seq_len(ncol(unique.chromosome.dt)))
         unique.chrom.dif.vec.dt <- sum.dif.vec.dt[!duplicated(all.chrom.dt), ]
@@ -142,8 +152,28 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                                                     ".diff.vec")
         colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
                                                             ".allele.copies")
+        if (rcpp.res.length == 10){
+
+            unique.risk.set.sign.dt <- risk.set.sign.dt[!duplicated(all.chrom.dt), ]
+            colnames(unique.risk.set.sign.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
+                                                        ".risk.sign")
+            unique.high.risk.exposure.vec <- high.risk.exposure.vec[!duplicated(all.chrom.dt)]
+            unique.low.risk.exposure.vec <- low.risk.exposure.vec[!duplicated(all.chrom.dt)]
+        }
+
         unique.fitness.score.vec <- fitness.score.vec[!duplicated(all.chrom.dt)]
-        unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
+        if (rcpp.res.length == 10){
+
+            unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.risk.set.sign.dt, unique.chrom.risk.allele.vec.dt)
+            unique.results[, `:=`(high.risk.exposure = unique.high.risk.exposure.vec, low.risk.exposure = unique.low.risk.exposure.vec)]
+
+
+        } else {
+
+            unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
+
+        }
+
         unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
         unique.results[, `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(unique.results)),
                        .SDcols = (1 + chromosome.size):(2 * chromosome.size)]
