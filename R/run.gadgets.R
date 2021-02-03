@@ -169,7 +169,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         }, 1)
 
         one.case.levels <- unique(exposure)[cases.per.level == 1]
-        exposure <- exposure[exposure != one.case.levels]
+        if (length(one.case.levels) > 0){
+
+            exposure <- exposure[exposure != one.case.levels]
+
+        }
         if (length(exposure) == 1){
 
             stop("exposure must have at least two levels")
@@ -211,7 +215,9 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### if running GxE, split input data into lists based on exposure status ###
     if (!is.null(exposure)){
 
-        case.genetic.data.list <- lapply(split(data.frame(case.genetic.data), exposure), as.matrix)
+        case.genetic.data.split <- split(data.frame(case.genetic.data), exposure)
+        exposure.levels <- names(case.genetic.data.split)
+        case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)
         complement.genetic.data.list <- lapply(split(data.frame(complement.genetic.data), exposure), as.matrix)
         case.comp.different.list <- lapply(split(data.frame(case.comp.different), exposure), as.matrix)
         case.minus.comp.list <- lapply(split(data.frame(case.minus.comp), exposure), as.matrix)
@@ -237,6 +243,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         both.one.mat.list <- NULL
         case2.mat.list <- NULL
         case0.mat.list <- NULL
+        exposure.levels <- NULL
 
     }
 
@@ -328,7 +335,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
         max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recode.threshold = recode.threshold, exposure = exposure, case.genetic.data.list = case.genetic.data.list,
+        crossover.prop = crossover.prop, recode.threshold = recode.threshold, exposure.levels = exposure.levels, case.genetic.data.list = case.genetic.data.list,
         complement.genetic.data.list = complement.genetic.data.list, case.comp.different.list = case.comp.different.list,
         case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list, case2.mat.list = case2.mat.list, case0.mat.list = case0.mat.list),
         reg = registry)

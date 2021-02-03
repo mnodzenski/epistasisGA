@@ -5,17 +5,22 @@
 #'
 #' @param cluster.number An integer indicating the cluster number (used for labeling the output file).
 #' @param results.dir The directory to which island results will be saved.
-#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
-#' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
+#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
+#' Columns are SNP allele counts, and rows are individuals. The ordering of the columns must be consistent with the LD structure specified in
+#' \code{block.ld.mat}. Defaults to NULL. If NULL, \code{case.genetic.data.list} must be specified.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
 #' Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
-#' the unaffected sibling genotypes.
+#' the unaffected sibling genotypes. Defaults to NULL. If NULL, \code{complement.genetic.data.list}
+#' must be specified.
 #' @param case.comp.different A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
-#' where rows correspond to individuals and columns correspond to snps.
-#' @param case.minus.comp A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.
+#' where rows correspond to individuals and columns correspond to SNPs. Defaults to NULL. If NULL, \code{case.comp.different.list}
+#' must be specified.
+#' @param case.minus.comp A matrix equal to \code{case.genetic.data} - \code{complement genetic data}. Defaults to NULL.
+#' If NULL, \code{case.minus.comp.list} must be specified.
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
-#' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
+#' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}. Defaults to NULL. If NULL,
+#' \code{both.one.mat.list} must be specified.
 #' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 #'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 #'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
@@ -47,8 +52,21 @@
 #' The remaining proportion will be mutated. Defaults to 0.8.
 #' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
 #' See the GADGETS paper for specific details.
-#' @param exposure A categorical vector corresponding to environmental exposures of the cases. Defaults to NULL. If specified, this function will search for
+#' @param exposure.levels A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 #' gene-environment interactions.
+#' @param case.genetic.data.list A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
+#' as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.
+#' @param complement.genetic.data.list A list of matrices containing complement/unaffected sibling genetic data. Each element of the list corresponds to groups of
+#' cases with a common environmental exposure, as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP
+#' minor allele counts. Defaults to NULL.
+#' @param case.comp.different.list A list of matrices indicating \code{case.genetic.data.list} != \code{complement.genetic.data.list}. Defaults to NULL.
+#' @param case.minus.comp.list A list of matrices corresponding to \code{case.genetic.data.list} - \code{complement.genetic.data.list}. Defaults to NULL.
+#' @param both.one.mat.list A list of matrices indicating \code{case.genetic.data.list} == \code{complement.genetic.data.list} == 1. Defaults to NULL.
+#' @param case2.mat.list A list of logical matrices indicating whether, for each matrix in \code{case.genetic.data.list} and for each SNP,
+#' the case carries 2 copies of the minor allele. Defaults to NULL.
+#' @param case0.mat.list A list of logical matrices indicating whether, for each matrix in \code{case.genetic.data.list} and for each SNP,
+#' the case carries 0 copies of the minor allele. Defaults to NULL.
+#'
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
@@ -106,7 +124,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3, exposure = NULL,
+                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recode.threshold = 3, exposure.levels = NULL,
                    case.genetic.data.list = NULL, complement.genetic.data.list = NULL, case.comp.different.list = NULL,
                    case.minus.comp.list = NULL, both.one.mat.list = NULL, case2.mat.list = NULL, case0.mat.list = NULL) {
 
@@ -116,7 +134,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                             complement.genetic.data, case.comp.different, case.minus.comp, both.one.mat,
                             case2.mat, case0.mat, case.genetic.data.list, complement.genetic.data.list,
                             case.comp.different.list, case.minus.comp.list, both.one.mat.list, case2.mat.list,
-                            case0.mat.list, exposure, n.different.snps.weight, n.both.one.weight, migration.interval,
+                            case0.mat.list, exposure.levels, n.different.snps.weight, n.both.one.weight, migration.interval,
                             gen.same.fitness, max.generations, tol, n.top.chroms, initial.sample.duplicates,
                             crossover.prop, recode.threshold)
 
@@ -124,7 +142,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
     lapply(seq_along(rcpp.res), function(island.number){
 
         #pick out the pieces from rcpp output
-        rcpp.res.length <- length(rcpp.res)
+        rcpp.res.length <- length(rcpp.res[[island.number]])
         n.generations <- rcpp.res[[island.number]][["generation"]]
         fitness.score.vec <- unlist(rcpp.res[[island.number]][["fitness_score_list"]][seq_len(n.generations)])
         all.chrom.dt <- rbindlist(lapply(rcpp.res[[island.number]][["gen_chromosome_list"]][seq_len(n.generations)],
@@ -134,16 +152,22 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
         risk.allele.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_allele_vec_list"]][seq_len(n.generations)],
                                         function(gen.list) transpose(setDT(gen.list))))
 
+       #print(rcpp.res[[island.number]][["risk_set_sign_list"]])
         if (rcpp.res.length == 10){
 
+            #print("risk set sign list")
             risk.set.sign.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_set_sign_list"]][seq_len(n.generations)],
                                                function(gen.list) transpose(setDT(gen.list))))
+
+            #print("high.risk.exposure.vec")
             high.risk.exposure.vec <- unlist(rcpp.res[[island.number]][["high_risk_exposure_list"]][seq_len(n.generations)])
+
+            #print("low.risk.exposure.vec")
             low.risk.exposure.vec <- unlist(rcpp.res[[island.number]][["low_risk_exposure_list"]][seq_len(n.generations)])
 
 
         }
-
+        #print("here")
         unique.chromosome.dt <- unique(all.chrom.dt)
         colnames(unique.chromosome.dt) <- paste0("snp", seq_len(ncol(unique.chromosome.dt)))
         unique.chrom.dif.vec.dt <- sum.dif.vec.dt[!duplicated(all.chrom.dt), ]
