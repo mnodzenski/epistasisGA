@@ -12,7 +12,8 @@ preprocess.genetic.data(
   block.ld.mat,
   min.allele.freq = 0.025,
   bp.param = bpparam(),
-  snp.sampling.probs = NULL
+  snp.sampling.probs = NULL,
+  categorical.exposures = NULL
 )
 }
 \arguments{
@@ -45,6 +46,8 @@ If using a cluster computer, this parameter needs to be set with care. See \code
 genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
 each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 real numbers. See argument \code{prob} from function \code{sample} for more details.}
+
+\item{categorical.exposures}{A data.frame of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.}
 }
 \value{
 A list containing the following:
@@ -57,6 +60,7 @@ A list containing the following:
  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
  \item{block.ld.mat}{The pre-processed version of \code{block.ld.mat}.}
  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
+ \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
 }
 }
 \description{
