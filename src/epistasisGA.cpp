@@ -149,6 +149,21 @@ Rcpp::IntegerMatrix subset_matrix_cols(Rcpp::IntegerMatrix in_matrix, Rcpp::Inte
   return(out_matrix);
 }
 
+// [[Rcpp::export]]
+Rcpp::IntegerMatrix subset_matrix_rows(Rcpp::IntegerMatrix in_matrix, Rcpp::IntegerVector rows){
+
+  int n_rows = rows.length();
+  int n_cols = in_matrix.ncol();
+  Rcpp::IntegerMatrix out_matrix(n_rows, n_cols);
+
+  for (int i = 0; i < n_rows; i++){
+    Rcpp::IntegerMatrix::Row original_row = in_matrix(rows[i]-1, _);
+    Rcpp::IntegerMatrix::Row new_row = out_matrix(i, _);
+    new_row = original_row;
+  }
+  return(out_matrix);
+}
+
 
 // [[Rcpp::export]]
 int sign_scalar(int x) {
@@ -537,7 +552,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                                   IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
                                   LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                                   int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                  double recode_threshold = 4.0, bool epi_test = false) {
+                                  double recode_threshold = 3.0, bool epi_test = false,
+                                  bool GxE = false) {
 
   // need to deep copy inputs to avoid overwriting
   IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
@@ -856,6 +872,17 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                             Named("inf_families") = informative_families);
     return(res);
 
+  } else if (GxE){
+
+    List res = List::create(Named("fitness_score") = fitness_score,
+                            Named("xbar") = mu_hat,
+                            Named("sigma") = cov_mat,
+                            Named("q") = rr,
+                            Named("w") = 1/invsum_family_weights,
+                            Named("risk_set_alleles") = risk_set_alleles);
+    return(res);
+
+
   } else {
 
     List res = List::create(Named("fitness_score") = fitness_score,
@@ -869,6 +896,153 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
 }
 
+///////////////////////////////////////////////////////////
+// fitness score for gene by environment interactions
+/////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
+                       ListOf<IntegerMatrix> case_comp_differences_list, IntegerVector target_snps,
+                       ListOf<IntegerMatrix> cases_minus_complements_list, ListOf<IntegerMatrix> both_one_mat_list,
+                       LogicalMatrix block_ld_mat, NumericVector weight_lookup, ListOf<IntegerMatrix> case2_mat_list,
+                       ListOf<IntegerMatrix> case0_mat_list, CharacterVector exposure_levels, int n_different_snps_weight = 2,
+                       int n_both_one_weight = 1, double recode_threshold = 3.0){
+
+  // divide the input data based on exposure and get components for fitness score //
+  List score_by_exposure(exposure_levels.length());
+
+  for (int i = 0; i < score_by_exposure.length(); i++){
+
+    IntegerMatrix case_genetic_data = case_genetic_data_list[i];
+    IntegerMatrix complement_genetic_data = complement_genetic_data_list[i];
+    IntegerMatrix case_comp_differences = case_comp_differences_list[i];
+    IntegerMatrix cases_minus_complements = cases_minus_complements_list[i];
+    IntegerMatrix both_one_mat = both_one_mat_list[i];
+    IntegerMatrix case2_mat = case2_mat_list[i];
+    IntegerMatrix case0_mat = case0_mat_list[i];
+    score_by_exposure[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
+                                               target_snps, cases_minus_complements, both_one_mat,
+                                               block_ld_mat, weight_lookup, case2_mat, case0_mat, n_different_snps_weight,
+                                               n_both_one_weight, recode_threshold, false, true);
+
+  }
+
+  // compute two sample hotelling for each pairwise comparison //
+  int n_pairs = Rf_choose(exposure_levels.length(), 2);
+  List pair_scores_list(n_pairs);
+  int pos = 0;
+  int max_score_pos = 0;
+  double max_score;
+  for (int i = 0; i < exposure_levels.length() - 1; i++){
+
+    for (int j = i + 1; j < exposure_levels.length(); j++){
+
+      // results for specific exposure levels
+      List exp1_list = score_by_exposure[i];
+      List exp2_list = score_by_exposure[j];
+
+      // mean difference vector //
+      arma::rowvec xbar1 = exp1_list["xbar"];
+      double q1 = exp1_list["q"];
+      arma::rowvec xbar2 = exp2_list["xbar"];
+      double q2 = exp2_list["q"];
+      arma::rowvec xbar_diff = q1*xbar1 - q2*xbar2;
+
+      // cov mat //
+      int w1 = exp1_list["w"];
+      arma::mat sigma1 = exp1_list["sigma"];
+      int w2 = exp2_list["w"];
+      arma::mat sigma2 = exp2_list["sigma"];
+      arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
+
+      // svd of cov mat //
+      arma::mat U, V;
+      arma::vec S;
+      arma::svd(U, S, V, sigma_hat, "dc");
+      double lower_limit = std::numeric_limits<double>::epsilon();
+      arma::uvec zero_sv = find(S < sqrt(lower_limit));
+      double sv_rep_val = pow(10, 10);
+      S.elem(zero_sv).fill(sv_rep_val);
+
+      // two sample modified hotelling stat //
+      double weight_scalar = (w1*w2)/(w1 + w2);
+      double s = (weight_scalar / 1000) * arma::sum(pow((xbar_diff * U), 2) / trans(S));
+
+      // prepare results
+       NumericVector se = wrap(sqrt(sigma_hat.diag()));
+       NumericVector xbar_diff_n = wrap(xbar_diff);
+       NumericVector std_diff_vecs = xbar_diff_n/se;
+       std_diff_vecs[se == 0] = pow(10, -10);
+
+       // use allele coding from higher scoring set
+       double s1 = exp1_list["fitness_score"];
+       double s2 = exp2_list["fitness_score"];
+       CharacterVector risk_set_alleles;
+       String high_risk_exposure;
+       String low_risk_exposure;
+       NumericVector diff_vec_signs;
+
+       if (s2 >= s1){
+
+         risk_set_alleles = exp2_list["risk_set_alleles"];
+         high_risk_exposure = exposure_levels[j];
+         low_risk_exposure = exposure_levels[i];
+         diff_vec_signs = sign(xbar2);
+
+       } else {
+
+         risk_set_alleles = exp1_list["risk_set_alleles"];
+         high_risk_exposure = exposure_levels[i];
+         low_risk_exposure = exposure_levels[j];
+         diff_vec_signs = sign(xbar1);
+
+       }
+
+       pair_scores_list[pos] = List::create(Named("s") = s,
+                                             Named("std_diff_vecs") = std_diff_vecs,
+                                             Named("diff_vec_signs") = diff_vec_signs,
+                                             Named("risk_set_alleles") = risk_set_alleles,
+                                             Named("high_risk_exposure") = high_risk_exposure,
+                                             Named("low_risk_exposure") = low_risk_exposure);
+       if (pos == 0){
+
+          max_score = s;
+
+       }
+
+       if (pos > 0){
+
+         if (s > max_score){
+
+           max_score_pos = pos;
+
+         }
+
+       }
+       pos += 1;
+
+    }
+
+  }
+
+  // return the largest pairwise stat as the fitness score //
+  List max_score_res = pair_scores_list[max_score_pos];
+  double fitness_score = max_score_res["s"];
+  NumericVector std_diff_vecs = max_score_res["std_diff_vecs"];
+  IntegerVector diff_vec_signs = max_score_res["diff_vec_signs"];
+  CharacterVector risk_set_alleles = max_score_res["risk_set_alleles"];
+  String high_risk_exposure = max_score_res["high_risk_exposure"];
+  String low_risk_exposure = max_score_res["low_risk_exposure"];
+  List res = List::create(Named("fitness_score") = fitness_score,
+                          Named("sum_dif_vecs") = std_diff_vecs,
+                          Named("risk_set_signs") = diff_vec_signs,
+                          Named("risk_set_alleles") = risk_set_alleles,
+                          Named("high_risk_exposure") = high_risk_exposure,
+                          Named("low_risk_exposure") = low_risk_exposure);
+  return(res);
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // helper function to apply the fitness score function to a list of chromosomes
 ////////////////////////////////////////////////////////////////////////////////
@@ -878,7 +1052,7 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
                         List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
                         LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        double recode_threshold = 4.0, bool epi_test = false){
+                        double recode_threshold = 3.0, bool epi_test = false){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
@@ -894,12 +1068,38 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Helper function to apply the GxE fitness score to a list of chromosomes
+///////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List case_comp_differences_list,
+                        List chromosome_list, List cases_minus_complements_list, List both_one_mat_list,
+                        LogicalMatrix block_ld_mat, NumericVector weight_lookup, List case2_mat_list, List case0_mat_list,
+                        CharacterVector exposure_levels, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                        double recode_threshold = 3.0){
+
+  List scores = chromosome_list.length();
+  for (int i = 0; i < chromosome_list.length(); i++){
+
+    IntegerVector target_snps = chromosome_list[i];
+    scores[i] = GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list,
+                                  target_snps, cases_minus_complements_list, both_one_mat_list,
+                                  block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, exposure_levels,
+                                  n_different_snps_weight, n_both_one_weight, recode_threshold);
+  }
+  return(scores);
+
+}
+
+
 ///////////////////////////////////////////
 // function to initiate island populations
 ///////////////////////////////////////////
 // [[Rcpp::export]]
 List initiate_population(IntegerMatrix case_genetic_data, int n_migrations, int n_chromosomes, int chromosome_size,
-                         NumericVector snp_chisq, int max_generations = 500, bool initial_sample_duplicates = false){
+                         NumericVector snp_chisq, int max_generations = 500, bool initial_sample_duplicates = false,
+                         bool GxE = false){
 
   int n_possible_unique_combn = n_chromosomes * chromosome_size;
   if ((case_genetic_data.ncol() < n_possible_unique_combn) & !initial_sample_duplicates) {
@@ -934,17 +1134,45 @@ List initiate_population(IntegerMatrix case_genetic_data, int n_migrations, int 
   List risk_allele_vec_list(max_generations);
   int generation = 1;
   bool last_gens_equal = false;
-  List res = List::create(Named("migrations") = migrations,
-                          Named("chromosome_list") = chromosome_list,
-                          Named("fitness_score_list") = fitness_score_list,
-                          Named("top_generation_chromosome") = top_generation_chromosome,
-                          Named("gen_chromosome_list") = gen_chromosome_list,
-                          Named("sum_dif_vec_list") = sum_dif_vec_list,
-                          Named("risk_allele_vec_list") = risk_allele_vec_list,
-                          Named("top_fitness") = top_fitness,
-                          Named("generation") = generation,
-                          Named("last_gens_equal") = last_gens_equal);
-  return(res);
+  if (GxE){
+
+    List risk_set_sign_list(max_generations);
+    List high_risk_exposure_list(max_generations);
+    List low_risk_exposure_list(max_generations);
+
+    List res = List::create(Named("migrations") = migrations,
+                            Named("chromosome_list") = chromosome_list,
+                            Named("fitness_score_list") = fitness_score_list,
+                            Named("top_generation_chromosome") = top_generation_chromosome,
+                            Named("gen_chromosome_list") = gen_chromosome_list,
+                            Named("sum_dif_vec_list") = sum_dif_vec_list,
+                            Named("risk_allele_vec_list") = risk_allele_vec_list,
+                            Named("top_fitness") = top_fitness,
+                            Named("generation") = generation,
+                            Named("risk_set_sign_list") = risk_set_sign_list,
+                            Named("high_risk_exposure_list") = high_risk_exposure_list,
+                            Named("low_risk_exposure_list") = low_risk_exposure_list,
+                            Named("last_gens_equal") = last_gens_equal);
+    return(res);
+
+  } else{
+
+    List res = List::create(Named("migrations") = migrations,
+                            Named("chromosome_list") = chromosome_list,
+                            Named("fitness_score_list") = fitness_score_list,
+                            Named("top_generation_chromosome") = top_generation_chromosome,
+                            Named("gen_chromosome_list") = gen_chromosome_list,
+                            Named("sum_dif_vec_list") = sum_dif_vec_list,
+                            Named("risk_allele_vec_list") = risk_allele_vec_list,
+                            Named("top_fitness") = top_fitness,
+                            Named("generation") = generation,
+                            Named("last_gens_equal") = last_gens_equal);
+    return(res);
+
+  }
+
+
+
 
 }
 
@@ -953,16 +1181,23 @@ List initiate_population(IntegerMatrix case_genetic_data, int n_migrations, int 
 //////////////////////////////////////////
 
 // [[Rcpp::export]]
-List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
-                   IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat,
-                   LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup,
-                   IntegerMatrix case2_mat, IntegerMatrix case0_mat,
+List evolve_island(int n_migrations, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, NumericVector weight_lookup,
                    NumericVector snp_chisq, IntegerVector original_col_numbers, List population,
+                   IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different,
+                   IntegerMatrix case_minus_comp, IntegerMatrix both_one_mat, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
+                   ListOf<IntegerMatrix> case_genetic_data_list,
+                   ListOf<IntegerMatrix> complement_genetic_data_list,
+                   ListOf<IntegerMatrix> case_comp_different_list,
+                   ListOf<IntegerMatrix> case_minus_comp_list,
+                   ListOf<IntegerMatrix> both_one_mat_list,
+                   ListOf<IntegerMatrix> case2_mat_list,
+                   ListOf<IntegerMatrix> case0_mat_list,
+                   CharacterVector exposure_levels,
                    bool all_converged = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
                    bool initial_sample_duplicates = false,
-                   double crossover_prop = 0.8, double recode_threshold = 4.0){
+                   double crossover_prop = 0.8, double recode_threshold = 3.0, bool GxE = false){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -976,18 +1211,47 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   List sum_dif_vec_list = population["sum_dif_vec_list"];
   List risk_allele_vec_list = population["risk_allele_vec_list"];
   NumericVector top_fitness = population["top_fitness"];
+  List risk_set_sign_list;
+  List high_risk_exposure_list;
+  List low_risk_exposure_list;
+
+  if (GxE){
+
+    risk_set_sign_list = population["risk_set_sign_list"];
+    high_risk_exposure_list = population["high_risk_exposure_list"];
+    low_risk_exposure_list = population["low_risk_exposure_list"];
+
+  }
+
 
   // iterate over generations
   while ((generation <= generations) & !all_converged) {
 
     // 1. compute the fitness score for each set of candidate snps
-    List chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
-                                                       chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
-                                                       case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold);
+    List chrom_fitness_score_list;
+    if (GxE){
+
+
+      chrom_fitness_score_list = GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, case_comp_different_list,
+                                                  chromosome_list, case_minus_comp_list, both_one_mat_list,
+                                                  block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list,
+                                                  exposure_levels, n_different_snps_weight, n_both_one_weight, recode_threshold);
+
+    } else {
+
+      chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
+                                                    chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
+                                                    case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold);
+
+    }
+
     NumericVector fitness_scores(n_chromosomes);
     List sum_dif_vecs(n_chromosomes);
     List gen_original_cols(n_chromosomes);
     List risk_allele_vecs(n_chromosomes);
+    List risk_set_signs(n_chromosomes);
+    CharacterVector high_risk_exposure_vec(n_chromosomes);
+    CharacterVector low_risk_exposure_vec(n_chromosomes);
 
     for (int i = 0; i < n_chromosomes; i++){
 
@@ -995,6 +1259,21 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       double fs = chrom_fitness_score_list_i["fitness_score"];
       NumericVector sdv = chrom_fitness_score_list_i["sum_dif_vecs"];
       CharacterVector rav = chrom_fitness_score_list_i["risk_set_alleles"];
+      IntegerVector rss;
+      String hre;
+      String lre;
+      if (GxE){
+
+        String hre_tmp = chrom_fitness_score_list_i["high_risk_exposure"];
+        String lre_tmp = chrom_fitness_score_list_i["low_risk_exposure"];
+        rss = chrom_fitness_score_list_i["risk_set_signs"];
+        hre = hre_tmp;
+        lre = lre_tmp;
+        risk_set_signs[i] = rss;
+        high_risk_exposure_vec[i] = hre;
+        low_risk_exposure_vec[i] = lre;
+
+      }
 
       fitness_scores[i] = fs;
       sum_dif_vecs[i] = sdv;
@@ -1013,6 +1292,17 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     population["sum_dif_vec_list"] = sum_dif_vec_list;
     risk_allele_vec_list[generation - 1] = risk_allele_vecs;
     population["risk_allele_vec_list"] = risk_allele_vec_list;
+
+    if (GxE){
+
+      risk_set_sign_list[generation - 1] = risk_set_signs;
+      population["risk_set_sign_list"] = risk_set_sign_list;
+      high_risk_exposure_list[generation - 1] = high_risk_exposure_vec;
+      population["high_risk_exposure_list"] = high_risk_exposure_list;
+      low_risk_exposure_list[generation - 1] = low_risk_exposure_vec;
+      population["low_risk_exposure_list"] = low_risk_exposure_list;
+
+    }
 
     // 2. identify the top scoring candidate solution(s) and fitness score
     double max_fitness = max(fitness_scores);
@@ -1280,9 +1570,20 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   if ((generation < max_generations) & (!all_converged) & (n_migrations > 0)){
 
     // pick out the highest and lowest fitness scores of the new chromosomes
-    List chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
-                                                       chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
-                                                       case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold);
+    List chrom_fitness_score_list;
+    if (GxE){
+
+      chrom_fitness_score_list = GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, case_comp_different_list,
+                                                  chromosome_list, case_minus_comp_list, both_one_mat_list,
+                                                  block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list,
+                                                  exposure_levels, n_different_snps_weight, n_both_one_weight, recode_threshold);
+    } else {
+
+      chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
+                                                    chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
+                                                    case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recode_threshold);
+    }
+
     NumericVector fitness_scores(n_chromosomes);
     for (int i = 0; i < n_chromosomes; i++){
 
@@ -1310,10 +1611,19 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   } else {
 
     population["generation"] = generation - 1;
-    IntegerVector return_these = seq(2, 8);
-    population = population[return_these];
-    return(population);
+    if (GxE){
 
+      IntegerVector return_these = seq(2, 11);
+      population = population[return_these];
+      return(population);
+
+    } else {
+
+      IntegerVector return_these = seq(2, 8);
+      population = population[return_these];
+      return(population);
+
+    }
   }
 }
 
@@ -1322,14 +1632,84 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 ////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data,
-                IntegerMatrix complement_genetic_data, IntegerMatrix case_comp_different, IntegerMatrix case_minus_comp,
-                IntegerMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size,
-                NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
-                NumericVector snp_chisq, IntegerVector original_col_numbers,
-                int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
-                int gen_same_fitness = 50, int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
-                bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recode_threshold = 4.0){
+List run_GADGETS(int island_cluster_size, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size,
+                 NumericVector weight_lookup,int n_migrations, NumericVector snp_chisq, IntegerVector original_col_numbers,
+                 Nullable<IntegerMatrix> case_genetic_data_in = R_NilValue,
+                 Nullable<IntegerMatrix> complement_genetic_data_in = R_NilValue,
+                 Nullable<IntegerMatrix> case_comp_different_in =  R_NilValue,
+                 Nullable<IntegerMatrix> case_minus_comp_in = R_NilValue,
+                 Nullable<IntegerMatrix> both_one_mat_in = R_NilValue,
+                 Nullable<IntegerMatrix> case2_mat_in = R_NilValue,
+                 Nullable<IntegerMatrix> case0_mat_in = R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> case_genetic_data_list_in = R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> complement_genetic_data_list_in = R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> case_comp_different_list_in =  R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> case_minus_comp_list_in = R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> both_one_mat_list_in = R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> case2_mat_list_in = R_NilValue,
+                 Nullable<ListOf<IntegerMatrix>> case0_mat_list_in = R_NilValue,
+                 Nullable<CharacterVector> exposure_levels_in = R_NilValue,
+                 int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
+                 int gen_same_fitness = 50, int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
+                 bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recode_threshold = 3.0){
+
+
+  // instantiate input data objects
+  IntegerMatrix case_genetic_data;
+  IntegerMatrix complement_genetic_data;
+  IntegerMatrix case_comp_different;
+  IntegerMatrix case_minus_comp;
+  IntegerMatrix both_one_mat;
+  IntegerMatrix case2_mat;
+  IntegerMatrix case0_mat;
+
+  ListOf<IntegerMatrix> case_genetic_data_list;
+  ListOf<IntegerMatrix> complement_genetic_data_list;
+  ListOf<IntegerMatrix> case_comp_different_list;
+  ListOf<IntegerMatrix> case_minus_comp_list;
+  ListOf<IntegerMatrix> both_one_mat_list;
+  ListOf<IntegerMatrix> case2_mat_list;
+  ListOf<IntegerMatrix> case0_mat_list;
+  CharacterVector exposure_levels;
+  bool GxE = false;
+
+  if (case_genetic_data_in.isNotNull()){
+
+    IntegerMatrix case_genetic_data_tmp(case_genetic_data_in);
+    case_genetic_data = case_genetic_data_tmp;
+
+    IntegerMatrix complement_genetic_data_tmp(complement_genetic_data_in);
+    complement_genetic_data = complement_genetic_data_tmp;
+
+    IntegerMatrix case_comp_different_tmp(case_comp_different_in);
+    case_comp_different = case_comp_different_tmp;
+
+    IntegerMatrix case_minus_comp_tmp(case_minus_comp_in);
+    case_minus_comp = case_minus_comp_tmp;
+
+    IntegerMatrix both_one_mat_tmp(both_one_mat_in);
+    both_one_mat = both_one_mat_tmp;
+
+    IntegerMatrix case2_mat_tmp(case2_mat_in);
+    case2_mat = case2_mat_tmp;
+
+    IntegerMatrix case0_mat_tmp(case0_mat_in);
+    case0_mat = case0_mat_tmp;
+
+  } else {
+
+    case_genetic_data_list = case_genetic_data_list_in;
+    complement_genetic_data_list = complement_genetic_data_list_in;
+    case_comp_different_list = case_comp_different_list_in;
+    case_minus_comp_list = case_minus_comp_list_in;
+    both_one_mat_list = both_one_mat_list_in;
+    case2_mat_list = case2_mat_list_in;
+    case0_mat_list = case0_mat_list_in;
+    exposure_levels = exposure_levels_in;
+    case_genetic_data = case_genetic_data_list[1];
+    GxE = true;
+
+  }
 
   if (island_cluster_size > 1){
 
@@ -1338,15 +1718,16 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
     for (int i = 0; i < island_cluster_size; i++){
 
       List island_population_i = initiate_population(case_genetic_data, n_migrations, n_chromosomes, chromosome_size,
-                                                     snp_chisq, max_generations, initial_sample_duplicates);
+                                                     snp_chisq, max_generations, initial_sample_duplicates, GxE);
 
-      island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
-                                             case_comp_different, case_minus_comp, both_one_mat,
-                                             block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
-                                             case0_mat, snp_chisq, original_col_numbers, island_population_i,
-                                             false, n_different_snps_weight, n_both_one_weight,
-                                             migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms,
-                                             initial_sample_duplicates, crossover_prop, recode_threshold);
+      island_populations[i] = evolve_island(n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup,
+                                            snp_chisq, original_col_numbers, island_population_i,
+                                            case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp,
+                                            both_one_mat, case2_mat, case0_mat, case_genetic_data_list, complement_genetic_data_list,
+                                            case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list,
+                                            case0_mat_list, exposure_levels, false, n_different_snps_weight, n_both_one_weight,
+                                            migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates,
+                                            crossover_prop, recode_threshold, GxE);
 
     }
 
@@ -1384,20 +1765,33 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
       for (int i = 0; i < island_cluster_size; i++){
 
         List island_population_i = island_populations[i];
-        island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
-                                              case_comp_different, case_minus_comp, both_one_mat,
-                                              block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
-                                              case0_mat, snp_chisq, original_col_numbers, island_population_i,
-                                              all_converged, n_different_snps_weight, n_both_one_weight,
-                                              migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms,
-                                              initial_sample_duplicates, crossover_prop, recode_threshold);
+        island_populations[i] = evolve_island(n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup,
+                                              snp_chisq, original_col_numbers, island_population_i,
+                                              case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp,
+                                              both_one_mat, case2_mat, case0_mat, case_genetic_data_list, complement_genetic_data_list,
+                                              case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list,
+                                              case0_mat_list, exposure_levels, all_converged, n_different_snps_weight, n_both_one_weight,
+                                              migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates,
+                                              crossover_prop, recode_threshold, GxE);
 
       }
       // check to see if we've output results
       List check_res = island_populations[0];
-      if (check_res.length() == 7){
+      if (GxE){
 
-        stop_iterations = true;
+        if (check_res.length() == 10){
+
+          stop_iterations = true;
+
+        }
+
+      } else {
+
+        if (check_res.length() == 7){
+
+          stop_iterations = true;
+
+        }
 
       }
       // otherwise, check to see if all islands converged
@@ -1429,25 +1823,24 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
 
   } else {
 
-    // otherwise, if no migrations are desired, just run GADGET straight through
+    // otherwise, if no migrations are desired, just run GADGETS straight through
     List island_populations(1);
-    List island_population_i = initiate_population(case_genetic_data, 0, n_chromosomes, chromosome_size,
-                                                   snp_chisq, max_generations, initial_sample_duplicates);
-    List island_population = evolve_island(0, case_genetic_data, complement_genetic_data,
-                                           case_comp_different, case_minus_comp, both_one_mat,
-                                           block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
-                                           case0_mat, snp_chisq, original_col_numbers, island_population_i,
-                                           false, n_different_snps_weight, n_both_one_weight,
-                                           migration_interval, gen_same_fitness,
-                                           max_generations, tol, n_top_chroms, initial_sample_duplicates,
-                                           crossover_prop, recode_threshold);
+    List island_population_i = initiate_population(case_genetic_data, n_migrations, n_chromosomes, chromosome_size,
+                                                   snp_chisq, max_generations, initial_sample_duplicates, GxE);
+    List island_population = evolve_island(0, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup,
+                                           snp_chisq, original_col_numbers, island_population_i,
+                                           case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp,
+                                           both_one_mat, case2_mat, case0_mat, case_genetic_data_list, complement_genetic_data_list,
+                                           case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list,
+                                           case0_mat_list, exposure_levels, false, n_different_snps_weight, n_both_one_weight,
+                                           migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates,
+                                           crossover_prop, recode_threshold, GxE);
     island_populations[0] = island_population;
     return(island_populations);
 
   }
 
 }
-
 
 
 

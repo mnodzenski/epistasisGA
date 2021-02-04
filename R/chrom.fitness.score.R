@@ -30,6 +30,8 @@
 #' See the GADGETS paper for specific details.
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
+#' @param GxE A logical indicating whether the function should return the pieces of the fitness score (in addition
+#' to the fitness score itself) for use in searching for gene-environment interactions.
 #' @return A list:
 #' \describe{
 #'  \item{fitness.score}{The chromosome fitness score.}
@@ -39,7 +41,7 @@
 #'  A positive value for a given SNP indicates the minor allele is positively associated with
 #'  disease status, while a negative value implies the reference (‘wild type’) allele is
 #'  positively associated with the disease.}
-#'  \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
+#'  \item{q}{The fraction of provisional risk alleles carried by cases with the full risk set
 #'  over the total number of risk alleles carried by either a case or complement with the full risk set.}
 #'  \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
 #'  \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
@@ -49,6 +51,9 @@
 #'   of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
 #'   the risk allele, while a positive value implicates the minor allele.}
 #'   \item{inf.families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
+#'   \item{xbar}{The weighted mean difference sign vector. Only returned if \code{GxE} is TRUE.}
+#'   \item{sigma.hat}{The pseudo covariance matrix of the weighted mean difference sign vector. Only returned if \code{GxE} is TRUE.}
+#'   \item{w}{The sum of the family weights. Only returned if \code{GxE} is TRUE.}
 #' }
 #'
 #' @examples
@@ -79,7 +84,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 target.snps, cases.minus.complements, both.one.mat,
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1,
-                                recode.threshold = 3, epi.test = FALSE) {
+                                recode.threshold = 3, epi.test = FALSE, GxE = FALSE) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -289,9 +294,15 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
     return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
                 risk.set.alleles = risk.set.alleles, inf.families = inf.family.rows))
 
+  } else if (GxE){
+
+    return(list(fitness.score = fitness.score, xbar = mu.hat, sigma.hat = cov.mat,
+                q = rr, w = 1/invsum.family.weights, risk.set.alleles = risk.set.alleles))
+
+
   } else {
 
-    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
+    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, q = rr, pseudo.t2 = pseudo.t2,
                 risk.set.alleles = risk.set.alleles))
 
   }

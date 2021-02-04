@@ -156,6 +156,42 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     case2.mat <- case.genetic.data == 2
     case0.mat <- case.genetic.data == 0
 
+    ### if running GxE, split input data into lists based on exposure status ###
+    exposure <- data.list$exposure
+    if (!is.null(exposure)){
+
+        case.genetic.data.split <- split(data.frame(case.genetic.data), exposure)
+        exposure.levels <- names(case.genetic.data.split)
+        case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)
+        complement.genetic.data.list <- lapply(split(data.frame(complement.genetic.data), exposure), as.matrix)
+        case.comp.different.list <- lapply(split(data.frame(case.comp.different), exposure), as.matrix)
+        case.minus.comp.list <- lapply(split(data.frame(case.minus.comp), exposure), as.matrix)
+        both.one.mat.list <- lapply(split(data.frame(both.one.mat), exposure), as.matrix)
+        case2.mat.list <- lapply(split(data.frame(case2.mat), exposure), as.matrix)
+        case0.mat.list <- lapply(split(data.frame(case0.mat), exposure), as.matrix)
+
+        ### also setting the original objects to null ###
+        case.genetic.data <- NULL
+        complement.genetic.data <- NULL
+        case.comp.different <- NULL
+        case.minus.comp <- NULL
+        both.one.mat <- NULL
+        case2.mat <- NULL
+        case0.mat <- NULL
+
+    } else {
+
+        case.genetic.data.list <- NULL
+        complement.genetic.data.list <- NULL
+        case.comp.different.list <- NULL
+        case.minus.comp.list <- NULL
+        both.one.mat.list <- NULL
+        case2.mat.list <- NULL
+        case0.mat.list <- NULL
+        exposure.levels <- NULL
+
+    }
+
     ### set sampling type for mutation snps ###
     if (snp.sampling.type == "chisq") {
 
@@ -244,7 +280,10 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
         max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recode.threshold = recode.threshold), reg = registry)
+        crossover.prop = crossover.prop, recode.threshold = recode.threshold, exposure.levels = exposure.levels, case.genetic.data.list = case.genetic.data.list,
+        complement.genetic.data.list = complement.genetic.data.list, case.comp.different.list = case.comp.different.list,
+        case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list, case2.mat.list = case2.mat.list, case0.mat.list = case0.mat.list),
+        reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]

@@ -24,6 +24,7 @@
 #' genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
 #' each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 #' real numbers. See argument \code{prob} from function \code{sample} for more details.
+#' @param categorical.exposures A data.frame of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{case.genetic.data}{The pre-processed version of the case genetic data.}
@@ -34,6 +35,7 @@
 #'  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
 #'  \item{block.ld.mat}{The pre-processed version of \code{block.ld.mat}.}
 #'  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
+#'  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
 #' }
 #'
 #' @examples
@@ -59,12 +61,68 @@
 #' @export
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-    mother.genetic.data = NULL, block.ld.mat, min.allele.freq = 0.025, bp.param = bpparam(), snp.sampling.probs = NULL) {
+    mother.genetic.data = NULL, block.ld.mat, min.allele.freq = 0.025, bp.param = bpparam(), snp.sampling.probs = NULL,
+    categorical.exposures = NULL) {
 
     # make sure the appropriate genetic data is included
     if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)) {
 
         stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
+
+    }
+
+    ### if environmental exposures are provided, make sure they are stored in a data.frame ###
+    ### and make a new omnibus exposure variable ###
+    if (!is.null(categorical.exposures)){
+
+        if (class(categorical.exposures) != "data.frame"){
+
+            stop("categorical.exposures must be a data.frame")
+
+        }
+
+        # make sure the variables are actually categorical
+        categorical <- vapply(categorical.exposures, class, character(1L))
+
+        # if stored as a numeric, make sure the column values are equivalent to integers
+        numeric.cols <- which(categorical == "numeric")
+        non.cat.cols <- vapply(numeric.cols, function(x){
+
+            !all(categorical.exposures$x == as.integer(categorical.exposures$x))
+
+        }, logical(1))
+        if (any(non.cat.cols)){
+
+            stop("all categorical.exposures columns must be categorical variables")
+
+        }
+
+        # now make an omnibus, factor variable containing categorical exposure groups
+        exposure <- interaction(categorical.exposures)
+
+        # get rid of any levels with only one case
+        cases.per.level <- vapply(unique(exposure), function(exp.level){
+
+            these.rows <- exposure == exp.level
+            sum(these.rows)
+
+        }, 1)
+
+        one.case.levels <- unique(exposure)[cases.per.level == 1]
+        if (length(one.case.levels) > 0){
+
+            exposure <- exposure[exposure != one.case.levels]
+
+        }
+        if (length(exposure) == 1){
+
+            stop("exposure must have at least two levels")
+
+        }
+
+    } else {
+
+        exposure <- NULL
 
     }
 
@@ -139,7 +197,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
         chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
-        minor.allele.vec = minor.alleles))
+        minor.allele.vec = minor.alleles, exposure = exposure))
 
 
 }

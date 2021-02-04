@@ -98,13 +98,24 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     setorder(combined.result, -fitness.score)
 
     ## add in annotations for the SNPs and risk alleles
-    chromosome.size <- sum(grepl("snp", colnames(combined.result)))/3
-    risk.sign.cols <- seq_len(chromosome.size) + chromosome.size
-    allele.copy.cols <- seq_len(chromosome.size) + 2*chromosome.size
+    GxE <- "high.risk.exposure" %in% colnames(combined.result)
+    if (GxE){
+
+        chromosome.size <- sum(grepl("snp", colnames(combined.result)))/4
+        risk.sign.cols <- seq_len(chromosome.size) + 2*chromosome.size
+        allele.copy.cols <- seq_len(chromosome.size) + 3*chromosome.size
+
+    } else {
+
+        chromosome.size <- sum(grepl("snp", colnames(combined.result)))/3
+        risk.sign.cols <- seq_len(chromosome.size) + chromosome.size
+        allele.copy.cols <- seq_len(chromosome.size) + 2*chromosome.size
+
+    }
 
     # starting with the rsids
-    choose.these <- seq_len(chromosome.size)
-    snp.cols <- combined.result[ , ..choose.these]
+    snp.col.positions <- seq_len(chromosome.size)
+    snp.cols <- combined.result[ , ..snp.col.positions]
     snp.numbers <- unlist(snp.cols)
     rsids <- annotation.data$RSID
     rsid.dt <- data.table(matrix(rsids[snp.numbers], ncol = chromosome.size,
@@ -112,7 +123,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     colnames(rsid.dt) <- paste(colnames(snp.cols), "rsid", sep = ".")
 
     #now the risk allele
-    diff.cols <- combined.result[ , (chromosome.size + 1):(2*chromosome.size)]
+    diff.cols <- combined.result[ , ..risk.sign.cols]
     diff.vecs <- unlist(diff.cols)
     risk.alleles <- rep(NA, length(diff.vecs))
     alt.alleles <- annotation.data$ALT
@@ -121,7 +132,107 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     risk.alleles[diff.vecs < 0 ] <- ref.alleles[snp.numbers[diff.vecs < 0]]
     risk.allele.dt <- data.table(matrix(risk.alleles, ncol = chromosome.size,
                                  byrow = FALSE))
-    colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele", colnames(diff.cols))
+    if (GxE){
+
+        colnames(risk.allele.dt) <- gsub("risk.sign", "risk.allele", colnames(diff.cols))
+
+    } else {
+
+        colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele", colnames(diff.cols))
+
+    }
+
+    ## count the number of cases and complements with the risk genotype
+    original.col.numbers <- preprocessed.list$original.col.numbers
+    case <- preprocessed.list$case.genetic.data
+    comp <- preprocessed.list$complement.genetic.data
+
+    n.case.comp.risk.geno.list <- lapply(seq_len(nrow(combined.result)), function(x){
+
+        if (GxE){
+
+            high.risk.exposure <- combined.result$high.risk.exposure[x]
+            low.risk.exposure <- combined.result$low.risk.exposure[x]
+            case.list <- lapply(c(high.risk.exposure, low.risk.exposure), function(exp.level){
+
+                case[exposure == exp.level, ]
+
+            })
+            comp.list <- lapply(c(high.risk.exposure, low.risk.exposure), function(exp.level){
+
+                comp[exposure == exp.level, ]
+
+            })
+
+        } else {
+
+            case.list <- list(case)
+            comp.list <- list(comp)
+
+        }
+
+        orig.chrom <- as.vector(t(snp.cols[x, ]))
+        chrom <- which(original.col.numbers %in% orig.chrom)
+        n.risk.alleles <- as.vector(t(combined.result[x, ..allele.copy.cols]))
+        risk.signs <- sign(as.vector(t(diff.cols[x, ])))
+
+        # determine the risk genotypes
+        risk.geno <- ifelse(risk.signs >= 0 & n.risk.alleles == "2", 2,
+                            ifelse(risk.signs < 0 & n.risk.alleles == "2", 0, 1))
+        pos.cols <- risk.signs >= 0
+        neg.cols <- risk.signs < 0
+
+        # pick out the chromosome in the preprocessed list and the risk alleles
+        unlist(lapply(seq_along(case.list), function(y){
+
+            case <- case.list[[y]]
+            comp <- comp.list[[y]]
+            n <- nrow(case)
+
+            # determine the number of cases and complements with the risk genotype
+            risk.geno.mat <- matrix(rep(risk.geno, nrow(case)), nrow = nrow(case), byrow = TRUE)
+            case.risk.geno <- matrix(NA, nrow = nrow(case), ncol = length(chrom))
+            comp.risk.geno <- matrix(NA, nrow = nrow(case), ncol = length(chrom))
+
+            if (any(pos.cols)){
+
+                case.risk.geno[ , pos.cols] <- case[ , chrom[pos.cols]] >= risk.geno.mat[ , pos.cols]
+                comp.risk.geno[ , pos.cols] <- comp[ , chrom[pos.cols]] >= risk.geno.mat[ , pos.cols]
+
+            }
+            if (any(neg.cols)){
+
+                case.risk.geno[ , neg.cols] <- case[ , chrom[neg.cols]] >= risk.geno.mat[ , neg.cols]
+                comp.risk.geno[ , neg.cols] <- comp[ , chrom[neg.cols]] >= risk.geno.mat[ , neg.cols]
+
+            }
+            n.case.full.risk.path <- sum(rowSums(case.risk.geno) == length(chrom))
+            n.comp.full.risk.path <- sum(rowSums(comp.risk.geno) == length(chrom))
+            if (GxE){
+
+                return(c(n, n.case.full.risk.path, n.comp.full.risk.path))
+
+            } else {
+
+                return(c(n.case.full.risk.path, n.comp.full.risk.path))
+
+            }
+
+        }))
+
+    })
+
+    n.case.comp.risk.geno.dt <- t(setDT(n.case.comp.risk.geno.list))
+    if (GxE){
+
+        colnames(n.case.comp.risk.geno.dt) <- c("n.high.risk.exp", "n.cases.risk.geno.high.risk.exp", "n.comps.risk.geno.high.risk.exp",
+                                                "n.low.risk.exp", "n.cases.risk.geno.low.risk.exp", "n.comps.risk.geno.low.risk.exp")
+
+    } else {
+
+        colnames(n.case.comp.risk.geno.dt) <- c("n.cases.risk.geno", "n.comps.risk.geno")
+    }
+
 
     ## count the number of cases and complements with the risk genotype
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -180,7 +291,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     colnames(n.case.comp.risk.geno.dt) <- c("n.cases.risk.geno", "n.comps.risk.geno")
 
     # put the full result together
-    combined.result <- cbind(cbind(snp.cols, rsid.dt, risk.allele.dt), combined.result[ , -(1:chromosome.size)],
+    combined.result <- cbind(cbind(cbind(snp.cols, rsid.dt, risk.allele.dt), combined.result[ , -(1:chromosome.size)]),
                              n.case.comp.risk.geno.dt)
     combined.result[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(combined.result)),
                   .SDcols = seq_len(chromosome.size)]
