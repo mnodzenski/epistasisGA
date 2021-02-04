@@ -196,14 +196,14 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
 
             if (any(pos.cols)){
 
-                case.risk.geno[ , pos.cols] <- case[ , chrom[pos.cols]] >= risk.geno[ , pos.cols]
-                comp.risk.geno[ , pos.cols] <- comp[ , chrom[pos.cols]] >= risk.geno[ , pos.cols]
+                case.risk.geno[ , pos.cols] <- case[ , chrom[pos.cols]] >= risk.geno.mat[ , pos.cols]
+                comp.risk.geno[ , pos.cols] <- comp[ , chrom[pos.cols]] >= risk.geno.mat[ , pos.cols]
 
             }
             if (any(neg.cols)){
 
-                case.risk.geno[ , neg.cols] <- case[ , chrom[neg.cols]] >= risk.geno[ , neg.cols]
-                comp.risk.geno[ , neg.cols] <- comp[ , chrom[neg.cols]] >= risk.geno[ , neg.cols]
+                case.risk.geno[ , neg.cols] <- case[ , chrom[neg.cols]] >= risk.geno.mat[ , neg.cols]
+                comp.risk.geno[ , neg.cols] <- comp[ , chrom[neg.cols]] >= risk.geno.mat[ , neg.cols]
 
             }
             n.case.full.risk.path <- sum(rowSums(case.risk.geno) == length(chrom))
