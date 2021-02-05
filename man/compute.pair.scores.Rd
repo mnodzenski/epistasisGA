@@ -16,7 +16,7 @@ compute.pair.scores(
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in the network plot.
-Each element of the list must be a data.table from the \code{unique.results} chromosome results from \code{combine.islands} for a given chromosome size.
+Each element of the list must be a data.table from \code{combine.islands} for a given chromosome size.
 Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 otherwise an error will be returned.}
 
@@ -83,7 +83,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
 
  ## create list of results
 
- final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
+ final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)

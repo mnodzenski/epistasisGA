@@ -71,7 +71,7 @@
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
-#'  final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
+#'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
 #'  set.seed(20)

@@ -9,9 +9,9 @@ global.test(results.list, n.top.scores = 30)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
-Each element of the list must itself be a list whose first element \code{observed.data} is a vector of fitness scores from the
-the \code{unique.results} chromosome results from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
-is a list containing vectors of all permutation results fitness scores, again using the \code{unique.results} results output by
+Each element of the list must itself be a list whose first element \code{observed.data} is a vector of fitness scores
+from \code{combine.islands} for a given chromosome size. The second element \code{permutation.list}
+is a list containing vectors of all permutation results fitness scores, again using the results output by
 \code{combine.islands} for each permutation.}
 
 \item{n.top.scores}{The number of top scoring chromosomes, for each chromosome size, to be used in calculating the global test. Defaults to 30.}
@@ -135,16 +135,16 @@ run.gadgets(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_t
  ## create list of results
 
  #chromosome size 2 results
- chrom2.list <- list(observed.data = combined.res2$unique.results$fitness.score,
-                    permutation.list = list(p1.combined.res2$unique.results$fitness.score,
-                                            p2.combined.res2$unique.results$fitness.score,
-                                            p3.combined.res2$unique.results$fitness.score))
+ chrom2.list <- list(observed.data = combined.res2$fitness.score,
+                    permutation.list = list(p1.combined.res2$fitness.score,
+                                            p2.combined.res2$fitness.score,
+                                            p3.combined.res2$fitness.score))
 
  #chromosome size 3 results
- chrom3.list <- list(observed.data = combined.res3$unique.results$fitness.score,
-                    permutation.list = list(p1.combined.res3$unique.results$fitness.score,
-                                            p2.combined.res3$unique.results$fitness.score,
-                                            p3.combined.res3$unique.results$fitness.score))
+ chrom3.list <- list(observed.data = combined.res3$fitness.score,
+                    permutation.list = list(p1.combined.res3$fitness.score,
+                                            p2.combined.res3$fitness.score,
+                                            p3.combined.res3$fitness.score))
 
  final.results <- list(chrom2.list, chrom3.list)
 

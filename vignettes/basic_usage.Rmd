@@ -130,35 +130,25 @@ size4.combined.res <- combine.islands("size4_res", snp.annotations,
 
 ```
 
-Importantly, the function will write these results to the specified directory. 
-
-The function condenses island results in two ways. First, it simply concatenates the results across islands, so that if a particular set of SNPs is identified on more than one island, it will appear in more than one row in the condensed results. Second, the concatenated results are further condensed so that each row contains a unique collection of SNPs, with an additional column indicating the number of islands on which that collection was included in the final evolved population. These two types of results may be useful in different contexts. In both cases, the rows are sorted in decreasing order according to fitness score, or, more plainly, with the most interesting SNPs appearing at the top of the dataset. 
+Importantly, the function will write these results to the specified directory. The function condenses island results such that the rows are sorted in decreasing order according to fitness score, or, more plainly, with the most interesting SNPs appearing at the top of the dataset:
 
 ```{r}
 library(magrittr)
 library(knitr)
 library(kableExtra)
-#first method of condensing 
-kable(head(size4.combined.res$all.results)) %>%
-  kable_styling() %>%
-  scroll_box(width = "750px")
-
-#second method of condensing 
-kable(head(size4.combined.res$unique.results)) %>%
+kable(head(size4.combined.res)) %>%
   kable_styling() %>%
   scroll_box(width = "750px")
 
 ```
 
-In general, the `unique.results` object is more useful for examining interesting sets of SNPs as it contains all of the information in the `all.results` object, just in a more easily digestible form. In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985535, and rs1487251 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
+In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985535, and rs1487251 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
 
 Perhaps the most important elements of the output are the `n.cases.risk.geno`and `n.comps.risk.geno`columns. These report the number of cases and complements/unaffected siblings with the provisional risk genotypes, as determined by GADGETS, at each locus. For true epistatic SNP-sets, many more cases should carry the risk genotypes at each locus than the complements. 
 
-A few important but subtle components of the results users should note are the `risk.allele`, `allele.copies`, `diff.vec`, and `fitness.score` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be similarly large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs. 
+A few important but subtle components of the results users should note are the `risk.allele`, `allele.copies`, `diff.vec`, `fitness.score`, and `n.islands.found` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `n.islands.found` column reports the number of distinct islands on which a specific chromosome was found. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be similarly large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs.
 
 As described in the GADGETS paper, we make a small adjustment to the fitness scores output by GADGETS at algorithm termination to improve the rank ordering of chromosomes. The `fitness.score` column contains these final, adjusted scores, and is the product of the `min.elem` and `raw.fitness.score` columns. The `min.elem` column reports the smallest absolute value of the `diff.vec` columns for each chromosome, and the `raw.fitness.score` is the unadjusted fitness score directly output by GADGETS. Note that the values in the `fitness.score` column are used for follow-up permutation testing. 
-
-
 
 ## Permute Datasets
 
@@ -222,9 +212,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
   
     perm.data.list <- preprocess.lists[[permutation]]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
-    condensed.res <- combine.islands(res.dir, snp.annotations,
-                                     perm.data.list)
-    condensed.res$all.results
+    combine.islands(res.dir, snp.annotations, perm.data.list)
     
   })
   
@@ -245,13 +233,13 @@ A key feature of this approach is the test does not require adjustment for multi
 # permutation based fitness scores
 chrom3.perm.fs <- lapply(perm.res.list[[1]], 
                          function(x) x$fitness.score)
-chrom3.list <- list(observed.data = size3.combined.res$all.results$fitness.score,
+chrom3.list <- list(observed.data = size3.combined.res$fitness.score,
                      permutation.list = chrom3.perm.fs)
 
 # chromosome size 4 results
 chrom4.perm.fs <- lapply(perm.res.list[[2]], 
                          function(x) x$fitness.score)
-chrom4.list <- list(observed.data = size4.combined.res$all.results$fitness.score,
+chrom4.list <- list(observed.data = size4.combined.res$fitness.score,
                      permutation.list = chrom4.perm.fs)
 
 # list of results across chromosome sizes, with each list 
@@ -322,7 +310,7 @@ The `max.obs.fitness` element reports the maximum fitness score in the observed 
 Users should also be clear that rejecting the null hypothesis does not necessarily indicate that a collection of SNPs exhibit epistasis. Indeed, we may reject the null simply because we have identified a single SNP with a non-zero marginal disease association. To that end, we provide a permutation based procedure specifically examining evidence for epistasis among a collection of SNPs conditional on the marginal SNP-disease associations. To illustrate, in our example, we might be interested in whether the high score of the top 4 SNP chromosome was attributable to epistasis or a collection of large marginal associations. We can execute this test as follows:
 
 ```{r}
-top.snps <- as.vector(t(size4.combined.res$all.results[1, 1:4]))
+top.snps <- as.vector(t(size4.combined.res[1, 1:4]))
 set.seed(10)
 epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
@@ -338,11 +326,11 @@ As a final step in the analytic pipeline, we recommend users examine network plo
 
 Briefly, we use our epistasis test p-values to assign graphical scores to pairs of SNPs identified in top-scoring chromosomes, with higher scores corresponding to lower epistasis p-values (more substantial evidence for epistasis). We then aggregate those pair-scores across chromosome sizes to generate a final collection of SNP-pairs, which we display in a single network plot.
 
-We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as arguments a list of data.tables containing the `unique.results` from GADGETS run for different chromosome sizes, the list of pre-processed data from function `preprocess.genetic.data`, and the number of top scoring chromosomes to use in constructing the plot (here we use 5 for illustration, in practice we use 50).  
+We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes, the list of pre-processed data from function `preprocess.genetic.data`, and the number of top scoring chromosomes to use in constructing the plot (here we use 5 for illustration, in practice we use 50).  
 
 ```{r}
 set.seed(10)
-obs.res.list <- list(size3.combined.res$unique.results[1:5, ], size4.combined.res$unique.results[1:5, ])
+obs.res.list <- list(size3.combined.res[1:5, ], size4.combined.res[1:5, ])
 pair.scores <- compute.pair.scores(obs.res.list, pp.list, 5)
 ```
 

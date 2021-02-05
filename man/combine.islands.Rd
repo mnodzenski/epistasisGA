@@ -16,16 +16,9 @@ column in the data passed to function \code{preprocess.genetic.data}, the second
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
 }
 \value{
-A list of two elements. Note these two objects will also be written to \code{results.dir}
-as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'.
-\describe{
- \item{all.results}{A dataset containing chromosome results across all islands,
- where top chromosomes that evolved on multiple distinct islands appear in multiple rows. See the package
- vignette for more detailed descriptions of the content of each output column.}
- \item{unique.results}{A condensed version of \code{all.results} with one row per distinct chromosome
- and an additional variable indicating the number of islands on which that chromosome evolved. See the package
- vignette for more detailed descriptions of the content of each output column.}
-}
+A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
+as 'combined.island.unique.chromosome.results.rds'. See the package vignette for more detailed descriptions of the content
+of each output column.
 }
 \description{
 This function combines GADGETS results for individual islands into a single dataset.

@@ -48,7 +48,7 @@
 #'
 #' combined.res <- combine.islands('tmp', snp.annotations, pp.list)
 #'
-#' top.snps <- as.vector(t(combined.res$unique.results[1, 1:3]))
+#' top.snps <- as.vector(t(combined.res[1, 1:3]))
 #' set.seed(10)
 #' epi.test.res <- epistasis.test(top.snps, pp.list)
 #'
