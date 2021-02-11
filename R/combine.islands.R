@@ -44,7 +44,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     island.names <- list.files(results.dir, pattern = "cluster", full.names = TRUE)
 
     # note if we've already run this function
-    out.file.name <- "combined.island.results.rds"
+    out.file.name <- "combined.island.unique.chromosome.results.rds"
     out.file <- file.path(dirname(island.names[[1]]), out.file.name)
     if (file.exists(out.file)){
 
