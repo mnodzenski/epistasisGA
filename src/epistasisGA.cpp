@@ -458,38 +458,25 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
   IntegerVector family_idx = seq_len(total_different_snps.length());
   IntegerVector informative_families = family_idx[informative_families_l];
 
-
-  // check prev_informative_families and update inf families if needed
-  bool prev_inf = all(is_na(prev_informative_families));
-  if (!prev_inf){
-
-    IntegerVector changed_families = setdiff(informative_families, prev_informative_families);
-    if (changed_families.length() > 0){
-
-      informative_families_l[changed_families - 1] = false;
-      total_different_snps[changed_families - 1] = 0;
-      informative_families = family_idx[informative_families_l];
-
-    }
-
-  }
-
-  LogicalVector uninformative_families_l = total_different_snps == 0;
+  //LogicalVector uninformative_families_l = total_different_snps == 0;
   total_different_snps = total_different_snps[total_different_snps > 0];
 
   // compute weights
   IntegerVector both_one = sub_rowsums(both_one_mat, informative_families, target_snps);
   IntegerVector weighted_informativeness = n_both_one_weight * both_one + n_different_snps_weight * total_different_snps;
-  NumericVector family_weights(weighted_informativeness.length());
-  for (int i = 0; i < weighted_informativeness.length(); i++){
+  NumericVector family_weights(informative_families_l.length(), 0);
+  for (int i = 0; i < informative_families.length(); i++){
 
+    int inf_family_i = informative_families[i];
     int weight_i = weighted_informativeness[i];
-    family_weights[i] = weight_lookup[weight_i - 1];
+    family_weights[inf_family_i - 1] = weight_lookup[weight_i - 1];
 
   }
   double invsum_family_weights = 1 / sum(family_weights);
+  NumericVector inf_family_weights = family_weights[informative_families_l];
   NumericVector sum_dif_vecs = weighted_sub_colsums(cases_minus_complements, informative_families,
-                                                    target_snps, family_weights);
+                                                    target_snps, inf_family_weights);
+
   sum_dif_vecs = sum_dif_vecs * invsum_family_weights;
 
   // determine how many cases and complements actually have the proposed risk set
@@ -537,7 +524,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                                   IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, IntegerMatrix both_one_mat_in,
                                   LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                                   int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                  double recode_threshold = 4.0, bool epi_test = false) {
+                                  double recode_threshold = 3.0, bool epi_test = false) {
 
   // need to deep copy inputs to avoid overwriting
   IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
@@ -790,22 +777,23 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   }
 
   // compute scaling factor
-  double rr;
+  double q;
   if ( (total_case_high_risk_alleles == 0) |
        R_isnancpp(total_case_high_risk_alleles) | R_isnancpp(total_comp_high_risk_alleles)){
-    rr = pow(10, -10);
+    q = pow(10, -10);
   } else {
-    rr = total_case_high_risk_alleles/(total_case_high_risk_alleles + total_comp_high_risk_alleles);
+    q = total_case_high_risk_alleles/(total_case_high_risk_alleles + total_comp_high_risk_alleles);
   }
 
   // compute pseudo hotelling t2
   n_informative_families = informative_families.length();
+  sum_dif_vecs = q*sum_dif_vecs;
   arma::rowvec mu_hat = as<arma::rowvec>(sum_dif_vecs);
-  arma::mat mu_hat_mat(n_informative_families, n_target);
-  for (int i = 0; i < n_informative_families; i++){
+  arma::mat mu_hat_mat(case_genetic_data.nrow(), n_target);
+  for (int i = 0; i < case_genetic_data.nrow(); i++){
     mu_hat_mat.row(i) = mu_hat;
   }
-  arma::mat x = as<arma::mat>(subset_matrix(cases_minus_complements, informative_families, target_snps));
+  arma::mat x = as<arma::mat>(cases_minus_complements);
   arma::vec inf_family_weights = as<arma::vec>(family_weights);
   arma::mat x_minus_mu_hat = x - mu_hat_mat;
   arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
@@ -842,16 +830,14 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   S.elem(zero_sv).fill(sv_rep_val);
 
   // compute fitness score
-  double pseudo_t2 = (1/(1000*invsum_family_weights)) * arma::sum(pow((mu_hat * U), 2) / trans(S));
-  double fitness_score = pow(rr, 2) * pseudo_t2;
+  double fitness_score = (1/(1000*invsum_family_weights)) * arma::sum(pow((mu_hat * U), 2) / trans(S));
 
   // if desired, return the required information for the epistasis test
   if (epi_test){
 
     List res = List::create(Named("fitness_score") = fitness_score,
                             Named("sum_dif_vecs") = sum_dif_vecs,
-                            Named("rr") = rr,
-                            Named("pseudo_t2") = pseudo_t2,
+                            Named("q") = q,
                             Named("risk_set_alleles") = risk_set_alleles,
                             Named("inf_families") = informative_families);
     return(res);
@@ -860,8 +846,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
     List res = List::create(Named("fitness_score") = fitness_score,
                             Named("sum_dif_vecs") = sum_dif_vecs,
-                            Named("rr") = rr,
-                            Named("pseudo_t2") = pseudo_t2,
+                            Named("q") = q,
                             Named("risk_set_alleles") = risk_set_alleles);
     return(res);
 
@@ -878,7 +863,7 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
                         List chromosome_list, IntegerMatrix cases_minus_complements, IntegerMatrix both_one_mat,
                         LogicalMatrix block_ld_mat, NumericVector weight_lookup, IntegerMatrix case2_mat, IntegerMatrix case0_mat,
                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        double recode_threshold = 4.0, bool epi_test = false){
+                        double recode_threshold = 3.0, bool epi_test = false){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
@@ -962,7 +947,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
                    bool initial_sample_duplicates = false,
-                   double crossover_prop = 0.8, double recode_threshold = 4.0){
+                   double crossover_prop = 0.8, double recode_threshold = 3.0){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -1329,7 +1314,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                 NumericVector snp_chisq, IntegerVector original_col_numbers,
                 int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                 int gen_same_fitness = 50, int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
-                bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recode_threshold = 4.0){
+                bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recode_threshold = 3.0){
 
   if (island_cluster_size > 1){
 
@@ -1447,6 +1432,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
   }
 
 }
+
+
 
 
 
