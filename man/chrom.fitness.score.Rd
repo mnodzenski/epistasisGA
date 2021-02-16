@@ -74,9 +74,8 @@ A list:
  A positive value for a given SNP indicates the minor allele is positively associated with
  disease status, while a negative value implies the reference (‘wild type’) allele is
  positively associated with the disease.}
- \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
+ \item{q}{The fraction of provisional risk alleles carried by cases with the full risk set
  over the total number of risk alleles carried by either a case or complement with the full risk set.}
- \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
  \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
   for each SNP in \code{target.snps} for the case or complement to be classified as having the
   proposed risk set. '1+' indicates at least one copy of the risk allele is required, while '2'

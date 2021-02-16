@@ -39,9 +39,8 @@
 #'  A positive value for a given SNP indicates the minor allele is positively associated with
 #'  disease status, while a negative value implies the reference (‘wild type’) allele is
 #'  positively associated with the disease.}
-#'  \item{rr}{The fraction of provisional risk alleles carried by cases with the full risk set
+#'  \item{q}{The fraction of provisional risk alleles carried by cases with the full risk set
 #'  over the total number of risk alleles carried by either a case or complement with the full risk set.}
-#'  \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
 #'  \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
 #'   for each SNP in \code{target.snps} for the case or complement to be classified as having the
 #'   proposed risk set. '1+' indicates at least one copy of the risk allele is required, while '2'
@@ -256,10 +255,11 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   total.comp.high.risk.alleles <- sum(comp.high.risk.alleles)
 
   ### compute scaling factor ###
-  rr <- total.case.high.risk.alleles/(total.case.high.risk.alleles + total.comp.high.risk.alleles)
-  rr <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
+  q <- total.case.high.risk.alleles/(total.case.high.risk.alleles + total.comp.high.risk.alleles)
+  q <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
 
   ### compute pseudo hotelling t2 ###
+  sum.dif.vecs <- q*sum.dif.vecs
   mu.hat <- sum.dif.vecs
   mu.hat.mat <- matrix(rep(mu.hat, n.informative.families), nrow = n.informative.families, byrow = TRUE)
   x <- t(as.matrix(cases.minus.complements.inf))
@@ -279,19 +279,18 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
   cov.mat.svd$d[cov.mat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
 
   # compute fitness score
-  pseudo.t2 <- (1/(invsum.family.weights*1000)) * rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
-  fitness.score <- (rr^2) * pseudo.t2
+  fitness.score <- (1/(invsum.family.weights*1000)) * rowSums((t(mu.hat) %*% cov.mat.svd$u)^2/cov.mat.svd$d)
 
   # if desired, return the required information for the epistasis test
   if (epi.test){
 
     high.risk.families <- inf.family.rows
-    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
+    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, q = q,
                 risk.set.alleles = risk.set.alleles, inf.families = inf.family.rows))
 
   } else {
 
-    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, rr = rr, pseudo.t2 = pseudo.t2,
+    return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, q = q,
                 risk.set.alleles = risk.set.alleles))
 
   }
