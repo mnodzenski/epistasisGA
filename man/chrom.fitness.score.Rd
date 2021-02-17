@@ -17,7 +17,8 @@ chrom.fitness.score(
   case0.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  recode.threshold = 3,
+  recessive.ref.prop = 0.8,
+  recode.test.stat = 1.96,
   epi.test = FALSE
 )
 }
@@ -58,7 +59,10 @@ is multiplied in computing the family weights. Defaults to 2.}
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
 
-\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+to determine whether to recode the SNP as recessive. Defaults to 0.8.}
+
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.96.
 See the GADGETS paper for specific details.}
 
 \item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epistasis.test}.

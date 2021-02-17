@@ -26,7 +26,9 @@
 #'  is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 1.
-#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+#' @param recessive.ref.prop The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+#' to determine whether to recode the SNP as recessive. Defaults to 0.8.
+#' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.96.
 #' See the GADGETS paper for specific details.
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
@@ -78,7 +80,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 target.snps, cases.minus.complements, both.one.mat,
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1,
-                                recode.threshold = 3, epi.test = FALSE) {
+                                recessive.ref.prop = 0.8, recode.test.stat = 1.96, epi.test = FALSE) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -133,6 +135,12 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
     case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
     comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
   }
+
+  #only use informative pairs for high risk
+  both.high.risk <- case.high.risk & comp.high.risk
+  case.high.risk <- case.high.risk[!both.high.risk]
+  comp.high.risk <- comp.high.risk[!both.high.risk]
+
   n.case.high.risk <- sum(case.high.risk)
   n.comp.high.risk <- sum(comp.high.risk)
   case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
@@ -146,22 +154,22 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
   if (n.case.high.risk > 0){
 
-    # compute proportion of 2's in cases with full risk set, compare to 0.5
+    # compute proportion of 2's in cases with full risk set, compare to ref prop
     if (any(pos.risk)) {
 
       phat <- colSums(case2.mat[which(informative.families)[case.high.risk], target.snps[pos.risk], drop = FALSE])/n.case.high.risk
-      test.stat <- (phat - 0.5)/sqrt((0.5*0.5/n.case.high.risk))
-      positive.recessive <- test.stat >= recode.threshold
+      test.stat <- (phat - recessive.ref.prop)/sqrt((recessive.ref.prop*(1 - recessive.ref.prop)/n.case.high.risk))
+      positive.recessive <- test.stat >= recode.test.stat
       recessive[pos.risk] <- positive.recessive
 
     }
 
-    # compute proportion of 0's in cases with full risk set, compare to 0.5
+    # compute proportion of 0's in cases with full risk set, compare to ref prop
     if (any(neg.risk)) {
 
       phat <- colSums(case0.mat[which(informative.families)[case.high.risk], target.snps[neg.risk], drop = FALSE])/n.case.high.risk
-      test.stat <- (phat - 0.5)/sqrt((0.5*0.5/n.case.high.risk))
-      negative.recessive <- test.stat >= recode.threshold
+      test.stat <- (phat - recessive.ref.prop)/sqrt((recessive.ref.prop*(1 - recessive.ref.prop)/n.case.high.risk))
+      negative.recessive <- test.stat >= recode.test.stat
       recessive[neg.risk] <- negative.recessive
 
     }
@@ -237,26 +245,22 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
         case.high.risk <- (colSums(p1) + colSums(n1)) == n.target
         comp.high.risk <- (colSums(p2) + colSums(n2)) == n.target
       }
+
+      #only use informative pairs for high risk
+      both.high.risk <- case.high.risk & comp.high.risk
+      case.high.risk <- case.high.risk[!both.high.risk]
+      comp.high.risk <- comp.high.risk[!both.high.risk]
+
       n.case.high.risk <- sum(case.high.risk)
       n.comp.high.risk <- sum(comp.high.risk)
-      case.high.inf <- case.inf[, case.high.risk, drop = FALSE]
-      comp.high.inf <- comp.inf[, comp.high.risk, drop = FALSE]
 
     }
 
   }
 
-  ### count the number of risk alleles in those with the full risk set ###
-  case.high.risk.alleles <- colSums(case.high.inf[pos.risk, , drop = FALSE]) +
-    (colSums(2 - case.high.inf[neg.risk, , drop = FALSE]))
-  total.case.high.risk.alleles <- sum(case.high.risk.alleles)
-  comp.high.risk.alleles <- colSums(comp.high.inf[pos.risk, , drop = FALSE]) +
-    (colSums(2 - comp.high.inf[neg.risk, , drop = FALSE]))
-  total.comp.high.risk.alleles <- sum(comp.high.risk.alleles)
-
-  ### compute scaling factor ###
-  q <- total.case.high.risk.alleles/(total.case.high.risk.alleles + total.comp.high.risk.alleles)
-  q <- ifelse(rr <= 0 | is.na(rr), 10^-10, rr)
+  ### compute q ###
+  q <- n.case.high.risk/(n.case.high.risk + n.comp.high.risk)
+  q <- ifelse(q <= 0 | is.na(q), 10^-10, q)
 
   ### compute pseudo hotelling t2 ###
   sum.dif.vecs <- q*sum.dif.vecs
@@ -286,12 +290,14 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
     high.risk.families <- inf.family.rows
     return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, q = q,
-                risk.set.alleles = risk.set.alleles, inf.families = inf.family.rows))
+                risk.set.alleles = risk.set.alleles, n.case.risk.geno = n.case.high.risk,
+                n.comp.risk.geno = n.comp.high.risk, inf.families = inf.family.rows))
 
   } else {
 
     return(list(fitness.score = fitness.score, sum.dif.vecs = sum.dif.vecs, q = q,
-                risk.set.alleles = risk.set.alleles))
+                risk.set.alleles = risk.set.alleles, n.case.risk.geno = n.case.high.risk,
+                n.comp.risk.geno = n.comp.high.risk))
 
   }
 
