@@ -27,7 +27,7 @@
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 1.
 #' @param recessive.ref.prop The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
-#' to determine whether to recode the SNP as recessive. Defaults to 0.8.
+#' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.96.
 #' See the GADGETS paper for specific details.
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
@@ -80,7 +80,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 target.snps, cases.minus.complements, both.one.mat,
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                 n.different.snps.weight = 2, n.both.one.weight = 1,
-                                recessive.ref.prop = 0.8, recode.test.stat = 1.96, epi.test = FALSE) {
+                                recessive.ref.prop = 0.75, recode.test.stat = 1.64, epi.test = FALSE) {
 
   ### pick out the differences for the target snps ###
   case.comp.diff <- case.comp.differences[, target.snps]
@@ -138,8 +138,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
   #only use informative pairs for high risk
   both.high.risk <- case.high.risk & comp.high.risk
-  case.high.risk <- case.high.risk[!both.high.risk]
-  comp.high.risk <- comp.high.risk[!both.high.risk]
+  case.high.risk[both.high.risk] <- FALSE
+  comp.high.risk[both.high.risk] <- FALSE
 
   n.case.high.risk <- sum(case.high.risk)
   n.comp.high.risk <- sum(comp.high.risk)
@@ -248,8 +248,8 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
 
       #only use informative pairs for high risk
       both.high.risk <- case.high.risk & comp.high.risk
-      case.high.risk <- case.high.risk[!both.high.risk]
-      comp.high.risk <- comp.high.risk[!both.high.risk]
+      case.high.risk[both.high.risk] <- FALSE
+      comp.high.risk[both.high.risk] <- FALSE
 
       n.case.high.risk <- sum(case.high.risk)
       n.comp.high.risk <- sum(comp.high.risk)
