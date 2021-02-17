@@ -10,7 +10,7 @@ preprocess.genetic.data(
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
   block.ld.mat,
-  min.allele.freq = 0.025,
+  min.allele.freq = 0,
   bp.param = bpparam(),
   snp.sampling.probs = NULL
 )
@@ -36,7 +36,7 @@ with the LD blocks specified in \code{ld.block.mat}. In the absence of outside i
 to be in LD if they are located on the same biological chromosome.}
 
 \item{min.allele.freq}{The minimum minor allele frequency required for a SNP to be considered for inclusion in the genetic algorithm.
-Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0.025.}
+Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0 (no filtering).}
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}

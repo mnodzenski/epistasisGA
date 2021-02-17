@@ -48,7 +48,10 @@
 #' @param migration.generations An integer equal to the number of generations between migrations among islands of a distinct cluster.
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
-#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+#' @param recessive.ref.prop The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+#' to determine whether to recode the SNP as recessive. Defaults to 0.75.
+#' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
+#' See the GADGETS paper for specific details.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
@@ -90,7 +93,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recode.threshold = 3) {
+    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations) {
@@ -133,13 +136,17 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
     weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
+    storage.mode(weight.lookup) <- "integer"
 
     #### grab the analysis data ###
     case.genetic.data <- as.matrix(data.list$case.genetic.data)
+    storage.mode(case.genetic.data) <- "integer"
     complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
+    storage.mode(complement.genetic.data) <- "integer"
     original.col.numbers <- data.list$original.col.numbers
     chisq.stats <- data.list$chisq.stats
     block.ld.mat <- as.matrix(data.list$block.ld.mat)
+    storage.mode(block.ld.mat) <- "logical"
 
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
@@ -147,14 +154,19 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     ### Compute matrices of differences between cases and complements ###
     case.minus.comp <- sign(case.genetic.data - complement.genetic.data)
+    storage.mode(case.minus.comp) <- "integer"
     case.comp.different <- case.minus.comp != 0
+    storage.mode(case.comp.different) <- "logical"
 
     ### Compute matrix indicating whether both the case and control have 1 copy of the minor allele ###
     both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
+    storage.mode(both.one.mat) <- "logical"
 
     ### compute matrices of whether cases carry 2 or 0 copies of minor allele
     case2.mat <- case.genetic.data == 2
+    storage.mode(case2.mat) <- "logical"
     case0.mat <- case.genetic.data == 0
+    storage.mode(case0.mat) <- "logical"
 
     ### set sampling type for mutation snps ###
     if (snp.sampling.type == "chisq") {
@@ -244,7 +256,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
         max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recode.threshold = recode.threshold), reg = registry)
+        crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat), reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]

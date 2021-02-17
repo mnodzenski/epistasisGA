@@ -62,7 +62,7 @@ is multiplied in computing the family weights. Defaults to 1.}
 \item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
 to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
-\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.96.
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
 \item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epistasis.test}.

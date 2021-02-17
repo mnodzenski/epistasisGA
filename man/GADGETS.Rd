@@ -31,7 +31,8 @@ GADGETS(
   n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   crossover.prop = 0.8,
-  recode.threshold = 3
+  recessive.ref.prop = 0.75,
+  recode.test.stat = 1.64
 )
 }
 \arguments{
@@ -103,7 +104,10 @@ considered to be sufficient to stop the algorithm.}
 \item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
 The remaining proportion will be mutated. Defaults to 0.8.}
 
-\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+to determine whether to recode the SNP as recessive. Defaults to 0.75.}
+
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 }
 \value{
