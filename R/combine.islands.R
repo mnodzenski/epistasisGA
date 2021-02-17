@@ -127,65 +127,9 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
                                  byrow = FALSE))
     colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele", colnames(diff.cols))
 
-    ## count the number of cases and complements with the risk genotype
-    original.col.numbers <- preprocessed.list$original.col.numbers
-    case <- preprocessed.list$case.genetic.data
-    comp <- preprocessed.list$complement.genetic.data
-
-    n.case.comp.risk.geno.list <- lapply(seq_len(nrow(unique.result)), function(x){
-
-        case.list <- list(case)
-        comp.list <- list(comp)
-
-        orig.chrom <- as.vector(t(snp.cols[x, ]))
-        chrom <- which(original.col.numbers %in% orig.chrom)
-        n.risk.alleles <- as.vector(t(unique.result[x, ..allele.copy.cols]))
-        risk.signs <- sign(as.vector(t(diff.cols[x, ])))
-
-        # determine the risk genotypes
-        risk.geno <- ifelse(risk.signs >= 0 & n.risk.alleles == "2", 2,
-                            ifelse(risk.signs < 0 & n.risk.alleles == "2", 0, 1))
-        pos.cols <- risk.signs >= 0
-        neg.cols <- risk.signs < 0
-
-        # pick out the chromosome in the preprocessed list and the risk alleles
-        unlist(lapply(seq_along(case.list), function(y){
-
-            case <- case.list[[y]]
-            comp <- comp.list[[y]]
-            n <- nrow(case)
-
-            # determine the number of cases and complements with the risk genotype
-            risk.geno.mat <- matrix(rep(risk.geno, nrow(case)), nrow = nrow(case), byrow = TRUE)
-            case.risk.geno <- matrix(NA, nrow = nrow(case), ncol = length(chrom))
-            comp.risk.geno <- matrix(NA, nrow = nrow(case), ncol = length(chrom))
-
-            if (any(pos.cols)){
-
-                case.risk.geno[ , pos.cols] <- case[ , chrom[pos.cols]] >= risk.geno.mat[ , pos.cols]
-                comp.risk.geno[ , pos.cols] <- comp[ , chrom[pos.cols]] >= risk.geno.mat[ , pos.cols]
-
-            }
-            if (any(neg.cols)){
-
-                case.risk.geno[ , neg.cols] <- case[ , chrom[neg.cols]] <= risk.geno.mat[ , neg.cols]
-                comp.risk.geno[ , neg.cols] <- comp[ , chrom[neg.cols]] <= risk.geno.mat[ , neg.cols]
-
-            }
-            n.case.full.risk.path <- sum(rowSums(case.risk.geno) == length(chrom))
-            n.comp.full.risk.path <- sum(rowSums(comp.risk.geno) == length(chrom))
-            return(c(n, n.case.full.risk.path, n.comp.full.risk.path))
-
-        }))
-
-    })
-
-    n.case.comp.risk.geno.dt <- t(setDT(n.case.comp.risk.geno.list))
-    colnames(n.case.comp.risk.geno.dt) <- c("n.families", "n.cases.risk.geno", "n.comps.risk.geno")
 
     # put the full result together
-    final.result <- cbind(snp.cols, rsid.dt, risk.allele.dt, unique.result[ , -(1:chromosome.size)],
-                             n.case.comp.risk.geno.dt)
+    final.result <- cbind(snp.cols, rsid.dt, risk.allele.dt, unique.result[ , -(1:chromosome.size)])
 
     #write to file
     saveRDS(unique.result, file = out.file)

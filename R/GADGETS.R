@@ -141,11 +141,17 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
         colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
                                                             ".allele.copies")
         unique.fitness.score.vec <- fitness.score.vec[!duplicated(all.chrom.dt)]
+        n.case.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_case_risk_geno"]][seq_len(n.generations)])
+        n.comp.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_comp_risk_geno"]][seq_len(n.generations)])
+        unique.n.case.risk.geno.vec <- n.case.risk.geno.vec[!duplicated(all.chrom.dt)]
+        unique.n.comp.risk.geno.vec <- n.comp.risk.geno.vec[!duplicated(all.chrom.dt)]
+
         unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
         unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
         unique.results[, `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(unique.results)),
                        .SDcols = (1 + chromosome.size):(2 * chromosome.size)]
-        unique.results[, `:=`(fitness.score, min.elem * raw.fitness.score)]
+        unique.results[ , `:=`(fitness.score, min.elem * raw.fitness.score)]
+        unique.results[ , `:=`(n.cases.risk.geno = unique.n.case.risk.geno.vec, n.comps.risk.geno = unique.n.comp.risk.geno.vec)]
         setorder(unique.results, -fitness.score)
         final.result <- unique.results[seq_len(n.top.chroms), ]
 

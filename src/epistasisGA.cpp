@@ -923,6 +923,8 @@ List initiate_population(IntegerMatrix case_genetic_data, int n_migrations, int 
   List gen_chromosome_list(max_generations);
   List sum_dif_vec_list(max_generations);
   List risk_allele_vec_list(max_generations);
+  List n_case_risk_geno_list(max_generations);
+  List n_comp_risk_geno_list(max_generations);
   int generation = 1;
   bool last_gens_equal = false;
   List res = List::create(Named("migrations") = migrations,
@@ -932,6 +934,8 @@ List initiate_population(IntegerMatrix case_genetic_data, int n_migrations, int 
                           Named("gen_chromosome_list") = gen_chromosome_list,
                           Named("sum_dif_vec_list") = sum_dif_vec_list,
                           Named("risk_allele_vec_list") = risk_allele_vec_list,
+                          Named("n_case_risk_geno_list") = n_case_risk_geno_list,
+                          Named("n_comp_risk_geno_list") = n_comp_risk_geno_list,
                           Named("top_fitness") = top_fitness,
                           Named("generation") = generation,
                           Named("last_gens_equal") = last_gens_equal);
@@ -966,6 +970,8 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   List gen_chromosome_list = population["gen_chromosome_list"];
   List sum_dif_vec_list = population["sum_dif_vec_list"];
   List risk_allele_vec_list = population["risk_allele_vec_list"];
+  List n_case_risk_geno_list = population["n_case_risk_geno_list"];
+  List n_comp_risk_geno_list = population["n_comp_risk_geno_list"];
   NumericVector top_fitness = population["top_fitness"];
 
   // iterate over generations
@@ -980,6 +986,8 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     List sum_dif_vecs(n_chromosomes);
     List gen_original_cols(n_chromosomes);
     List risk_allele_vecs(n_chromosomes);
+    IntegerVector n_case_risk_geno_vec(n_chromosomes);
+    IntegerVector n_comp_risk_geno_vec(n_chromosomes);
 
     for (int i = 0; i < n_chromosomes; i++){
 
@@ -987,12 +995,16 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       double fs = chrom_fitness_score_list_i["fitness_score"];
       NumericVector sdv = chrom_fitness_score_list_i["sum_dif_vecs"];
       CharacterVector rav = chrom_fitness_score_list_i["risk_set_alleles"];
+      int n_case_risk_geno = chrom_fitness_score_list_i["n_case_risk_geno"];
+      int n_comp_risk_geno = chrom_fitness_score_list_i["n_comp_risk_geno"];
 
       fitness_scores[i] = fs;
       sum_dif_vecs[i] = sdv;
       risk_allele_vecs[i] = rav;
       IntegerVector chrom_col_idx = chromosome_list[i];
       gen_original_cols[i] = original_col_numbers[chrom_col_idx - 1];
+      n_case_risk_geno_vec[i] = n_case_risk_geno;
+      n_comp_risk_geno_vec[i] = n_comp_risk_geno;
 
     }
 
@@ -1005,6 +1017,10 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     population["sum_dif_vec_list"] = sum_dif_vec_list;
     risk_allele_vec_list[generation - 1] = risk_allele_vecs;
     population["risk_allele_vec_list"] = risk_allele_vec_list;
+    n_case_risk_geno_list[generation - 1] = n_case_risk_geno_vec;
+    population["n_case_risk_geno_list"] = n_case_risk_geno_list;
+    n_comp_risk_geno_list[generation - 1] = n_comp_risk_geno_vec;
+    population["n_comp_risk_geno_list"] = n_comp_risk_geno_list;
 
     // 2. identify the top scoring candidate solution(s) and fitness score
     double max_fitness = max(fitness_scores);
@@ -1303,7 +1319,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   } else {
 
     population["generation"] = generation - 1;
-    IntegerVector return_these = seq(2, 8);
+    IntegerVector return_these = seq(2, 10);
     population = population[return_these];
     return(population);
 
@@ -1389,7 +1405,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
       }
       // check to see if we've output results
       List check_res = island_populations[0];
-      if (check_res.length() == 7){
+      if (check_res.length() == 9){
 
         stop_iterations = true;
 
