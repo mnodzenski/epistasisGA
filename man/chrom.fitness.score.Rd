@@ -71,8 +71,8 @@ for a given SNP. See the GADGETS paper for specific details on the implementatio
 \value{
 A list:
 \describe{
- \item{fitness.score}{The chromosome fitness score.}
- \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome,
+ \item{fitness_score}{The chromosome fitness score.}
+ \item{sum_dif_vecs}{The weighted mean difference vector corresponding to the chromosome,
  with each element divided by it's pseudo-standard error.
  The magnitudes of these values are not particularly important, but the sign is useful.
  A positive value for a given SNP indicates the minor allele is positively associated with
@@ -80,26 +80,30 @@ A list:
  positively associated with the disease.}
  \item{q}{The fraction of provisional risk alleles carried by cases with the full risk set
  over the total number of risk alleles carried by either a case or complement with the full risk set.}
- \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
+ \item{risk_set_alleles}{A vector indicating the number risk alleles a case or complement must have
   for each SNP in \code{target.snps} for the case or complement to be classified as having the
   proposed risk set. '1+' indicates at least one copy of the risk allele is required, while '2'
   indicates 2 copies are needed. The risk allele can be determined based on the signs of the elements
-  of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
+  of \code{sum_dif_vecs}, where a negative value indicates the major allele for a given SNP is
   the risk allele, while a positive value implicates the minor allele.}
-  \item{inf.families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
+  \item{inf_families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
 }
 }
 \description{
-This function assigns a fitness score to a chromosome.
+This function assigns a fitness score to a chromosome. It is a wrapper for the Rcpp function chrom_fitness_score.
 }
 \examples{
 
 data(case)
 data(dad)
 data(mom)
+case <- as.matrix(case)
+dad <- as.matrix(dad)
+mom <- as.matrix(mom)
 comp <- mom + dad - case
 case.comp.diff <- case != comp
 case.minus.comp <- sign(case - comp)
+storage.mode(case.minus.comp) <- "integer"
 both.one.mat <- case == 1 & comp == 1
 case2.mat <- case == 2
 case0.mat <- case == 0
@@ -109,6 +113,7 @@ block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
+storage.mode(weight.lookup) <- "integer"
 chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
                     case.minus.comp, both.one.mat,
                     block.ld.mat, weight.lookup,
