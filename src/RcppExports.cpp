@@ -91,13 +91,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // subset_matrix_cols
-Rcpp::IntegerMatrix subset_matrix_cols(Rcpp::IntegerMatrix in_matrix, Rcpp::IntegerVector cols);
+IntegerMatrix subset_matrix_cols(IntegerMatrix in_matrix, IntegerVector cols);
 RcppExport SEXP _epistasisGA_subset_matrix_cols(SEXP in_matrixSEXP, SEXP colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type in_matrix(in_matrixSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type cols(colsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type in_matrix(in_matrixSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cols(colsSEXP);
     rcpp_result_gen = Rcpp::wrap(subset_matrix_cols(in_matrix, cols));
     return rcpp_result_gen;
 END_RCPP
@@ -164,19 +164,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// sub_colsums
-IntegerVector sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _epistasisGA_sub_colsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerMatrix >::type in_mat(in_matSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type target_rows(target_rowsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type target_cols(target_colsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sub_colsums(in_mat, target_rows, target_cols));
-    return rcpp_result_gen;
-END_RCPP
-}
 // sub_colsumsl
 IntegerVector sub_colsumsl(LogicalMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
 RcppExport SEXP _epistasisGA_sub_colsumsl(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
@@ -187,32 +174,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type target_rows(target_rowsSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type target_cols(target_colsSEXP);
     rcpp_result_gen = Rcpp::wrap(sub_colsumsl(in_mat, target_rows, target_cols));
-    return rcpp_result_gen;
-END_RCPP
-}
-// sub_colsums_2minus
-IntegerVector sub_colsums_2minus(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _epistasisGA_sub_colsums_2minus(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerMatrix >::type in_mat(in_matSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type target_rows(target_rowsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type target_cols(target_colsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sub_colsums_2minus(in_mat, target_rows, target_cols));
-    return rcpp_result_gen;
-END_RCPP
-}
-// sub_rowsums
-IntegerVector sub_rowsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols);
-RcppExport SEXP _epistasisGA_sub_rowsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerMatrix >::type in_mat(in_matSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type target_rows(target_rowsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type target_cols(target_colsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sub_rowsums(in_mat, target_rows, target_cols));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -461,10 +422,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_subset_matrix", (DL_FUNC) &_epistasisGA_subset_matrix, 3},
     {"_epistasisGA_weighted_sub_colsums", (DL_FUNC) &_epistasisGA_weighted_sub_colsums, 4},
     {"_epistasisGA_sub_rowsums_start", (DL_FUNC) &_epistasisGA_sub_rowsums_start, 2},
-    {"_epistasisGA_sub_colsums", (DL_FUNC) &_epistasisGA_sub_colsums, 3},
     {"_epistasisGA_sub_colsumsl", (DL_FUNC) &_epistasisGA_sub_colsumsl, 3},
-    {"_epistasisGA_sub_colsums_2minus", (DL_FUNC) &_epistasisGA_sub_colsums_2minus, 3},
-    {"_epistasisGA_sub_rowsums", (DL_FUNC) &_epistasisGA_sub_rowsums, 3},
     {"_epistasisGA_sub_rowsumsl", (DL_FUNC) &_epistasisGA_sub_rowsumsl, 3},
     {"_epistasisGA_n_pos_high_risk", (DL_FUNC) &_epistasisGA_n_pos_high_risk, 3},
     {"_epistasisGA_n_neg_high_risk", (DL_FUNC) &_epistasisGA_n_neg_high_risk, 3},

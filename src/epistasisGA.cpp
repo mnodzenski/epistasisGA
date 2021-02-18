@@ -135,15 +135,15 @@ LogicalVector unique_chrom_list(List chromosome_list, int chrom_size) {
 }
 
 // [[Rcpp::export]]
-Rcpp::IntegerMatrix subset_matrix_cols(Rcpp::IntegerMatrix in_matrix, Rcpp::IntegerVector cols){
+IntegerMatrix subset_matrix_cols(IntegerMatrix in_matrix, IntegerVector cols){
 
   int n_rows = in_matrix.nrow();
   int n_cols = cols.length();
-  Rcpp::IntegerMatrix out_matrix(n_rows, n_cols);
+  IntegerMatrix out_matrix(n_rows, n_cols);
 
   for (int i = 0; i < n_cols; i++){
-    Rcpp::IntegerMatrix::Column original_col = in_matrix(_, cols[i]-1);
-    Rcpp::IntegerMatrix::Column new_col = out_matrix(_, i);
+    IntegerMatrix::Column original_col = in_matrix(_, cols[i]-1);
+    IntegerMatrix::Column new_col = out_matrix(_, i);
     new_col = original_col;
   }
   return(out_matrix);
@@ -247,26 +247,6 @@ IntegerVector sub_rowsums_start(LogicalMatrix in_mat, IntegerVector target_cols)
 }
 
 // [[Rcpp::export]]
-IntegerVector sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
-
-  int n_cols = target_cols.length();
-  int n_rows = target_rows.length();
-  IntegerVector out_vec(n_cols, 0);
-  for (int i = 0; i < n_rows; i++){
-
-    int this_row = target_rows[i] - 1;
-
-    for (int j = 0; j < n_cols; j ++){
-
-      int this_col = target_cols[j] - 1;
-      out_vec[j] += in_mat(this_row, this_col);
-
-    }
-  }
-  return(out_vec);
-}
-
-// [[Rcpp::export]]
 IntegerVector sub_colsumsl(LogicalMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
 
   int n_cols = target_cols.length();
@@ -280,50 +260,6 @@ IntegerVector sub_colsumsl(LogicalMatrix in_mat, IntegerVector target_rows, Inte
 
       int this_col = target_cols[j] - 1;
       out_vec[j] += in_mat(this_row, this_col);
-
-    }
-  }
-  return(out_vec);
-}
-
-
-
-// [[Rcpp::export]]
-IntegerVector sub_colsums_2minus(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
-
-  int n_cols = target_cols.length();
-  int n_rows = target_rows.length();
-  IntegerVector out_vec(n_cols, 0);
-  for (int i = 0; i < n_rows; i++){
-
-    int this_row = target_rows[i] - 1;
-
-    for (int j = 0; j < n_cols; j ++){
-
-      int this_col = target_cols[j] - 1;
-      out_vec[j] += 2 - in_mat(this_row, this_col);
-
-    }
-  }
-  return(out_vec);
-}
-
-
-
-// [[Rcpp::export]]
-IntegerVector sub_rowsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
-
-  int n_cols = target_cols.length();
-  int n_rows = target_rows.length();
-  IntegerVector out_vec(n_rows, 0);
-  for (int i = 0; i < n_rows; i++){
-
-    int this_row = target_rows[i] - 1;
-
-    for (int j = 0; j < n_cols; j ++){
-
-      int this_col = target_cols[j] - 1;
-      out_vec[i] += in_mat(this_row, this_col);
 
     }
   }

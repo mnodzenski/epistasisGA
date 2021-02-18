@@ -53,20 +53,8 @@ sub_rowsums_start <- function(in_mat, target_cols) {
     .Call('_epistasisGA_sub_rowsums_start', PACKAGE = 'epistasisGA', in_mat, target_cols)
 }
 
-sub_colsums <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_sub_colsums', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
-}
-
 sub_colsumsl <- function(in_mat, target_rows, target_cols) {
     .Call('_epistasisGA_sub_colsumsl', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
-}
-
-sub_colsums_2minus <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_sub_colsums_2minus', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
-}
-
-sub_rowsums <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_sub_rowsums', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
 }
 
 sub_rowsumsl <- function(in_mat, target_rows, target_cols) {
