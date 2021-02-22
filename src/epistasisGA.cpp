@@ -758,17 +758,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   // if no variance, just make the element small
   sum_dif_vecs[elem_vars == 0] = pow(10, -10);
 
-  // compute svd of cov_mat
-  arma::mat U, V;
-  arma::vec S;
-  arma::svd(U, S, V, cov_mat, "dc");
-  double lower_limit = std::numeric_limits<double>::epsilon();
-  arma::uvec zero_sv = find(S < sqrt(lower_limit));
-  double sv_rep_val = pow(10, 10);
-  S.elem(zero_sv).fill(sv_rep_val);
-
   // compute fitness score
-  double fitness_score = (1/(1000*invsum_family_weights)) * arma::sum(pow((mu_hat * U), 2) / trans(S));
+  double fitness_score = (1/(1000*invsum_family_weights)) * as_scalar(mu_hat * arma::pinv(cov_mat) * mu_hat.t());
 
   // if desired, return the required information for the epistasis test
   if (epi_test){
@@ -1132,7 +1123,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       IntegerVector snps_for_mutation = sample(candiate_snp_idx, candiate_snp_idx.length(),
                                                true, snp_chisq);
       int ulen = unique(snps_for_mutation).length();
-      int n_possible_mutations = seq_len(chromosome_size);
+      IntegerVector n_possible_mutations = seq_len(chromosome_size);
       for (int l = 0; l < mutation_positions.length(); l++){
 
         int mutation_position = mutation_positions[l];
