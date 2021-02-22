@@ -1394,6 +1394,80 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
 
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Function shuffle rows of input case/comp data and recompute fitness score
+/////////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_blocks,
+                                 int n_families, LogicalMatrix block_ld_mat, IntegerVector weight_lookup,
+                                 int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
+
+  // make copies of the input data
+  uint nrows = case_inf.n_rows;
+  uint ncols = case_inf.n_cols;
+  arma::mat case_permuted(nrows, ncols);
+  arma::mat comp_permuted(nrows, ncols);
+
+  // loop over SNP LD blocks and shuffle rows
+  for (arma::uword i = 0; i < ld_blocks.size(); i++){
+
+    IntegerVector family_idx = seq_len(n_families);
+    //IntegerVector row_order = Rcpp::sample(family_idx, n_families, false);
+    arma::uvec row_order = arma::randperm(n_families, n_families);
+    arma::vec these_snps = ld_blocks[i];
+
+    for (arma::uword j = 0; j < row_order.size(); j++){
+
+      arma::uword in_row = row_order(j);
+
+      for (arma::uword k = 0; k < these_snps.size(); k++){
+
+        arma::uword snp_col = these_snps(k) - 1;
+        int case_val_k = case_inf(in_row, snp_col);
+        case_permuted(j, snp_col) = case_val_k;
+        int comp_val_k = comp_inf(in_row, snp_col);
+        comp_permuted(j, snp_col) = comp_val_k;
+
+      }
+
+    }
+
+  }
+
+  // compute matrices required for computing fitness score
+  arma::mat case_minus_comp = case_permuted - comp_permuted;
+  case_minus_comp = arma::sign(case_minus_comp);
+  arma::umat case_comp_different = case_permuted != comp_permuted;
+  arma::umat both_one_mat = case_permuted == 1 && comp_permuted == 1;
+  arma::umat case2_mat = case_permuted == 2;
+  arma::umat case0_mat = comp_permuted == 0;
+
+  // convert back to regular rcpp
+  IntegerMatrix case_rcpp = wrap(case_permuted);
+  IntegerMatrix comp_rcpp = wrap(comp_permuted);
+  IntegerMatrix case_minus_comp_rcpp = wrap(case_minus_comp);
+  LogicalMatrix case_comp_different_rcpp = wrap(case_comp_different);
+  LogicalMatrix both_one_mat_rcpp = wrap(both_one_mat);
+  LogicalMatrix case2_mat_rcpp = wrap(case2_mat);
+  LogicalMatrix case0_mat_rcpp = wrap(case0_mat);
+
+  // compute fitness score for permuted dataset
+  IntegerVector target_snps = seq_len(case_rcpp.ncol());
+  List fitness_list = chrom_fitness_score(case_rcpp, comp_rcpp, case_comp_different_rcpp,
+                      target_snps, case_minus_comp_rcpp, both_one_mat_rcpp,
+                      block_ld_mat, weight_lookup, case2_mat_rcpp, case0_mat_rcpp,
+                      n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
+                      recode_test_stat, false);
+   double fitness = fitness_list["fitness_score"];
+   NumericVector sum_dif_vecs = fitness_list["sum_dif_vecs"];
+   NumericVector abs_sdv = Rcpp::abs(sum_dif_vecs);
+   double min_elem = min(abs_sdv);
+   double fitness_score = min_elem * fitness;
+   return(fitness_score);
+
+}
 
 
 

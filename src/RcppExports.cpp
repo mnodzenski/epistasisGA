@@ -407,6 +407,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// epistasis_test_permute
+double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_blocks, int n_families, LogicalMatrix block_ld_mat, IntegerVector weight_lookup, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat);
+RcppExport SEXP _epistasisGA_epistasis_test_permute(SEXP case_infSEXP, SEXP comp_infSEXP, SEXP ld_blocksSEXP, SEXP n_familiesSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type case_inf(case_infSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type comp_inf(comp_infSEXP);
+    Rcpp::traits::input_parameter< List >::type ld_blocks(ld_blocksSEXP);
+    Rcpp::traits::input_parameter< int >::type n_families(n_familiesSEXP);
+    Rcpp::traits::input_parameter< LogicalMatrix >::type block_ld_mat(block_ld_matSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type weight_lookup(weight_lookupSEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
+    Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
+    rcpp_result_gen = Rcpp::wrap(epistasis_test_permute(case_inf, comp_inf, ld_blocks, n_families, block_ld_mat, weight_lookup, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_scalar_min", (DL_FUNC) &_epistasisGA_scalar_min, 2},
@@ -434,6 +454,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_initiate_population", (DL_FUNC) &_epistasisGA_initiate_population, 7},
     {"_epistasisGA_evolve_island", (DL_FUNC) &_epistasisGA_evolve_island, 27},
     {"_epistasisGA_run_GADGETS", (DL_FUNC) &_epistasisGA_run_GADGETS, 26},
+    {"_epistasisGA_epistasis_test_permute", (DL_FUNC) &_epistasisGA_epistasis_test_permute, 10},
     {NULL, NULL, 0}
 };
 
