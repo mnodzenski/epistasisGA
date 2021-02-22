@@ -901,6 +901,17 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   List n_comp_risk_geno_list = population["n_comp_risk_geno_list"];
   NumericVector top_fitness = population["top_fitness"];
 
+  // for storing generation information
+  NumericVector fitness_scores(n_chromosomes);
+  List sum_dif_vecs(n_chromosomes);
+  List gen_original_cols(n_chromosomes);
+  List risk_allele_vecs(n_chromosomes);
+  IntegerVector n_case_risk_geno_vec(n_chromosomes);
+  IntegerVector n_comp_risk_geno_vec(n_chromosomes);
+
+  // counter for same top chrom
+  int same_top_chrom = 0;
+
   // iterate over generations
   while ((generation <= generations) & !all_converged) {
 
@@ -909,12 +920,6 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                                                        chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
                                                        case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight,
                                                        recessive_ref_prop, recode_test_stat);
-    NumericVector fitness_scores(n_chromosomes);
-    List sum_dif_vecs(n_chromosomes);
-    List gen_original_cols(n_chromosomes);
-    List risk_allele_vecs(n_chromosomes);
-    IntegerVector n_case_risk_geno_vec(n_chromosomes);
-    IntegerVector n_comp_risk_geno_vec(n_chromosomes);
 
     for (int i = 0; i < n_chromosomes; i++){
 
@@ -983,6 +988,28 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       top_chromosome = top_chromosomes[0];
 
     }
+
+    // check if same top chrom
+    if (generation == 1){
+
+      same_top_chrom += 1;
+
+
+    } else {
+
+      IntegerVector prev_top_chrom = top_generation_chromosome[generation - 2];
+      if (is_true(all(top_chromosome == prev_top_chrom))){
+
+        same_top_chrom += 1;
+
+      } else {
+
+        same_top_chrom = 1;
+
+      }
+
+    }
+
 
     // 3. Sample with replacement from the existing chromosomes, allowing the top
     // scoring chromosome to be sampled, but only sample from the unique chromosomes available
@@ -1186,20 +1213,21 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     }
 
     // 8. Increment iterators
-    top_fitness[generation - 1] = max_fitness;
-    population["top_fitness"] = top_fitness;
-    top_generation_chromosome[generation - 1] = original_col_numbers[top_chromosome - 1];
-    population["top_generation_chromosome"] = top_generation_chromosome;
+    //top_fitness[generation - 1] = max_fitness;
+    //population["top_fitness"] = top_fitness;
+    top_generation_chromosome[generation - 1] = top_chromosome;
+    //population["top_generation_chromosome"] = top_generation_chromosome;
     population["generation"] = generation + 1;
 
     // check to see if we can terminate
     if (generation >= gen_same_fitness){
 
-      int start_gen = generation - gen_same_fitness;
-      IntegerVector check_these_gens = seq(start_gen, generation - 1);
-      NumericVector last_gens = top_fitness[check_these_gens];
-      double abs_diff = abs(max(last_gens) - min(last_gens));
-      bool last_gens_equal = abs_diff < tol;
+      // int start_gen = generation - gen_same_fitness;
+      // IntegerVector check_these_gens = seq(start_gen, generation - 1);
+      // NumericVector last_gens = top_fitness[check_these_gens];
+      // double abs_diff = abs(max(last_gens) - min(last_gens));
+      // bool last_gens_equal = abs_diff < tol;
+      bool last_gens_equal = same_top_chrom >= gen_same_fitness;
       population["last_gens_equal"] = last_gens_equal;
       if ( (n_migrations == 0) & last_gens_equal){
 
