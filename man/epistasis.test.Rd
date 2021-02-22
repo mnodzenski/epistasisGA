@@ -12,7 +12,8 @@ epistasis.test(
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function.int = 2,
-  recode.threshold = 3,
+  recessive.ref.prop = 0.75,
+  recode.test.stat = 1.64,
   bp.param = bpparam()
 )
 }
@@ -33,7 +34,10 @@ is multiplied in computing the family weights. Defaults to 1.}
 of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
 returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
 
-\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+to determine whether to recode the SNP as recessive. Defaults to 0.75.}
+
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.

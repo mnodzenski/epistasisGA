@@ -105,3 +105,7 @@ epistasis_test_permute <- function(case_inf, comp_inf, ld_blocks, n_families, bl
     .Call('_epistasisGA_epistasis_test_permute', PACKAGE = 'epistasisGA', case_inf, comp_inf, ld_blocks, n_families, block_ld_mat, weight_lookup, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat)
 }
 
+epistasis_test_null_scores <- function(n_permutes, case_inf, comp_inf, ld_blocks, n_families, block_ld_mat, weight_lookup, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
+    .Call('_epistasisGA_epistasis_test_null_scores', PACKAGE = 'epistasisGA', n_permutes, case_inf, comp_inf, ld_blocks, n_families, block_ld_mat, weight_lookup, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat)
+}
+
