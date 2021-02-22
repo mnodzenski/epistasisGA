@@ -1484,7 +1484,7 @@ NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arm
   for (int i = 0; i < n_permutes; i++){
 
     double permute_score_i = epistasis_test_permute(case_inf, comp_inf, ld_blocks, n_families, block_ld_mat, weight_lookup,
-                                                    n_different_snps_weight, n_both_one_weight, recessive_ref_prop = 0.75,
+                                                    n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
                                                     recode_test_stat);
     res[i] = permute_score_i;
 

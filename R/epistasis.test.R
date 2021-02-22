@@ -61,7 +61,7 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @export
 
-epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
+epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
                      recode.test.stat = 1.64, bp.param = bpparam()) {
@@ -88,7 +88,7 @@ epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     storage.mode(weight.lookup) <- "integer"
 
     ### grab pre-processed case and complement data ###
-    case.genetic.data <- as.maxtrix(preprocessed.list$case.genetic.data)
+    case.genetic.data <- as.matrix(preprocessed.list$case.genetic.data)
     storage.mode(case.genetic.data) <- "integer"
     complement.genetic.data <- as.matrix(preprocessed.list$complement.genetic.data)
     storage.mode(complement.genetic.data) <- "integer"
@@ -152,43 +152,8 @@ epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 1000,
     ### loop over permuted datasets and compute fitness scores
     perm.fitness.scores <- epistasis_test_null_scores(n.permutes, case.inf, comp.inf,
                                                       ld.blocks, n.families, block.ld.mat, weight.lookup,
-                                                      n.different.snps.weight, n.different.snps.weight, n.both.one.weight,
+                                                      n.different.snps.weight, n.both.one.weight,
                                                       recessive.ref.prop, recode.test.stat)
-
-    # perm.fitness.scores <- unlist(bplapply(permutes,
-    #
-    #     function(permute, target.snps, target.block.ld.mat, weight.lookup, n.different.snps.weight,
-    #              n.both.one.weight, recode.threshold){
-    #
-    #     ### grab case and complement data ###
-    #     case.genetic.data <- permute$case
-    #     complement.genetic.data <- permute$complement
-    #
-    #     ### Compute matrices of differences between cases and complements ###
-    #     case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
-    #     storage.mode(case.minus.comp) <- "integer"
-    #     case.comp.different <- case.minus.comp != 0
-    #
-    #     ### Compute matrix indicating whether both the case and control have the same ###
-    #     ### number of copies of the minor allele ###
-    #     both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
-    #
-    #     ### compute matrices indicating whether case carries two copies of the risk allele
-    #     case2.mat <- case.genetic.data == 2
-    #     case0.mat <- case.genetic.data == 0
-    #
-    #     ### compute fitness score ###
-    #     fitness.score <- chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
-    #                                          seq_len(length(target.snps)), case.minus.comp, both.one.mat,
-    #                                          target.block.ld.mat, weight.lookup, case2.mat, case0.mat,
-    #                                          n.different.snps.weight, n.both.one.weight,
-    #                                          recode.threshold)
-    #     fs <- fitness.score$fitness_score*min(abs(fitness.score$sum_dif_vecs))
-    #     return(fs)
-    #
-    # }, target.snps  = target.snps, target.block.ld.mat = target.block.ld.mat, weight.lookup = weight.lookup,
-    # n.different.snps.weight =  n.different.snps.weight, n.both.one.weight = n.both.one.weight,
-    # recode.threshold = recode.threshold, BPPARAM = bp.param))
 
     ### compute p-value ###
     pval <- sum(perm.fitness.scores >= obs.fitness.score)/(n.permutes + 1)

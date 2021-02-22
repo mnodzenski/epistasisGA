@@ -8,7 +8,7 @@ upon observed marginal SNP-disease associations.}
 epistasis.test(
   snp.cols,
   preprocessed.list,
-  n.permutes = 1000,
+  n.permutes = 10000,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function.int = 2,
