@@ -1132,6 +1132,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       IntegerVector snps_for_mutation = sample(candiate_snp_idx, candiate_snp_idx.length(),
                                                true, snp_chisq);
       int ulen = unique(snps_for_mutation).length();
+      int n_possible_mutations = seq_len(chromosome_size);
       for (int l = 0; l < mutation_positions.length(); l++){
 
         int mutation_position = mutation_positions[l];
@@ -1144,9 +1145,11 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
         target_chrom = sort_by_order(target_chrom, abs(target_dif_vec), 1);
 
         // determine which snps to mutate
-        int binom_sample = rbinom(1, chromosome_size, 0.5)[0];
-        int part1 = scalar_max(1, binom_sample);
-        int total_mutations = scalar_min(part1, ulen);
+        int sampled_n_mutations = sample(n_possible_mutations, 1)[0];
+
+        // note that we account for the very unlikely case where the pool
+        // of unique possible mutations is smaller than the sampled number of mutations
+        int total_mutations = scalar_min(sampled_n_mutations, ulen);
 
         // grab random mutation set
         IntegerVector mutated_snps = sample(snps_for_mutation, total_mutations, false);
@@ -1460,11 +1463,12 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_bl
                       n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
                       recode_test_stat, false);
    double fitness = fitness_list["fitness_score"];
-   NumericVector sum_dif_vecs = fitness_list["sum_dif_vecs"];
-   NumericVector abs_sdv = Rcpp::abs(sum_dif_vecs);
-   double min_elem = min(abs_sdv);
-   double fitness_score = min_elem * fitness;
-   return(fitness_score);
+   // NumericVector sum_dif_vecs = fitness_list["sum_dif_vecs"];
+   // NumericVector abs_sdv = Rcpp::abs(sum_dif_vecs);
+   // double min_elem = min(abs_sdv);
+   // double fitness_score = min_elem * fitness;
+   // return(fitness_score);
+   return(fitness);
 
 }
 
