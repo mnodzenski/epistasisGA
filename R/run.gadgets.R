@@ -96,11 +96,18 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
-    if (island.cluster.size > 1 & migration.generations >= generations) {
+    if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
 
-        stop("migration.generations must be less than generations. Specify island.cluster.size = 1 if no migrations are desired.")
+        stop("migration.generations must be less than generations. Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
 
     }
+    if (n.migrations == 0 & island.cluster.size != 1) {
+
+        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
+
+    }
+
+
     if (migration.generations == 1) {
 
         stop("migration.generations must be greater than 1")
@@ -131,6 +138,12 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
         stop("weight.function.int must be an integer")
 
+    }
+
+    ### if no migrations, correctly set the migration.interval
+    if (n.migrations == 0){
+
+        migration.generations = generations
     }
 
     ### compute the weight lookup table ###

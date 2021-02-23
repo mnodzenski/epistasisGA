@@ -97,8 +97,20 @@ initiate_population <- function(case_genetic_data, complement_genetic_data, case
     .Call('_epistasisGA_initiate_population', PACKAGE = 'epistasisGA', case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, n_migrations, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates)
 }
 
-evolve_island <- function(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, all_converged = FALSE, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 0.000001, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
-    .Call('_epistasisGA_evolve_island', PACKAGE = 'epistasisGA', n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, all_converged, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat)
+find_top_chrom <- function(fitness_scores, chromosome_list, chromosome_size) {
+    .Call('_epistasisGA_find_top_chrom', PACKAGE = 'epistasisGA', fitness_scores, chromosome_list, chromosome_size)
+}
+
+evolve_island <- function(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 0.000001, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
+    .Call('_epistasisGA_evolve_island', PACKAGE = 'epistasisGA', n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat)
+}
+
+check_convergence <- function(island_cluster_size, island_populations) {
+    .Call('_epistasisGA_check_convergence', PACKAGE = 'epistasisGA', island_cluster_size, island_populations)
+}
+
+check_max_gens <- function(island_populations, max_generations) {
+    .Call('_epistasisGA_check_max_gens', PACKAGE = 'epistasisGA', island_populations, max_generations)
 }
 
 run_GADGETS <- function(island_cluster_size, n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 0.000001, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
