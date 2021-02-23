@@ -93,6 +93,10 @@ initiate_population <- function(case_genetic_data, n_migrations, n_chromosomes, 
     .Call('_epistasisGA_initiate_population', PACKAGE = 'epistasisGA', case_genetic_data, n_migrations, n_chromosomes, chromosome_size, snp_chisq, max_generations, initial_sample_duplicates)
 }
 
+compute_population_fitness <- function(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
+    .Call('_epistasisGA_compute_population_fitness', PACKAGE = 'epistasisGA', case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat)
+}
+
 evolve_island <- function(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, all_converged = FALSE, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, tol = 0.000001, n_top_chroms = 100L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
     .Call('_epistasisGA_evolve_island', PACKAGE = 'epistasisGA', n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, all_converged, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat)
 }
