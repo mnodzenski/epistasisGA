@@ -141,8 +141,8 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
         colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
                                                             ".allele.copies")
         unique.fitness.score.vec <- fitness.score.vec[!duplicated(all.chrom.dt)]
-        n.case.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_case_risk_geno"]][seq_len(n.generations)])
-        n.comp.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_comp_risk_geno"]][seq_len(n.generations)])
+        n.case.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_case_risk_geno_list"]][seq_len(n.generations)])
+        n.comp.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_comp_risk_geno_list"]][seq_len(n.generations)])
         unique.n.case.risk.geno.vec <- n.case.risk.geno.vec[!duplicated(all.chrom.dt)]
         unique.n.comp.risk.geno.vec <- n.comp.risk.geno.vec[!duplicated(all.chrom.dt)]
 

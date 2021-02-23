@@ -929,6 +929,22 @@ List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix compleme
                                                        n_different_snps_weight, n_both_one_weight,
                                                        recessive_ref_prop, recode_test_stat);
 
+  //pick out relevant pieces of the output
+  NumericVector fitness_scores = current_fitness["fitness_scores"];
+  List sum_dif_vecs = current_fitness["sum_dif_vecs"];
+  List gen_original_cols = current_fitness["gen_original_cols"];
+  List risk_allele_vecs = current_fitness["risk_allele_vecs"];
+  IntegerVector n_case_risk_geno_vec = current_fitness["n_case_risk_geno_vec"];
+  IntegerVector n_comp_risk_geno_vec = current_fitness["n_comp_risk_geno_vec"];
+
+  //store elements of the new population
+  fitness_score_list[0] = fitness_scores;
+  gen_chromosome_list[0] = gen_original_cols;
+  sum_dif_vec_list[0] = sum_dif_vecs;
+  risk_allele_vec_list[0] = risk_allele_vecs;
+  n_case_risk_geno_list[0] = n_case_risk_geno_vec;
+  n_comp_risk_geno_list[0] = n_comp_risk_geno_vec;
+
   List res = List::create(Named("fitness_score_list") = fitness_score_list,
                           Named("top_generation_chromosome") = top_generation_chromosome,
                           Named("gen_chromosome_list") = gen_chromosome_list,

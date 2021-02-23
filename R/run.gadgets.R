@@ -75,7 +75,8 @@
 #'                                block.ld.mat = block.ld.mat[1:10, 1:10])
 #' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+#'        n.migrations = 0)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -107,6 +108,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     }
 
+    if (n.migrations != 0 & island.cluster.size == 1) {
+
+        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
+
+    }
 
     if (migration.generations == 1) {
 
