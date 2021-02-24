@@ -38,8 +38,6 @@
 #' In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations. We also check for convergence at each of these intervals.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
 #' @param max.generations The maximum number of generations for which GADGETS will run. Defaults to 500.
-#' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
-#' considered to be sufficient to stop the algorithm.
 #' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Defaults to FALSE.
@@ -105,7 +103,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
-                   gen.same.fitness = 50, max.generations = 500, tol = 10^-6, n.top.chroms = 100,
+                   gen.same.fitness = 50, max.generations = 500, n.top.chroms = 100,
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                    recode.test.stat = 1.64) {
 
@@ -115,7 +113,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                            both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
                            weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
-                           gen.same.fitness, max.generations, tol, n.top.chroms,
+                           gen.same.fitness, max.generations, n.top.chroms,
                            initial.sample.duplicates, crossover.prop, recessive.ref.prop,
                            recode.test.stat)
 

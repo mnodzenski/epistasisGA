@@ -27,7 +27,6 @@ GADGETS(
   migration.interval = 50,
   gen.same.fitness = 50,
   max.generations = 500,
-  tol = 10^-6,
   n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   crossover.prop = 0.8,
@@ -92,9 +91,6 @@ In other words, top chromosomes will migrate among cluster islands every \code{m
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.}
 
 \item{max.generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
-
-\item{tol}{The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
-considered to be sufficient to stop the algorithm.}
 
 \item{n.top.chroms}{The number of top scoring chromosomes according to fitness score to return. Defaults to 100.}
 

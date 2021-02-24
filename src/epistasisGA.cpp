@@ -1028,7 +1028,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    NumericVector snp_chisq, IntegerVector original_col_numbers, List population,
                    int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
-                   int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
+                   int max_generations = 500, int n_top_chroms = 100,
                    bool initial_sample_duplicates = false,
                    double crossover_prop = 0.8, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
 
@@ -1341,12 +1341,6 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     // check to see if we can stop iterating over generations
     if ((generation >= gen_same_fitness)) {
 
-      // int start_gen = generation - gen_same_fitness;
-      // IntegerVector check_these_gens = seq(start_gen, generation - 1);
-      // NumericVector last_gens = top_fitness[check_these_gens];
-      // double abs_diff = abs(max(last_gens) - min(last_gens));
-      // bool last_gens_equal = abs_diff < tol;
-
       bool same_last_gens = same_top_chrom >= gen_same_fitness;
       population["last_gens_equal"] = same_last_gens;
 
@@ -1364,16 +1358,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
   }
 
-  // // if running island model with migrations, check if this island has converged
-  // if (n_migrations > 0){
-  //
-  //   bool last_gens_equal = same_top_chrom >= gen_same_fitness;
-  //   population["last_gens_equal"] = last_gens_equal;
-  //
-  // }
-
-  // if the algorithm hasn't hit the max number of generations or converged, return a partial list of
-  // the results
+  // if the algorithm hasn't hit the max number of generations prepare for potential migration
   if ((generation < max_generations) & (n_migrations > 0)){
 
     // order by fitness score
@@ -1389,22 +1374,31 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     IntegerVector n_comp_risk_geno_vec_tmp = n_comp_risk_geno_vec[chrom_list_order - 1];
     n_comp_risk_geno_vec = n_comp_risk_geno_vec_tmp;
 
-    // // identify chromosomes that will migrate to other islands
-    // IntegerVector migration_idx = seq_len(n_migrations);
-    // List migrations = chromosome_list[migration_idx - 1];
-    // population["migrations"] = migrations;
-    //
-    // // remove the lowest scoring chromosomes in preparation for migration
-    // IntegerVector keep_these = seq_len(n_chromosomes - n_migrations);
-    // chromosome_list = chromosome_list[keep_these - 1];
-    // population["chromosome_list"] = chromosome_list;
+    // store in population
+    List pop_current_fitness_list = population["current_fitness"];
+    pop_current_fitness_list["chromosome_list"] = chromosome_list;
+    pop_current_fitness_list["fitness_scores"] = fitness_scores;
+    pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
+    pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
+    pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
+    pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
+    pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
 
+    // return the population
     return(population);
 
   } else {
 
-    //IntegerVector return_these = seq(2, 10);
-    //population = population[return_these];
+    // otherwise just store the current generation and return the population
+    List pop_current_fitness_list = population["current_fitness"];
+    pop_current_fitness_list["chromosome_list"] = chromosome_list;
+    pop_current_fitness_list["fitness_scores"] = fitness_scores;
+    pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
+    pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
+    pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
+    pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
+    pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
+
     return(population);
 
   }
@@ -1475,7 +1469,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                 IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                 NumericVector snp_chisq, IntegerVector original_col_numbers,
                 int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
-                int gen_same_fitness = 50, int max_generations = 500, double tol = 0.000001, int n_top_chroms = 100,
+                int gen_same_fitness = 50, int max_generations = 500, int n_top_chroms = 100,
                 bool initial_sample_duplicates = false, double crossover_prop = 0.8,
                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
 
@@ -1496,7 +1490,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                                            block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
                                            case0_mat, snp_chisq, original_col_numbers, island_population_i,
                                            n_different_snps_weight, n_both_one_weight,
-                                           migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms,
+                                           migration_interval, gen_same_fitness, max_generations, n_top_chroms,
                                            initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat);
   }
 
@@ -1535,40 +1529,44 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
       // migrate chromosomes
       List second_island_chroms = second_island_current["chromosome_list"];
       List first_island_chroms = first_island_current["chromosome_list"];
-      first_island_chroms[receiver_idx] = second_island_chroms[donor_idx];
+      List chrom_migrations = second_island_chroms[donor_idx];
+      first_island_chroms[receiver_idx] = chrom_migrations;
 
       // migrate corresponding fitness scores
       NumericVector first_island_fitness_scores = first_island_current["fitness_scores"];
       NumericVector second_island_fitness_scores = second_island_current["fitness_scores"];
-      NumericVector second_island_fitness_migrations = second_island_fitness_scores[donor_idx];
-      first_island_fitness_scores[receiver_idx] = second_island_fitness_migrations;
+      NumericVector fitness_migrations = second_island_fitness_scores[donor_idx];
+      first_island_fitness_scores[receiver_idx] = fitness_migrations;
 
       // migrate corresponding dif vecs
       List second_island_dif_vecs = second_island_current["sum_dif_vecs"];
       List first_island_dif_vecs = first_island_current["sum_dif_vecs"];
-      first_island_dif_vecs[receiver_idx] = second_island_dif_vecs[donor_idx];
+      List dif_vec_migrations = second_island_dif_vecs[donor_idx];
+      first_island_dif_vecs[receiver_idx] = dif_vec_migrations;
 
       // migrate original chromosome numbers
       List second_island_orig_chroms = second_island_current["gen_original_cols"];
       List first_island_orig_chroms = first_island_current["gen_original_cols"];
-      first_island_orig_chroms[receiver_idx] = second_island_orig_chroms[donor_idx];
+      List original_chrom_migrations = second_island_orig_chroms[donor_idx];
+      first_island_orig_chroms[receiver_idx] = original_chrom_migrations;
 
       // migrate risk allele vecs
       List second_island_risk_alleles = second_island_current["risk_allele_vecs"];
       List first_island_risk_alleles = first_island_current["risk_allele_vecs"];
-      first_island_risk_alleles[receiver_idx] = second_island_risk_alleles[donor_idx];
+      List risk_allele_migrations = second_island_risk_alleles[donor_idx];
+      first_island_risk_alleles[receiver_idx] = risk_allele_migrations;
 
       // migrate n case high risk geno
       IntegerVector first_island_case_geno = first_island_current["n_case_risk_geno_vec"];
       IntegerVector second_island_case_geno = second_island_current["n_case_risk_geno_vec"];
-      IntegerVector second_island_case_geno_migrations = second_island_case_geno[donor_idx];
-      first_island_case_geno[receiver_idx] = second_island_case_geno_migrations;
+      IntegerVector case_geno_migrations = second_island_case_geno[donor_idx];
+      first_island_case_geno[receiver_idx] = case_geno_migrations;
 
       // migrate n comp high risk geno
       IntegerVector first_island_comp_geno = first_island_current["n_comp_risk_geno_vec"];
       IntegerVector second_island_comp_geno = second_island_current["n_comp_risk_geno_vec"];
-      IntegerVector second_island_comp_geno_migrations = second_island_comp_geno[donor_idx];
-      first_island_comp_geno[receiver_idx] = second_island_comp_geno_migrations;
+      IntegerVector comp_geno_migrations = second_island_comp_geno[donor_idx];
+      first_island_comp_geno[receiver_idx] = comp_geno_migrations;
 
     }
 
@@ -1581,7 +1579,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                                             block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
                                             case0_mat, snp_chisq, original_col_numbers, island_population_i,
                                             n_different_snps_weight, n_both_one_weight,
-                                            migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms,
+                                            migration_interval, gen_same_fitness, max_generations, n_top_chroms,
                                             initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat);
 
     }
@@ -1697,6 +1695,7 @@ NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arm
   return(res);
 
 }
+
 
 
 

@@ -29,8 +29,6 @@
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
-#' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
-#' considered to be sufficient to stop the algorithm.
 #' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
@@ -92,7 +90,7 @@
 run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
-    generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
+    generations = 500, gen.same.fitness = 50, n.top.chroms = 100, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
     n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
@@ -274,7 +272,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
         case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
-        max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
+        max.generations = generations, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
         crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat), reg = registry)
 
     # chunk the jobs

@@ -385,8 +385,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // evolve_island
-List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, NumericVector snp_chisq, IntegerVector original_col_numbers, List population, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat);
-RcppExport SEXP _epistasisGA_evolve_island(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP populationSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
+List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, NumericVector snp_chisq, IntegerVector original_col_numbers, List population, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat);
+RcppExport SEXP _epistasisGA_evolve_island(SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP populationSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -410,13 +410,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type migration_interval(migration_intervalSEXP);
     Rcpp::traits::input_parameter< int >::type gen_same_fitness(gen_same_fitnessSEXP);
     Rcpp::traits::input_parameter< int >::type max_generations(max_generationsSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type n_top_chroms(n_top_chromsSEXP);
     Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
     Rcpp::traits::input_parameter< double >::type crossover_prop(crossover_propSEXP);
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
-    rcpp_result_gen = Rcpp::wrap(evolve_island(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat));
+    rcpp_result_gen = Rcpp::wrap(evolve_island(n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, population, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -445,8 +444,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_GADGETS
-List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, NumericVector snp_chisq, IntegerVector original_col_numbers, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, double tol, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat);
-RcppExport SEXP _epistasisGA_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP tolSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
+List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, NumericVector snp_chisq, IntegerVector original_col_numbers, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, int n_top_chroms, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat);
+RcppExport SEXP _epistasisGA_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP n_top_chromsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -470,13 +469,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type migration_interval(migration_intervalSEXP);
     Rcpp::traits::input_parameter< int >::type gen_same_fitness(gen_same_fitnessSEXP);
     Rcpp::traits::input_parameter< int >::type max_generations(max_generationsSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type n_top_chroms(n_top_chromsSEXP);
     Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
     Rcpp::traits::input_parameter< double >::type crossover_prop(crossover_propSEXP);
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_GADGETS(island_cluster_size, n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, tol, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat));
+    rcpp_result_gen = Rcpp::wrap(run_GADGETS(island_cluster_size, n_migrations, case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat, case0_mat, snp_chisq, original_col_numbers, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, n_top_chroms, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -548,10 +546,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_compute_population_fitness", (DL_FUNC) &_epistasisGA_compute_population_fitness, 15},
     {"_epistasisGA_initiate_population", (DL_FUNC) &_epistasisGA_initiate_population, 19},
     {"_epistasisGA_find_top_chrom", (DL_FUNC) &_epistasisGA_find_top_chrom, 3},
-    {"_epistasisGA_evolve_island", (DL_FUNC) &_epistasisGA_evolve_island, 26},
+    {"_epistasisGA_evolve_island", (DL_FUNC) &_epistasisGA_evolve_island, 25},
     {"_epistasisGA_check_convergence", (DL_FUNC) &_epistasisGA_check_convergence, 2},
     {"_epistasisGA_check_max_gens", (DL_FUNC) &_epistasisGA_check_max_gens, 2},
-    {"_epistasisGA_run_GADGETS", (DL_FUNC) &_epistasisGA_run_GADGETS, 26},
+    {"_epistasisGA_run_GADGETS", (DL_FUNC) &_epistasisGA_run_GADGETS, 25},
     {"_epistasisGA_epistasis_test_permute", (DL_FUNC) &_epistasisGA_epistasis_test_permute, 10},
     {"_epistasisGA_epistasis_test_null_scores", (DL_FUNC) &_epistasisGA_epistasis_test_null_scores, 11},
     {NULL, NULL, 0}

@@ -20,7 +20,6 @@ run.gadgets(
   weight.function.int = 2,
   generations = 500,
   gen.same.fitness = 50,
-  tol = 10^-6,
   n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   snp.sampling.type = "chisq",
@@ -75,9 +74,6 @@ of the number of different SNPs and SNPs both equal to one as an argument, denot
 \item{generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
 
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.}
-
-\item{tol}{The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
-considered to be sufficient to stop the algorithm.}
 
 \item{n.top.chroms}{The number of top scoring chromosomes according to fitness score to return. Defaults to 100.}
 
@@ -137,7 +133,8 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                block.ld.mat = block.ld.mat[1:10, 1:10])
 run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
