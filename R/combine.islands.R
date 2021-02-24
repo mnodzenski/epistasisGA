@@ -132,13 +132,8 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
     # put the full result together
     final.result <- cbind(snp.cols, rsid.dt, risk.allele.dt, unique.result[ , -(1:chromosome.size)])
 
-    #write to file
-    saveRDS(unique.result, file = out.file)
-
-    # only unique chromosomes
-    unique.file.name <- "combined.island.unique.chromosome.results.rds"
-    unique.file <- file.path(dirname(island.names[[1]]), unique.file.name)
-    saveRDS(final.result, file = unique.file)
+    # save
+    saveRDS(final.result, file = out.file)
 
     return(final.result)
 
