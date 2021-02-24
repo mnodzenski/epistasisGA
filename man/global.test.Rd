@@ -57,14 +57,16 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
 #observed data chromosome size 2
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  combined.res2 <- combine.islands('tmp_2', snp.annotations[ 1:10, ], pp.list)
  unlink('tmp_reg', recursive = TRUE)
 
  #observed data chromosome size 3
  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  combined.res3 <- combine.islands('tmp_3', snp.annotations[ 1:10, ], pp.list)
  unlink('tmp_reg', recursive = TRUE)
 
@@ -93,42 +95,48 @@ p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
 #permutation 1, chromosome size 2
 run.gadgets(p1.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p1_tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  p1.combined.res2 <- combine.islands('p1_tmp_2', snp.annotations[ 1:10, ], p1.list)
  unlink('tmp_reg', recursive = TRUE)
 
 #permutation 1, chromosome size 3
 run.gadgets(p1.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p1_tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  p1.combined.res3 <- combine.islands('p1_tmp_3', snp.annotations[ 1:10, ], p1.list)
  unlink('tmp_reg', recursive = TRUE)
 
 #permutation 2, chromosome size 2
 run.gadgets(p2.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p2_tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  p2.combined.res2 <- combine.islands('p2_tmp_2', snp.annotations[ 1:10, ], p2.list)
  unlink('tmp_reg', recursive = TRUE)
 
 #permutation 2, chromosome size 3
 run.gadgets(p2.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p2_tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  p2.combined.res3 <- combine.islands('p2_tmp_3', snp.annotations[ 1:10, ], p2.list)
  unlink('tmp_reg', recursive = TRUE)
 
 #permutation 3, chromosome size 2
 run.gadgets(p3.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'p3_tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  p3.combined.res2 <- combine.islands('p3_tmp_2', snp.annotations[ 1:10, ], p3.list)
  unlink('tmp_reg', recursive = TRUE)
 
 #permutation 3, chromosome size 3
 run.gadgets(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       n.migrations = 0)
  p3.combined.res3 <- combine.islands('p3_tmp_3', snp.annotations[ 1:10, ], p3.list)
  unlink('tmp_reg', recursive = TRUE)
 
