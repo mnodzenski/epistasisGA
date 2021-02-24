@@ -1249,6 +1249,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
             total_mutations = ulen_psm;
 
           }
+
           IntegerVector new_mutated_snps(total_mutations);
           for (int p = 0; p < total_mutations; p++){
 
@@ -1261,9 +1262,14 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
         }
         // substitute in mutations
-        IntegerVector mutate_here = seq(0, total_mutations - 1);
-        target_chrom[mutate_here] = mutated_snps;
-        sampled_lower_chromosomes[mutation_position - 1] = target_chrom;
+        if (total_mutations > 0){
+
+          IntegerVector mutate_here = seq(0, total_mutations - 1);
+          target_chrom[mutate_here] = mutated_snps;
+          sampled_lower_chromosomes[mutation_position - 1] = target_chrom;
+
+        }
+
       }
 
     }
@@ -1591,6 +1597,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
     max_gens = check_max_gens(island_populations, max_generations);
 
   }
+
   //return evolved island list
   return(island_populations);
 
