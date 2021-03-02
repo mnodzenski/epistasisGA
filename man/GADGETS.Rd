@@ -20,6 +20,8 @@ GADGETS(
   weight.lookup,
   case2.mat,
   case0.mat,
+  comp2.mat,
+  comp0.mat,
   island.cluster.size = 4,
   n.migrations = 20,
   n.different.snps.weight = 2,
@@ -76,6 +78,10 @@ This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.
 \item{case2.mat}{A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.}
 
 \item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
+
+\item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
+
+\item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
 
 \item{island.cluster.size}{An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.}
 
@@ -144,6 +150,8 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
  case2.mat <- case.genetic.data == 2
  case0.mat <- case.genetic.data == 0
+ comp2.mat <- complement.genetic.data == 2
+ comp0.mat <- complement.genetic.data == 0
  snp.chisq <- sqrt(chisq.stats)
  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
  dir.create('tmp')
@@ -155,7 +163,8 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    chromosome.size = 3, snp.chisq = snp.chisq,
                    original.col.numbers = original.col.numbers,
                    weight.lookup = weight.lookup, case2.mat = case2.mat,
-                   case0.mat = case0.mat, n.migrations = 2,
+                   case0.mat = case0.mat, comp2.mat = comp2.mat,
+                   comp0.mat = comp0.mat, n.migrations = 2,
                    migration.interval = 5, max.generations = 10)
 unlink('tmp', recursive = TRUE)
 

@@ -18,8 +18,6 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
-#' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
-#'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -64,7 +62,7 @@
 epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
-                     recode.test.stat = 1.64, bp.param = bpparam()) {
+                     recode.test.stat = 1.64) {
 
     ### pick out the target columns in the pre-processed data ###
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -88,9 +86,9 @@ epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
     storage.mode(weight.lookup) <- "integer"
 
     ### grab pre-processed case and complement data ###
-    case.genetic.data <- as.matrix(preprocessed.list$case.genetic.data)
+    case.genetic.data <- as.matrix(preprocessed.list$case.genetic.data[ , target.snps])
     storage.mode(case.genetic.data) <- "integer"
-    complement.genetic.data <- as.matrix(preprocessed.list$complement.genetic.data)
+    complement.genetic.data <- as.matrix(preprocessed.list$complement.genetic.data[ , target.snps])
     storage.mode(complement.genetic.data) <- "integer"
 
     ### Compute matrices of differences between cases and complements ###
@@ -110,19 +108,27 @@ epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
     case0.mat <- case.genetic.data == 0
     storage.mode(case0.mat) <- "logical"
 
+    ### compute matrices of whether complements carry 2 or 0 copies of minor allele
+    comp2.mat <- complement.genetic.data == 2
+    storage.mode(comp2.mat) <- "logical"
+    comp0.mat <- complement.genetic.data == 0
+    storage.mode(comp0.mat) <- "logical"
+
     ### compute fitness score and find the families with the full risk set ###
     fitness.score <- chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.different,
-                                    target.snps, case.minus.comp, both.one.mat,
+                                    seq_along(target.snps), case.minus.comp, both.one.mat,
                                     block.ld.mat, weight.lookup, case2.mat, case0.mat,
+                                    comp2.mat, comp0.mat,
                                     n.different.snps.weight, n.both.one.weight,
                                     recessive.ref.prop, recode.test.stat, TRUE)
 
     ### uses informative families already, so no need to recompute the observed fitness score here ###
-    obs.fitness.score <- fitness.score$fitness_score*min(abs(fitness.score$sum_dif_vecs))
+    #obs.fitness.score <- fitness.score$fitness_score*min(abs(fitness.score$sum_dif_vecs))
+    obs.fitness.score <- fitness.score$fitness_score
 
     ### restrict the data to informative families ###
-    case.inf <- case.genetic.data[fitness.score$inf_families, target.snps]
-    comp.inf <- complement.genetic.data[fitness.score$inf_families, target.snps]
+    case.inf <- case.genetic.data[fitness.score$inf_families, ]
+    comp.inf <- complement.genetic.data[fitness.score$inf_families, ]
     n.families <- length(fitness.score$inf_families)
 
     ### identify ld blocks for the target snps ###

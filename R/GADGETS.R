@@ -30,6 +30,8 @@
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param case2.mat A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.
 #' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
+#' @param comp2.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.
+#' @param comp0.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.
 #' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
@@ -80,6 +82,8 @@
 #'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
 #'  case2.mat <- case.genetic.data == 2
 #'  case0.mat <- case.genetic.data == 0
+#'  comp2.mat <- complement.genetic.data == 2
+#'  comp0.mat <- complement.genetic.data == 0
 #'  snp.chisq <- sqrt(chisq.stats)
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  dir.create('tmp')
@@ -91,7 +95,8 @@
 #'                    chromosome.size = 3, snp.chisq = snp.chisq,
 #'                    original.col.numbers = original.col.numbers,
 #'                    weight.lookup = weight.lookup, case2.mat = case2.mat,
-#'                    case0.mat = case0.mat, n.migrations = 2,
+#'                    case0.mat = case0.mat, comp2.mat = comp2.mat,
+#'                    comp0.mat = comp0.mat, n.migrations = 2,
 #'                    migration.interval = 5, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
 #'
@@ -101,17 +106,18 @@
 
 GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
                    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
-                   n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
-                   gen.same.fitness = 50, max.generations = 500, n.top.chroms = 100,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                   recode.test.stat = 1.64) {
+                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, comp2.mat,
+                   comp0.mat, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
+                   n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50,
+                   max.generations = 500, n.top.chroms = 100, initial.sample.duplicates = FALSE,
+                   crossover.prop = 0.8, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
     ### run rcpp version of GADGET ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
                            complement.genetic.data, case.comp.different, case.minus.comp,
                            both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                           weight.lookup, case2.mat, case0.mat, snp.chisq, original.col.numbers,
+                           weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
+                           snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
                            gen.same.fitness, max.generations, n.top.chroms,
                            initial.sample.duplicates, crossover.prop, recessive.ref.prop,

@@ -15,6 +15,8 @@ chrom.fitness.score(
   weight.lookup,
   case2.mat,
   case0.mat,
+  comp2.mat,
+  comp0.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   recessive.ref.prop = 0.75,
@@ -52,6 +54,10 @@ to be in LD if they are located on the same biological chromosome.}
 \item{case2.mat}{A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.}
 
 \item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
+
+\item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
+
+\item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
 
 \item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 2.}
@@ -107,6 +113,8 @@ storage.mode(case.minus.comp) <- "integer"
 both.one.mat <- case == 1 & comp == 1
 case2.mat <- case == 2
 case0.mat <- case == 0
+comp2.mat <- comp == 2
+comp0.mat <- comp == 0
 library(Matrix)
 block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -117,6 +125,7 @@ storage.mode(weight.lookup) <- "integer"
 chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
                     case.minus.comp, both.one.mat,
                     block.ld.mat, weight.lookup,
-                    case2.mat, case0.mat)
+                    case2.mat, case0.mat, comp2.mat,
+                    comp0.mat)
 
 }

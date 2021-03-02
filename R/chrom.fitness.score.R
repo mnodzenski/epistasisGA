@@ -22,6 +22,8 @@
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param case2.mat A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.
 #' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
+#' @param comp2.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.
+#' @param comp0.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement/unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
@@ -67,6 +69,8 @@
 #' both.one.mat <- case == 1 & comp == 1
 #' case2.mat <- case == 2
 #' case0.mat <- case == 0
+#' comp2.mat <- comp == 2
+#' comp0.mat <- comp == 0
 #' library(Matrix)
 #' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -77,20 +81,22 @@
 #' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
 #'                     case.minus.comp, both.one.mat,
 #'                     block.ld.mat, weight.lookup,
-#'                     case2.mat, case0.mat)
+#'                     case2.mat, case0.mat, comp2.mat,
+#'                     comp0.mat)
 #'
 #' @export
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
                                 target.snps, cases.minus.complements, both.one.mat,
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
-                                n.different.snps.weight = 2, n.both.one.weight = 1,
-                                recessive.ref.prop = 0.75, recode.test.stat = 1.64, epi.test = FALSE) {
+                                comp2.mat, comp0.mat, n.different.snps.weight = 2,
+                                n.both.one.weight = 1, recessive.ref.prop = 0.75,
+                                recode.test.stat = 1.64, epi.test = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
                       cases.minus.complements, both.one.mat, block.ld.mat, weight.lookup, case2.mat,
-                      case0.mat, n.different.snps.weight, n.both.one.weight, recessive.ref.prop,
-                      recode.test.stat, epi.test)
+                      case0.mat, comp2.mat, comp0.mat, n.different.snps.weight, n.both.one.weight,
+                      recessive.ref.prop, recode.test.stat, epi.test)
 
 }
 

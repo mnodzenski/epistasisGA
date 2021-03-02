@@ -13,8 +13,7 @@ epistasis.test(
   n.both.one.weight = 1,
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64,
-  bp.param = bpparam()
+  recode.test.stat = 1.64
 )
 }
 \arguments{
@@ -39,9 +38,6 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
-
-\item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
-If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
 }
 \value{
 A list of thee elements:

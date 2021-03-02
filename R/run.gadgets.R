@@ -185,6 +185,12 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     case0.mat <- case.genetic.data == 0
     storage.mode(case0.mat) <- "logical"
 
+    ### compute matrices of whether complements carry 2 or 0 copies of minor allele
+    comp2.mat <- complement.genetic.data == 2
+    storage.mode(comp2.mat) <- "logical"
+    comp0.mat <- complement.genetic.data == 0
+    storage.mode(comp0.mat) <- "logical"
+
     ### set sampling type for mutation snps ###
     if (snp.sampling.type == "chisq") {
 
@@ -270,10 +276,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
         case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes,
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
-        case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
-        n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
-        max.generations = generations, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat), reg = registry)
+        case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, island.cluster.size = island.cluster.size,
+        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
+        gen.same.fitness = gen.same.fitness, max.generations = generations, n.top.chroms = n.top.chroms,
+        initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop,
+        recode.test.stat = recode.test.stat), reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]
