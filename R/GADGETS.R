@@ -121,6 +121,10 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
     lapply(seq_along(rcpp.res), function(island.number){
 
         #pick out the pieces from rcpp output
+
+        # last.gen.pop <- rcpp.res[[island.number]][["current_fitness"]]$chromosome_list
+        # last.gen.chroms <- unlist(lapply(last.gen.pop, function(x) paste(x, collapse = ".")))
+
         n.generations <- rcpp.res[[island.number]][["generation"]]
         fitness.score.vec <- unlist(rcpp.res[[island.number]][["fitness_score_list"]][seq_len(n.generations)])
         all.chrom.dt <- rbindlist(lapply(rcpp.res[[island.number]][["gen_chromosome_list"]][seq_len(n.generations)],
@@ -154,8 +158,12 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
         setorder(unique.results, -fitness.score)
         final.result <- unique.results[seq_len(n.top.chroms), ]
 
+        # final.result[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(final.result)),
+        #                 .SDcols = seq_len(chromosome.size)]
+        # final.result$in_last_gen <- final.result$chromosome %in% last.gen.chroms
+
         #output list
-        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations)
+        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations, last.gen.chroms = last.gen.chroms)
 
         #write to file
         out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", island.number,".rds"))
