@@ -127,53 +127,68 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
     lapply(seq_along(rcpp.res), function(island.number){
 
         #pick out the pieces from rcpp output
-
-        # last.gen.pop <- rcpp.res[[island.number]][["current_fitness"]]$chromosome_list
-        # last.gen.chroms <- unlist(lapply(last.gen.pop, function(x) paste(x, collapse = ".")))
-
         n.generations <- rcpp.res[[island.number]][["generation"]]
-        fitness.score.vec <- unlist(rcpp.res[[island.number]][["fitness_score_list"]][seq_len(n.generations)])
-        all.chrom.dt <- rbindlist(lapply(rcpp.res[[island.number]][["gen_chromosome_list"]][seq_len(n.generations)],
-                                    function(gen.list) transpose(setDT(gen.list))))
-        sum.dif.vec.dt <- rbindlist(lapply(rcpp.res[[island.number]][["sum_dif_vec_list"]][seq_len(n.generations)],
-                                        function(gen.list) transpose(setDT(gen.list))))
-        risk.allele.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_allele_vec_list"]][seq_len(n.generations)],
-                                        function(gen.list) transpose(setDT(gen.list))))
-
-        unique.chromosome.dt <- unique(all.chrom.dt)
-        colnames(unique.chromosome.dt) <- paste0("snp", seq_len(ncol(unique.chromosome.dt)))
-        unique.chrom.dif.vec.dt <- sum.dif.vec.dt[!duplicated(all.chrom.dt), ]
-        unique.chrom.risk.allele.vec.dt <-  risk.allele.dt[!duplicated(all.chrom.dt), ]
-        colnames(unique.chrom.dif.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
-                                                    ".diff.vec")
-        colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
-                                                            ".allele.copies")
-        unique.fitness.score.vec <- fitness.score.vec[!duplicated(all.chrom.dt)]
-        n.case.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_case_risk_geno_list"]][seq_len(n.generations)])
-        n.comp.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_comp_risk_geno_list"]][seq_len(n.generations)])
-        unique.n.case.risk.geno.vec <- n.case.risk.geno.vec[!duplicated(all.chrom.dt)]
-        unique.n.comp.risk.geno.vec <- n.comp.risk.geno.vec[!duplicated(all.chrom.dt)]
-
-        unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
-        unique.results[, `:=`(fitness.score, unique.fitness.score.vec)]
-        #unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
-        #unique.results[, `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(unique.results)),
-        #               .SDcols = (1 + chromosome.size):(2 * chromosome.size)]
-        #unique.results[ , `:=`(fitness.score, min.elem * raw.fitness.score)]
-        unique.results[ , `:=`(n.cases.risk.geno = unique.n.case.risk.geno.vec, n.comps.risk.geno = unique.n.comp.risk.geno.vec)]
-        setorder(unique.results, -fitness.score)
-        final.result <- unique.results[seq_len(n.top.chroms), ]
-
-        # final.result[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(final.result)),
-        #                 .SDcols = seq_len(chromosome.size)]
-        # final.result$in_last_gen <- final.result$chromosome %in% last.gen.chroms
+        final.population.list <- rcpp.res[[island.number]][["current_fitness"]]
+        chromosome.list <- final.population.list[["gen_original_cols"]]
+        chromosome.dt <- as.data.table(do.call(rbind, chromosome.list))
+        colnames(chromosome.dt) <- paste0("snp", seq_len(chromosome.size))
+        fitness.score.dt <- data.table(fitness.score = final.population.list[["fitness_scores"]])
+        dif.vec.list <- final.population.list[["sum_dif_vecs"]]
+        dif.vec.dt <- as.data.table(do.call(rbind, dif.vec.list))
+        colnames(dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
+        risk.allele.vec.list <- final.population.list[["risk_allele_vecs"]]
+        risk.allele.vec.dt <- as.data.table(do.call(rbind, risk.allele.vec.list))
+        colnames(risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
+        n.case.risk.geno.dt <- data.table(n.cases.risk.geno = final.population.list[["n_case_risk_geno_vec"]])
+        n.comp.risk.geno.dt <- data.table(n.comps.risk.geno = final.population.list[["n_comp_risk_geno_vec"]])
+        final.result <- cbind(chromosome.dt, dif.vec.dt, risk.allele.vec.dt, fitness.score.dt,
+                              n.case.risk.geno.dt, n.comp.risk.geno.dt)
+        setorder(final.result, -fitness.score)
 
         #output list
-        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations, last.gen.chroms = last.gen.chroms)
+        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations)
 
         #write to file
         out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", island.number,".rds"))
         saveRDS(final.list, out.file)
+
+        # last.gen.pop <- rcpp.res[[island.number]][["current_fitness"]]$chromosome_list
+        # last.gen.chroms <- unlist(lapply(last.gen.pop, function(x) paste(x, collapse = ".")))
+        # fitness.score.vec <- unlist(rcpp.res[[island.number]][["fitness_score_list"]][seq_len(n.generations)])
+        # all.chrom.dt <- rbindlist(lapply(rcpp.res[[island.number]][["gen_chromosome_list"]][seq_len(n.generations)],
+        #                             function(gen.list) transpose(setDT(gen.list))))
+        # sum.dif.vec.dt <- rbindlist(lapply(rcpp.res[[island.number]][["sum_dif_vec_list"]][seq_len(n.generations)],
+        #                                 function(gen.list) transpose(setDT(gen.list))))
+        # risk.allele.dt <- rbindlist(lapply(rcpp.res[[island.number]][["risk_allele_vec_list"]][seq_len(n.generations)],
+        #                                 function(gen.list) transpose(setDT(gen.list))))
+        #
+        # unique.chromosome.dt <- unique(all.chrom.dt)
+        # colnames(unique.chromosome.dt) <- paste0("snp", seq_len(ncol(unique.chromosome.dt)))
+        # unique.chrom.dif.vec.dt <- sum.dif.vec.dt[!duplicated(all.chrom.dt), ]
+        # unique.chrom.risk.allele.vec.dt <-  risk.allele.dt[!duplicated(all.chrom.dt), ]
+        # colnames(unique.chrom.dif.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
+        #                                             ".diff.vec")
+        # colnames(unique.chrom.risk.allele.vec.dt) <- paste0("snp", seq_len(ncol(unique.chrom.dif.vec.dt)),
+        #                                                     ".allele.copies")
+        # unique.fitness.score.vec <- fitness.score.vec[!duplicated(all.chrom.dt)]
+        # n.case.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_case_risk_geno_list"]][seq_len(n.generations)])
+        # n.comp.risk.geno.vec <- unlist(rcpp.res[[island.number]][["n_comp_risk_geno_list"]][seq_len(n.generations)])
+        # unique.n.case.risk.geno.vec <- n.case.risk.geno.vec[!duplicated(all.chrom.dt)]
+        # unique.n.comp.risk.geno.vec <- n.comp.risk.geno.vec[!duplicated(all.chrom.dt)]
+        #
+        # unique.results <- cbind(unique.chromosome.dt, unique.chrom.dif.vec.dt, unique.chrom.risk.allele.vec.dt)
+        # unique.results[, `:=`(fitness.score, unique.fitness.score.vec)]
+        # #unique.results[, `:=`(raw.fitness.score, unique.fitness.score.vec)]
+        # #unique.results[, `:=`(min.elem, min(abs(.SD))), by = seq_len(nrow(unique.results)),
+        # #               .SDcols = (1 + chromosome.size):(2 * chromosome.size)]
+        # #unique.results[ , `:=`(fitness.score, min.elem * raw.fitness.score)]
+        # unique.results[ , `:=`(n.cases.risk.geno = unique.n.case.risk.geno.vec, n.comps.risk.geno = unique.n.comp.risk.geno.vec)]
+        # setorder(unique.results, -fitness.score)
+        # final.result <- unique.results[seq_len(n.top.chroms), ]
+        #
+        # # final.result[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(final.result)),
+        # #                 .SDcols = seq_len(chromosome.size)]
+        # # final.result$in_last_gen <- final.result$chromosome %in% last.gen.chroms
 
     })
 

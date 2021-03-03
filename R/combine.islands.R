@@ -7,6 +7,8 @@
 #' RSIDs for the input SNPs, with the rows ordered such that the first RSID entry corresponds to the first SNP
 #' column in the data passed to function \code{preprocess.genetic.data}, the second RSID corresponds to the second SNP column, etc.
 #' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
+#' @param n.chroms.per.island The number of top chromosomes per island to save in the final combined list. Defaults to the
+#' top 10.
 #' @return A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
 #' as 'combined.island.unique.chromosome.results.rds'. See the package vignette for more detailed descriptions of the content
 #' of each output column.
@@ -39,7 +41,7 @@
 #' @importFrom data.table rbindlist setkey setorder `:=` setDT
 #' @export
 
-combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
+combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.chroms.per.island = 10) {
 
     # list all islands in the results data
     island.names <- list.files(results.dir, pattern = "cluster", full.names = TRUE)
@@ -79,7 +81,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list) {
         island <- gsub(".rds", "", basename(island.file))
         island.data <- readRDS(island.file)
         n.generations <- island.data$n.generations
-        chrom.results <- island.data$top.chromosome.results
+        chrom.results <- island.data$top.chromosome.results[seq_len(n.chroms.per.island), ]
         chromosome.size <- sum(grepl("snp", colnames(chrom.results)))/3
         chrom.results[, `:=`(island, rep(island, nrow(chrom.results)))]
         chrom.results[, `:=`(n.generations, rep(n.generations, nrow(chrom.results)))]

@@ -4,7 +4,12 @@
 \alias{combine.islands}
 \title{A function to combine GADGETS results for individual islands into a single dataset.}
 \usage{
-combine.islands(results.dir, annotation.data, preprocessed.list)
+combine.islands(
+  results.dir,
+  annotation.data,
+  preprocessed.list,
+  n.chroms.per.island = 10
+)
 }
 \arguments{
 \item{results.dir}{The directory in which individual island results from \code{run.gadgets} are saved.}
@@ -14,6 +19,9 @@ RSIDs for the input SNPs, with the rows ordered such that the first RSID entry c
 column in the data passed to function \code{preprocess.genetic.data}, the second RSID corresponds to the second SNP column, etc.}
 
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
+
+\item{n.chroms.per.island}{The number of top chromosomes per island to save in the final combined list. Defaults to the
+top 10.}
 }
 \value{
 A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
