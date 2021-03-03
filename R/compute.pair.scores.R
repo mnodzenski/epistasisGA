@@ -15,8 +15,6 @@
 #' plots using both \code{score.type} approaches. Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or
 #' edges having negative weights.
 #' @param epi.test.permutes The number of permutes used to compute the epistasis test p-values. Defaults to 100.
-#' @param bp.param The \code{bp.param} argument to be passed to \code{run.epi.test}.
-#'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @param pval.thresh A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 #' chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
 #' will not contribute to network plots. The argument defaults to 0.05.
@@ -48,7 +46,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list)
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  #observed data chromosome size 3
@@ -56,7 +54,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list)
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
@@ -71,11 +69,10 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom matrixStats colSds
 #' @importFrom utils combn
-#' @importFrom BiocParallel SerialParam
 #' @export
 
 compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
-                                 epi.test.permutes = 100, bp.param = SerialParam(), pval.thresh = 0.05) {
+                                 epi.test.permutes = 10000, pval.thresh = 0.05) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     n.chroms.vec <- lapply(results.list, function(chrom.size.data){
@@ -100,7 +97,7 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.
 
             these.cols <- seq_len(chrom.size)
             chrom <- as.vector(t(obs.res[x, ..these.cols]))
-            epi.test.pval <- tryCatch(epistasis.test(chrom, pp.list, n.permutes = epi.test.permutes, bp.param = bp.param)$pval,
+            epi.test.pval <- tryCatch(epistasis.test(chrom, pp.list, n.permutes = epi.test.permutes)$pval,
                                      error = function(e) {
 
                                          error.message = conditionMessage(e)

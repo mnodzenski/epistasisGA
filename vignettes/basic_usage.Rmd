@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "January 13, 2020"
+date: "March 2, 2020"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -124,9 +124,9 @@ Once users have confirmed `run.gadgets` has completed and run properly, the sets
 ```{r}
 data(snp.annotations)
 size3.combined.res <- combine.islands("size3_res", snp.annotations,
-                                      pp.list)
+                                      pp.list, 2)
 size4.combined.res <- combine.islands("size4_res", snp.annotations,
-                                      pp.list)
+                                      pp.list, 2)
 
 ```
 
@@ -147,10 +147,6 @@ In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985
 Perhaps the most important elements of the output are the `n.cases.risk.geno`and `n.comps.risk.geno`columns. These report the number of cases and complements/unaffected siblings with the provisional risk genotypes, as determined by GADGETS, at each locus, among families where only one of the case and complement carries the risk genotype. For true epistatic SNP-sets, many more cases should carry the risk genotypes at each locus than the complements. 
 
 A few important but subtle components of the results users should note are the `risk.allele`, `allele.copies`, `diff.vec`, `fitness.score`, and `n.islands.found` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `n.islands.found` column reports the number of distinct islands on which a specific chromosome was found. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be similarly large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs.
-
-```{echo = F}
-# As described in the GADGETS paper, we make a small adjustment to the fitness scores output by GADGETS at algorithm termination to improve the rank ordering of chromosomes. The `fitness.score` column contains these final, adjusted scores, and is the product of the `min.elem` and `raw.fitness.score` columns. The `min.elem` column reports the smallest absolute value of the `diff.vec` columns for each chromosome, and the `raw.fitness.score` is the unadjusted fitness score directly output by GADGETS. Note that the values in the `fitness.score` column are used for follow-up permutation testing. 
-```
 
 ## Permute Datasets
 
@@ -214,7 +210,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
   
     perm.data.list <- preprocess.lists[[permutation]]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
-    combine.islands(res.dir, snp.annotations, perm.data.list)
+    combine.islands(res.dir, snp.annotations, perm.data.list, 2)
     
   })
   
@@ -226,7 +222,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
 
 Now we are ready to more formally examine whether our results are consistent with what would be expected under the null hypothesis of no association between the input variants and disease status. Our first step is to run a global test across all chromosome sizes examining whether the fitness scores from the observed data are drawn from the distribution expected under the null. Briefly, for each chromosome size separately, we sum the fitness scores of the top $k$ chromosomes for the observed data and each permuted dataset. We then rank the observed sum compared to the corresponding chromosome size specific sums for each permuted dataset. Letting $R_d$ denote the rank for chromosome size $d$, with 1 denoting the rank of the smallest sum of fitness scores, and with $N$ denoting the the number of permutes plus 1, we compute $T_d = -2ln((N - R_d + 0.5)/N)$. The test is based on summing $T_d$ over chromosome sizes, $T = \sum_d{T_d}$. We also compute this statistic for each permuted dataset and compute a permutation-based p-value using the $N$ values for $T$. Intuitively, this test assesses whether the top-scoring chromosomes are consistently higher than null data across chromosome sizes. 
 
-A key feature of this approach is the test does not require adjustment for multiple comparisons despite the very large number of combinations being considered by the GA. The test is implemented in function `global.test`, with $k$ specified by argument `n.top.scores`. We generally specify `n.top.scores = 30`, but for this illustrative example, we only use 10:
+A key feature of this approach is the test does not require adjustment for multiple comparisons despite the very large number of combinations being considered by the GA. The test is implemented in function `global.test`, with $k$ specified by argument `n.top.scores`. We generally specify `n.top.scores = 30`, but for this illustrative example, we only use 5. Note that the number of unique chromosomes in the observed data results and each permute must be at least as large as `n.top.scores`, otherwise an error will be generated. 
 
 ```{r}
 # chromosome size 3 results
@@ -249,7 +245,7 @@ chrom4.list <- list(observed.data = size4.combined.res$fitness.score,
 final.results <- list(chrom3.list, chrom4.list)
 
 # run global test
-global.test.res <- global.test(final.results, n.top.scores = 10)
+global.test.res <- global.test(final.results, n.top.scores = 5)
 
 # look at the global test stat and p-value 
 global.test.res$obs.test.stat

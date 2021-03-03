@@ -9,8 +9,7 @@ compute.pair.scores(
   pp.list,
   n.top.chroms = 50,
   score.type = "logsum",
-  epi.test.permutes = 100,
-  bp.param = SerialParam(),
+  epi.test.permutes = 10000,
   pval.thresh = 0.05
 )
 }
@@ -32,9 +31,6 @@ plots using both \code{score.type} approaches. Note that "logsum" is actually th
 edges having negative weights.}
 
 \item{epi.test.permutes}{The number of permutes used to compute the epistasis test p-values. Defaults to 100.}
-
-\item{bp.param}{The \code{bp.param} argument to be passed to \code{run.epi.test}.
-If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
 
 \item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
@@ -72,7 +68,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
        n.migrations = 0)
- combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list)
+ combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
  #observed data chromosome size 3
@@ -80,7 +76,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
        n.migrations = 0)
- combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list)
+ combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
  ## create list of results

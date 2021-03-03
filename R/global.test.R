@@ -48,7 +48,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ 1:10, ], pp.list)
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ 1:10, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  #observed data chromosome size 3
@@ -56,7 +56,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ 1:10, ], pp.list)
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ 1:10, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #create three permuted datasets
@@ -86,7 +86,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  p1.combined.res2 <- combine.islands('p1_tmp_2', snp.annotations[ 1:10, ], p1.list)
+#'  p1.combined.res2 <- combine.islands('p1_tmp_2', snp.annotations[ 1:10, ], p1.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 1, chromosome size 3
@@ -94,7 +94,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  p1.combined.res3 <- combine.islands('p1_tmp_3', snp.annotations[ 1:10, ], p1.list)
+#'  p1.combined.res3 <- combine.islands('p1_tmp_3', snp.annotations[ 1:10, ], p1.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 2, chromosome size 2
@@ -102,7 +102,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  p2.combined.res2 <- combine.islands('p2_tmp_2', snp.annotations[ 1:10, ], p2.list)
+#'  p2.combined.res2 <- combine.islands('p2_tmp_2', snp.annotations[ 1:10, ], p2.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 2, chromosome size 3
@@ -110,7 +110,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  p2.combined.res3 <- combine.islands('p2_tmp_3', snp.annotations[ 1:10, ], p2.list)
+#'  p2.combined.res3 <- combine.islands('p2_tmp_3', snp.annotations[ 1:10, ], p2.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 3, chromosome size 2
@@ -118,7 +118,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  p3.combined.res2 <- combine.islands('p3_tmp_2', snp.annotations[ 1:10, ], p3.list)
+#'  p3.combined.res2 <- combine.islands('p3_tmp_2', snp.annotations[ 1:10, ], p3.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #' #permutation 3, chromosome size 3
@@ -126,7 +126,7 @@
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
 #'        n.migrations = 0)
-#'  p3.combined.res3 <- combine.islands('p3_tmp_3', snp.annotations[ 1:10, ], p3.list)
+#'  p3.combined.res3 <- combine.islands('p3_tmp_3', snp.annotations[ 1:10, ], p3.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
@@ -146,7 +146,7 @@
 #'  final.results <- list(chrom2.list, chrom3.list)
 #'
 #'  ## run global test
-#'  global.test.res <- global.test(final.results)
+#'  global.test.res <- global.test(final.results, 1)
 #'
 #'  lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
 #'           'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
@@ -171,11 +171,23 @@ global.test <- function(results.list, n.top.scores = 30) {
         }
 
         # grab the observed data
-        obs.score <- sum(sort(chrom.size.res$observed.data, decreasing = TRUE)[seq_len(n.top.scores)])
+
+        obs <- chrom.size.res$observed.data
+        if (length(obs) < n.top.scores){
+
+            stop("n.top.scores must be <= number of unique chromosomes")
+
+        }
+        obs.score <- sum(sort(obs, decreasing = TRUE)[seq_len(n.top.scores)])
 
         # grab permuted data
         perm.scores <- unlist(lapply(chrom.size.res$permutation.list, function(perm.scores){
 
+            if (length(perm.scores) < n.top.scores){
+
+                stop("n.top.scores must be <= number of unique chromosomes")
+
+            }
             sum(sort(perm.scores, decreasing = TRUE)[seq_len(n.top.scores)])
 
         }))

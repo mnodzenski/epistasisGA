@@ -8,7 +8,7 @@ combine.islands(
   results.dir,
   annotation.data,
   preprocessed.list,
-  n.chroms.per.island = 10
+  n.top.chroms.per.island = 10
 )
 }
 \arguments{
@@ -20,7 +20,7 @@ column in the data passed to function \code{preprocess.genetic.data}, the second
 
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
 
-\item{n.chroms.per.island}{The number of top chromosomes per island to save in the final combined list. Defaults to the
+\item{n.top.chroms.per.island}{The number of top chromosomes per island to save in the final combined list. Defaults to the
 top 10.}
 }
 \value{
@@ -52,7 +52,7 @@ run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp'
        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
        n.migrations = 0)
 
-combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
+combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list, 1)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)

@@ -46,7 +46,7 @@
 #'        n.top.chroms = 5, n.islands = 8, island.cluster.size = 4,
 #'        n.migrations = 2)
 #'
-#' combined.res <- combine.islands('tmp', snp.annotations, pp.list)
+#' combined.res <- combine.islands('tmp', snp.annotations, pp.list, 2)
 #'
 #' top.snps <- as.vector(t(combined.res[1, 1:3]))
 #' set.seed(10)
