@@ -137,6 +137,12 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
+    # make sure case and comp data are stored correctly
+    case.genetic.data <- as.matrix(case.genetic.data)
+    storage.mode(case.genetic.data) <- "integer"
+    complement.genetic.data <- as.matrix(complement.genetic.data)
+    storage.mode(complement.genetic.data) <- "integer"
+
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
         chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
         minor.allele.vec = minor.alleles))
