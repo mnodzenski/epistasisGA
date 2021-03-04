@@ -138,6 +138,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// subset_matrix_rows
+IntegerMatrix subset_matrix_rows(IntegerMatrix in_matrix, IntegerVector rows);
+RcppExport SEXP _epistasisGA_subset_matrix_rows(SEXP in_matrixSEXP, SEXP rowsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type in_matrix(in_matrixSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type rows(rowsSEXP);
+    rcpp_result_gen = Rcpp::wrap(subset_matrix_rows(in_matrix, rows));
+    return rcpp_result_gen;
+END_RCPP
+}
+// subset_lmatrix
+LogicalMatrix subset_lmatrix(LogicalMatrix in_matrix, IntegerVector rows, IntegerVector cols);
+RcppExport SEXP _epistasisGA_subset_lmatrix(SEXP in_matrixSEXP, SEXP rowsSEXP, SEXP colsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< LogicalMatrix >::type in_matrix(in_matrixSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type rows(rowsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cols(colsSEXP);
+    rcpp_result_gen = Rcpp::wrap(subset_lmatrix(in_matrix, rows, cols));
+    return rcpp_result_gen;
+END_RCPP
+}
 // weighted_sub_colsums
 NumericVector weighted_sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols, IntegerVector row_weights);
 RcppExport SEXP _epistasisGA_weighted_sub_colsums(SEXP in_matSEXP, SEXP target_rowsSEXP, SEXP target_colsSEXP, SEXP row_weightsSEXP) {
@@ -531,6 +556,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// epistasis_test
+List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes, int n_different_snps_weight, int n_both_one_weight, int weight_function_int, double recessive_ref_prop, double recode_test_stat);
+RcppExport SEXP _epistasisGA_epistasis_test(SEXP snp_colsSEXP, SEXP preprocessed_listSEXP, SEXP n_permutesSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP weight_function_intSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type snp_cols(snp_colsSEXP);
+    Rcpp::traits::input_parameter< List >::type preprocessed_list(preprocessed_listSEXP);
+    Rcpp::traits::input_parameter< int >::type n_permutes(n_permutesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type weight_function_int(weight_function_intSEXP);
+    Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
+    Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
+    rcpp_result_gen = Rcpp::wrap(epistasis_test(snp_cols, preprocessed_list, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_scalar_min", (DL_FUNC) &_epistasisGA_scalar_min, 2},
@@ -544,6 +587,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_subset_lmatrix_cols", (DL_FUNC) &_epistasisGA_subset_lmatrix_cols, 2},
     {"_epistasisGA_sign_scalar", (DL_FUNC) &_epistasisGA_sign_scalar, 1},
     {"_epistasisGA_subset_matrix", (DL_FUNC) &_epistasisGA_subset_matrix, 3},
+    {"_epistasisGA_subset_matrix_rows", (DL_FUNC) &_epistasisGA_subset_matrix_rows, 2},
+    {"_epistasisGA_subset_lmatrix", (DL_FUNC) &_epistasisGA_subset_lmatrix, 3},
     {"_epistasisGA_weighted_sub_colsums", (DL_FUNC) &_epistasisGA_weighted_sub_colsums, 4},
     {"_epistasisGA_sub_rowsums_start", (DL_FUNC) &_epistasisGA_sub_rowsums_start, 2},
     {"_epistasisGA_sub_colsumsl", (DL_FUNC) &_epistasisGA_sub_colsumsl, 3},
@@ -564,6 +609,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_run_GADGETS", (DL_FUNC) &_epistasisGA_run_GADGETS, 27},
     {"_epistasisGA_epistasis_test_permute", (DL_FUNC) &_epistasisGA_epistasis_test_permute, 10},
     {"_epistasisGA_epistasis_test_null_scores", (DL_FUNC) &_epistasisGA_epistasis_test_null_scores, 11},
+    {"_epistasisGA_epistasis_test", (DL_FUNC) &_epistasisGA_epistasis_test, 8},
     {NULL, NULL, 0}
 };
 
