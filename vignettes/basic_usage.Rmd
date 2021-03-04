@@ -324,7 +324,7 @@ As a final step in the analytic pipeline, we recommend users examine network plo
 
 Briefly, we use our epistasis test p-values to assign graphical scores to pairs of SNPs identified in top-scoring chromosomes, with higher scores corresponding to lower epistasis p-values (more substantial evidence for epistasis). We then aggregate those pair-scores across chromosome sizes to generate a final collection of SNP-pairs, which we display in a single network plot.
 
-We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes, the list of pre-processed data from function `preprocess.genetic.data`, and the number of top scoring chromosomes to use in constructing the plot (here we use 5 for illustration, in practice we use 50).  
+We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes, the list of pre-processed data from function `preprocess.genetic.data`, and the number of top scoring chromosomes to use in constructing the plot (here we use 5 for illustration, in practice we use 50). Note that for large numbers of top scoring chromosomes, this function may take several minutes to complete.   
 
 ```{r}
 set.seed(10)

@@ -1863,14 +1863,14 @@ NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arm
 
 }
 
-////////////////////////////////////////////
-// epistasis test
-////////////////////////////////////////////
+//////////////////////////////////
+// function to run epistasis test
+/////////////////////////////////
 
 // [[Rcpp::export]]
 List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 10000,
                     int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
-                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
+                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool warn = true){
 
   // pick out target columns in the preprocessed data
   IntegerVector original_col_numbers = preprocessed_list["original.col.numbers"];
@@ -1886,7 +1886,11 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   bool one_ld_block = is_true(all(target_block_ld_mat == TRUE));
   if (one_ld_block){
 
-    Rcout << "All chromosome SNPs in linkage, returning NA for p-value \n";
+    if (warn){
+
+      Rcout << "All chromosome SNPs in linkage, returning NA for p-value \n";
+
+    }
     List res = List::create(Named("pval") = NA_REAL,
                             Named("obs_fitness_score") = NA_REAL,
                             Named("perm_fitness_scores") = NumericVector::get_na());
@@ -2002,10 +2006,53 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
 }
 
+/////////////////////////////////////////////////////////
+// function to loop over a list of chromosomes and
+// compute epistasis p-value, and reuturn the -2log.
+// This is used in the graphical scoring procedure.
+/////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List preprocessed_list, int n_permutes = 10000,
+                              int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
+                              double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
 
 
+  NumericVector n2log_epi_pvals(chromosome_list.size());
+  double N = n_permutes + 1;
+  for (int i = 0; i < chromosome_list.size(); i++){
 
+    IntegerVector chromosome = chromosome_list[i];
+    List epi_res = epistasis_test(chromosome, preprocessed_list, n_permutes,
+                                  n_different_snps_weight, n_both_one_weight, weight_function_int,
+                                  recessive_ref_prop, recode_test_stat, false);
+    NumericVector pval_vec = epi_res["pval"];
+    double pval = pval_vec[0];
+    LogicalVector pval_na_vec = NumericVector::is_na(pval);
+    bool pval_na = pval_na_vec[0];
+    if (pval_na){
 
+      pval = 0.5;
+
+    }
+    if (pval == 0){
+
+      pval = 1/N;
+
+    }
+
+    if (pval == 1){
+
+      pval = 1 - 1/N;
+
+    }
+    pval = -2*log(pval);
+    n2log_epi_pvals[i] = pval;
+
+  }
+  return(n2log_epi_pvals);
+
+}
 
 
 

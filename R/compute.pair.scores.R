@@ -14,10 +14,23 @@
 #' may be useful in cases where there are multiple risk-sets, and one is found much more frequently. However, it may be of interest to examine
 #' plots using both \code{score.type} approaches. Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or
 #' edges having negative weights.
-#' @param epi.test.permutes The number of permutes used to compute the epistasis test p-values. Defaults to 100.
 #' @param pval.thresh A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 #' chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
 #' will not contribute to network plots. The argument defaults to 0.05.
+#' @param n.permutes The number of permutations on which to base the epistasis tests. Defaults to 10000.
+#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement/unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
+#' is multiplied in computing the family weights. Defaults to 1.
+#' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
+#' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
+#' returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
+#' @param recessive.ref.prop The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+#' to determine whether to recode the SNP as recessive. Defaults to 0.75.
+#' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
+#' See the GADGETS paper for specific details.
+
+#' @param bp.param The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.
 #' @return A data.table where the first four columns represent SNPs and the fifth column (edge.score)
 #' is the graphical SNP-pair score.
 #'
@@ -69,13 +82,18 @@
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom matrixStats colSds
 #' @importFrom utils combn
+#' @importFrom BiocParallel bplapply bpparam
 #' @export
 
 compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
-                                 epi.test.permutes = 10000, pval.thresh = 0.05) {
+                                pval.thresh = 0.05, n.permutes = 10000, n.different.snps.weight = 2,
+                                n.both.one.weight = 1, weight.function.int = 2, recessive.ref.prop = 0.75,
+                                recode.test.stat = 1.64, bp.param = bpparam()) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
-    n.chroms.vec <- lapply(results.list, function(chrom.size.data){
+    ## and then return just the chromosomes of interest
+    chrom.list <- lapply(results.list, function(chrom.size.data){
+
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
         if (n.obs.chroms != n.top.chroms){
@@ -83,73 +101,50 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.
             stop("Each element of results.list must contain n.top.scores fitness scores.")
 
         }
+        chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
+        these.cols <- seq_len(chrom.size)
+        chrom.mat <- as.matrix(chrom.size.data[ , ..these.cols])
+        chrom.list <- split(chrom.mat, seq_len(nrow(chrom.mat)))
+        return(chrom.list)
 
     })
 
-    ## compute re-scaled fitness scores based on epistasis test
-    rescaled.results <- lapply(results.list, function(obs.res){
+    ## compute graphical scores based on epistasis test
+    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, pp.list, n.permutes,
+                                                       n.different.snps.weight, n.both.one.weight,
+                                                       weight.function.int, recessive.ref.prop,
+                                                       recode.test.stat){
 
-        # compute permutation epistasis p-values for each of 1:n.top.chroms
-        # return 0.5 if we can't do the epistasis test due to all chroms being on
-        # same biological chromosome
-        chrom.size <- sum(grepl("snp", colnames(obs.res)))/5
-        epi.pvals <- vapply(seq_len(n.top.chroms), function(x){
+        n2log_epistasis_pvals(chrom.size.list, pp.list, n.permutes,
+                              n.different.snps.weight, n.both.one.weight, weight.function.int,
+                              recessive.ref.prop, recode.test.stat)
 
-            these.cols <- seq_len(chrom.size)
-            chrom <- as.vector(t(obs.res[x, ..these.cols]))
-            epi.test.pval <- tryCatch(epistasis.test(chrom, pp.list, n.permutes = epi.test.permutes)$pval,
-                                     error = function(e) {
+    }, pp.list = pp.list, n.permutes = n.permutes, n.different.snps.weight = n.different.snps.weight,
+    n.both.one.weight = n.both.one.weight, weight.function.int = weight.function.int,
+    recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, BPPARAM = bp.param)
 
-                                         error.message = conditionMessage(e)
-                                         if (error.message == "cannot run test, all SNPs are in LD"){
+   ## add those scores to the obs data
+   for (i in seq_along(n2log.epi.pvals)){
 
-                                             0.5
+       results.list[[i]]$graphical.score <- n2log.epi.pvals[[i]]
+       results.list[[i]] <- results.list[[i]][results.list[[i]]$graphical.score >= -2*log(pval.thresh), ]
 
-                                         } else {
-
-                                             stop(e)
-
-                                         }
-
-                                     })
-            if (isTRUE(all.equal(0, epi.test.pval))){
-
-                epi.test.pval <- 1/(epi.test.permutes + 1)
-
-            }
-            if (isTRUE(all.equal(1, epi.test.pval))){
-
-                epi.test.pval <- 1 - (1/(epi.test.permutes + 1))
-
-            }
-            return(epi.test.pval)
-
-        }, 1.0)
-
-        ## take -2 log
-        rescaled.scores <- -2*log(epi.pvals)
-
-        ## update the observed results data.table
-        obs.res$fitness.score <- rescaled.scores
-        obs.res <- obs.res[epi.pvals <= pval.thresh, ]
-        return(obs.res)
-
-    })
+   }
 
     #make sure we have some edges
-    n.edges <- vapply(rescaled.results, nrow, 1)
+    n.edges <- vapply(results.list, nrow, 1)
     if (sum(n.edges) == 0){
         stop("No SNP pairs meet p-value threshold")
     }
 
-    all.edge.weights <- rbindlist(lapply(seq_along(rescaled.results), function(d){
+    all.edge.weights <- rbindlist(bplapply(seq_along(results.list), function(d, results.list){
 
-        chrom.size.res <- rescaled.results[[d]]
+        chrom.size.res <- results.list[[d]]
         chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
         rbindlist(lapply(seq_len(n.top.chroms), function(res.row) {
 
             chrom.res <- chrom.size.res[res.row, ]
-            fs <- chrom.res$fitness.score
+            score <- chrom.res$graphical.score
             these.cols <- seq_len(chrom.size)
             chrom <- as.vector(t(chrom.res[, ..these.cols]))
             chrom.pairs <- data.table(t(combn(chrom, 2)))
@@ -167,35 +162,35 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.
             }
             colnames(rsid.dt) <- c("SNP1.rsid", "SNP2.rsid")
             chrom.pairs <- cbind(chrom.pairs, rsid.dt)
-            chrom.pairs[ , `:=`(raw.fitness.score = fs)]
+            chrom.pairs[ , `:=`(raw.score = score)]
 
             #take average score for each pair
-            out.dt <- chrom.pairs[ , list(fitness.score = mean(raw.fitness.score)),
+            out.dt <- chrom.pairs[ , list(graphical.score = mean(score)),
                                    list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
             return(out.dt)
 
         }))
 
-    }))
+    }, results.list = results.list, BPPARAM = bp.param))
 
     # remove the NA's
-    all.edge.weights <- all.edge.weights[!is.na(all.edge.weights$fitness.score), ]
+    all.edge.weights <- all.edge.weights[!is.na(all.edge.weights$graphical.score), ]
 
     # compute edge score based on score.type
     if (score.type == "max"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = max(fitness.score)), list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
+        out.dt <- all.edge.weights[ , list(edge.score = max(graphical.score)), list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
         setorder(out.dt, -edge.score)
 
     } else if (score.type == "sum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = sum(fitness.score)/length(results.list)),
+        out.dt <- all.edge.weights[ , list(edge.score = sum(graphical.score)),
                                     list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
         setorder(out.dt, -edge.score)
 
     } else if (score.type == "logsum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = log(1 + (sum(fitness.score)/length(results.list)))),
+        out.dt <- all.edge.weights[ , list(edge.score = log(1 + (sum(graphical.score)))),
                                     list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
         setorder(out.dt, -edge.score)
 

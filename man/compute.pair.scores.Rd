@@ -9,8 +9,14 @@ compute.pair.scores(
   pp.list,
   n.top.chroms = 50,
   score.type = "logsum",
-  epi.test.permutes = 10000,
-  pval.thresh = 0.05
+  pval.thresh = 0.05,
+  n.permutes = 10000,
+  n.different.snps.weight = 2,
+  n.both.one.weight = 1,
+  weight.function.int = 2,
+  recessive.ref.prop = 0.75,
+  recode.test.stat = 1.64,
+  bp.param = bpparam()
 )
 }
 \arguments{
@@ -30,11 +36,29 @@ may be useful in cases where there are multiple risk-sets, and one is found much
 plots using both \code{score.type} approaches. Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or
 edges having negative weights.}
 
-\item{epi.test.permutes}{The number of permutes used to compute the epistasis test p-values. Defaults to 100.}
-
 \item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
 will not contribute to network plots. The argument defaults to 0.05.}
+
+\item{n.permutes}{The number of permutations on which to base the epistasis tests. Defaults to 10000.}
+
+\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
+is multiplied in computing the family weights. Defaults to 2.}
+
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
+is multiplied in computing the family weights. Defaults to 1.}
+
+\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
+of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
+returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
+
+\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+to determine whether to recode the SNP as recessive. Defaults to 0.75.}
+
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
+See the GADGETS paper for specific details.}
+
+\item{bp.param}{The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.}
 }
 \value{
 A data.table where the first four columns represent SNPs and the fifth column (edge.score)
