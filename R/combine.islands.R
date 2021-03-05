@@ -86,10 +86,16 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
             stop("n.top.chroms.per.island must be <= the total number of chromosomes")
 
         }
-        chrom.results <- island.data$top.chromosome.results[seq_len(n.top.chroms.per.island), ]
+        chrom.results <- island.data$top.chromosome.results
+
+        # subset to unique results
         chromosome.size <- sum(grepl("snp", colnames(chrom.results)))/3
-        chrom.results[, `:=`(island, rep(island, nrow(chrom.results)))]
-        chrom.results[, `:=`(n.generations, rep(n.generations, nrow(chrom.results)))]
+        chrom.results[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(chrom.results)),
+                        .SDcols = seq_len(chromosome.size)]
+        chrom.results <- chrom.results[!duplicated(chrom.results), ]
+
+        #take top scorers
+        chrom.results <- chrom.results[seq_len(n.top.chroms.per.island), ]
         return(chrom.results)
 
     })
@@ -100,14 +106,11 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     chromosome.size <- sum(grepl("snp", colnames(combined.result)))/3
 
     # subset to unique results
-    combined.result[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(combined.result)),
-                    .SDcols = seq_len(chromosome.size)]
     unique.result <- combined.result[!duplicated(combined.result$chromosome), ]
     n.islands.found <- combined.result[, list(n.islands.found = length(fitness.score)), by = chromosome]
     setkey(unique.result, chromosome)
     setkey(n.islands.found, chromosome)
     unique.result <- unique.result[n.islands.found]
-    unique.result[, `:=`(c("island", "n.generations"), NULL)]
     setorder(unique.result, -fitness.score)
 
     ## add in annotations for the SNPs and risk alleles
