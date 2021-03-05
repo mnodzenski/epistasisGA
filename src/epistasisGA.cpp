@@ -788,7 +788,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   // compute scaling factor
   double q;
   double total_high_risk = n_case_high_risk + n_comp_high_risk;
-  if ( (total_high_risk == 0) |
+  if ( (total_high_risk == 0) | (n_case_high_risk == 0) |
        R_isnancpp(n_case_high_risk) | R_isnancpp(n_comp_high_risk)){
     q = pow(10, -10);
   } else {
@@ -831,6 +831,12 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
   // compute fitness score
   double fitness_score = (1/(1000*invsum_family_weights)) * as_scalar(mu_hat * arma::pinv(cov_mat) * mu_hat.t());
+
+  // if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
+  if ( (fitness_score == 0) |
+         R_isnancpp(fitness_score) | R_isnancpp(fitness_score)){
+    fitness_score = pow(10, -10);
+  }
 
   // if desired, return the required information for the epistasis test
   if (epi_test){
