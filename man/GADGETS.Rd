@@ -29,7 +29,6 @@ GADGETS(
   migration.interval = 50,
   gen.same.fitness = 50,
   max.generations = 500,
-  n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   crossover.prop = 0.8,
   recessive.ref.prop = 0.75,
@@ -98,8 +97,6 @@ In other words, top chromosomes will migrate among cluster islands every \code{m
 
 \item{max.generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
 
-\item{n.top.chroms}{The number of top scoring chromosomes according to fitness score to return. Defaults to 100.}
-
 \item{initial.sample.duplicates}{A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 (the same SNP may appear in more than one chromosome thereafter, regardless). Defaults to FALSE.}
 
@@ -115,7 +112,7 @@ See the GADGETS paper for specific details.}
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 \describe{
- \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+ \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
 See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
  \item{n.generations}{The total number of generations run.}

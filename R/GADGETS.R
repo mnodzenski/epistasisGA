@@ -40,7 +40,6 @@
 #' In other words, top chromosomes will migrate among cluster islands every \code{migration.interval} generations. We also check for convergence at each of these intervals.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
 #' @param max.generations The maximum number of generations for which GADGETS will run. Defaults to 500.
-#' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Defaults to FALSE.
 #' @param crossover.prop A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
@@ -51,7 +50,7 @@
 #' See the GADGETS paper for specific details.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
-#'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+#'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 #' and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
 #' See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
 #'  \item{n.generations}{The total number of generations run.}
@@ -109,7 +108,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, comp2.mat,
                    comp0.mat, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
                    n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50,
-                   max.generations = 500, n.top.chroms = 100, initial.sample.duplicates = FALSE,
+                   max.generations = 500, initial.sample.duplicates = FALSE,
                    crossover.prop = 0.8, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
     ### run rcpp version of GADGET ##
@@ -119,7 +118,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                            weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
                            snp.chisq, original.col.numbers,
                            n.different.snps.weight, n.both.one.weight, migration.interval,
-                           gen.same.fitness, max.generations, n.top.chroms,
+                           gen.same.fitness, max.generations,
                            initial.sample.duplicates, crossover.prop, recessive.ref.prop,
                            recode.test.stat)
 

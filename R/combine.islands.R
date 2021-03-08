@@ -41,7 +41,7 @@
 #' @importFrom data.table rbindlist setkey setorder `:=` setDT
 #' @export
 
-combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.top.chroms.per.island = 10) {
+combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.top.chroms.per.island = 1) {
 
     # list all islands in the results data
     island.names <- list.files(results.dir, pattern = "cluster", full.names = TRUE)

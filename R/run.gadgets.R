@@ -29,7 +29,6 @@
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
-#' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
 #' @param snp.sampling.type A string indicating how SNPs are to be sampled for mutations. Options are 'chisq', 'random', or 'manual'. The 'chisq' option takes
@@ -52,7 +51,7 @@
 #' See the GADGETS paper for specific details.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
-#'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+#'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 #' and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
 #' See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
 #'  \item{n.generations}{The total number of generations run.}
@@ -73,7 +72,7 @@
 #'                                block.ld.mat = block.ld.mat[1:10, 1:10])
 #' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+#'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
 #'
 #' unlink('tmp', recursive = TRUE)
@@ -90,7 +89,7 @@
 run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
-    generations = 500, gen.same.fitness = 50, n.top.chroms = 100, initial.sample.duplicates = FALSE,
+    generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
     n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
@@ -278,7 +277,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
         case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, island.cluster.size = island.cluster.size,
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
-        gen.same.fitness = gen.same.fitness, max.generations = generations, n.top.chroms = n.top.chroms,
+        gen.same.fitness = gen.same.fitness, max.generations = generations,
         initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop,
         recode.test.stat = recode.test.stat), reg = registry)
 

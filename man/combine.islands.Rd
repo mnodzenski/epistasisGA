@@ -8,7 +8,7 @@ combine.islands(
   results.dir,
   annotation.data,
   preprocessed.list,
-  n.top.chroms.per.island = 10
+  n.top.chroms.per.island = 1
 )
 }
 \arguments{

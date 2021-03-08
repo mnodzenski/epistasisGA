@@ -86,13 +86,13 @@ Note that `run.gadgets` does not output results directly to the R session, it wi
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, 
        results.dir = "size3_res", cluster.type = "interactive",
        registryargs = list(file.dir = "size3_reg", seed = 1300),
-       n.top.chroms = 5, n.islands = 8, island.cluster.size = 4, 
+       n.islands = 8, island.cluster.size = 4, 
        n.migrations = 2)
 
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 4, 
        results.dir = "size4_res", cluster.type = "interactive", 
        registryargs = list(file.dir = "size4_reg", seed = 1400),
-       n.top.chroms = 5, n.islands = 8, island.cluster.size = 4, 
+       n.islands = 8, island.cluster.size = 4, 
        n.migrations = 2)
 ```
 
@@ -110,7 +110,7 @@ run.gadgets(pp.list, n.chromosomes = 20, chromosome.size = 3,
        registryargs = list(file.dir = "size3_reg", seed = 1300),
        cluster.template = fname, 
        resources = list(chunks.as.arrayjobs = TRUE),
-       n.top.chroms = 5, n.islands = 12, 
+       n.islands = 12, 
        island.cluster.size = 4)
 
 ```
@@ -196,7 +196,7 @@ lapply(chrom.sizes, function(chrom.size){
            chromosome.size = chrom.size,
            results.dir = res.dir, cluster.type = "interactive", 
            registryargs = list(file.dir = reg.dir, seed = seed.val),
-           n.top.chroms = 5, n.islands = 8, island.cluster.size = 4,
+           n.islands = 8, island.cluster.size = 4,
            n.migrations = 2)
     
   })
