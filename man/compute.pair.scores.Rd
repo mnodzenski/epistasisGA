@@ -16,6 +16,7 @@ compute.pair.scores(
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
+  dif.coding = TRUE,
   bp.param = bpparam()
 )
 }
@@ -58,6 +59,9 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
+\item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
+be coded as the sign of the difference (defaulting to true) or the raw difference.}
+
 \item{bp.param}{The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.}
 }
 \value{
@@ -90,7 +94,7 @@ pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = da
 #observed data chromosome size 2
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       generations = 2, n.islands = 2, island.cluster.size = 1,
        n.migrations = 0)
  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
@@ -98,7 +102,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
  #observed data chromosome size 3
  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+       generations = 2, n.islands = 2, island.cluster.size = 1,
        n.migrations = 0)
  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)

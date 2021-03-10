@@ -18,6 +18,8 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
+#' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
+#' be coded as the sign of the difference (defaulting to true) or the raw difference.
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -43,7 +45,7 @@
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
 #'        results.dir = "tmp", cluster.type = "interactive",
 #'        registryargs = list(file.dir = "tmp_reg", seed = 1300),
-#'        n.top.chroms = 5, n.islands = 8, island.cluster.size = 4,
+#'        n.islands = 8, island.cluster.size = 4,
 #'        n.migrations = 2)
 #'
 #' combined.res <- combine.islands('tmp', snp.annotations, pp.list, 2)
@@ -62,10 +64,10 @@
 epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
-                     recode.test.stat = 1.64) {
+                     recode.test.stat = 1.64, dif.coding = TRUE) {
 
     epistasis_test(snp.cols, preprocessed.list, n.permutes,n.different.snps.weight,
                    n.both.one.weight, weight.function.int, recessive.ref.prop,
-                   recode.test.stat)
+                   recode.test.stat, TRUE, dif.coding)
 
 }

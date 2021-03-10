@@ -59,7 +59,7 @@
 #' #observed data chromosome size 2
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+#'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
 #'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
@@ -67,7 +67,7 @@
 #'  #observed data chromosome size 3
 #'  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3,
+#'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
 #'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
