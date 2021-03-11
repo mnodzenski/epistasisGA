@@ -49,7 +49,7 @@
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to true) or the raw difference.
+#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
@@ -112,7 +112,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50,
                    max.generations = 500, initial.sample.duplicates = FALSE,
                    crossover.prop = 0.8, recessive.ref.prop = 0.75, recode.test.stat = 1.64,
-                   dif.coding = TRUE) {
+                   dif.coding = FALSE) {
 
     ### run rcpp version of GADGET ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,

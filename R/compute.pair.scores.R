@@ -30,7 +30,7 @@
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to true) or the raw difference.
+#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param bp.param The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.
 #' @return A data.table where the first four columns represent SNPs and the fifth column (edge.score)
 #' is the graphical SNP-pair score.
@@ -89,7 +89,7 @@
 compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
                                 pval.thresh = 0.05, n.permutes = 10000, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, weight.function.int = 2, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, dif.coding = TRUE, bp.param = bpparam()) {
+                                recode.test.stat = 1.64, dif.coding = FALSE, bp.param = bpparam()) {
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     ## and then return just the chromosomes of interest

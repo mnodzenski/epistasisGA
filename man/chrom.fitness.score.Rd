@@ -22,7 +22,7 @@ chrom.fitness.score(
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
   epi.test = FALSE,
-  dif.coding = TRUE
+  dif.coding = FALSE
 )
 }
 \arguments{
@@ -76,7 +76,7 @@ See the GADGETS paper for specific details.}
 for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.}
 
 \item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
-be coded as the sign of the difference (defaulting to true) or the raw difference.}
+be coded as the sign of the difference (defaulting to false) or the raw difference.}
 }
 \value{
 A list:

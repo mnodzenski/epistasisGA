@@ -35,7 +35,7 @@
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to true) or the raw difference.
+#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @return A list:
 #' \describe{
 #'  \item{fitness_score}{The chromosome fitness score.}
@@ -93,7 +93,7 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                 comp2.mat, comp0.mat, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = TRUE) {
+                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
                       cases.minus.complements, both.one.mat, block.ld.mat, weight.lookup, case2.mat,

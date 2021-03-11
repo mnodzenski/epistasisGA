@@ -14,7 +14,7 @@ epistasis.test(
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  dif.coding = TRUE
+  dif.coding = FALSE
 )
 }
 \arguments{
@@ -41,7 +41,7 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 See the GADGETS paper for specific details.}
 
 \item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
-be coded as the sign of the difference (defaulting to true) or the raw difference.}
+be coded as the sign of the difference (defaulting to false) or the raw difference.}
 }
 \value{
 A list of thee elements:
