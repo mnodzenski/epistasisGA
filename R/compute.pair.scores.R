@@ -97,9 +97,13 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.
 
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
-        if (n.obs.chroms != n.top.chroms){
+        if (n.obs.chroms > n.top.chroms){
 
-            stop("Each element of results.list must contain n.top.scores fitness scores.")
+            stop("Elements of results.list contain more than n.top.scores fitness scores.")
+
+        } else if (n.obs.chroms < n.top.chroms){
+
+            message("Elements of results.list contain fewer than n.top.scores fitness scores. If intentional, ignore message.")
 
         }
         chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
