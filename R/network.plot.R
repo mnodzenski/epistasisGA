@@ -158,8 +158,10 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
 
     # convert to data.frames and scale the edge and node scores
     edge.df <- as.data.frame(edge.dt)
+    max.edge.widths <- max(edge.df$edge.score)
     edge.widths <- edge.df$edge.score/max(edge.df$edge.score)
     node.df <- as.data.frame(node.dt)
+    max.node.size <- max(node.df$size)
     node.size.raw <- node.df$size/max(node.df$size)
     node.df$size <- node.size*(node.df$size/max(node.df$size))
 
@@ -203,14 +205,14 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
             plot(c(0,2),c(0,1),type = 'n', axes = F, xlab = '', ylab = '', main = 'SNP-Score',
                  cex.main = legend.title.cex)
             rasterImage(node_legend, 0.75, 0, 1, 1)
-            n.legend.labels <- round(seq(min(node.size.raw), max(node.size.raw), length.out = 5), digits = 1)
+            n.legend.labels <- round(seq(max.node.size*min(node.size.raw), max.node.size*max(node.size.raw), length.out = 5), digits = 1)
             axis(side = 4, at = seq(0, 1, length.out = 5), labels = n.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
             edge_legend <- as.raster(matrix(rev(raw.edge.colors), ncol=1))
             plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Pair-Score',
                  cex.main = legend.title.cex)
             rasterImage(edge_legend, 0.75, 0, 1, 1)
-            e.legend.labels <- round(seq(min(edge.widths), max(edge.widths), length.out = 5), digits = 1)
+            e.legend.labels <- round(seq(max.edge.widths*min(edge.widths), max.edge.widths*max(edge.widths), length.out = 5), digits = 1)
             axis(side = 4, at = seq(0, 1, length.out = 5), labels = e.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
         } else {
