@@ -23,6 +23,8 @@
 #'  \item{max.perm.fitness}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
 #'  \item{max.order.pvals}{A vector of p-values for the maximum observed order statistics for each chromosome size.
 #'   P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
+#'  \item{boxplot.grob}{A grob of a ggplot plot of the observed vs permuted fitness score densities for each chromosome size.}
+
 #' }
 #' @examples
 #'
@@ -152,13 +154,18 @@
 #'           'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
 #'
 #'
+#' @importFrom data.table data.table rbindlist
+#' @importFrom ggplot2 ggplot aes facet_wrap geom_boxplot ggplotGrob
+#' @importFrom grid grid.draw
 #' @export
 
-global.test <- function(results.list, n.top.scores = 30) {
+global.test <- function(results.list, n.top.scores = 10) {
 
-    # loop over chromosome sizes
-    chrom.size.ranks <- do.call(cbind, lapply(results.list, function(chrom.size.res) {
+    # decide on the n.top.scores per chromosome size
+    chrom.size.n.top.scores <- rep(n.top.scores, length(results.list))
+    for (i in 1:length(chrom.size.n.top.scores)){
 
+        chrom.size.res <- results.list[[i]]
         # error checking
         if (!"observed.data" %in% names(chrom.size.res)) {
 
@@ -170,25 +177,42 @@ global.test <- function(results.list, n.top.scores = 30) {
             stop("Each element of results.list must be a list containing an element titled permutation.list.")
         }
 
-        # grab the observed data
+        # re-set n.top.chroms if needed
+        n.obs.scores <- length(chrom.size.res$observed.data)
+        n.perm.scores <- vapply(chrom.size.res$permutation.list, length, 1)
+        min.n.scores <- min(c(n.obs.scores, n.perm.scores))
+        if (min.n.scores < n.top.scores){
 
-        obs <- chrom.size.res$observed.data
-        if (length(obs) < n.top.scores){
+            chrom.size.n.top.scores[i] <- min.n.scores
+            if (n.obs.scores == min.n.scores){
 
-            stop("n.top.scores must be <= number of unique chromosomes")
+                message(paste("only", min.n.scores, "observed.data fitness scores for element", i, "of results list, re-setting n.top.chroms to", min.n.scores))
+
+            } else if (any(n.perm.scores == min.n.scores)){
+
+                message(paste("only", min.n.scores, "permutation.list fitness scores for element", i, "of results list, re-setting n.top.chroms to", min.n.scores))
+
+            }
 
         }
-        obs.score <- sum(sort(obs, decreasing = TRUE)[seq_len(n.top.scores)])
+
+    }
+
+    # loop over chromosome sizes
+    chrom.size.ranks <- do.call(cbind, lapply(seq_along(results.list), function(x) {
+
+        # get the chromosome size specific data
+        chrom.size.res <- results.list[[x]]
+        n.top <- chrom.size.n.top.scores[x]
+
+        # grab the observed data
+        obs <- chrom.size.res$observed.data
+        obs.score <- sum(sort(obs, decreasing = TRUE)[seq_len(n.top)])
 
         # grab permuted data
         perm.scores <- unlist(lapply(chrom.size.res$permutation.list, function(perm.scores){
 
-            if (length(perm.scores) < n.top.scores){
-
-                stop("n.top.scores must be <= number of unique chromosomes")
-
-            }
-            sum(sort(perm.scores, decreasing = TRUE)[seq_len(n.top.scores)])
+            sum(sort(perm.scores, decreasing = TRUE)[seq_len(n.top)])
 
         }))
 
@@ -251,12 +275,44 @@ global.test <- function(results.list, n.top.scores = 30) {
 
     }, 1.0)
 
+    # plots of the observed vs permute distributions
+    plot.data <- rbindlist(lapply(seq_along(results.list), function(x) {
+
+        # get the chromosome size specific data
+        chrom.size.res <- results.list[[x]]
+
+        # grab the observed data
+        obs <- chrom.size.res$observed.data
+        obs.dt <- data.table(chrom.res.element = x, data.type = "observed", fitness.score = obs)
+
+        # grab permuted data
+        perm.dt <- rbindlist(lapply(chrom.size.res$permutation.list, function(perm.scores){
+
+            data.table(chrom.res.element = x, data.type = "permuted", fitness.score = perm.scores)
+
+        }))
+
+        # put together data.table for plotting
+        plot.dt <- rbind(obs.dt, perm.dt)
+        return(plot.dt)
+
+    }))
+
+    boxplot.plot <- ggplot(plot.data, aes(x = data.type, y = fitness.score)) +
+        geom_boxplot() + facet_wrap(chrom.res.element ~ ., scales = "free")
+
+    # don't need copies of the global environment vars
+    boxplot.plot$plot_env <- new.env()
+
+    #store as grob
+   boxplot.grob <- ggplotGrob(boxplot.plot)
+
     # return results list
     res.list <- list(obs.test.stat = obs.test.stat,  perm.test.stats = perm.test.stats, pval = global.pval,
                      obs.marginal.test.stats = chrom.size.ranks[1, ], perm.marginal.test.stats.mat = chrom.size.ranks[-1, ],
                      marginal.pvals = marginal.pvals,
                      max.obs.fitness = max.obs.fitness, max.perm.fitness = max.perm.fitness,
-                     max.order.pvals = max.order.pvals)
+                     max.order.pvals = max.order.pvals, boxplot.grob = boxplot.grob)
     return(res.list)
 
 }

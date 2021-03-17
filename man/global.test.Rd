@@ -5,7 +5,7 @@
 \title{A function to run a global test of the null hypothesis that there are no joint SNP-disease associations
 across a range of chromosome sizes}
 \usage{
-global.test(results.list, n.top.scores = 30)
+global.test(results.list, n.top.scores = 10)
 }
 \arguments{
 \item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in a global test.
@@ -30,6 +30,7 @@ A list containing the following:
  \item{max.perm.fitness}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
  \item{max.order.pvals}{A vector of p-values for the maximum observed order statistics for each chromosome size.
   P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
+ \item{boxplot.grob}{A grob of a ggplot plot of the observed vs permuted fitness score densities for each chromosome size.}
 }
 }
 \description{

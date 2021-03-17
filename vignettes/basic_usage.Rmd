@@ -305,6 +305,16 @@ global.test.res$max.order.pvals
 
 The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the proportion of permutations whose maximum fitness score exceeds the maximum observed fitness score. In the example above, we see the maximum observed fitness score exceeds all of the permutation maxima for each chromosome size. Again, given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
 
+Finally, the function provides plots of the observed vs. permuted fitness score densities for each element of the input results list:
+
+```{r, fig.width=6}
+library(grid)
+grid.draw(global.test.res$boxplot.grob)
+
+```
+
+Note the numbers at the top of the plots correspond to the element of the input results list. In this example, the '1' corresponds to the chromosome size 3 results (the first element of the results list) and the '2' corresponds to the chromosome size 4 results (the second element of the results list). Above, we see the observed fitness scores tend to be higher than the null permutes, especially for chromosome size 4. 
+
 Users should also be clear that rejecting the null hypothesis does not necessarily indicate that a collection of SNPs exhibit epistasis. Indeed, we may reject the null simply because we have identified a single SNP with a non-zero marginal disease association. To that end, we provide a permutation based procedure specifically examining evidence for epistasis among a collection of SNPs conditional on the marginal SNP-disease associations. To illustrate, in our example, we might be interested in whether the high score of the top 4 SNP chromosome was attributable to epistasis or a collection of large marginal associations. We can execute this test as follows:
 
 ```{r}
