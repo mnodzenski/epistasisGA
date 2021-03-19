@@ -39,7 +39,7 @@ edges having negative weights.}
 
 \item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
-will not contribute to network plots. The argument defaults to 0.05.}
+will not contribute to network plots. The argument defaults to 0.05. It must be <= 0.6 (to ensure positive scores).}
 
 \item{n.permutes}{The number of permutations on which to base the epistasis tests. Defaults to 10000.}
 
@@ -112,7 +112,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
- edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
+ edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 0.5)
 
  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 

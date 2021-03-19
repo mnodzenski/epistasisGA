@@ -77,7 +77,7 @@
 #'
 #'  ## compute edge scores
 #'  set.seed(20)
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
+#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 0.5)
 #'
 #' ## plot
 #' set.seed(10)
@@ -151,8 +151,8 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
 
     } else if (score.type == "logsum"){
 
-        edge.dt.long[ , edge.score := exp(edge.score) - 1]
-        node.dt <- edge.dt.long[ , list(size = log(1 + sum(edge.score))), by = 'name']
+        edge.dt.long[ , edge.score := exp(edge.score)]
+        node.dt <- edge.dt.long[ , list(size = log(sum(edge.score))), by = 'name']
 
     }
 

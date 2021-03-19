@@ -16,7 +16,7 @@
 #' edges having negative weights.
 #' @param pval.thresh A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
 #' chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
-#' will not contribute to network plots. The argument defaults to 0.05.
+#' will not contribute to network plots. The argument defaults to 0.05. It must be <= 0.6 (to ensure positive scores).
 #' @param n.permutes The number of permutations on which to base the epistasis tests. Defaults to 10000.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement/unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 2.
@@ -76,7 +76,7 @@
 #'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
+#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 0.5)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
@@ -90,6 +90,12 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.
                                 pval.thresh = 0.05, n.permutes = 10000, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, weight.function.int = 2, recessive.ref.prop = 0.75,
                                 recode.test.stat = 1.64, dif.coding = FALSE, bp.param = bpparam()) {
+
+    if (pval.thresh > 0.6){
+
+        stop("pval.thresh must be <= 0.6")
+
+    }
 
     ## make sure we have the correct number of chromosomes in each element of the results list
     ## and then return just the chromosomes of interest
@@ -196,7 +202,7 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.
 
     } else if (score.type == "logsum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = log(1 + (sum(graphical.score)))),
+        out.dt <- all.edge.weights[ , list(edge.score = log(sum(graphical.score))),
                                     list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
         setorder(out.dt, -edge.score)
 
