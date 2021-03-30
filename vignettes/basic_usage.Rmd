@@ -222,7 +222,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
 
 Now we are ready to more formally examine whether our results are consistent with what would be expected under the null hypothesis of no association between the input variants and disease status. Our first step is to run a global test across all chromosome sizes examining whether the fitness scores from the observed data are drawn from the distribution expected under the null. Briefly, for each chromosome size separately, we sum the fitness scores of the top $k$ chromosomes for the observed data and each permuted dataset. We then rank the observed sum compared to the corresponding chromosome size specific sums for each permuted dataset. Letting $R_d$ denote the rank for chromosome size $d$, with 1 denoting the rank of the smallest sum of fitness scores, and with $N$ denoting the the number of permutes plus 1, we compute $T_d = -2ln((N - R_d + 0.5)/N)$. The test is based on summing $T_d$ over chromosome sizes, $T = \sum_d{T_d}$. We also compute this statistic for each permuted dataset and compute a permutation-based p-value using the $N$ values for $T$. Intuitively, this test assesses whether the top-scoring chromosomes are consistently higher than null data across chromosome sizes. 
 
-A key feature of this approach is the test does not require adjustment for multiple comparisons despite the very large number of combinations being considered by the GA. The test is implemented in function `global.test`, with $k$ specified by argument `n.top.scores`. We generally specify `n.top.scores = 30`, but for this illustrative example, we only use 5. Note that the number of unique chromosomes in the observed data results and each permute must be at least as large as `n.top.scores`, otherwise an error will be generated. 
+A key feature of this approach is the test does not require adjustment for multiple comparisons despite the very large number of combinations being considered by the GA. The test is implemented in function `global.test`, with $k$ specified by argument `n.top.scores`. We generally specify `n.top.scores = 10`, but for this illustrative example, we only use 5. Note that the number of unique chromosomes in the observed data results and each permute must be at least as large as `n.top.scores`, otherwise an error will be generated. When GADGETS returns fewer than `n.top.scores` chromosomes for a given chromosome size for either the observed data or any permute, say $l^*$ chromosomes, the global test will be automatically computed using the top $l^*$ for that chromosome size. Note that the number of chromosomes actually used to compute the global test for each chromosome size will be stored in the `chrom.size.k` element of the `global.test` output. 
 
 ```{r}
 # chromosome size 3 results
@@ -246,6 +246,9 @@ final.results <- list(chrom3.list, chrom4.list)
 
 # run global test
 global.test.res <- global.test(final.results, n.top.scores = 5)
+
+# examine how many chromosomes were used for each  chromosome size 
+global.test.res$chrom.size.k
 
 # look at the global test stat and p-value 
 global.test.res$obs.test.stat
@@ -305,7 +308,7 @@ global.test.res$max.order.pvals
 
 The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the proportion of permutations whose maximum fitness score exceeds the maximum observed fitness score. In the example above, we see the maximum observed fitness score exceeds all of the permutation maxima for each chromosome size. Again, given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
 
-Finally, the function provides plots of the observed vs. permuted fitness score densities for each element of the input results list:
+Finally, the function provides boxplots of the observed vs. permuted fitness scores for each element of the input results list:
 
 ```{r, fig.width=6}
 library(grid)
@@ -324,9 +327,9 @@ epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this p-value. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. Alternatively, a comparison against similar calculations based on permuted data would provide a valid test of epistasis. 
+The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this p-value. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. 
 
-Users may also experience an error when executing `epistasis.test` that says "cannot run test, all SNPs are in LD". This is generated because the procedure can only run if at least two SNPs are located in different LD blocks, otherwise other methods (not provided in this package) are required. 
+Users may also receive a warning when executing `epistasis.test` that says "All chromosome SNPs in linkage, returning NA for p-value". This is generated because the procedure can only run if at least two SNPs are not in linkage, as specified in matrix `block.ld.mat`, otherwise other methods (not provided in this package) are required. 
 
 ## Visualize Results 
 
@@ -334,22 +337,49 @@ As a final step in the analytic pipeline, we recommend users examine network plo
 
 Briefly, we use our epistasis test p-values to assign graphical scores to pairs of SNPs identified in top-scoring chromosomes, with higher scores corresponding to lower epistasis p-values (more substantial evidence for epistasis). We then aggregate those pair-scores across chromosome sizes to generate a final collection of SNP-pairs, which we display in a single network plot.
 
-We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes, the list of pre-processed data from function `preprocess.genetic.data`, and the number of top scoring chromosomes to use in constructing the plot (here we use 5 for illustration, in practice we use 50). Note that for large numbers of top scoring chromosomes, this function may take several minutes to complete.   
+We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from function `preprocess.genetic.data`. For analysts who have run the permutation-based global test, we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores that exceed the corresponding null threshold for each chromosome size: 
+
+```{r}
+# vector of 95th percentile of null fitness scores 
+chrom.size.thresholds <- global.test.res$max.perm.95th.pctl
+
+# chromosome size 3 threshold
+d3.t <- chrom.size.thresholds[1]
+
+# chromosome size 4 threshold
+d4.t <- chrom.size.thresholds[2]
+
+# create results list 
+obs.res.list <- list(size3.combined.res[size3.combined.res$fitness.score >= d3.t, ], 
+                     size4.combined.res[size4.combined.res$fitness.score >= d4.t, ])
+
+```
+
+Alternatively, for analysts who have not run the global-test permutes, we recommend restricting attention to a subset of the top scoring chromosomes for each chromosome size. We've observed good results using the top 10, but for this example, we use the top 5:
+
+```{r}
+obs.res.list.no.permutes <- list(size3.combined.res[1:5, ], size4.combined.res[1:5, ])
+
+```
+
+Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.     
 
 ```{r}
 set.seed(10)
-obs.res.list <- list(size3.combined.res[1:5, ], size4.combined.res[1:5, ])
-pair.scores <- compute.pair.scores(obs.res.list, pp.list, 5)
+pair.scores <- compute.pair.scores(obs.res.list, pp.list)
+
 ```
 
-Next, we input these pair scores into function `network.plot`:
-
+Next, we input these pair scores into function `network.plot` to actually plot the data. 
+ 
 ```{r, fig.width = 14, fig.height = 12}
 network.plot(pair.scores, pp.list, graph.area = 200,
              node.size = 40, vertex.label.cex = 2)
 ```
 
 We see the true pathway SNPs appear prominently in this plot. Key features of the plotting approach are (1) the thickness of the SNP-to-SNP line segments is proportional to the log of the graphical score for that pair and (2) the area of each node circle is proportional to the log of the sum of the graphical scores for all pairs that include the SNP. Although not seen in the plot above, dashed connections indicate SNPs in high LD (pairwise $r^2 \geq 0.1$ by default) in the unaffected siblings/complements. 
+
+This function uses the Fruchterman-Reingold force directed graph drawing algorithm, as implemented in the `qgraph` R package. If other layout algorithms are desired, users can specify `plot = FALSE` to `network.plot`, which will return an `igraph` object that can be used for more customized or interactive plotting. 
 
 As a more minor point, the SNP labels default to the RSIDs provided, as seen in the third and fourth columns of the `pair.scores` data frame:
 ```{r}

@@ -113,7 +113,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
         target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
         same.ld.block <- target.block.ld.mat[2, 1]
 
-        # if not on same ld block, compute r2
+        # if on same ld block, compute r2
         if (!same.ld.block){
 
             return(0.0)
