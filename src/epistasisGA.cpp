@@ -1774,7 +1774,9 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_bl
 
   // compute matrices required for computing fitness score
   arma::mat case_minus_comp = case_permuted - comp_permuted;
-  case_minus_comp = arma::sign(case_minus_comp);
+  if (dif_coding){
+    case_minus_comp = arma::sign(case_minus_comp);
+  }
   arma::umat case_comp_different = case_permuted != comp_permuted;
   arma::umat both_one_mat = case_permuted == 1 && comp_permuted == 1;
   arma::umat case2_mat = case_permuted == 2;
@@ -1898,7 +1900,9 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
   // compute matrices for computing observed fitness score
   arma::mat case_minus_comp_arma = case_arma - comp_arma;
-  case_minus_comp_arma = arma::sign(case_minus_comp_arma);
+  if (dif_coding){
+    case_minus_comp_arma = arma::sign(case_minus_comp_arma);
+  }
   arma::umat case_comp_different_arma = case_arma != comp_arma;
   arma::umat both_one_mat_arma = case_arma == 1 && comp_arma == 1;
   arma::umat case2_arma = case_arma == 2;
@@ -1962,7 +1966,6 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
                                                                  n_families, target_block_ld_mat, weight_lookup,
                                                                  n_different_snps_weight, n_both_one_weight,
                                                                  recessive_ref_prop, recode_test_stat, dif_coding);
-
   // compute p-value
   double N = n_permutes + 1;
   double pval = sum(perm_fitness_scores >= obs_fitness_score)/N;
