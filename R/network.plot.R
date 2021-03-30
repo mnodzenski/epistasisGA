@@ -77,7 +77,7 @@
 #'
 #'  ## compute edge scores
 #'  set.seed(20)
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 0.5)
+#'  edge.dt <- compute.pair.scores(final.results, pp.list, pval.thresh = 0.5)
 #'
 #' ## plot
 #' set.seed(10)

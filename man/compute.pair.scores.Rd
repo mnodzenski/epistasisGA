@@ -7,7 +7,6 @@
 compute.pair.scores(
   results.list,
   pp.list,
-  n.top.chroms = 10,
   score.type = "logsum",
   pval.thresh = 0.05,
   n.permutes = 10000,
@@ -27,8 +26,6 @@ Each data.table in the list should be subset to the top \code{n.top.scores} scor
 otherwise an error will be returned.}
 
 \item{pp.list}{The list output by \code{preprocess.genetic.data} run on the observed data.}
-
-\item{n.top.chroms}{The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.}
 
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
@@ -112,7 +109,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
- edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 0.5)
+ edge.dt <- compute.pair.scores(final.results, pp.list, pval.thresh = 0.5)
 
  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 

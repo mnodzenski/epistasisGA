@@ -7,7 +7,6 @@
 #'  Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 #'  otherwise an error will be returned.
 #' @param pp.list The list output by \code{preprocess.genetic.data} run on the observed data.
-#' @param n.top.chroms The number of top scoring chromosomes to be used in calculating the edge.scores. Defaults to 50.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
 #' graphical scores of chromosomes containing that pair across chromosome sizes. The choice of 'logsum' rather than 'sum'
@@ -76,7 +75,7 @@
 #'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 0.5)
+#'  edge.dt <- compute.pair.scores(final.results, pp.list, pval.thresh = 0.5)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
@@ -86,7 +85,7 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @export
 
-compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 10,
+compute.pair.scores <- function(results.list, pp.list,
                                 score.type = "logsum", pval.thresh = 0.05, n.permutes = 10000,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
                                 recessive.ref.prop = 0.75, recode.test.stat = 1.64, dif.coding = FALSE,
@@ -104,15 +103,6 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 10,
 
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
-        if (n.obs.chroms > n.top.chroms){
-
-            stop("Elements of results.list contain more than n.top.scores fitness scores.")
-
-        } else if (n.obs.chroms < n.top.chroms){
-
-            message("Elements of results.list contain fewer than n.top.scores fitness scores. If intentional, ignore message.")
-
-        }
         chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
         these.cols <- seq_len(chrom.size)
         chrom.mat <- as.matrix(chrom.size.data[ , ..these.cols])
@@ -153,6 +143,7 @@ compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 10,
     all.edge.weights <- rbindlist(bplapply(seq_along(results.list), function(d, results.list){
 
         chrom.size.res <- results.list[[d]]
+        n.top.chroms <- nrow(chrom.size.res)
         chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
         rbindlist(lapply(seq_len(n.top.chroms), function(res.row) {
 
