@@ -7,7 +7,7 @@
 compute.pair.scores(
   results.list,
   pp.list,
-  n.top.chroms = 50,
+  n.top.chroms = 10,
   score.type = "logsum",
   pval.thresh = 0.05,
   n.permutes = 10000,

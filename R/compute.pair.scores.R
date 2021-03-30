@@ -86,10 +86,11 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @export
 
-compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 50, score.type = "logsum",
-                                pval.thresh = 0.05, n.permutes = 10000, n.different.snps.weight = 2,
-                                n.both.one.weight = 1, weight.function.int = 2, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, dif.coding = FALSE, bp.param = bpparam()) {
+compute.pair.scores <- function(results.list, pp.list, n.top.chroms = 10,
+                                score.type = "logsum", pval.thresh = 0.05, n.permutes = 10000,
+                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
+                                recessive.ref.prop = 0.75, recode.test.stat = 1.64, dif.coding = FALSE,
+                                bp.param = bpparam()) {
 
     if (pval.thresh > 0.6){
 
