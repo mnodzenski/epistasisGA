@@ -140,12 +140,15 @@ compute.pair.scores <- function(results.list, pp.list,
         stop("No SNP pairs meet p-value threshold")
     }
 
+    #get rid of d where we have no edges
+    results.list <- results.list[n.edges > 0]
+
     all.edge.weights <- rbindlist(bplapply(seq_along(results.list), function(d, results.list){
 
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
         chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
-        rbindlist(lapply(seq_len(n.top.chroms), function(res.row) {
+        chrom.size.pairs <- rbindlist(lapply(seq_len(n.top.chroms), function(res.row) {
 
             chrom.res <- chrom.size.res[res.row, ]
             score <- chrom.res$graphical.score
@@ -168,12 +171,12 @@ compute.pair.scores <- function(results.list, pp.list,
             chrom.pairs <- cbind(chrom.pairs, rsid.dt)
             chrom.pairs[ , `:=`(raw.score = score)]
 
-            #take average score for each pair
-            out.dt <- chrom.pairs[ , list(graphical.score = mean(score)),
-                                   list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
-            return(out.dt)
-
         }))
+
+        #take average score for each pair
+        out.dt <- chrom.size.pairs[ , list(graphical.score = mean(raw.score)),
+                               list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
+        return(out.dt)
 
     }, results.list = results.list, BPPARAM = bp.param))
 
