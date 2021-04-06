@@ -3,7 +3,7 @@
 export(GADGETS)
 export(chrom.fitness.score)
 export(combine.islands)
-export(compute.pair.scores)
+export(compute.graphical.scores)
 export(epistasis.test)
 export(global.test)
 export(network.plot)

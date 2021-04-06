@@ -31,10 +31,14 @@
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
 #' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param bp.param The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.
-#' @return A data.table where the first four columns represent SNPs and the fifth column (edge.score)
-#' is the graphical SNP-pair score.
-#'
-#'@examples
+#' @return A list of two elements:
+#' \describe{
+#'  \item{pair.scores}{A data.table containing SNP-pair graphical scores, where the first four columns represent SNPs and the fifth column (pair.score)
+#' is the graphical SNP-pair score.}
+#'  \item{snp.scores}{A data.table containing individual SNP graphical scores, where the first two columns represent SNPs and the third column (snp.score)
+#' is the graphical SNP score.}
+#' }
+#' @examples
 #'
 #' data(case)
 #' data(dad)
@@ -75,7 +79,7 @@
 #'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, pval.thresh = 0.5)
+#'  edge.dt <- compute.graphical.scores(final.results, pp.list, pval.thresh = 0.5)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
@@ -83,9 +87,10 @@
 #' @importFrom matrixStats colSds
 #' @importFrom utils combn
 #' @importFrom BiocParallel bplapply bpparam
+#' @importFrom data.table melt
 #' @export
 
-compute.pair.scores <- function(results.list, pp.list,
+compute.graphical.scores <- function(results.list, pp.list,
                                 score.type = "logsum", pval.thresh = 0.05, n.permutes = 10000,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
                                 recessive.ref.prop = 0.75, recode.test.stat = 1.64, dif.coding = FALSE,
@@ -97,10 +102,8 @@ compute.pair.scores <- function(results.list, pp.list,
 
     }
 
-    ## make sure we have the correct number of chromosomes in each element of the results list
-    ## and then return just the chromosomes of interest
+    ## divide up results into list of chromosome lists
     chrom.list <- lapply(results.list, function(chrom.size.data){
-
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
         chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
@@ -143,7 +146,8 @@ compute.pair.scores <- function(results.list, pp.list,
     #get rid of d where we have no edges
     results.list <- results.list[n.edges > 0]
 
-    all.edge.weights <- rbindlist(bplapply(seq_along(results.list), function(d, results.list){
+    # edge weights
+    edge.weights <- rbindlist(bplapply(seq_along(results.list), function(d, results.list){
 
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
@@ -173,37 +177,73 @@ compute.pair.scores <- function(results.list, pp.list,
 
         }))
 
-        #take average score for each pair
-        out.dt <- chrom.size.pairs[ , list(graphical.score = mean(raw.score)),
-                               list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
-        return(out.dt)
+        return(chrom.size.pairs)
+
+    }, results.list = results.list, BPPARAM = bp.param))
+
+    # node weights
+    node.weights <- rbindlist(bplapply(seq_along(results.list), function(d, results.list){
+
+        # chromosome specific results
+        chrom.size.res <- results.list[[d]]
+        n.top.chroms <- nrow(chrom.size.res)
+        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        these.cols <- seq_len(chrom.size)
+        scores <- chrom.size.res$graphical.score
+
+        # snp number data.table
+        snp.dt <- chrom.size.res[ , ..these.cols]
+        snp.dt$raw.score <- scores
+
+        # rsid data.table
+        rsid.cols <- seq(chrom.size + 1, 2*chrom.size)
+        rsid.dt <- chrom.size.res[ , ..rsid.cols]
+        rsid.dt$raw.score <- scores
+
+        # melt
+        snp.cols <- seq_len(chrom.size)
+        snp.dt.long <- melt(snp.dt, 'raw.score', snp.cols)
+        snp.dt.long$variable <- NULL
+        colnames(snp.dt.long) <- c("raw.score", "SNP")
+        rsid.dt.long <- melt(rsid.dt, 'raw.score', snp.cols)
+
+        # combine into data.table of SNPs and graphical score
+        snp.dt.long$rsid <- rsid.dt.long$value
+
+        # return result
+        return(snp.dt.long)
 
     }, results.list = results.list, BPPARAM = bp.param))
 
     # remove the NA's
-    all.edge.weights <- all.edge.weights[!is.na(all.edge.weights$graphical.score), ]
+    edge.weights <- edge.weights[!is.na(edge.weights$raw.score), ]
+    node.weights <- node.weights[!is.na(node.weights$raw.score), ]
 
-    # compute edge score based on score.type
+    # compute score based on score.type
     if (score.type == "max"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = max(graphical.score)), list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
-        setorder(out.dt, -edge.score)
+        snp.pair.scores <- edge.weights[ , list(pair.score = max(raw.score)), list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
+        snp.scores <- node.weights[ , list(snp.score = max(raw.score)), list(SNP, rsid)]
+        setorder(snp.pair.scores, -pair.score)
+        setorder(snp.scores, -snp.score)
 
     } else if (score.type == "sum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = sum(graphical.score)),
-                                    list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
-        setorder(out.dt, -edge.score)
+        snp.pair.scores <- edge.weights[ , list(pair.score = sum(raw.score)), list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
+        snp.scores <- node.weights[ , list(snp.score = sum(raw.score)), list(SNP, rsid)]
+        setorder(snp.pair.scores, -pair.score)
+        setorder(snp.scores, -snp.score)
 
     } else if (score.type == "logsum"){
 
-        out.dt <- all.edge.weights[ , list(edge.score = log(sum(graphical.score))),
-                                    list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
-        setorder(out.dt, -edge.score)
+        snp.pair.scores <- edge.weights[ , list(pair.score = log(sum(raw.score))), list(SNP1, SNP2, SNP1.rsid, SNP2.rsid)]
+        snp.scores <- node.weights[ , list(snp.score = log(sum(raw.score))), list(SNP, rsid)]
+        setorder(snp.pair.scores, -pair.score)
+        setorder(snp.scores, -snp.score)
 
     }
 
-    return(out.dt)
+    return(list(pair.scores = snp.pair.scores, snp.scores = snp.scores))
 
 }
 
