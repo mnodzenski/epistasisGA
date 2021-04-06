@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "March 2, 2020"
+date: "April 2, 2020"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -337,7 +337,7 @@ As a final step in the analytic pipeline, we recommend users examine network plo
 
 Briefly, we use our epistasis test p-values to assign graphical scores to pairs of SNPs identified in top-scoring chromosomes, with higher scores corresponding to lower epistasis p-values (more substantial evidence for epistasis). We then aggregate those pair-scores across chromosome sizes to generate a final collection of SNP-pairs, which we display in a single network plot.
 
-We start by computing the SNP-pair scores using `compute.pair.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from function `preprocess.genetic.data`. For analysts who have run the permutation-based global test, we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores that exceed the corresponding null threshold for each chromosome size: 
+We start by computing the SNP-pair scores using `compute.graphical.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from function `preprocess.genetic.data`. For analysts who have run the permutation-based global test, we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores that exceed the corresponding null threshold for each chromosome size: 
 
 ```{r}
 # vector of 95th percentile of null fitness scores 
@@ -362,37 +362,50 @@ obs.res.list.no.permutes <- list(size3.combined.res[1:5, ], size4.combined.res[1
 
 ```
 
-Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.     
+Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take 10-20 minutes to complete.     
 
 ```{r}
 set.seed(10)
-pair.scores <- compute.pair.scores(obs.res.list, pp.list)
+graphical.scores <- compute.graphical.scores(obs.res.list, pp.list)
 
 ```
 
 Next, we input these pair scores into function `network.plot` to actually plot the data. 
  
 ```{r, fig.width = 14, fig.height = 12}
-network.plot(pair.scores, pp.list, graph.area = 200,
+network.plot(graphical.scores, pp.list, graph.area = 200,
              node.size = 40, vertex.label.cex = 2)
 ```
 
 We see the true pathway SNPs appear prominently in this plot. Key features of the plotting approach are (1) the thickness of the SNP-to-SNP line segments is proportional to the log of the graphical score for that pair and (2) the area of each node circle is proportional to the log of the sum of the graphical scores for all pairs that include the SNP. Although not seen in the plot above, dashed connections indicate SNPs in high LD (pairwise $r^2 \geq 0.1$ by default) in the unaffected siblings/complements. 
 
-This function uses the Fruchterman-Reingold force directed graph drawing algorithm, as implemented in the `qgraph` R package. If other layout algorithms are desired, users can specify `plot = FALSE` to `network.plot`, which will return an `igraph` object that can be used for more customized or interactive plotting. 
+This function uses the Fruchterman-Reingold force directed graph drawing algorithm, as implemented in the `qgraph` R package. If other layout algorithms are desired, users can specify `plot = FALSE` to `network.plot`, which will return an `igraph` object that can be used for more customized or interactive plotting. For instance, the `igraph` package function `tkplot` allows for interactive plotting of `igraph` objects. 
 
-As a more minor point, the SNP labels default to the RSIDs provided, as seen in the third and fourth columns of the `pair.scores` data frame:
-```{r}
-head(pair.scores)
+In real applications, there may be too many SNPs for a network plot to fit on a single page. In those instances, we plot a subset of the top scoring pairs. For example, we could plot the top 6 scoring pairs as follows:
+
+```{r, fig.width = 14, fig.height = 12}
+network.plot(graphical.scores, pp.list, 
+             n.top.scoring.pairs = 6, graph.area = 10,
+             node.size = 40, vertex.label.cex = 2)
+
 ```
 
-However, if users desire custom labels, they can do so by changing the values in the third and fourth columns. For instance, here we label the true risk SNPs with a star and leave all others blank:
+As a more minor point, the SNP labels default to the RSIDs provided, as seen in the third and fourth columns of the `pair.scores` object, and the second column of `snp.scores`:
+```{r}
+head(graphical.scores[["pair.scores"]])
+head(graphical.scores[["snp.scores"]])
+```
+
+However, if users desire custom labels, they can do so by changing the corresponding values. For instance, here we label the true risk SNPs with a star and leave all others blank:
 
 ```{r, fig.width = 14, fig.height = 12}
 risk.numbers <- c(51, 52, 76, 77)
-pair.scores$SNP1.rsid <- ifelse(pair.scores$SNP1 %in% risk.numbers, "*", "")
-pair.scores$SNP2.rsid <- ifelse(pair.scores$SNP2 %in% risk.numbers, "*", "")
-network.plot(pair.scores, pp.list, graph.area = 200,
+graphical.scores[[1]]$SNP1.rsid <- ifelse(graphical.scores[[1]]$SNP1 %in% risk.numbers, 
+                                          "*", "")
+graphical.scores[[1]]$SNP2.rsid <- ifelse(graphical.scores[[1]]$SNP2 %in% risk.numbers,
+                                          "*", "")
+graphical.scores[[2]]$rsid <- ifelse(graphical.scores[[2]]$SNP %in% risk.numbers, "*", "")
+network.plot(graphical.scores, pp.list, graph.area = 200,
              node.size = 40, vertex.label.cex = 10)
 
 ```

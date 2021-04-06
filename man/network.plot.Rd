@@ -5,9 +5,10 @@
 \title{A function to plot a network of SNPs with potential multi-SNP effects.}
 \usage{
 network.plot(
-  edge.dt,
+  graphical.score.list,
   preprocessed.list,
   score.type = "logsum",
+  n.top.scoring.pairs = NULL,
   node.shape = "circle",
   repulse.rad = 1000,
   node.size = 25,
@@ -26,7 +27,7 @@ network.plot(
 )
 }
 \arguments{
-\item{edge.dt}{The data.table returned by function \code{compute.edge.scores}, or a subset of it. By default, the SNPs
+\item{graphical.score.list}{The list returned by function \code{compute.graphical.scores}, or a subset of it. By default, the SNPs
 will be labeled with their RSIDs, listed in columns 3 and 4. Users can create custom labels by changing the values in these
 two columns.}
 
@@ -37,6 +38,9 @@ two columns.}
 graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
 for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
 Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.}
+
+\item{n.top.scoring.pairs}{An integer indicating the number of top scoring pairs to plot. Defaults to, NULL, which plots all pairs.
+For large networks, plotting a subset of the top scoring pairs can improve the appearance of the graph.}
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.}
 
@@ -124,11 +128,11 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
 
  ## compute edge scores
  set.seed(20)
- edge.dt <- compute.pair.scores(final.results, pp.list, pval.thresh = 0.5)
+ graphical.list <- compute.graphical.scores(final.results, pp.list, pval.thresh = 0.5)
 
 ## plot
 set.seed(10)
-network.plot(edge.dt, pp.list)
+network.plot(graphical.list, pp.list)
 
  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 

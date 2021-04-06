@@ -13,6 +13,6 @@ if (getRversion() >= "2.15.1") {
         "Var1", "Var2", "name", "cluster", "job.id", "V1", "V2", "edge.score", "h.score",
         "..choose.these", "..these.cols", "..rsid.cols", "SNP1", "SNP2", "SNP1.rsid",
         "SNP2.rsid", "NA_INTEGER", "..allele.copy.cols", "..risk.sign.cols","graphical.score",
-        "data.type", "raw.score"))
+        "data.type", "raw.score", "SNP", "pair.score", "rsid", "snp.score"))
 
 }

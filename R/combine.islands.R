@@ -99,8 +99,6 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         return(chrom.results)
 
     })
-
-    # all results
     combined.result <- rbindlist(island.list)
     setorder(combined.result, -fitness.score)
     chromosome.size <- sum(grepl("snp", colnames(combined.result)))/3
