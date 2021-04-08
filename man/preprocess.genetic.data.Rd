@@ -49,9 +49,11 @@ real numbers. See argument \code{prob} from function \code{sample} for more deta
 \value{
 A list containing the following:
 \describe{
- \item{case.genetic.data}{The pre-processed version of the case genetic data.}
+ \item{case.genetic.data}{The pre-processed version of the case genetic data. Any missing genotypes for a given family will be coded as -9 for both case and complement,
+ resulting in that family being uninformative for that SNP.}
  \item{complement.genetic.data}{Pre-processed complement or unaffected sibling genetic data. If mother and father data are input,
- the complement genetic data are first created and then pre-processed.}
+ the complement genetic data are first created and then pre-processed. Any missing genotypes for a given family will be coded as -9 for both case and complement,
+ resulting in that family being uninformative for that SNP.}
  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
  is not specified, and \code{snp.sampling.probs} if specified.}
  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
