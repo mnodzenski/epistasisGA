@@ -376,6 +376,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// find_top_chrom
+List find_top_chrom(NumericVector fitness_scores, List chromosome_list, int chromosome_size);
+RcppExport SEXP _epistasisGA_find_top_chrom(SEXP fitness_scoresSEXP, SEXP chromosome_listSEXP, SEXP chromosome_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type fitness_scores(fitness_scoresSEXP);
+    Rcpp::traits::input_parameter< List >::type chromosome_list(chromosome_listSEXP);
+    Rcpp::traits::input_parameter< int >::type chromosome_size(chromosome_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_top_chrom(fitness_scores, chromosome_list, chromosome_size));
+    return rcpp_result_gen;
+END_RCPP
+}
 // initiate_population
 List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector original_col_numbers, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, int n_migrations, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, int max_generations, bool initial_sample_duplicates, bool dif_coding);
 RcppExport SEXP _epistasisGA_initiate_population(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP original_col_numbersSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP comp2_matSEXP, SEXP comp0_matSEXP, SEXP n_migrationsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP dif_codingSEXP) {
@@ -405,19 +418,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
     rcpp_result_gen = Rcpp::wrap(initiate_population(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_migrations, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, dif_coding));
-    return rcpp_result_gen;
-END_RCPP
-}
-// find_top_chrom
-List find_top_chrom(NumericVector fitness_scores, List chromosome_list, int chromosome_size);
-RcppExport SEXP _epistasisGA_find_top_chrom(SEXP fitness_scoresSEXP, SEXP chromosome_listSEXP, SEXP chromosome_sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type fitness_scores(fitness_scoresSEXP);
-    Rcpp::traits::input_parameter< List >::type chromosome_list(chromosome_listSEXP);
-    Rcpp::traits::input_parameter< int >::type chromosome_size(chromosome_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(find_top_chrom(fitness_scores, chromosome_list, chromosome_size));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -628,8 +628,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGA_chrom_fitness_score", (DL_FUNC) &_epistasisGA_chrom_fitness_score, 18},
     {"_epistasisGA_chrom_fitness_list", (DL_FUNC) &_epistasisGA_chrom_fitness_list, 18},
     {"_epistasisGA_compute_population_fitness", (DL_FUNC) &_epistasisGA_compute_population_fitness, 18},
-    {"_epistasisGA_initiate_population", (DL_FUNC) &_epistasisGA_initiate_population, 22},
     {"_epistasisGA_find_top_chrom", (DL_FUNC) &_epistasisGA_find_top_chrom, 3},
+    {"_epistasisGA_initiate_population", (DL_FUNC) &_epistasisGA_initiate_population, 22},
     {"_epistasisGA_evolve_island", (DL_FUNC) &_epistasisGA_evolve_island, 27},
     {"_epistasisGA_check_convergence", (DL_FUNC) &_epistasisGA_check_convergence, 2},
     {"_epistasisGA_check_max_gens", (DL_FUNC) &_epistasisGA_check_max_gens, 2},

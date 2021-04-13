@@ -1039,69 +1039,6 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
 
 }
 
-///////////////////////////////////////////
-// function to initiate island populations
-///////////////////////////////////////////
-
-// [[Rcpp::export]]
-List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
-                         LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat,
-                         LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector original_col_numbers,
-                         IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
-                         LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, int n_migrations,
-                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                         int max_generations = 500, bool initial_sample_duplicates = false,
-                         bool dif_coding = false){
-
-  int n_possible_unique_combn = n_chromosomes * chromosome_size;
-  if ((case_genetic_data.ncol() < n_possible_unique_combn) & !initial_sample_duplicates) {
-
-    Rcout << "Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.\n";
-    initial_sample_duplicates = true;
-
-  }
-
-  // make initial chromosome list
-  List chromosome_list(n_chromosomes);
-  IntegerVector all_snps_idx = seq_len(case_genetic_data.ncol());
-
-  for (int i = 0; i < n_chromosomes; i++) {
-
-    IntegerVector snp_idx = sample(all_snps_idx, chromosome_size, false);
-    std::sort(snp_idx.begin(), snp_idx.end());
-    if (!initial_sample_duplicates) {
-
-      LogicalVector not_these = !in(all_snps_idx, snp_idx);
-      all_snps_idx = all_snps_idx[not_these];
-
-    }
-    chromosome_list[i] = snp_idx;
-
-  }
-
-
-  // initiate storage objects
-  List top_generation_chromosome(max_generations);
-  int generation = 1;
-  bool last_gens_equal = false;
-
-  // compute fitness scores for the chromosome list
-  List current_fitness = compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different,
-                                                    case_minus_comp, both_one_mat, block_ld_mat, chromosome_list,
-                                                    original_col_numbers, weight_lookup, case2_mat, case0_mat,
-                                                    comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight,
-                                                    recessive_ref_prop, recode_test_stat, dif_coding);
-
-  List res = List::create(Named("top_generation_chromosome") = top_generation_chromosome,
-                          Named("current_fitness") = current_fitness,
-                          Named("generation") = generation,
-                          Named("last_gens_equal") = last_gens_equal);
-  return(res);
-
-}
-
-
 /////////////////////////////////////////////////
 // function to pick out the top chromosome
 // and generate a list of unique chroms
@@ -1155,7 +1092,80 @@ List find_top_chrom(NumericVector fitness_scores, List chromosome_list, int chro
 
 }
 
+///////////////////////////////////////////
+// function to initiate island populations
+///////////////////////////////////////////
 
+// [[Rcpp::export]]
+List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
+                         LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat,
+                         LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector original_col_numbers,
+                         IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
+                         LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, int n_migrations,
+                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+                         int max_generations = 500, bool initial_sample_duplicates = false,
+                         bool dif_coding = false){
+
+  int n_possible_unique_combn = n_chromosomes * chromosome_size;
+  if ((case_genetic_data.ncol() < n_possible_unique_combn) & !initial_sample_duplicates) {
+
+    Rcout << "Not enough SNPs present to allow for no initial sample duplicate SNPs, now allowing initial sample duplicate snps.\n";
+    initial_sample_duplicates = true;
+
+  }
+
+  // make initial chromosome list
+  List chromosome_list(n_chromosomes);
+  IntegerVector all_snps_idx = seq_len(case_genetic_data.ncol());
+
+  for (int i = 0; i < n_chromosomes; i++) {
+
+    IntegerVector snp_idx = sample(all_snps_idx, chromosome_size, false);
+    std::sort(snp_idx.begin(), snp_idx.end());
+    if (!initial_sample_duplicates) {
+
+      LogicalVector not_these = !in(all_snps_idx, snp_idx);
+      all_snps_idx = all_snps_idx[not_these];
+
+    }
+    chromosome_list[i] = snp_idx;
+
+  }
+
+
+  // initiate storage objects
+  int generation = 1;
+  bool last_gens_equal = false;
+  bool top_chrom_migrated = false;
+
+  // compute fitness scores for the chromosome list
+  List current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different,
+                                                    case_minus_comp, both_one_mat, block_ld_mat, chromosome_list,
+                                                    original_col_numbers, weight_lookup, case2_mat, case0_mat,
+                                                    comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight,
+                                                    recessive_ref_prop, recode_test_stat, dif_coding);
+
+  // pick out the top and bottom scores
+  chromosome_list = current_fitness_list["chromosome_list"];
+  NumericVector fitness_scores = current_fitness_list["fitness_scores"];
+  List gen_top_chrom_list = find_top_chrom(fitness_scores, chromosome_list, chromosome_size);
+  IntegerVector top_chromosome = gen_top_chrom_list["top_chromosome"];
+  List lower_chromosomes = gen_top_chrom_list["lower_chromosomes"];
+
+  // counter for same top chrom
+  int same_top_chrom = 1;
+
+  List res = List::create(Named("current_top_generation_chromosome") = top_chromosome,
+                          Named("current_lower_chromosomes") = lower_chromosomes,
+                          Named("top_chrom_migrated") = top_chrom_migrated,
+                          Named("current_fitness") = current_fitness_list,
+                          Named("generation") = generation,
+                          Named("last_gens_equal") = last_gens_equal,
+                          Named("n_gens_same_top_chrom") = same_top_chrom);
+  return(res);
+
+}
 
 ///////////////////////////////////////////
 // function to evolve island populations
@@ -1189,8 +1199,12 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   }
 
   // grab input population data
-  List top_generation_chromosome = population["top_generation_chromosome"];
+  IntegerVector top_chromosome = population["current_top_generation_chromosome"];
+  List lower_chromosomes = population["current_lower_chromosomes"];
+  int n_gens_same_top_chrom = population["n_gens_same_top_chrom"];
+  bool same_last_gens = population["last_gens_equal"];
   List current_fitness_list = population["current_fitness"];
+  bool top_chrom_migrated = population["top_chrom_migrated"];
 
   //parse the current population fitness scores
   List chromosome_list = current_fitness_list["chromosome_list"];
@@ -1200,15 +1214,6 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   List risk_allele_vecs = current_fitness_list["risk_allele_vecs"];
   IntegerVector n_case_risk_geno_vec = current_fitness_list["n_case_risk_geno_vec"];
   IntegerVector n_comp_risk_geno_vec = current_fitness_list["n_comp_risk_geno_vec"];
-
-  // pick out the top and bottom scores
-  List gen_top_chrom_list = find_top_chrom(fitness_scores, chromosome_list, chromosome_size);
-  IntegerVector top_chromosome = gen_top_chrom_list["top_chromosome"];
-  List lower_chromosomes = gen_top_chrom_list["lower_chromosomes"];
-  top_generation_chromosome[0] = top_chromosome;
-
-  // counter for same top chrom
-  int same_top_chrom = 1;
 
   // iterate over generations
   bool all_converged = false;
@@ -1430,7 +1435,6 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
     //7. Increment iterators
     generation += 1;
-    population["generation"] = generation;
 
     // 8. pick out relevant pieces of the output
     NumericVector fitness_scores_tmp = current_fitness_list["fitness_scores"];
@@ -1444,33 +1448,37 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     n_comp_risk_geno_vec = n_comp_risk_geno_vec_tmp;
 
     // 9. identify the top scoring candidate solution(s) and fitness score
-    gen_top_chrom_list = find_top_chrom(fitness_scores, chromosome_list, chromosome_size);
-    IntegerVector top_chromosome_tmp = gen_top_chrom_list["top_chromosome"];
-    top_chromosome = top_chromosome_tmp;
+    List gen_top_chrom_list = find_top_chrom(fitness_scores, chromosome_list, chromosome_size);
+    IntegerVector new_top_chromosome = gen_top_chrom_list["top_chromosome"];
     lower_chromosomes = gen_top_chrom_list["lower_chromosomes"];
-    top_generation_chromosome[generation - 1] = top_chromosome;
 
     // check if the top chromosome is the same as the previous generation
-    if (generation > 1){
+    if (top_chrom_migrated){
 
-      IntegerVector prev_top_chrom = top_generation_chromosome[generation - 2];
-      if (is_true(all(top_chromosome == prev_top_chrom))){
+      n_gens_same_top_chrom = 1;
+      top_chrom_migrated = false;
 
-        same_top_chrom += 1;
+    } else {
+
+      if (is_true(all(new_top_chromosome == top_chromosome))){
+
+        n_gens_same_top_chrom += 1;
 
       } else {
 
-        same_top_chrom = 1;
+        n_gens_same_top_chrom = 1;
 
       }
 
     }
 
+    // update the current top generation chromosome
+    top_chromosome = new_top_chromosome;
+
     // check to see if we can stop iterating over generations
     if ((generation >= gen_same_fitness)) {
 
-      bool same_last_gens = same_top_chrom >= gen_same_fitness;
-      population["last_gens_equal"] = same_last_gens;
+      same_last_gens = n_gens_same_top_chrom >= gen_same_fitness;
 
       if (n_migrations == 0){
 
@@ -1512,6 +1520,13 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
     pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
 
+    population["last_gens_equal"] = same_last_gens;
+    population["current_top_generation_chromosome"] = top_chromosome;
+    population["current_lower_chromosomes"] = lower_chromosomes;
+    population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
+    population["generation"] = generation;
+    population["top_chrom_migrated"] = top_chrom_migrated;
+
     // return the population
     return(population);
 
@@ -1526,6 +1541,13 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
     pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
     pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
+
+    population["last_gens_equal"] = same_last_gens;
+    population["current_top_generation_chromosome"] = top_chromosome;
+    population["current_lower_chromosomes"] = lower_chromosomes;
+    population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
+    population["generation"] = generation;
+    population["top_chrom_migrated"] = top_chrom_migrated;
 
     return(population);
 
@@ -1699,6 +1721,22 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
       IntegerVector second_island_comp_geno = second_island_current["n_comp_risk_geno_vec"];
       IntegerVector comp_geno_migrations = second_island_comp_geno[donor_idx];
       first_island_comp_geno[receiver_idx] = comp_geno_migrations;
+
+      // update the top/lower chromosomes, and the n_same_last_gens
+      List gen_top_chrom_list = find_top_chrom(first_island_fitness_scores, first_island_chroms, chromosome_size);
+      IntegerVector new_top_chromosome = gen_top_chrom_list["top_chromosome"];
+      List lower_chromosomes = gen_top_chrom_list["lower_chromosomes"];
+      first_island["current_lower_chromosomes"] = lower_chromosomes;
+      IntegerVector top_chromosome = first_island["current_top_generation_chromosome"];
+
+      if (!is_true(all(new_top_chromosome == top_chromosome))){
+
+        first_island["n_gens_same_top_chrom"] = 1;
+        first_island["last_gens_equal"] = false;
+        first_island["current_top_generation_chromosome"] = new_top_chromosome;
+        first_island["top_chrom_migrated"]  = true;
+
+      }
 
     }
 
@@ -1957,9 +1995,6 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   }
   IntegerVector ld_block_idx = seq_len(list_pos);
   ld_blocks = ld_blocks[ld_block_idx - 1];
-
-  // generate null, permuted scores
-  IntegerVector permutes = seq_len(n_permutes);
 
   // loop over permuted datasets and compute fitness scores
   NumericVector perm_fitness_scores = epistasis_test_null_scores(n_permutes, case_inf_arma, comp_inf_arma, ld_blocks,
