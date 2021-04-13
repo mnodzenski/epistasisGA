@@ -119,8 +119,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         complement.genetic.data[, !minor.alleles] <- 2 - complement.genetic.data[, !minor.alleles]
 
         ### remove the snps not meeting the required allele frequency threshold ###
-        father.genetic.data <- father.genetic.data[, !below.maf.threshold]
-        mother.genetic.data <- mother.genetic.data[, !below.maf.threshold]
         case.genetic.data <- case.genetic.data[, !below.maf.threshold]
         complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
         block.ld.mat <- block.ld.mat[!below.maf.threshold, !below.maf.threshold]

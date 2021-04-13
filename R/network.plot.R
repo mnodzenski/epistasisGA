@@ -107,7 +107,7 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
     edge.dt <- graphical.score.list[["pair.scores"]]
     node.dt <- graphical.score.list[["snp.scores"]]
 
-    # if plotting a subset pairs, subset input data
+    # if plotting a subset of pairs, subset input data
     if (!is.null(n.top.scoring.pairs)){
 
         edge.dt <- edge.dt[seq_len(n.top.scoring.pairs), ]

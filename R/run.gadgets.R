@@ -148,7 +148,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### if no migrations, correctly set the migration.interval
     if (n.migrations == 0){
 
-        migration.generations = generations
+        migration.generations <- generations
     }
 
     ### compute the weight lookup table ###
