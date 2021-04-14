@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "April 2, 2020"
+date: "April 14, 2020"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -103,6 +103,8 @@ pp.list <- preprocess.genetic.data(case.genetic.data = combined.case,
                                    block.ld.mat = block.ld.mat)
 
 ```
+
+Importantly, X chromosome SNPs can be used as candidates for GADGETS, but some extra attention is required. Specifically, for affected/unaffected sibling data, both siblings in each pair should be of the same biological sex. For case-parent triad data, the 'complement' should be assumed to be of the same sex as the case. As a consequence, analysts must input triad data containing X chromosome SNPs as `case.genetic.data` and `complement.genetic.data`, as shown above, after manually creating the complement data for these triads. To do so, autosomal SNP complements should still be created as above (mother genotype + father genotype - case genotype), but the X chromosome SNP complement genotypes should be the allele transmitted by the father to the case *and* the allele *not* transmitted by the mother to the case. Note this will result in male X chromosome SNP case and complement genotypes being coded as 0 or 1, compared to 0, 1, or 2 for females. If males and females are both contained in the analysis dataset, analysts may wish to double male X chromosome SNP allele counts (male genotype 1 re-coded as 2) because half of the X copies are typically silenced in females. This, however, is not required and analysts can decide on a SNP-by-SNP basis. Alternatively, GADGETS could be run separately for males and females, in which case doubling male X chromosome allele counts would not be necessary. 
 
 The `preprocess.genetic.data` function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP based on the observed frequency in the mothers and fathers (or both siblings in sibling studies). The coding is then flipped for any SNPs where the allele count corresponds to the major allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 0\% by default (no filtering), are removed. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each SNP assuming a log-additive model using the method of conditioning on the set of transmitted and untransmitted genotypes, regardless of phase, described by @Cordell2002. These statistics are used in GADGETS when SNPs are sampled for mutation, with the sampling probability for a given SNP proportional to its $\sqrt{\chi^2}$ value. Alternatively, users can manually specify a vector proportional to SNP sampling probabilities using argument `snp.sampling.probs`. This may be of interest to users who wish to incorporate prior biological or expert knowledge into the algorithm to prioritize sampling a subset of particularly interesting SNPs.   
 
