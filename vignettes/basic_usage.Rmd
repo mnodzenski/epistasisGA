@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "April 14, 2020"
+date: "April 26, 2021"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -288,7 +288,7 @@ global.test.res$pval
 
 ```
 
-We see the observed $T$ for our simple example is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. If we overlay the observed $T$ on a boxplot of the permutations, we see the observed distance is a huge outlier even when taking logs: 
+We see the observed $T$ for our simple example is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. Note the permutation p-values for both for the `global.test` and `epistasis.test` functions are computed as one plus the number of permutation test statistics that exceed the observed test statistic divided the number of permutations plus one [@phipson], underscoring the need to run as many permutations as computationally possible. If we overlay the observed $T$ on a boxplot of the permutations, we see the observed distance is a huge outlier even when taking logs: 
 
 ```{r, echo = FALSE}
 library(ggplot2)
@@ -314,8 +314,6 @@ ggplot(plot.data, aes(x = factor(""), y = distance, color = data)) + geom_boxplo
 
 ```
 
-In cases where the p-value is zero, users may wish to report the p-value as $\frac{1}{\#\:permutations + 1}$ or $\lt\frac{1}{\#\:permutations + 1}$. Above, this would be $\frac{1}{5}$. Note that this underscores the need to run as many permutations as is computationally feasible in real applications.   
-
 ## Post-hoc Analyses 
 
 Regardless of result, it is crucial that users are clear about what the test implies. The null hypothesis is that the observed test statistic is drawn from the null distribution, i.e., that the global patterns of transmissions to cases are not systematically different from those to the corresponding complements or unaffected siblings. In situations where we reject the null hypothesis, of course the conclusion is the observed test statistic is very different from from the null distribution. However, to best characterize results, it is incumbent on users to closely examine results beyond the global test. In particular, we would like to be able to identify the specific subsets of SNPs that are collectively related to risk.
@@ -328,7 +326,7 @@ global.test.res$marginal.pvals
 
 ```
 
-The `obs.marginal.test.stats` object reports the fitness score sums for each chromosome size for the observed data. The `marginal.pvals` object reports the proportion of permutation based fitness score sum statistics, $T_d$ that exceed the observed statistic for each chromosome size. In this case, we see that none of the permutation based statistics exceeded the observed value for either chromosome size. 
+The `obs.marginal.test.stats` object reports the fitness score sums for each chromosome size for the observed data. The `marginal.pvals` object reports a permutation p-value for each distinct chromosome size. 
 
 Second, users may also wish to examine the `max.obs.fitness` and `max.order.pvals` elements of the output:
 
@@ -338,7 +336,7 @@ global.test.res$max.order.pvals
 
 ```
 
-The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the proportion of permutations whose maximum fitness score exceeds the maximum observed fitness score. In the example above, we see the maximum observed fitness score exceeds all of the permutation maxima for each chromosome size. Again, given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
+The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the corresponding permutation p-values. Given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
 
 Finally, the function provides boxplots of the observed vs. permuted fitness scores for each element of the input results list:
 
@@ -359,7 +357,7 @@ epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. We make use of these p-values primarily in constructing network plots of potentially interesting SNP-sets.  
+The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. We make use of these 'p-values' primarily in constructing network plots of potentially interesting SNP-sets.  
 
 Users may also receive a warning when executing `epistasis.test` that says "All chromosome SNPs in linkage, returning NA for p-value". This is generated because the procedure can only run if at least two SNPs are not in linkage, as specified in matrix `block.ld.mat`, otherwise other methods (not provided in this package) are required. 
 

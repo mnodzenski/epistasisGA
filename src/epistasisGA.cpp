@@ -2003,7 +2003,8 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
                                                                  recessive_ref_prop, recode_test_stat, dif_coding);
   // compute p-value
   double N = n_permutes + 1;
-  double pval = sum(perm_fitness_scores >= obs_fitness_score)/N;
+  double B = sum(perm_fitness_scores >= obs_fitness_score);
+  double pval = (B + 1)/N;
 
   //return result
   List res = List::create(Named("pval") = pval,
@@ -2041,11 +2042,6 @@ NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List 
     if (pval_na){
 
       pval = 0.5;
-
-    }
-    if (pval == 0){
-
-      pval = 1/N;
 
     }
 

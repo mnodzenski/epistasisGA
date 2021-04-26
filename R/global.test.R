@@ -22,7 +22,8 @@
 #'  \item{max.obs.fitness}{A vector of the maximum fitness score for each chromosome size in the observed data.}
 #'  \item{max.perm.fitness}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
 #'  \item{max.order.pvals}{A vector of p-values for the maximum observed order statistics for each chromosome size.
-#'   P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
+#'   P-values are one plus the number of permutation based maximum order statistics that exceed the observed maximum fitness score
+#'   divided by the total number of permutations plus one.}
 #'  \item{boxplot.grob}{A grob of a ggplot plot of the observed vs permuted fitness score densities for each chromosome size.}
 #'  \item{chrom.size.k}{A vector indicating the number of top scores (k) from each chromosome size that the test used.
 #'  This will be equal to \code{n.top.scores} unless GADGETS returns fewer than \code{n.top.scores} unique chromosomes for
@@ -241,7 +242,9 @@ global.test <- function(results.list, n.top.scores = 10) {
     # pval
     obs.test.stat <- global.scores[1]
     perm.test.stats <- global.scores[-1]
-    global.pval <- sum(perm.test.stats >= obs.test.stat)/(length(perm.test.stats) + 1)
+    B <- sum(perm.test.stats >= obs.test.stat)
+    N <- length(perm.test.stats) + 1
+    global.pval <- (B + 1)/N
 
     # also look at element-wise results
     marginal.pvals <- vapply(seq_len(ncol(chrom.size.ranks)), function(x){
@@ -249,7 +252,9 @@ global.test <- function(results.list, n.top.scores = 10) {
         chrom.size.res <- chrom.size.ranks[, x]
         obs.test.stat <- chrom.size.res[1]
         perm.test.stats <- chrom.size.res[-1]
-        pval <- sum(perm.test.stats >= obs.test.stat)/(length(perm.test.stats) + 1)
+        B <- sum(perm.test.stats >= obs.test.stat)
+        N <- length(perm.test.stats) + 1
+        pval <- (B + 1)/N
         pval
 
     }, 1.0)
@@ -284,7 +289,9 @@ global.test <- function(results.list, n.top.scores = 10) {
 
         max.obs <- max.obs.fitness[chrom.size]
         max.perms <- max.perm.fitness[ , chrom.size]
-        pval <- sum(max.perms >= max.obs)/(length(max.perms) + 1)
+        B <- sum(max.perms >= max.obs)
+        N <- length(max.perms) + 1
+        pval <- (B + 1)/N
         pval
 
     }, 1.0)

@@ -29,7 +29,8 @@ A list containing the following:
  \item{max.obs.fitness}{A vector of the maximum fitness score for each chromosome size in the observed data.}
  \item{max.perm.fitness}{A list of vectors for each chromosome size of maximum observed fitness scores for each permutation.}
  \item{max.order.pvals}{A vector of p-values for the maximum observed order statistics for each chromosome size.
-  P-values are the proportion of permutation based maximum order statistics that exceed the observed maximum fitness score.}
+  P-values are one plus the number of permutation based maximum order statistics that exceed the observed maximum fitness score
+  divided by the total number of permutations plus one.}
  \item{boxplot.grob}{A grob of a ggplot plot of the observed vs permuted fitness score densities for each chromosome size.}
  \item{chrom.size.k}{A vector indicating the number of top scores (k) from each chromosome size that the test used.
  This will be equal to \code{n.top.scores} unless GADGETS returns fewer than \code{n.top.scores} unique chromosomes for
