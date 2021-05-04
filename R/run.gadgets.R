@@ -29,9 +29,6 @@
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
-#' @param tol The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
-#' considered to be sufficient to stop the algorithm.
-#' @param n.top.chroms The number of top scoring chromosomes according to fitness score to return. Defaults to 100.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 #'  (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.
 #' @param snp.sampling.type A string indicating how SNPs are to be sampled for mutations. Options are 'chisq', 'random', or 'manual'. The 'chisq' option takes
@@ -48,10 +45,15 @@
 #' @param migration.generations An integer equal to the number of generations between migrations among islands of a distinct cluster.
 #' Argument \code{generations} must be an integer multiple of this value. Defaults to 50.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
-#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+#' @param recessive.ref.prop The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+#' to determine whether to recode the SNP as recessive. Defaults to 0.75.
+#' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
+#' See the GADGETS paper for specific details.
+#' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
+#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
-#'  \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+#'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 #' and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
 #' See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
 #'  \item{n.generations}{The total number of generations run.}
@@ -72,7 +74,8 @@
 #'                                block.ld.mat = block.ld.mat[1:10, 1:10])
 #' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+#'        generations = 2, n.islands = 2, island.cluster.size = 1,
+#'        n.migrations = 0)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -88,16 +91,28 @@
 run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
-    generations = 500, gen.same.fitness = 50, tol = 10^-6, n.top.chroms = 100, initial.sample.duplicates = FALSE,
+    generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recode.threshold = 3) {
+    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, dif.coding = FALSE) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
-    if (island.cluster.size > 1 & migration.generations >= generations) {
+    if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
 
-        stop("migration.generations must be less than generations. Specify island.cluster.size = 1 if no migrations are desired.")
+        stop("migration.generations must be less than generations. Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
 
     }
+    if (n.migrations == 0 & island.cluster.size != 1) {
+
+        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
+
+    }
+
+    if (n.migrations != 0 & island.cluster.size == 1) {
+
+        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
+
+    }
+
     if (migration.generations == 1) {
 
         stop("migration.generations must be greater than 1")
@@ -130,38 +145,67 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     }
 
+    ### if no migrations, correctly set the migration.interval
+    if (n.migrations == 0){
+
+        migration.generations <- generations
+    }
+
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
     weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
+    storage.mode(weight.lookup) <- "integer"
 
     #### grab the analysis data ###
     case.genetic.data <- as.matrix(data.list$case.genetic.data)
+    storage.mode(case.genetic.data) <- "integer"
     complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
+    storage.mode(complement.genetic.data) <- "integer"
     original.col.numbers <- data.list$original.col.numbers
     chisq.stats <- data.list$chisq.stats
     block.ld.mat <- as.matrix(data.list$block.ld.mat)
+    storage.mode(block.ld.mat) <- "logical"
 
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
     chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
 
     ### Compute matrices of differences between cases and complements ###
-    case.minus.comp <- sign(case.genetic.data - complement.genetic.data)
+    if (dif.coding){
+
+        case.minus.comp <- sign(case.genetic.data - complement.genetic.data)
+
+    } else {
+
+        case.minus.comp <- case.genetic.data - complement.genetic.data
+
+    }
+    storage.mode(case.minus.comp) <- "integer"
     case.comp.different <- case.minus.comp != 0
+    storage.mode(case.comp.different) <- "logical"
 
     ### Compute matrix indicating whether both the case and control have 1 copy of the minor allele ###
     both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
+    storage.mode(both.one.mat) <- "logical"
 
     ### compute matrices of whether cases carry 2 or 0 copies of minor allele
     case2.mat <- case.genetic.data == 2
+    storage.mode(case2.mat) <- "logical"
     case0.mat <- case.genetic.data == 0
+    storage.mode(case0.mat) <- "logical"
+
+    ### compute matrices of whether complements carry 2 or 0 copies of minor allele
+    comp2.mat <- complement.genetic.data == 2
+    storage.mode(comp2.mat) <- "logical"
+    comp0.mat <- complement.genetic.data == 0
+    storage.mode(comp0.mat) <- "logical"
 
     ### if running GxE, split input data into lists based on exposure status ###
     exposure <- data.list$exposure
     if (!is.null(exposure)){
 
         case.genetic.data.split <- split(data.frame(case.genetic.data), exposure)
-        exposure.levels <- names(case.genetic.data.split)
+        exposure.levels <- as.character(names(case.genetic.data.split))
         case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)
         complement.genetic.data.list <- lapply(split(data.frame(complement.genetic.data), exposure), as.matrix)
         case.comp.different.list <- lapply(split(data.frame(case.comp.different), exposure), as.matrix)
@@ -169,6 +213,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         both.one.mat.list <- lapply(split(data.frame(both.one.mat), exposure), as.matrix)
         case2.mat.list <- lapply(split(data.frame(case2.mat), exposure), as.matrix)
         case0.mat.list <- lapply(split(data.frame(case0.mat), exposure), as.matrix)
+        comp2.mat.list <- lapply(split(data.frame(comp2.mat), exposure), as.matrix)
+        comp0.mat.list <- lapply(split(data.frame(comp0.mat), exposure), as.matrix)
 
         ### also setting the original objects to null ###
         case.genetic.data <- NULL
@@ -178,6 +224,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         both.one.mat <- NULL
         case2.mat <- NULL
         case0.mat <- NULL
+        comp2.mat <- NULL
+        comp0.mat <- NULL
 
     } else {
 
@@ -188,6 +236,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         both.one.mat.list <- NULL
         case2.mat.list <- NULL
         case0.mat.list <- NULL
+        comp2.mat.list <- NULL
+        comp0.mat.list <- NULL
         exposure.levels <- NULL
 
     }
@@ -277,12 +327,13 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
         case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes,
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
-        case2.mat = case2.mat, case0.mat = case0.mat, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
-        n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
-        max.generations = generations, tol = tol, n.top.chroms = n.top.chroms, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recode.threshold = recode.threshold, exposure.levels = exposure.levels, case.genetic.data.list = case.genetic.data.list,
-        complement.genetic.data.list = complement.genetic.data.list, case.comp.different.list = case.comp.different.list,
-        case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list, case2.mat.list = case2.mat.list, case0.mat.list = case0.mat.list),
+        case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, island.cluster.size = island.cluster.size,
+        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
+        gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
+        crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, dif.coding = dif.coding,
+        exposure.levels = exposure.levels, case.genetic.data.list = case.genetic.data.list, complement.genetic.data.list = complement.genetic.data.list,
+        case.comp.different.list = case.comp.different.list, case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list,
+        case2.mat.list = case2.mat.list, case0.mat.list = case0.mat.list, comp2.mat.list = comp2.mat.list, comp0.mat.list = comp0.mat.list),
         reg = registry)
 
     # chunk the jobs

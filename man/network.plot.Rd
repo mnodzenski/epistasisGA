@@ -5,9 +5,10 @@
 \title{A function to plot a network of SNPs with potential multi-SNP effects.}
 \usage{
 network.plot(
-  edge.dt,
+  graphical.score.list,
   preprocessed.list,
   score.type = "logsum",
+  n.top.scoring.pairs = NULL,
   node.shape = "circle",
   repulse.rad = 1000,
   node.size = 25,
@@ -26,7 +27,7 @@ network.plot(
 )
 }
 \arguments{
-\item{edge.dt}{The data.table returned by function \code{compute.edge.scores}, or a subset of it. By default, the SNPs
+\item{graphical.score.list}{The list returned by function \code{compute.graphical.scores}, or a subset of it. By default, the SNPs
 will be labeled with their RSIDs, listed in columns 3 and 4. Users can create custom labels by changing the values in these
 two columns.}
 
@@ -37,6 +38,9 @@ two columns.}
 graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
 for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
 Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.}
+
+\item{n.top.scoring.pairs}{An integer indicating the number of top scoring pairs to plot. Defaults to, NULL, which plots all pairs.
+For large networks, plotting a subset of the top scoring pairs can improve the appearance of the graph.}
 
 \item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.}
 
@@ -106,27 +110,29 @@ pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = da
 #observed data chromosome size 2
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list)
+       generations = 2, n.islands = 2, island.cluster.size = 1,
+       n.migrations = 0)
+ combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
  #observed data chromosome size 3
  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
- combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list)
+       generations = 2, n.islands = 2, island.cluster.size = 1,
+       n.migrations = 0)
+ combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
  ## create list of results
- final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
+ final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
  set.seed(20)
- edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
+ graphical.list <- compute.graphical.scores(final.results, pp.list, pval.thresh = 0.5)
 
 ## plot
 set.seed(10)
-network.plot(edge.dt, pp.list)
+network.plot(graphical.list, pp.list)
 
  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 

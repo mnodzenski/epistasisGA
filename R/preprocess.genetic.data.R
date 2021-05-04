@@ -17,7 +17,7 @@
 #'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
 #'  to be in LD if they are located on the same biological chromosome.
 #' @param min.allele.freq The minimum minor allele frequency required for a SNP to be considered for inclusion in the genetic algorithm.
-#' Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0.025.
+#' Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0 (no filtering).
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 #'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @param snp.sampling.probs A vector indicating the sampling probabilities of the SNPs in \code{case.genetic.data}. SNPs will be sampled in the
@@ -25,11 +25,14 @@
 #' each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 #' real numbers. See argument \code{prob} from function \code{sample} for more details.
 #' @param categorical.exposures A data.frame of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.
+#' Families with any missing exposure will be excluded from analysis.
 #' @return A list containing the following:
 #' \describe{
-#'  \item{case.genetic.data}{The pre-processed version of the case genetic data.}
+#'  \item{case.genetic.data}{The pre-processed version of the case genetic data. Any missing genotypes for a given family will be coded as -9 for both case and complement,
+#'  resulting in that family being uninformative for that SNP.}
 #'  \item{complement.genetic.data}{Pre-processed complement or unaffected sibling genetic data. If mother and father data are input,
-#'  the complement genetic data are first created and then pre-processed.}
+#'  the complement genetic data are first created and then pre-processed. Any missing genotypes for a given family will be coded as -9 for both case and complement,
+#'  resulting in that family being uninformative for that SNP.}
 #'  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
 #'  is not specified, and \code{snp.sampling.probs} if specified.}
 #'  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
@@ -61,11 +64,11 @@
 #' @export
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
-    mother.genetic.data = NULL, block.ld.mat, min.allele.freq = 0.025, bp.param = bpparam(), snp.sampling.probs = NULL,
+    mother.genetic.data = NULL, block.ld.mat, min.allele.freq = 0, bp.param = bpparam(), snp.sampling.probs = NULL,
     categorical.exposures = NULL) {
 
     # make sure the appropriate genetic data is included
-    if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)) {
+    if (is.null(complement.genetic.data) & (is.null(father.genetic.data) | is.null(mother.genetic.data))) {
 
         stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
 
@@ -97,6 +100,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         }
 
+        # identify families with missing exposure data
+        missing.exposure <- apply(categorical.exposures, 1, function(x) any(is.na(x)))
+        if (sum(missing.exposure) > 0){
+            message(paste("Removing", sum(missing.exposure), "families from analysis due to missing exposure(s)"))
+        }
+
+        # remove missing exposure families
+        categorical.exposures <- categorical.exposures[!missing.exposure, ]
+        case.genetic.data <- case.genetic.data[!missing.exposure, ]
+
         # now make an omnibus, factor variable containing categorical exposure groups
         exposure <- interaction(categorical.exposures)
 
@@ -126,10 +139,50 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
+    # make sure genotypes are integers
+    if (!all(round(case.genetic.data) == case.genetic.data, na.rm = TRUE)){
+
+        stop("case.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+    }
+
+    # check for missing data in the cases
+    missing.case.geno <- is.na(case.genetic.data)
+
     ### find the snps with MAF < minimum threshold in the cases ###
     if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)) {
 
-        alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data)/(4 * nrow(father.genetic.data))
+        # remove families with missing exposure data
+        if (!is.null(categorical.exposures)){
+
+            father.genetic.data <- father.genetic.data[!missing.exposure, ]
+            mother.genetic.data <- mother.genetic.data[!missing.exposure, ]
+
+        }
+
+        if (!all(round(father.genetic.data) == father.genetic.data, na.rm = TRUE)){
+
+            stop("father.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+        }
+
+        if (!all(round(mother.genetic.data) == mother.genetic.data, na.rm = TRUE)){
+
+            stop("mother.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+        }
+
+        # check for missing genotypes in moms and dads
+        missing.father.geno <- is.na(father.genetic.data)
+        missing.mother.geno <- is.na(mother.genetic.data)
+        any.missing.geno <- missing.case.geno | missing.father.geno | missing.mother.geno
+
+        # for now, set missing values to NA for the whole family
+        case.genetic.data[any.missing.geno] <- NA
+        father.genetic.data[any.missing.geno] <- NA
+        mother.genetic.data[any.missing.geno] <- NA
+
+        alt.allele.freqs <- colSums(father.genetic.data + mother.genetic.data, na.rm = TRUE)/(4 * colSums(!any.missing.geno))
         minor.alleles <- alt.allele.freqs < 0.5
         below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
         original.col.numbers <- which(!below.maf.threshold)
@@ -148,10 +201,33 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         case.genetic.data <- case.genetic.data[, !below.maf.threshold]
         complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
         block.ld.mat <- block.ld.mat[!below.maf.threshold, !below.maf.threshold]
+        any.missing.geno <- any.missing.geno[ , !below.maf.threshold]
 
     } else if (!is.null(complement.genetic.data)) {
 
-        alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data)/(4 * nrow(case.genetic.data))
+        if (!all(round(complement.genetic.data) == complement.genetic.data, na.rm = TRUE)){
+
+            stop("complement.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+        }
+
+        # remove families with missing exposure
+        if (!is.null(categorical.exposures)){
+
+            complement.genetic.data <- complement.genetic.data[!missing.exposure, ]
+
+        }
+
+        # check for missing genotypes in complements
+        missing.complement.geno <- is.na(complement.genetic.data)
+
+        # for now, set any missing genotypes to NA for the family
+        any.missing.geno <- missing.case.geno | missing.complement.geno
+        case.genetic.data[any.missing.geno] <- NA
+        complement.genetic.data[any.missing.geno] <- NA
+
+        # identify minor alleles
+        alt.allele.freqs <- colSums(case.genetic.data + complement.genetic.data, na.rm = TRUE)/(4 * colSums(!any.missing.geno))
         minor.alleles <- alt.allele.freqs < 0.5
         below.maf.threshold <- alt.allele.freqs > (1 - min.allele.freq) | alt.allele.freqs < min.allele.freq
         original.col.numbers <- which(!below.maf.threshold)
@@ -165,6 +241,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         case.genetic.data <- case.genetic.data[, !below.maf.threshold]
         complement.genetic.data <- complement.genetic.data[, !below.maf.threshold]
         block.ld.mat <- block.ld.mat[!below.maf.threshold, !below.maf.threshold]
+        any.missing.geno <- any.missing.geno[ , !below.maf.threshold]
 
     }
 
@@ -173,21 +250,49 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         ### use conditional logistic regression to estimate univariate association ###
         case.status <- c(rep(1, nrow(case.genetic.data)), rep(0, nrow(complement.genetic.data)))
         ids <- rep(seq_len(nrow(case.genetic.data)), 2)
-        n <- nrow(case.genetic.data)
-        res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data) {
 
-            case.snp <- case.genetic.data[, snp]
-            comp.snp <- complement.genetic.data[, snp]
+        if (is.null(categorical.exposures)){
 
-            # get p-value of association from conditional logistic regression
-            case.comp.geno <- c(case.snp, comp.snp)
-            clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
-            clogit.chisq <- summary(clogit.res)$logtest[1]
+            res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data) {
 
-            return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+                case.snp <- case.genetic.data[, snp]
+                comp.snp <- complement.genetic.data[, snp]
 
-        }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, BPPARAM = bp.param)
-        chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+                # get p-value of association from conditional logistic regression
+                case.comp.geno <- c(case.snp, comp.snp)
+                clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
+                clogit.chisq <- summary(clogit.res)$logtest[1]
+
+                return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+
+            }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, BPPARAM = bp.param)
+            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+        } else {
+
+            res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data,
+                                                                            exposure) {
+
+                case.snp <- case.genetic.data[, snp]
+                comp.snp <- complement.genetic.data[, snp]
+
+                # get p-value of snp-exposure association from conditional logistic regression
+                case.comp.geno <- c(case.snp, comp.snp)
+                df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure, ids = ids)
+                full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
+                full.model.ll <- full.model$loglik
+                reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
+                reduced.model.ll <- reduced.model$loglik
+                clogit.chisq <- 2*log(full.model.ll - reduced.model.ll)
+
+
+                return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+
+            }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, exposure = exposure,
+            BPPARAM = bp.param)
+            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+        }
 
     } else {
 
@@ -195,9 +300,18 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
+    # make sure case and comp data are stored correctly
+    case.genetic.data <- as.matrix(case.genetic.data)
+    storage.mode(case.genetic.data) <- "integer"
+    complement.genetic.data <- as.matrix(complement.genetic.data)
+    storage.mode(complement.genetic.data) <- "integer"
+
+    # set any missing values to -9
+    case.genetic.data[any.missing.geno] <- -9
+    complement.genetic.data[any.missing.geno] <- -9
+
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
         chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
         minor.allele.vec = minor.alleles, exposure = exposure))
-
 
 }

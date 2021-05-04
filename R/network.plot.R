@@ -2,7 +2,7 @@
 #'
 #' This function plots a network of SNPs with potential multi-SNP effects.
 #'
-#' @param edge.dt The data.table returned by function \code{compute.edge.scores}, or a subset of it. By default, the SNPs
+#' @param graphical.score.list The list returned by function \code{compute.graphical.scores}, or a subset of it. By default, the SNPs
 #' will be labeled with their RSIDs, listed in columns 3 and 4. Users can create custom labels by changing the values in these
 #' two columns.
 #' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
@@ -11,6 +11,8 @@
 #' graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
 #' for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
 #' Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.
+#' @param n.top.scoring.pairs An integer indicating the number of top scoring pairs to plot. Defaults to, NULL, which plots all pairs.
+#' For large networks, plotting a subset of the top scoring pairs can improve the appearance of the graph.
 #' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.
 #' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
 #'  increase to move nodes closer together.
@@ -59,27 +61,29 @@
 #' #observed data chromosome size 2
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list)
+#'        generations = 2, n.islands = 2, island.cluster.size = 1,
+#'        n.migrations = 0)
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  #observed data chromosome size 3
 #'  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-#'        generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
-#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list)
+#'        generations = 2, n.islands = 2, island.cluster.size = 1,
+#'        n.migrations = 0)
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
-#'  final.results <- list(combined.res2$unique.results[1:3, ], combined.res3$unique.results[1:3, ])
+#'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
 #'  set.seed(20)
-#'  edge.dt <- compute.pair.scores(final.results, pp.list, 3, pval.thresh = 1)
+#'  graphical.list <- compute.graphical.scores(final.results, pp.list, pval.thresh = 0.5)
 #'
 #' ## plot
 #' set.seed(10)
-#' network.plot(edge.dt, pp.list)
+#' network.plot(graphical.list, pp.list)
 #'
 #'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
@@ -91,12 +95,28 @@
 #' @importFrom graphics rasterImage axis layout par
 #' @export
 
-network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node.shape = "circle",
+network.plot <- function(graphical.score.list, preprocessed.list, score.type = "logsum",
+                         n.top.scoring.pairs = NULL, node.shape = "circle",
                          repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
                          edge.width.cex = 12, plot = TRUE, edge.color.ramp = c("lightblue", "blue"),
                          node.color.ramp = c("white", "red"), plot.legend = TRUE,
                          high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
                          legend.axis.cex = 1.75, ...) {
+
+    # pick out the pieces of the graphical.score.list
+    edge.dt <- graphical.score.list[["pair.scores"]]
+    node.dt <- graphical.score.list[["snp.scores"]]
+
+    # if plotting a subset pairs, subset input data
+    if (!is.null(n.top.scoring.pairs)){
+
+        edge.dt <- edge.dt[seq_len(n.top.scoring.pairs), ]
+        snp1 <- edge.dt$SNP1
+        snp2 <- edge.dt$SNP2
+        snps <- c(snp1, snp2)
+        node.dt <- node.dt[node.dt$SNP %in% snps, ]
+
+    }
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
     original.col.numbers <- preprocessed.list$original.col.numbers
@@ -111,7 +131,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
         target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
         same.ld.block <- target.block.ld.mat[2, 1]
 
-        # if not on same ld block, compute r2
+        # if on same ld block, compute r2
         if (!same.ld.block){
 
             return(0.0)
@@ -128,43 +148,28 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
 
     }, 1.0)
 
-
     #subset to target cols
-    edge.label.dt <- edge.dt[ , c(3, 4, 5)]
     edge.dt <- edge.dt[ , c(1, 2, 5)]
 
-    #compute node scores
-    edge.dt.long <- melt(edge.dt, 3, c(1, 2), value.name = 'name')
-    edge.label.dt.long <- melt(edge.label.dt, 3, c(1, 2), value.name = 'label')
-    node.labels <- as.character(edge.label.dt.long$label)
-    names(node.labels) <- as.character(edge.dt.long$name)
-
-    if (score.type == "max"){
-
-        node.dt <- edge.dt.long[ , list(size = max(edge.score)), by = 'name']
-
-    } else if (score.type == "sum"){
-
-        node.dt <- edge.dt.long[ , list(size = sum(edge.score)), by = 'name']
-
-    } else if (score.type == "logsum"){
-
-        edge.dt.long[ , edge.score := exp(edge.score) - 1]
-        node.dt <- edge.dt.long[ , list(size = log(1 + sum(edge.score))), by = 'name']
-
-    }
+    #get node labels
+    node.labels <- as.character(node.dt$rsid)
+    names(node.labels) <- as.character(node.dt$SNP)
 
     # convert to data.frames and scale the edge and node scores
     edge.df <- as.data.frame(edge.dt)
-    edge.widths <- edge.df$edge.score/max(edge.df$edge.score)
-    node.df <- as.data.frame(node.dt)
-    node.size.raw <- node.df$size/max(node.df$size)
+    max.edge.widths <- max(edge.df$pair.score)
+    edge.widths <- edge.df$pair.score/max(edge.df$pair.score)
+    raw.edge.widths <- edge.df$pair.score
+    node.df <- as.data.frame(node.dt[ , c(1, 3)])
+    colnames(node.df) <- c("name", "size")
+    max.node.size <- max(node.df$size)
+    node.size.raw <- node.df$size
     node.df$size <- node.size*(node.df$size/max(node.df$size))
 
     # prepare for plotting
     colnames(edge.df)[1:2] <- c("from", "to")
     network <- graph.data.frame(edge.df[, 1:2], directed = FALSE, vertices = node.df)
-    E(network)$weight <- edge.df$edge.score
+    E(network)$weight <- edge.df$pair.score
     E(network)$width <- edge.width.cex*edge.widths
     color_fun_e <- colorRampPalette(edge.color.ramp)
     edge.required.colors <- as.integer(as.factor(E(network)$weight))
@@ -208,7 +213,7 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
             plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Pair-Score',
                  cex.main = legend.title.cex)
             rasterImage(edge_legend, 0.75, 0, 1, 1)
-            e.legend.labels <- round(seq(min(edge.widths), max(edge.widths), length.out = 5), digits = 1)
+            e.legend.labels <- round(seq(min(raw.edge.widths), max(raw.edge.widths), length.out = 5), digits = 1)
             axis(side = 4, at = seq(0, 1, length.out = 5), labels = e.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
         } else {
@@ -216,7 +221,6 @@ network.plot <- function(edge.dt, preprocessed.list, score.type = "logsum", node
             plot(network, layout = coords, asp = 0, ...)
 
         }
-
 
     # otherwise, return igraph object
     } else {

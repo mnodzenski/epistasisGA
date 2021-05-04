@@ -20,8 +20,6 @@ run.gadgets(
   weight.function.int = 2,
   generations = 500,
   gen.same.fitness = 50,
-  tol = 10^-6,
-  n.top.chroms = 100,
   initial.sample.duplicates = FALSE,
   snp.sampling.type = "chisq",
   crossover.prop = 0.8,
@@ -29,7 +27,9 @@ run.gadgets(
   island.cluster.size = 4,
   migration.generations = 50,
   n.migrations = 20,
-  recode.threshold = 3
+  recessive.ref.prop = 0.75,
+  recode.test.stat = 1.64,
+  dif.coding = FALSE
 )
 }
 \arguments{
@@ -75,11 +75,6 @@ of the number of different SNPs and SNPs both equal to one as an argument, denot
 
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.}
 
-\item{tol}{The maximum absolute pairwise difference among the top fitness scores from the previous \code{gen.same.fitness} generations
-considered to be sufficient to stop the algorithm.}
-
-\item{n.top.chroms}{The number of top scoring chromosomes according to fitness score to return. Defaults to 100.}
-
 \item{initial.sample.duplicates}{A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
 (the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.}
 
@@ -103,12 +98,19 @@ Argument \code{generations} must be an integer multiple of this value. Defaults 
 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 
-\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.}
+\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+to determine whether to recode the SNP as recessive. Defaults to 0.75.}
+
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
+See the GADGETS paper for specific details.}
+
+\item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
+be coded as the sign of the difference (defaulting to false) or the raw difference.}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:
 \describe{
- \item{top.chromosome.results}{A data.table of the top \code{n.top.chroms scoring chromosomes}, their fitness scores, their difference vectors,
+ \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
 See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
  \item{n.generations}{The total number of generations run.}
@@ -132,7 +134,8 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                block.ld.mat = block.ld.mat[1:10, 1:10])
 run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1,
+       n.migrations = 0)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)

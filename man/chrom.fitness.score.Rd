@@ -15,11 +15,20 @@ chrom.fitness.score(
   weight.lookup,
   case2.mat,
   case0.mat,
+  comp2.mat,
+  comp0.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
+<<<<<<< HEAD
   recode.threshold = 3,
   epi.test = FALSE,
   GxE = FALSE
+=======
+  recessive.ref.prop = 0.75,
+  recode.test.stat = 1.64,
+  epi.test = FALSE,
+  dif.coding = FALSE
+>>>>>>> 8f61fd771ef587683168363a3c2e24e1dd581de1
 )
 }
 \arguments{
@@ -53,26 +62,38 @@ to be in LD if they are located on the same biological chromosome.}
 
 \item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
 
+\item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
+
+\item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
+
 \item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 2.}
 
 \item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
 
-\item{recode.threshold}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
+\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+to determine whether to recode the SNP as recessive. Defaults to 0.75.}
+
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
 \item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.}
 
+<<<<<<< HEAD
 \item{GxE}{A logical indicating whether the function should return the pieces of the fitness score (in addition
 to the fitness score itself) for use in searching for gene-environment interactions.}
+=======
+\item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
+be coded as the sign of the difference (defaulting to false) or the raw difference.}
+>>>>>>> 8f61fd771ef587683168363a3c2e24e1dd581de1
 }
 \value{
 A list:
 \describe{
- \item{fitness.score}{The chromosome fitness score.}
- \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome,
+ \item{fitness_score}{The chromosome fitness score.}
+ \item{sum_dif_vecs}{The weighted mean difference vector corresponding to the chromosome,
  with each element divided by it's pseudo-standard error.
  The magnitudes of these values are not particularly important, but the sign is useful.
  A positive value for a given SNP indicates the minor allele is positively associated with
@@ -80,42 +101,53 @@ A list:
  positively associated with the disease.}
  \item{q}{The fraction of provisional risk alleles carried by cases with the full risk set
  over the total number of risk alleles carried by either a case or complement with the full risk set.}
- \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
- \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
+ \item{risk_set_alleles}{A vector indicating the number risk alleles a case or complement must have
   for each SNP in \code{target.snps} for the case or complement to be classified as having the
   proposed risk set. '1+' indicates at least one copy of the risk allele is required, while '2'
   indicates 2 copies are needed. The risk allele can be determined based on the signs of the elements
-  of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
+  of \code{sum_dif_vecs}, where a negative value indicates the major allele for a given SNP is
   the risk allele, while a positive value implicates the minor allele.}
+<<<<<<< HEAD
   \item{inf.families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
   \item{xbar}{The weighted mean difference sign vector. Only returned if \code{GxE} is TRUE.}
   \item{sigma.hat}{The pseudo covariance matrix of the weighted mean difference sign vector. Only returned if \code{GxE} is TRUE.}
   \item{w}{The sum of the family weights. Only returned if \code{GxE} is TRUE.}
+=======
+  \item{inf_families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
+>>>>>>> 8f61fd771ef587683168363a3c2e24e1dd581de1
 }
 }
 \description{
-This function assigns a fitness score to a chromosome.
+This function assigns a fitness score to a chromosome. It is a wrapper for the Rcpp function chrom_fitness_score.
 }
 \examples{
 
 data(case)
 data(dad)
 data(mom)
+case <- as.matrix(case)
+dad <- as.matrix(dad)
+mom <- as.matrix(mom)
 comp <- mom + dad - case
 case.comp.diff <- case != comp
 case.minus.comp <- sign(case - comp)
+storage.mode(case.minus.comp) <- "integer"
 both.one.mat <- case == 1 & comp == 1
 case2.mat <- case == 2
 case0.mat <- case == 0
+comp2.mat <- comp == 2
+comp0.mat <- comp == 0
 library(Matrix)
 block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25),
                               matrix(rep(TRUE, 25^2), nrow = 25))))
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
+storage.mode(weight.lookup) <- "integer"
 chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
                     case.minus.comp, both.one.mat,
                     block.ld.mat, weight.lookup,
-                    case2.mat, case0.mat)
+                    case2.mat, case0.mat, comp2.mat,
+                    comp0.mat)
 
 }

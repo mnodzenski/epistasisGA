@@ -4,7 +4,12 @@
 \alias{combine.islands}
 \title{A function to combine GADGETS results for individual islands into a single dataset.}
 \usage{
-combine.islands(results.dir, annotation.data, preprocessed.list)
+combine.islands(
+  results.dir,
+  annotation.data,
+  preprocessed.list,
+  n.top.chroms.per.island = 1
+)
 }
 \arguments{
 \item{results.dir}{The directory in which individual island results from \code{run.gadgets} are saved.}
@@ -14,18 +19,14 @@ RSIDs for the input SNPs, with the rows ordered such that the first RSID entry c
 column in the data passed to function \code{preprocess.genetic.data}, the second RSID corresponds to the second SNP column, etc.}
 
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
+
+\item{n.top.chroms.per.island}{The number of top chromosomes per island to save in the final combined list. Defaults to the
+top 10.}
 }
 \value{
-A list of two elements. Note these two objects will also be written to \code{results.dir}
-as 'combined.island.results.rds' and 'combined.island.unique.chromosome.results.rds'.
-\describe{
- \item{all.results}{A dataset containing chromosome results across all islands,
- where top chromosomes that evolved on multiple distinct islands appear in multiple rows. See the package
- vignette for more detailed descriptions of the content of each output column.}
- \item{unique.results}{A condensed version of \code{all.results} with one row per distinct chromosome
- and an additional variable indicating the number of islands on which that chromosome evolved. See the package
- vignette for more detailed descriptions of the content of each output column.}
-}
+A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
+as 'combined.island.unique.chromosome.results.rds'. See the package vignette for more detailed descriptions of the content
+of each output column.
 }
 \description{
 This function combines GADGETS results for individual islands into a single dataset.
@@ -48,9 +49,10 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
 
 run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1, n.top.chroms = 3)
+       generations = 2, n.islands = 2, island.cluster.size = 1,
+       n.migrations = 0)
 
-combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
+combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list, 1)
 
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
