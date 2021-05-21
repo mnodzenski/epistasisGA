@@ -25,8 +25,11 @@
 #'  is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 1.
+#' @param n.different.covar.weight The number by which the number of different covariates between a case and unaffected sibling
+#'  is multiplied in computing the family weights. Defaults to 0.
 #' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
-#' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
+#' of the number of different SNPs, SNPs both equal to one, and different covariates as an argument, denoted as x, and
+#' returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
 #' @param generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
@@ -50,7 +53,7 @@
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to false) or the raw difference.
+#' be coded as the sign of the difference or the raw difference. It defaults to FALSE, meaning the raw differences will be used.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
@@ -90,7 +93,7 @@
 
 run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
-    n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
+    n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, n.different.covar.weight = 0, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
     n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, dif.coding = FALSE) {
@@ -149,6 +152,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     if (n.migrations == 0){
 
         migration.generations <- generations
+
     }
 
     ### compute the weight lookup table ###
@@ -165,6 +169,19 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     chisq.stats <- data.list$chisq.stats
     block.ld.mat <- as.matrix(data.list$block.ld.mat)
     storage.mode(block.ld.mat) <- "logical"
+    case.covars <- data.list$case.covars
+    comp.covars <- data.list$comp.covars
+    use.covars <- data.list$use.covars
+    trio.data <- data.list$trio.data
+
+    ### construct covar difference matrix and weights ###
+    # note this will just be a 1x1 matrix containing a 0 if use.covars = FALSE
+    covar.dif.mat <- case.covars - comp.covars
+    covar.weights <- rowSums(covar.dif.mat != 0)
+
+    # set covar weights to 0 for trios because we automatically set
+    # the complement to the opposite
+    covar.weights[trio.data] <- 0
 
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
@@ -199,48 +216,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     storage.mode(comp2.mat) <- "logical"
     comp0.mat <- complement.genetic.data == 0
     storage.mode(comp0.mat) <- "logical"
-
-    ### if running GxE, split input data into lists based on exposure status ###
-    exposure <- data.list$exposure
-    if (!is.null(exposure)){
-
-        case.genetic.data.split <- split(data.frame(case.genetic.data), exposure)
-        exposure.levels <- as.character(names(case.genetic.data.split))
-        case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)
-        complement.genetic.data.list <- lapply(split(data.frame(complement.genetic.data), exposure), as.matrix)
-        case.comp.different.list <- lapply(split(data.frame(case.comp.different), exposure), as.matrix)
-        case.minus.comp.list <- lapply(split(data.frame(case.minus.comp), exposure), as.matrix)
-        both.one.mat.list <- lapply(split(data.frame(both.one.mat), exposure), as.matrix)
-        case2.mat.list <- lapply(split(data.frame(case2.mat), exposure), as.matrix)
-        case0.mat.list <- lapply(split(data.frame(case0.mat), exposure), as.matrix)
-        comp2.mat.list <- lapply(split(data.frame(comp2.mat), exposure), as.matrix)
-        comp0.mat.list <- lapply(split(data.frame(comp0.mat), exposure), as.matrix)
-
-        ### also setting the original objects to null ###
-        case.genetic.data <- NULL
-        complement.genetic.data <- NULL
-        case.comp.different <- NULL
-        case.minus.comp <- NULL
-        both.one.mat <- NULL
-        case2.mat <- NULL
-        case0.mat <- NULL
-        comp2.mat <- NULL
-        comp0.mat <- NULL
-
-    } else {
-
-        case.genetic.data.list <- NULL
-        complement.genetic.data.list <- NULL
-        case.comp.different.list <- NULL
-        case.minus.comp.list <- NULL
-        both.one.mat.list <- NULL
-        case2.mat.list <- NULL
-        case0.mat.list <- NULL
-        comp2.mat.list <- NULL
-        comp0.mat.list <- NULL
-        exposure.levels <- NULL
-
-    }
 
     ### set sampling type for mutation snps ###
     if (snp.sampling.type == "chisq") {
@@ -327,13 +302,12 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
         case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes,
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
-        case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, island.cluster.size = island.cluster.size,
+        case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, covar.dif.mat = covar.dif.mat,
+        case.covar.mat = case.covar.mat, comp.covar.mat = comp.covar.mat, covar.weights = covar.weights, island.cluster.size = island.cluster.size,
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
         gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
         crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, dif.coding = dif.coding,
-        exposure.levels = exposure.levels, case.genetic.data.list = case.genetic.data.list, complement.genetic.data.list = complement.genetic.data.list,
-        case.comp.different.list = case.comp.different.list, case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list,
-        case2.mat.list = case2.mat.list, case0.mat.list = case0.mat.list, comp2.mat.list = comp2.mat.list, comp0.mat.list = comp0.mat.list),
+        use.covars = use.covars),
         reg = registry)
 
     # chunk the jobs

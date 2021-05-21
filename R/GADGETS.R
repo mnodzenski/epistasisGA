@@ -37,6 +37,10 @@
 #' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
 #' @param comp2.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.
 #' @param comp0.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.
+#' @param covar.dif.mat An integer matrix = \code{case.covar.mat} - \code{comp.covar.mat}.
+#' @param case.covar.mat An integer matrix of binary covariates in the cases. Columns represent covariates, rows represent families.
+#' @param comp.covar.mat An integer matrix of binary covariates in the complements. Columns represent covariates, rows represent families.
+#' @param covar.weights An integer vector of family weights based on \code{covar.dif.mat}.
 #' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
@@ -54,25 +58,8 @@
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to false) or the raw difference.
-#' @param exposure.levels A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
-#' gene-environment interactions.
-#' @param case.genetic.data.list A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
-#' as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.
-#' @param complement.genetic.data.list A list of matrices containing complement/unaffected sibling genetic data. Each element of the list corresponds to groups of
-#' cases with a common environmental exposure, as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP
-#' minor allele counts. Defaults to NULL.
-#' @param case.comp.different.list A list of matrices indicating \code{case.genetic.data.list} != \code{complement.genetic.data.list}. Defaults to NULL.
-#' @param case.minus.comp.list A list of matrices corresponding to \code{case.genetic.data.list} - \code{complement.genetic.data.list}. Defaults to NULL.
-#' @param both.one.mat.list A list of matrices indicating \code{case.genetic.data.list} == \code{complement.genetic.data.list} == 1. Defaults to NULL.
-#' @param case2.mat.list A list of logical matrices indicating whether, for each matrix in \code{case.genetic.data.list} and for each SNP,
-#' the case carries 2 copies of the minor allele. Defaults to NULL.
-#' @param case0.mat.list A list of logical matrices indicating whether, for each matrix in \code{case.genetic.data.list} and for each SNP,
-#' the case carries 0 copies of the minor allele. Defaults to NULL.
-#' @param comp2.mat.list A list of logical matrices indicating whether, for each matrix in \code{complement.genetic.data.list} and for each SNP,
-#' the complement/unaffected sibling carries 2 copies of the minor allele. Defaults to NULL.
-#' @param comp0.mat.list A list of logical matrices indicating whether, for each matrix in \code{complement.genetic.data.list} and for each SNP,
-#' the complement/unaffected sibling carries 0 copies of the minor allele. Defaults to NULL.
+#' be coded as the sign of the difference or the raw difference. It defaults to FALSE, meaning the raw differences will be used.
+#' @param use.covars A boolean indicating whether covariates should be used. Defaults to FALSE.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
@@ -108,6 +95,10 @@
 #'  case0.mat <- case.genetic.data == 0
 #'  comp2.mat <- complement.genetic.data == 2
 #'  comp0.mat <- complement.genetic.data == 0
+#'  case.covar.mat <- matrix(1, 1, 1, drop = FALSE)
+#'  comp.covar.mat <- matrix(1, 1, 1, drop = FALSE)
+#'  covar.dif.mat <- case.covar.mat - comp.covar.mat
+#'  covar.weights <- 0
 #'  snp.chisq <- sqrt(chisq.stats)
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  dir.create('tmp')
@@ -120,38 +111,36 @@
 #'                    original.col.numbers = original.col.numbers,
 #'                    weight.lookup = weight.lookup, case2.mat = case2.mat,
 #'                    case0.mat = case0.mat, comp2.mat = comp2.mat,
-#'                    comp0.mat = comp0.mat, n.migrations = 2,
-#'                    migration.interval = 5, max.generations = 10)
+#'                    comp0.mat = comp0.mat, covar.dif.mat = covar.dif.mat,
+#'                    case.covar.mat = case.covar.mat, comp.covar.mat = comp.covar.mat,
+#'                    covar.weights = covar.weights, n.migrations = 2,
+#'                    migration.interval = 5, max.generations = 10, use.covars = FALSE)
 #' unlink('tmp', recursive = TRUE)
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
 #' @useDynLib epistasisGA
 #' @export
 
+
 GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
                    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
+                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
+                   covar.dif.mat, case.covar.mat, comp.covar.mat, covar.weights, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500,
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                   recode.test.stat = 1.64, dif.coding = FALSE, exposure.levels = NULL,
-                   case.genetic.data.list = NULL, complement.genetic.data.list = NULL, case.comp.different.list = NULL,
-                   case.minus.comp.list = NULL, both.one.mat.list = NULL, case2.mat.list = NULL, case0.mat.list = NULL,
-                   comp2.mat.list = NULL, comp0.mat.list = NULL) {
+                   recode.test.stat = 1.64, dif.coding = FALSE, use.covars = FALSE) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
                             complement.genetic.data, case.comp.different, case.minus.comp,
                             both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
                             weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
-                            case.genetic.data.list, complement.genetic.data.list,
-                            case.comp.different.list, case.minus.comp.list, both.one.mat.list,
-                            case2.mat.list, case0.mat.list, comp2.mat.list, comp0.mat.list,
-                            exposure.levels, snp.chisq, original.col.numbers,
-                            n.different.snps.weight, n.both.one.weight, migration.interval,
-                            gen.same.fitness, max.generations,
+                            covar.dif.mat, case.covar.mat, comp.covar.mat, covar.weights,
+                            snp.chisq, original.col.numbers, n.different.snps.weight, n.both.one.weight,
+                            migration.interval, gen.same.fitness, max.generations,
                             initial.sample.duplicates, crossover.prop, recessive.ref.prop,
-                            recode.test.stat, dif.coding)
+                            recode.test.stat, dif.coding, use.covars)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
@@ -167,57 +156,36 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
         dif.vec.list <- final.population.list[["sum_dif_vecs"]]
         dif.vec.dt <- as.data.table(do.call(rbind, dif.vec.list))
         colnames(dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
+        risk.allele.vec.list <- final.population.list[["risk_allele_vecs"]]
+        risk.allele.vec.dt <- as.data.table(do.call(rbind, risk.allele.vec.list))
+        colnames(risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
+        n.case.risk.geno.dt <- data.table(n.cases.risk.geno = final.population.list[["n_case_risk_geno_vec"]])
+        n.comp.risk.geno.dt <- data.table(n.comps.risk.geno = final.population.list[["n_comp_risk_geno_vec"]])
 
-        if (is.null(exposure.levels)){
+        if (!use.covars){
 
-            risk.allele.vec.list <- final.population.list[["risk_allele_vecs"]]
-            risk.allele.vec.dt <- as.data.table(do.call(rbind, risk.allele.vec.list))
-            colnames(risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
-            n.case.risk.geno.dt <- data.table(n.cases.risk.geno = final.population.list[["n_case_risk_geno_vec"]])
-            n.comp.risk.geno.dt <- data.table(n.comps.risk.geno = final.population.list[["n_comp_risk_geno_vec"]])
             final.result <- cbind(chromosome.dt, dif.vec.dt, risk.allele.vec.dt, fitness.score.dt,
                                   n.case.risk.geno.dt, n.comp.risk.geno.dt)
-            setorder(final.result, -fitness.score)
 
         } else {
 
-            high.risk.exposure.dt <- data.table(high.risk.exposure = final.population.list[["high_risk_exposures"]])
-
-            high.risk.dif.vec.list <- final.population.list[["high_risk_exposure_sum_dif_vecs"]]
-            high.risk.dif.vec.dt <- as.data.table(do.call(rbind, high.risk.dif.vec.list))
-            colnames(high.risk.dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".high.risk.diff.vec")
-
-            high.risk.risk.allele.vec.list <- final.population.list[["high_risk_exposure_risk_allele_vecs"]]
-            high.risk.risk.allele.vec.dt <- as.data.table(do.call(rbind, high.risk.risk.allele.vec.list))
-            colnames(high.risk.risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".high.risk.allele.copies")
-
-            high.risk.n.case.risk.geno.dt <- data.table(high.risk.n.cases.risk.geno = final.population.list[["high_risk_exposure_n_case_risk_geno_vec"]])
-            high.risk.n.comp.risk.geno.dt <- data.table(high.risk.n.comps.risk.geno = final.population.list[["high_risk_exposure_n_comp_risk_geno_vec"]])
-
-            low.risk.exposure.dt <- data.table(low.risk.exposure = final.population.list[["low_risk_exposures"]])
-
-            low.risk.dif.vec.list <- final.population.list[["low_risk_exposure_sum_dif_vecs"]]
-            low.risk.dif.vec.dt <- as.data.table(do.call(rbind, low.risk.dif.vec.list))
-            colnames(low.risk.dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".low.risk.diff.vec")
-
-            low.risk.risk.allele.vec.list <- final.population.list[["low_risk_exposure_risk_allele_vecs"]]
-            low.risk.risk.allele.vec.dt <- as.data.table(do.call(rbind, low.risk.risk.allele.vec.list))
-            colnames(low.risk.risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".low.risk.allele.copies")
-
-            low.risk.n.case.risk.geno.dt <- data.table(low.risk.n.cases.risk.geno = final.population.list[["low_risk_exposure_n_case_risk_geno_vec"]])
-            low.risk.n.comp.risk.geno.dt <- data.table(low.risk.n.comps.risk.geno = final.population.list[["low_risk_exposure_n_comp_risk_geno_vec"]])
-
-            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, high.risk.exposure.dt,
-                                  high.risk.dif.vec.dt, high.risk.risk.allele.vec.dt, high.risk.n.case.risk.geno.dt,
-                                  high.risk.n.comp.risk.geno.dt, low.risk.exposure.dt, low.risk.dif.vec.dt,
-                                  low.risk.risk.allele.vec.dt, low.risk.n.case.risk.geno.dt, low.risk.n.comp.risk.geno.dt)
-            setorder(final.result, -fitness.score)
+            covar.dif.vec.list <- final.population.list[["covar_sum_dif_vecs"]]
+            covar.dif.vec.dt <- as.data.table(do.call(rbind, covar.dif.vec.list))
+            n.covars <- ncol(covar.dif.vec.dt)
+            colnames(covar.dif.vec.dt) <- paste0("covar", seq_len(n.covars), ".diff.vec")
+            risk.covar.vec.list <- final.population.list[["risk_covars"]]
+            risk.covar.vec.dt <- as.data.table(do.call(rbind, risk.covar.vec.list))
+            colnames(risk.covar.vec.dt) <- paste0("covar", seq_len(n.covars), ".risk.related.level")
+            final.result <- cbind(chromosome.dt, dif.vec.dt, risk.allele.vec.dt, covar.dif.vec.dt,
+                                  risk.covar.vec.dt, fitness.score.dt,
+                                  n.case.risk.geno.dt, n.comp.risk.geno.dt)
 
         }
 
-
         #output list
+        setorder(final.result, -fitness.score)
         final.list <- list(top.chromosome.results = final.result, n.generations = n.generations)
+
 
         #write to file
         out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", island.number,".rds"))
