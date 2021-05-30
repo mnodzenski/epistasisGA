@@ -639,7 +639,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
                                   IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, LogicalMatrix both_one_mat_in,
                                   LogicalMatrix block_ld_mat, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                                   LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, IntegerMatrix covar_dif_mat, IntegerMatrix case_covar_mat,
-                                  IntegerMatrix comp_covar_mat, IntegerVector covar_weights, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                                  IntegerMatrix comp_covar_mat, IntegerVector covar_weights, LogicalMatrix covar_dependence_mat,
+                                  bool snp_covar_independent = true, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                                   double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false, bool dif_coding = false,
                                   bool use_covars = false) {
 
@@ -1027,6 +1028,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
     sum_dif_vecs = q*sum_dif_vecs;
     arma::rowvec mu_hat;
     arma::mat x;
+    arma:mat cov_mat;
     int total_vars = n_target;
     if (!use_covars){
 
@@ -1039,7 +1041,9 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
       }
       x = as<arma::mat>(cases_minus_complements);
 
-    } else {
+    }
+
+    if (use.covars & !snp_covar_independent) {
 
       arma::rowvec mu_hat_snps = as<arma::rowvec>(sum_dif_vecs);
       covar_sum_dif_vecs = q*covar_sum_dif_vecs;
@@ -1055,35 +1059,121 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
     }
 
-    arma::vec inf_family_weights = as<arma::vec>(family_weights);
-    arma::mat mu_hat_mat(case_genetic_data.nrow(), total_vars);
-    for (int i = 0; i < case_genetic_data.nrow(); i++){
+    // for when we have no covariates or do not assumen SNP/covariate independence
+    if (!use_covars || !snp_covar_independent){
 
-      mu_hat_mat.row(i) = mu_hat;
+      arma::vec inf_family_weights = as<arma::vec>(family_weights);
+      arma::mat mu_hat_mat(case_genetic_data.nrow(), total_vars);
+      for (int i = 0; i < case_genetic_data.nrow(); i++){
 
-    }
-    arma::mat x_minus_mu_hat = x - mu_hat_mat;
-    arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
-    weighted_x_minus_mu_hat.each_col() %= inf_family_weights;
-    arma::mat cov_mat = invsum_family_weights * trans(weighted_x_minus_mu_hat) * x_minus_mu_hat;
+        mu_hat_mat.row(i) = mu_hat;
 
-    // set cov elements to zero if SNPs are not in same ld block
-    for (int i = 1; i < n_target; i++){
+      }
+      arma::mat x_minus_mu_hat = x - mu_hat_mat;
+      arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat;
+      weighted_x_minus_mu_hat.each_col() %= inf_family_weights;
+      cov_mat = invsum_family_weights * trans(weighted_x_minus_mu_hat) * x_minus_mu_hat;
 
-      int this_row = target_snps_in[i] - 1;
+      // set cov elements to zero if SNPs are not in same ld block
+      for (int i = 1; i < n_target; i++){
 
-      for (int j = 0; j < i; j++){
+        int this_row = target_snps_in[i] - 1;
 
-        int this_col = target_snps_in[j] - 1;
+        for (int j = 0; j < i; j++){
 
-        if (block_ld_mat(this_row, this_col) != 1){
+          int this_col = target_snps_in[j] - 1;
 
-          cov_mat(i, j) = 0;
-          cov_mat(j, i) = 0;
+          if (block_ld_mat(this_row, this_col) != 1){
+
+            cov_mat(i, j) = 0;
+            cov_mat(j, i) = 0;
+
+          }
 
         }
 
       }
+
+    // otherwise, if we can assume SNP/covariate independence
+    } else {
+
+      arma::rowvec mu_hat_snps = as<arma::rowvec>(sum_dif_vecs);
+      covar_sum_dif_vecs = q*covar_sum_dif_vecs;
+      arma::rowvec covar_mu_hat = as<arma::rowvec>(covar_sum_dif_vecs);
+      total_vars = n_target + n_covars;
+      arma::rowvec mu_hat_tmp(total_vars, arma::fill::zeros);
+      mu_hat_tmp.subvec(0, n_target - 1) = mu_hat_snps;
+      mu_hat_tmp.subvec(n_target, total_vars - 1) = covar_mu_hat;
+      mu_hat = mu_hat_tmp;
+
+      // separately compute covar matrices for snps and covars
+
+      // snps
+      arma::mat mu_hat_snps_mat(case_genetic_data.nrow(), n_target);
+      for (int i = 0; i < case_genetic_data.nrow(); i++){
+
+        mu_hat_snps_mat.row(i) = mu_hat_snps;
+
+      }
+      x_snps = as<arma::mat>(cases_minus_complements);
+      arma::mat x_minus_mu_hat_snps = x - mu_hat_snps_mat;
+      arma::mat weighted_x_minus_mu_hat_snps = x_minus_mu_hat_snps;
+      weighted_x_minus_mu_hat_snps.each_col() %= inf_family_weights;
+      arma::mat cov_mat_snps = invsum_family_weights * trans(weighted_x_minus_mu_hat_snps) * x_minus_mu_hat_snps;
+      for (int i = 1; i < n_target; i++){
+
+        int this_row = target_snps_in[i] - 1;
+
+        for (int j = 0; j < i; j++){
+
+          int this_col = target_snps_in[j] - 1;
+
+          if (block_ld_mat(this_row, this_col) != 1){
+
+            cov_mat_snps(i, j) = 0;
+            cov_mat_snps(j, i) = 0;
+
+          }
+
+        }
+
+      }
+
+      //  covariates
+      arma::mat mu_hat_covar_mat(covar_dif_mat.nrow(), n_covars);
+      for (int i = 0; i < covar_dif_mat.nrow(); i++){
+
+        mu_hat_covar_mat.row(i) = covar_mu_hat;
+
+      }
+      x_covar = as<arma::mat>(covar_dif_mat);
+      arma::mat x_minus_mu_hat_covar = x_covar - mu_hat_covar_mat;
+      arma::mat weighted_x_minus_mu_hat_covar = x_minus_mu_hat_covar;
+      weighted_x_minus_mu_hat_covar.each_col() %= inf_family_weights;
+      arma::mat cov_mat_covar = invsum_family_weights * trans(weighted_x_minus_mu_hat_covar) * x_minus_mu_hat_covar;
+      for (int i = 1; i < n_covars; i++){
+
+        for (int j = 0; j < i; j++){
+
+          if (covar_dependence_mat(i, j) != 1){
+
+            cov_mat_covar(i, j) = 0;
+            cov_mat_covar(j, i) = 0;
+
+          }
+
+        }
+
+      }
+
+      // now put together the full mu hat and cov mat
+      arma::rowvec mu_hat_tmp(total_vars, arma::fill::zeros);
+      mu_hat_tmp.subvec(0, n_target - 1) = mu_hat_snps;
+      mu_hat_tmp.subvec(n_target, total_vars - 1) = covar_mu_hat;
+      mu_hat = mu_hat_tmp;
+      cov_mat = mat(total_vars, total_vars, fill::zeroes);
+      cov_mat.submat(0, 0, n_target - 1, n_target - 1) = cov_mat_snps;
+      cov_mat.submat(n_target, n_target, total_vars - 1, total_vars - 1) = cov_mat_covar;
 
     }
 
@@ -1322,7 +1412,8 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
                         List chromosome_list, IntegerMatrix cases_minus_complements, LogicalMatrix both_one_mat,
                         LogicalMatrix block_ld_mat, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                         LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, IntegerMatrix covar_dif_mat, IntegerMatrix case_covar_mat,
-                        IntegerMatrix comp_covar_mat, IntegerVector covar_weights, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                        IntegerMatrix comp_covar_mat, IntegerVector covar_weights, LogicalMatrix covar_dependence_mat,
+                        bool snp_covar_independent = true, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false, bool dif_coding = false,
                         bool use_covars = false ){
 
@@ -1333,7 +1424,8 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
     scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
                                     target_snps, cases_minus_complements, both_one_mat,
                                     block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat,
-                                    covar_dif_mat, case_covar_mat, comp_covar_mat, covar_weights, n_different_snps_weight,
+                                    covar_dif_mat, case_covar_mat, comp_covar_mat, covar_weights, covar_dependence_mat,
+                                    snp_covar_independent, n_different_snps_weight,
                                     n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test, dif_coding,
                                     use_covars);
 
@@ -1380,13 +1472,15 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                 IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                                 LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, IntegerMatrix covar_dif_mat,
                                 IntegerMatrix case_covar_mat, IntegerMatrix comp_covar_mat, IntegerVector covar_weights,
+                                LogicalMatrix covar_dependence_mat, bool snp_covar_independent = true,
                                 int n_different_snps_weight = 2, int n_both_one_weight = 1, double recessive_ref_prop = 0.75,
                                 double recode_test_stat = 1.64, bool dif_coding = false, bool use_covars = false){
 
   List chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
                                                      chromosome_list, case_minus_comp, both_one_mat, block_ld_mat, weight_lookup,
                                                      case2_mat, case0_mat, comp2_mat, comp0_mat, covar_dif_mat, case_covar_mat,
-                                                     comp_covar_mat, covar_weights, n_different_snps_weight, n_both_one_weight,
+                                                     comp_covar_mat, covar_weights, covar_dependence_mat,
+                                                     snp_covar_independent, n_different_snps_weight, n_both_one_weight,
                                                      recessive_ref_prop, recode_test_stat, false, dif_coding, use_covars);
 
   // for storing generation information
@@ -1522,6 +1616,7 @@ List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix compleme
                          IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                          LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, IntegerMatrix covar_dif_mat,
                          IntegerMatrix case_covar_mat, IntegerMatrix comp_covar_mat, IntegerVector covar_weights,
+                         LogicalMatrix covar_dependence_mat, bool snp_covar_independent = true,
                          int n_migrations, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
@@ -1563,8 +1658,9 @@ List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix compleme
   List current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different,
                                                          case_minus_comp, both_one_mat, block_ld_mat, chromosome_list,
                                                          original_col_numbers, weight_lookup, case2_mat, case0_mat,
-                                                         comp2_mat, comp0_mat, covar_dif_mat, case_covar_mat, comp_covar_mat,
-                                                         covar_weights, n_different_snps_weight, n_both_one_weight,
+                                                         comp2_mat, comp0_mat, covar_dif_mat, case_covar_mat,
+                                                         comp_covar_mat, covar_weights, covar_dependence_mat,
+                                                         snp_covar_independent, n_different_snps_weight, n_both_one_weight,
                                                          recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
 
   // pick out the top and bottom scores
@@ -1599,8 +1695,9 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
                    LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                    LogicalMatrix comp2_mat, LogicalMatrix comp0_mat,
-                   IntegerMatrix covar_dif_mat, IntegerMatrix case_covar_mat, IntegerMatrix comp_covar_mat,
-                   IntegerVector covar_weights, NumericVector snp_chisq, IntegerVector original_col_numbers,
+                   IntegerMatrix covar_dif_mat, IntegerMatrix case_covar_mat,
+                   IntegerMatrix comp_covar_mat, IntegerVector covar_weights, LogicalMatrix covar_dependence_mat,
+                   bool snp_covar_independent = true, NumericVector snp_chisq, IntegerVector original_col_numbers,
                    List population, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50, int max_generations = 500,
                    bool initial_sample_duplicates = false, double crossover_prop = 0.8, double recessive_ref_prop = 0.75,
@@ -1770,6 +1867,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
     }
 
+
     // 4. mutate chromosomes
     IntegerVector tmp_lower_idx = seq_len(sampled_lower_chromosomes.length());
     IntegerVector mutation_positions = setdiff(tmp_lower_idx, cross_over_positions);
@@ -1851,8 +1949,10 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different,
                                                       case_minus_comp, both_one_mat, block_ld_mat, chromosome_list,
                                                       original_col_numbers, weight_lookup, case2_mat, case0_mat,
-                                                      comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight,
-                                                      recessive_ref_prop, recode_test_stat, dif_coding);
+                                                      comp2_mat, comp0_mat, covar_dif_mat, case_covar_mat,
+                                                      comp_covar_mat, covar_weights, covar_dependence_mat,
+                                                      snp_covar_independent, n_different_snps_weight, n_both_one_weight,
+                                                      recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
 
     //7. Increment iterators
     generation += 1;
@@ -2062,8 +2162,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                  LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size,
                  IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
                  LogicalMatrix comp2_mat, LogicalMatrix comp0_mat,
-                 IntegerMatrix covar_dif_mat, IntegerMatrix case_covar_mat, IntegerMatrix comp_covar_mat,
-                 IntegerVector covar_weights, NumericVector snp_chisq, IntegerVector original_col_numbers,
+                 IntegerMatrix covar_dif_mat, IntegerMatrix case_covar_mat,
+                 IntegerMatrix comp_covar_mat, IntegerVector covar_weights, LogicalMatrix covar_dependence_mat,
+                 bool snp_covar_independent = true, NumericVector snp_chisq, IntegerVector original_col_numbers,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
@@ -2072,6 +2173,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
 
   // go through first round of island evolution
   List island_populations(island_cluster_size);
+
   for (int i = 0; i < island_cluster_size; i++){
 
     List island_population_i = initiate_population(case_genetic_data, complement_genetic_data,
@@ -2079,7 +2181,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                                                    block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers,
                                                    weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat,
                                                    covar_dif_mat, case_covar_mat, comp_covar_mat, covar_weights,
-                                                   n_migrations, n_different_snps_weight, n_both_one_weight,
+                                                   covar_dependence_mat, snp_covar_independent, n_migrations,
+                                                   n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat, max_generations,
                                                    initial_sample_duplicates, dif_coding, use_covars);
 
@@ -2087,9 +2190,10 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                                           case_comp_different, case_minus_comp, both_one_mat,
                                           block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
                                           case0_mat, comp2_mat, comp0_mat, covar_dif_mat, case_covar_mat, comp_covar_mat, covar_weights,
-                                          snp_chisq, original_col_numbers, island_population_i, n_different_snps_weight, n_both_one_weight,
-                                          migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop,
-                                          recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
+                                          covar_dependence_mat, snp_covar_independent, snp_chisq, original_col_numbers, island_population_i,
+                                          n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations,
+                                          initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
+
   }
 
   // check convergence
@@ -2204,6 +2308,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
     }
 
     // evolve islands using the new populations
+
     for (int i = 0; i < island_cluster_size; i++){
 
       List island_population_i = island_populations[i];
@@ -2211,9 +2316,10 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
                                             case_comp_different, case_minus_comp, both_one_mat,
                                             block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
                                             case0_mat, comp2_mat, comp0_mat, covar_dif_mat, case_covar_mat, comp_covar_mat, covar_weights,
-                                            snp_chisq, original_col_numbers, island_population_i, n_different_snps_weight, n_both_one_weight,
-                                            migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop,
-                                            recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
+                                            covar_dependence_mat, snp_covar_independent, snp_chisq, original_col_numbers, island_population_i,
+                                            n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations,
+                                            initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
+
 
     }
 
@@ -2235,17 +2341,30 @@ List run_GADGETS(int island_cluster_size, int n_migrations, IntegerMatrix case_g
 /////////////////////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_blocks,
-                              int n_families, LogicalMatrix block_ld_mat, IntegerVector weight_lookup,
-                              int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                              double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                              bool dif_coding = false){
+double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, arma::mat case_covar_inf,
+                              arma::mat comp_covar_inf, List ld_blocks, List covar_blocks,
+                              int n_families, LogicalMatrix block_ld_mat, LogicalMatrix covar_dependence_mat, IntegerVector weight_lookup,
+                              LogicalVector trio_data, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                              int n_different_covars_weight = 2; double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+                              bool dif_coding = false, bool use_covars = false){
 
   // make copies of the input data
   uint nrows = case_inf.n_rows;
   uint ncols = case_inf.n_cols;
   arma::mat case_permuted(nrows, ncols);
   arma::mat comp_permuted(nrows, ncols);
+  uint ncovars = case_covar_inf.n_cols;
+  uint ncov_families = 1;
+  uint ncovars = 1;
+  if (use_covars){
+
+    ncov_families = nrows;
+    ncovars = case_covar_inf.n_cols;
+
+  }
+
+  amra::mat case_covar_permuted(ncov_families, ncovars);
+  arma::mat comp_covar_permuted(ncov_families, ncovars);
 
   // loop over SNP LD blocks and shuffle rows
   for (arma::uword i = 0; i < ld_blocks.size(); i++){
@@ -2265,6 +2384,36 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_bl
         case_permuted(j, snp_col) = case_val_k;
         int comp_val_k = comp_inf(in_row, snp_col);
         comp_permuted(j, snp_col) = comp_val_k;
+
+      }
+
+    }
+
+  }
+
+  // if desired, also for covariates
+  if (use_covars){
+
+    // loop over SNP LD blocks and shuffle rows
+    for (arma::uword i = 0; i < covar_blocks.size(); i++){
+
+      IntegerVector family_idx = seq_len(ncov_families);
+      arma::uvec row_order = arma::randperm(ncov_families, ncov_families);
+      arma::vec these_covs = covar_blocks[i];
+
+      for (arma::uword j = 0; j < row_order.size(); j++){
+
+        arma::uword in_row = row_order(j);
+
+        for (arma::uword k = 0; k < these_covars.size(); k++){
+
+          arma::uword cov_col = these_covars(k) - 1;
+          int case_val_k = case_covar_inf(in_row, cov_col);
+          case_covar_permuted(j, snp_col) = case_val_k;
+          int comp_val_k = comp_covar_inf(in_row, snp_col);
+          comp_covar_permuted(j, snp_col) = comp_val_k;
+
+        }
 
       }
 
@@ -2295,13 +2444,43 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_bl
   LogicalMatrix comp2_mat_rcpp = wrap(comp2_mat);
   LogicalMatrix comp0_mat_rcpp = wrap(comp0_mat);
 
+  // also for covariates if specified
+  IntegerMatrix covar_dif_mat_rcpp;
+  IntegerMatrix case_covar_mat_rcpp;
+  IntegerMatrix comp_covar_mat_rcpp;
+  IntegerVector covar_weights_rcpp;
+
+  if (use_covars){
+
+    //rcpp versions
+    case_covar_mat_rcpp = wrap(case_covar_mat_rcpp);
+    comp_covar_mat_rcpp = wrap(comp_covar_mat_rcpp);
+
+    // difference matrix
+    arma::mat covar_dif_mat = case_covar_permuted - comp_covar_permuted;
+    arma::umat covar_dif_mat_l = covar_dif_mat != 0;
+    covar_dif_mat_rcpp = wrap(covar_dif_mat);
+    LogicalMatrix covar_dif_mat_l_rcpp = wrap(covar_dif_mat_l);
+
+    // need to recompute the covariate weights
+    int ncovs = case_covar_mat_rcpp.ncol();
+    IntegerVector cov_cols = seq_len(ncovs);
+    IntegerVector total_different_covars = sub_rowsums_start(covar_dif_mat_l_rcpp, cov_cols);
+    covar_weights_rcpp = n_different_covars_weight * total_different_covars;
+    covar_weights_rcpp[trio_data] = 0;
+
+  }
+
   // compute fitness score for permuted dataset
   IntegerVector target_snps = seq_len(case_rcpp.ncol());
   List fitness_list = chrom_fitness_score(case_rcpp, comp_rcpp, case_comp_different_rcpp,
                                           target_snps, case_minus_comp_rcpp, both_one_mat_rcpp,
                                           block_ld_mat, weight_lookup, case2_mat_rcpp, case0_mat_rcpp,
-                                          comp2_mat_rcpp, comp0_mat_rcpp, n_different_snps_weight, n_both_one_weight,
-                                          recessive_ref_prop, recode_test_stat, false, dif_coding);
+                                          comp2_mat_rcpp, comp0_mat_rcpp, covar_dif_mat_rcpp, case_covar_mat_rcpp,
+                                          comp_covar_mat_rcpp, covar_weights_rcpp, covar_dependence_mat,
+                                          true, n_different_snps_weight, n_both_one_weight,
+                                          recessive_ref_prop, recode_test_stat, false, dif_coding, use_covars);
+
   double fitness = fitness_list["fitness_score"];
   return(fitness);
 
@@ -2313,19 +2492,21 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_bl
 /////////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arma::mat comp_inf, List ld_blocks,
-                                         int n_families, LogicalMatrix block_ld_mat, IntegerVector weight_lookup,
-                                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                         bool dif_coding = false){
+NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arma::mat comp_inf, arma::mat case_covar_inf,
+                                         arma::mat comp_covar_inf, List ld_blocks, List covar_blocks,
+                                         int n_families, LogicalMatrix block_ld_mat, LogicalMatrix covar_dependence_mat,
+                                         IntegerVector weight_lookup, LogicalVector trio_data, int n_different_snps_weight = 2,
+                                         int n_both_one_weight = 1, int n_different_covars_weight = 2, double recessive_ref_prop = 0.75,
+                                         double recode_test_stat = 1.64, bool dif_coding = false, bool use_covars = false){
 
   // loop over number of permutes and output vector of null fitness scores
   NumericVector res(n_permutes);
   for (int i = 0; i < n_permutes; i++){
 
-    double permute_score_i = epistasis_test_permute(case_inf, comp_inf, ld_blocks, n_families, block_ld_mat, weight_lookup,
-                                                    n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
-                                                    recode_test_stat, dif_coding);
+    double permute_score_i = epistasis_test_permute(case_inf, comp_inf, case_covar_inf, comp_covar_inf, ld_blocks, covar_blocks,
+                                                    n_families, block_ld_mat, covar_dependence_mat, weight_lookup, trio_data,
+                                                    n_different_snps_weight, n_both_one_weight, n_different_covars_weight;
+                                                    recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
     res[i] = permute_score_i;
 
   }
@@ -2339,9 +2520,28 @@ NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arm
 
 // [[Rcpp::export]]
 List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 10000,
-                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
-                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool warn = true,
-                    bool dif_coding = false){
+                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int n_different_covars_weight = 2,
+                    int weight_function_int = 2, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+                    bool warn = true, bool dif_coding = false){
+
+  // require covariates and SNPs to be independent
+  bool snps_covars_independent = preprocessed_list["snp.covar.independent"];
+  bool use_covars = snps_covars_independent = preprocessed_list["use.covars"];
+
+  if (!snps_covars_independent & use.covars){
+
+    if (warn){
+
+      Rcout << "SNPs and covariates not independent, returning NA for p-value \n";
+
+    }
+    List res = List::create(Named("pval") = NA_REAL,
+                            Named("obs_fitness_score") = NA_REAL,
+                            Named("perm_fitness_scores") = NumericVector::get_na());
+    return(res);
+
+  }
+
 
   // pick out target columns in the preprocessed data
   IntegerVector original_col_numbers = preprocessed_list["original.col.numbers"];
@@ -2369,25 +2569,6 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
   }
 
-  // compute weight lookup table
-  int max_weight = n_different_snps_weight;
-  if (n_both_one_weight > n_different_snps_weight){
-
-    max_weight = n_both_one_weight;
-
-  }
-
-  int max_sum = max_weight*snp_cols.length();
-  IntegerVector exponents = seq_len(max_sum);
-  IntegerVector weight_lookup(max_sum);
-  for (int i = 0; i < max_sum; i++){
-
-    int exponent_i = exponents[i];
-    int lookup_i = pow(weight_function_int, exponent_i);
-    weight_lookup[i] = lookup_i;
-
-  }
-
   // grab pre-processed case and complement data
   IntegerMatrix case_genetic_data = preprocessed_list["case.genetic.data"];
   case_genetic_data = subset_matrix_cols(case_genetic_data, target_snps);
@@ -2410,7 +2591,7 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   arma::umat comp2_arma = comp_arma == 2;
   arma::umat comp0_arma = comp_arma == 0;
 
-  // compute back to rcpp versions and compute fitness
+  // compute back to rcpp versions
   IntegerMatrix case_minus_comp = wrap(case_minus_comp_arma);
   LogicalMatrix case_comp_different = wrap(case_comp_different_arma);
   LogicalMatrix both_one_mat = wrap(both_one_mat_arma);
@@ -2419,13 +2600,76 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   LogicalMatrix comp2_mat = wrap(comp2_arma);
   LogicalMatrix comp0_mat = wrap(comp0_arma);
 
+  // also read in covariate data
+  LogicalMatrix covar_dependence_mat;
+  IntegerMatrix case_covars;
+  IntegerMatrix comp_covars;
+  LogicalVector trio_data;
+  IntegerMatrix covar_dif_mat;
+  int ncovs = 0;
+  IntegerVector covar_weights;
+
+  if (use_covars){
+
+    covar_dependence_mat = preprocessed_list["covar.dependence.mat"];
+    case_covars = preprocessed_list["case.covars"];
+    comp_covars = preprocessed_list["comp.covars"];
+    trio_data = preprocessed_list["trio.data"];
+
+    // arma versions
+    arma::mat case_covars_arma = as<arma::mat>(case_covars);
+    arma::mat comp_covars_arma = as<arma::mat>(comp_covars);
+
+    // difference matrix
+    arma::mat covar_dif_mat_arma = case_covars_arma - comp_covars_arma;
+    arma::umat covar_dif_mat_l = covar_dif_mat_arma != 0;
+    covar_dif_mat = wrap(covar_dif_mat_arma);
+    LogicalMatrix covar_dif_mat_l_rcpp = wrap(covar_dif_mat_l);
+
+    // need to recompute the covariate weights
+    ncovs = case_covars.ncol();
+    IntegerVector cov_cols = seq_len(ncovs);
+    IntegerVector total_different_covars = sub_rowsums_start(covar_dif_mat_l_rcpp, cov_cols);
+    covar_weights = n_different_covars_weight * total_different_covars;
+    covar_weights[trio_data] = 0;
+
+  }
+
+  // compute weight lookup table
+  int max_weight = n_different_snps_weight;
+  if (n_both_one_weight > n_different_snps_weight){
+
+    max_weight = n_both_one_weight;
+
+    if (use_covars && (n_different_covars_weight > max_weight)){
+
+      max_weight = n_different_covars_weight;
+
+    }
+
+  }
+
+  int n_total = snp_cols.length() + ncovs;
+  int max_sum = max_weight*n_total;
+  IntegerVector exponents = seq_len(max_sum);
+  IntegerVector weight_lookup(max_sum);
+  for (int i = 0; i < max_sum; i++){
+
+    int exponent_i = exponents[i];
+    int lookup_i = pow(weight_function_int, exponent_i);
+    weight_lookup[i] = lookup_i;
+
+  }
+
   // compute fitness score for observed data
   IntegerVector chrom_snps = seq_len(case_genetic_data.ncol());
   List obs_fitness_list = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_different,
                                               chrom_snps, case_minus_comp, both_one_mat,
-                                              block_ld_mat, weight_lookup, case2_mat, case0_mat,
-                                              comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight,
-                                              recessive_ref_prop, recode_test_stat, true, dif_coding);
+                                              target_block_ld_mat, weight_lookup, case2_mat, case0_mat,
+                                              comp2_mat, comp0_mat, covar_dif_mat, case_covars,
+                                              comp_covars, covar_weights, covar_dependence_mat,
+                                              true, n_different_snps_weight, n_both_one_weight,
+                                              recessive_ref_prop, recode_test_stat, true, dif_coding, use_covars);
 
   double obs_fitness_score = obs_fitness_list["fitness_score"];
 
@@ -2458,11 +2702,50 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   IntegerVector ld_block_idx = seq_len(list_pos);
   ld_blocks = ld_blocks[ld_block_idx - 1];
 
+  // also prepare covariate data
+  arma::mat case_covars_inf_arma;
+  arma::mat comp_covars_inf_arma;
+  LogicalVector trio_data_inf;
+  List cov_blocks;
+  if (use_covars){
+
+    IntegerMatrix case_covars_inf = subset_matrix_rows(case_covars, informative_families);
+    case_covars_inf_arma = as<arma::mat>(case_covars_inf);
+    IntegerMatrix comp_covars_inf = subset_matrix_rows(comp_covars, informative_families);
+    comp_covars_inf_arma = as<arma::mat>(comp_covars_inf);
+    trio_data_inf = trio_data[informative_families];
+
+    // identify ld blocks for the covariates
+    IntegerVector remaining_covs = seq_along(case_covars.ncol());
+    List cov_blocks_tmp(case_covars.ncol());
+    int list_pos = 0;
+    while (remaining_covs.length() > 0){
+
+      int starting_cov = min(remaining_covs);
+      LogicalVector this_cov_block = covar_dependence_mat( _ , starting_cov - 1);
+      this_cov_block = this_cov_block[remaining_covs - 1];
+      if (sum(this_cov_block) > 0){
+
+        IntegerVector dependent_covs = remaining_covs[this_cov_block];
+        remaining_covs = remaining_covs[!this_cov_block];
+        cov_blocks_tmp[list_pos] = dependent_covs;
+        list_pos += 1;
+
+      }
+    }
+    IntegerVector cov_block_idx = seq_len(list_pos);
+    cov_blocks_tmp = cov_blocks_tmp[cov_block_idx - 1];
+    cov_blocks = cov_blocks_tmp;
+
+  }
+
   // loop over permuted datasets and compute fitness scores
-  NumericVector perm_fitness_scores = epistasis_test_null_scores(n_permutes, case_inf_arma, comp_inf_arma, ld_blocks,
-                                                                 n_families, target_block_ld_mat, weight_lookup,
-                                                                 n_different_snps_weight, n_both_one_weight,
-                                                                 recessive_ref_prop, recode_test_stat, dif_coding);
+  NumericVector perm_fitness_scores = epistasis_test_null_scores(n_permutes, case_inf_arma, comp_inf_arma,
+                                                                 case_covars_inf_arma, comp_covars_inf_arma,
+                                                                 ld_blocks, cov_blocks, n_families, target_block_ld_mat,
+                                                                 covar_dependence_mat, weight_lookup, trio_data_inf,
+                                                                 n_different_snps_weight, n_both_one_weight, n_different_covars_weight,
+                                                                 recessive_ref_prop, recode_test_stat, dif_coding, use_covars);
   // compute p-value
   double N = n_permutes + 1;
   double B = sum(perm_fitness_scores >= obs_fitness_score);
@@ -2484,8 +2767,8 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
 // [[Rcpp::export]]
 NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List preprocessed_list, int n_permutes = 10000,
-                                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
-                                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+                                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int n_different_covars_weight = 2,
+                                    int weight_function_int = 2, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                                     bool dif_coding = false){
 
 
@@ -2495,8 +2778,8 @@ NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List 
 
     IntegerVector chromosome = chromosome_list[i];
     List epi_res = epistasis_test(chromosome, preprocessed_list, n_permutes,
-                                  n_different_snps_weight, n_both_one_weight, weight_function_int,
-                                  recessive_ref_prop, recode_test_stat, false, dif_coding);
+                                  n_different_snps_weight, n_both_one_weight, n_different_covars_weight,
+                                  weight_function_int, recessive_ref_prop, recode_test_stat, false, dif_coding);
     NumericVector pval_vec = epi_res["pval"];
     double pval = pval_vec[0];
     LogicalVector pval_na_vec = NumericVector::is_na(pval);

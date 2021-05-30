@@ -22,11 +22,18 @@
 #' @param case.covars.sibling.study A matrix or data.frame of binary covariates to be included in the stochastic search corresponding to the affected cases in
 #' \code{case.genetic.data.sibling.study}. Columns correspond to different covariates, rows correspond to different families.
 #' @param sibling.covars A matrix or data.frame of sibling covariates, with columns matching those specified in \code{case.covars.sibling.study}.
-#' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
-#'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
-#'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
+#' @param block.ld.mat A logical diagonal, block diagonal, or uniformly TRUE matrix indicating whether the SNPs in \code{case.genetic.data.trio.study} or
+#'  \code{case.genetic.data.sibling.study} should be considered to be in linkage disequilibrium.
+#'  Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data.trio.study} or \code{case.genetic.data.sibling.study}
+#'  must be consistent with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
 #'  to be in LD if they are located on the same biological chromosome. If not specified, this defaults to the assumption that all SNPs are potentially in linkage,
 #'  which may adversely affect performance compared to a more carefully and biologically relevant specification.
+#' @param covar.dependence.mat A logical diagonal, block diagonal, or uniformly TRUE matrix indicating whether the covariates in
+#'  \code{case.covars.trio.study} or \code{case.covars.sibling.study} should be considered to be independent.
+#'  Note that this means the ordering of the columns in \code{case.covars.trio.study} or \code{case.covars.sibling.study} must be consistent
+#'  with the blocks specified in \code{covar.dependence.mat}. If not specified, this defaults to the assumption that all of the covariates are independent
+#'  (diagonal matrix with TRUE along the diagonal and FALSE otherwise).
+#' @param snp.covar.independent A logical indicating whether the specified snps and covariates should be considered to be independent. Defaults to TRUE.
 #' @param min.allele.freq The minimum minor allele frequency required for a SNP to be considered for inclusion in the genetic algorithm.
 #' Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0 (no filtering).
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
@@ -76,7 +83,8 @@
 preprocess.genetic.data <- function(case.genetic.data.trio.study = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, complement.genetic.data.trio.study = NULL, case.covars.trio.study = NULL,
     case.genetic.data.sibling.study = NULL, sibling.genetic.data = NULL, case.covars.sibling.study = NULL,
-    sibling.covars = NULL, block.ld.mat = NULL, min.allele.freq = 0, bp.param = bpparam(), snp.sampling.probs = NULL) {
+    sibling.covars = NULL, block.ld.mat = NULL, covar.dependence.mat = NULL, snp.covar.independent = TRUE,
+    min.allele.freq = 0, bp.param = bpparam(), snp.sampling.probs = NULL) {
 
 
     # make sure the appropriate genetic data is included
@@ -86,7 +94,7 @@ preprocess.genetic.data <- function(case.genetic.data.trio.study = NULL, father.
 
     }
 
-    if (!is.null(case.genetic.data.trio.study) & ((is.null(father.genetic.data) | is.null(mother.genetic.data)) |
+    if (!is.null(case.genetic.data.trio.study) & ((is.null(father.genetic.data) | is.null(mother.genetic.data)) &
                                                   is.null(complement.genetic.data.trio.study))) {
 
         stop("Must include father.genetic.data and mother.genetic.data or complement.genetic.data.trio.study corresponding to case.genetic.data.trio.study")
@@ -196,6 +204,20 @@ preprocess.genetic.data <- function(case.genetic.data.trio.study = NULL, father.
 
         }
 
+    }
+
+    if (is.null(covar.dependence.mat)){
+
+        if (!is.null(case.covar.trio.study)){
+
+            covar.dependence.mat <- matrix(FALSE, ncol(case.covar.trio.study), ncol(case.covar.trio.study))
+
+        } else if (!is.null(case.covar.sibling.study)) {
+
+            covar.dependence.mat <- matrix(FALSE, ncol(case.covar.trio.study), ncol(case.covar.trio.study))
+
+        }
+        diag(covar.dependence.mat) <- TRUE
 
     }
 
@@ -261,7 +283,7 @@ preprocess.genetic.data <- function(case.genetic.data.trio.study = NULL, father.
             mother.genetic.data[any.missing.geno] <- NA
 
             ### Compute the complement data ###
-            complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
+            complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data.trio.study
 
         } else if (!is.null(complement.genetic.data.trio.study)){
 
@@ -468,14 +490,15 @@ preprocess.genetic.data <- function(case.genetic.data.trio.study = NULL, father.
 
     } else {
 
-        case.covars <- matrix(1, 1, 1, drop = FALSE)
+        case.covars <- matrix(1, 1, 1)
         storage.mode(case.covars) <- "integer"
-        comp.covars <- matrix(1, 1, 1, drop = FALSE)
+        comp.covars <- matrix(1, 1, 1)
 
     }
 
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
                 chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
+                covar.dependence.mat = covar.dependence.mat, snp.covar.independent = snp.covar.independent,
                 minor.allele.vec = minor.alleles, case.covars = case.covars, comp.covars = comp.covars,
                 use.covars = use.covars, trio.data = trio.data))
 }

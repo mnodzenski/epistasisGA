@@ -21,7 +21,7 @@
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 #' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}. Defaults to NULL. If NULL,
 #' \code{both.one.mat.list} must be specified.
-#' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
+#' @param block.ld.mat A logical diagonal, block diagonal, or uniformly TRUE matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 #'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 #'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
 #'  to be in LD if they are located on the same biological chromosome.
@@ -41,6 +41,10 @@
 #' @param case.covar.mat An integer matrix of binary covariates in the cases. Columns represent covariates, rows represent families.
 #' @param comp.covar.mat An integer matrix of binary covariates in the complements. Columns represent covariates, rows represent families.
 #' @param covar.weights An integer vector of family weights based on \code{covar.dif.mat}.
+#' @param covar.dependence.mat A logical diagonal, block diagonal, or uniformly TRUE matrix indicating whether the covariates in
+#'  \code{case.covar.mat} should be considered to be independent. Note that this means the ordering of the columns in \code{case.covar.mat}
+#'  must be consistent with the blocks specified in \code{covar.dependence.mat}.
+#' @param snp.covar.independent A logical indicating whether the specified snps and covariates should be considered to be independent.
 #' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
@@ -125,9 +129,9 @@
 GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
                    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
                    snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
-                   covar.dif.mat, case.covar.mat, comp.covar.mat, covar.weights, island.cluster.size = 4,
-                   n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
-                   gen.same.fitness = 50, max.generations = 500,
+                   covar.dif.mat, case.covar.mat, comp.covar.mat, covar.weights, covar.dependence.mat, snp.covar.independent = TRUE,
+                   island.cluster.size = 4,n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1,
+                   migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                    recode.test.stat = 1.64, dif.coding = FALSE, use.covars = FALSE) {
 
@@ -137,9 +141,9 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                             both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
                             weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
                             covar.dif.mat, case.covar.mat, comp.covar.mat, covar.weights,
-                            snp.chisq, original.col.numbers, n.different.snps.weight, n.both.one.weight,
-                            migration.interval, gen.same.fitness, max.generations,
-                            initial.sample.duplicates, crossover.prop, recessive.ref.prop,
+                            covar.dependence.mat, snp.covar.independent, snp.chisq, original.col.numbers,
+                            n.different.snps.weight, n.both.one.weight, migration.interval, gen.same.fitness,
+                            max.generations, initial.sample.duplicates, crossover.prop, recessive.ref.prop,
                             recode.test.stat, dif.coding, use.covars)
 
     ### clean up and output results

@@ -73,20 +73,20 @@ sub_rowsumsl <- function(in_mat, target_rows, target_cols) {
     .Call('_epistasisGA_sub_rowsumsl', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
 }
 
-n_pos_high_risk <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_n_pos_high_risk', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+n_pos_high_risk <- function(in_mat, target_rows, target_cols, covars = FALSE) {
+    .Call('_epistasisGA_n_pos_high_risk', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols, covars)
 }
 
-n_neg_high_risk <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_n_neg_high_risk', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+n_neg_high_risk <- function(in_mat, target_rows, target_cols, covars = FALSE) {
+    .Call('_epistasisGA_n_neg_high_risk', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols, covars)
 }
 
 sub_colmeans <- function(in_mat, target_rows, target_cols) {
     .Call('_epistasisGA_sub_colmeans', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
 }
 
-find_high_risk <- function(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps) {
-    .Call('_epistasisGA_find_high_risk', PACKAGE = 'epistasisGA', n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps)
+find_high_risk <- function(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps, covars = FALSE) {
+    .Call('_epistasisGA_find_high_risk', PACKAGE = 'epistasisGA', n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps, covars)
 }
 
 compute_dif_vecs <- function(case_genetic_data, comp_genetic_data, case_comp_dif, target_snps, cases_minus_complements, both_one_mat, weight_lookup, covar_dif_mat, case_covar_mat, comp_covar_mat, covar_weights, n_different_snps_weight = 2L, n_both_one_weight = 1L, use_covars = FALSE) {

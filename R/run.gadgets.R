@@ -173,6 +173,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     comp.covars <- data.list$comp.covars
     use.covars <- data.list$use.covars
     trio.data <- data.list$trio.data
+    covar.dependence.mat <- data.list$covar.dependence.mat
+    snp.covar.independent <- data.list$snp.covar.independent
 
     ### construct covar difference matrix and weights ###
     # note this will just be a 1x1 matrix containing a 0 if use.covars = FALSE
@@ -303,7 +305,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes,
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
         case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, covar.dif.mat = covar.dif.mat,
-        case.covar.mat = case.covar.mat, comp.covar.mat = comp.covar.mat, covar.weights = covar.weights, island.cluster.size = island.cluster.size,
+        case.covar.mat = case.covars, comp.covar.mat = comp.covars, covar.weights = covar.weights, covar.dependence.mat = covar.dependence.mat,
+        snp.covar.independent = snp.covar.independent, island.cluster.size = island.cluster.size,
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
         gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
         crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, dif.coding = dif.coding,
