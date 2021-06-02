@@ -124,7 +124,29 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         one.case.levels <- unique(exposure)[cases.per.level == 1]
         if (length(one.case.levels) > 0){
 
-            exposure <- exposure[exposure != one.case.levels]
+            one.case.levels.message <- paste(one.case.levels, collapse = ", ")
+            warning(paste("A single case had the following exposures, and families with these exposures will be excluded from analysis:",
+                    one.case.levels.message))
+            keep.these <- exposure != one.case.levels
+            exposure <- exposure[keep.these]
+            case.genetic.data <- case.genetic.data[keep.these, ]
+            if (!is.null(complement.genetic.data)){
+
+                complement.genetic.data <- complement.genetic.data[keep.these, ]
+
+            }
+
+            if (!is.null(father.genetic.data)){
+
+                father.genetic.data <- father.genetic.data[keep.these, ]
+
+            }
+
+            if (!is.null(mother.genetic.data)) {
+
+                mother.genetic.data <- mother.genetic.data[keep.these, ]
+
+            }
 
         }
         if (length(exposure) == 1){
@@ -270,25 +292,25 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         } else {
 
+            exposure.var <- rep(exposure, 2)
             res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data,
-                                                                            exposure) {
+                                                                            exposure.var) {
 
                 case.snp <- case.genetic.data[, snp]
                 comp.snp <- complement.genetic.data[, snp]
 
                 # get p-value of snp-exposure association from conditional logistic regression
                 case.comp.geno <- c(case.snp, comp.snp)
-                df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure, ids = ids)
+                df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
                 full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
                 full.model.ll <- full.model$loglik
                 reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
                 reduced.model.ll <- reduced.model$loglik
-                clogit.chisq <- 2*log(full.model.ll - reduced.model.ll)
-
+                clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
 
                 return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
 
-            }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, exposure = exposure,
+            }, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, exposure.var = exposure.var,
             BPPARAM = bp.param)
             chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
 
