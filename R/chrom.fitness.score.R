@@ -24,10 +24,6 @@
 #' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
 #' @param comp2.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.
 #' @param comp0.mat A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.
-#' @param covar.dif.mat An integer matrix = \code{case.covar.mat} - \code{comp.covar.mat}.
-#' @param case.covar.mat An integer matrix of binary covariates in the cases. Columns represent covariates, rows represent families.
-#' @param comp.covar.mat An integer matrix of binary covariates in the complements. Columns represent covariates, rows represent families.
-#' @param covar.weights An integer vector of family weights based on \code{covar.dif.mat}.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement/unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 2.
 #' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
@@ -39,8 +35,7 @@
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference or the raw difference. It defaults to FALSE, meaning the raw differences will be used.
-#' @param use.covars A boolean indicating whether covariates should be used. Defaults to FALSE.
+#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @return A list:
 #' \describe{
 #'  \item{fitness_score}{The chromosome fitness score.}
@@ -78,10 +73,6 @@
 #' case0.mat <- case == 0
 #' comp2.mat <- comp == 2
 #' comp0.mat <- comp == 0
-#' case.covar.mat <- matrix(1, 1, 1, drop = FALSE)
-#' comp.covar.mat <- matrix(1, 1, 1, drop = FALSE)
-#' covar.dif.mat <- case.covar.mat - comp.covar.mat
-#' covar.weights <- 0
 #' library(Matrix)
 #' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
 #'                               matrix(rep(TRUE, 25^2), nrow = 25),
@@ -93,26 +84,21 @@
 #'                     case.minus.comp, both.one.mat,
 #'                     block.ld.mat, weight.lookup,
 #'                     case2.mat, case0.mat, comp2.mat,
-#'                     comp0.mat, covar.dif.mat, case.covar.mat,
-#'                     comp.covar.mat, covar.weights, use.covars = FALSE)
+#'                     comp0.mat)
 #'
 #' @export
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
                                 target.snps, cases.minus.complements, both.one.mat,
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
-                                comp2.mat, comp0.mat, covar.dif.mat, case.covar.mat,
-                                comp.covar.mat, covar.weights, n.different.snps.weight = 2,
+                                comp2.mat, comp0.mat, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE,
-                                use.covars = FALSE) {
+                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
                       cases.minus.complements, both.one.mat, block.ld.mat, weight.lookup, case2.mat,
-                      case0.mat, comp2.mat, comp0.mat, covar.dif.mat, case.covar.mat, comp.covar.mat, covar.weights,
-                      n.different.snps.weight, n.both.one.weight, recessive.ref.prop, recode.test.stat, epi.test,
-                      dif.coding, use.covars)
-
+                      case0.mat, comp2.mat, comp0.mat, n.different.snps.weight, n.both.one.weight,
+                      recessive.ref.prop, recode.test.stat, epi.test, dif.coding)
 
 }
 
