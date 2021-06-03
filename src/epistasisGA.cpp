@@ -898,16 +898,23 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
     arma::mat cov_mat = invsum_family_weights * trans(weighted_x_minus_mu_hat) * x_minus_mu_hat;
 
     // set cov elements to zero if SNPs are not in same ld block
-    for (int i = 0; i < n_target; i++){
+    for (int i = 1; i < n_target; i++){
+
       int this_row = target_snps_in[i] - 1;
-      for (int j = 0; j < n_target; j++){
+
+      for (int j = 0; j < i; j++){
+
         int this_col = target_snps_in[j] - 1;
+
         if (block_ld_mat(this_row, this_col) != 1){
 
-          cov_mat(i,j) = 0;
+          cov_mat(i, j) = 0;
+          cov_mat(j, i) = 0;
 
         }
+
       }
+
     }
 
     // get info for function output
@@ -1280,12 +1287,12 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                             Named("fitness_scores") = fitness_scores,
                             Named("sum_dif_vecs") = sum_dif_vecs,
                             Named("gen_original_cols") = gen_original_cols,
-                            Named("high_risk_exposures") = high_risk_exposures,
+                            Named("high_risk_exposure") = high_risk_exposures,
                             Named("high_risk_exposure_sum_dif_vecs") = high_risk_exposure_sum_dif_vecs,
                             Named("high_risk_exposure_risk_allele_vecs") = high_risk_exposure_risk_allele_vecs,
                             Named("high_risk_exposure_n_case_risk_geno_vec") = high_risk_exposure_n_case_risk_geno_vec,
                             Named("high_risk_exposure_n_comp_risk_geno_vec") = high_risk_exposure_n_comp_risk_geno_vec,
-                            Named("low_risk_exposures") = low_risk_exposures,
+                            Named("low_risk_exposure") = low_risk_exposures,
                             Named("low_risk_exposure_sum_dif_vecs") = low_risk_exposure_sum_dif_vecs,
                             Named("low_risk_exposure_risk_allele_vecs") = low_risk_exposure_risk_allele_vecs,
                             Named("low_risk_exposure_n_case_risk_geno_vec") = low_risk_exposure_n_case_risk_geno_vec,
@@ -1671,7 +1678,6 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
     }
 
-
     // 4. mutate chromosomes
     IntegerVector tmp_lower_idx = seq_len(sampled_lower_chromosomes.length());
     IntegerVector mutation_positions = setdiff(tmp_lower_idx, cross_over_positions);
@@ -1819,7 +1825,10 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   // if the algorithm hasn't hit the max number of generations prepare for potential migration
   if ((generation < max_generations) & (n_migrations > 0)){
 
+    Rcout << "preparing migration \n";
+
     // order by fitness score
+    Rcout << "migration step 1 \n";
     IntegerVector chrom_list_order = sort_by_order(seq_len(chromosome_list.size()), fitness_scores, 2);
     chromosome_list = chromosome_list[chrom_list_order - 1];
     NumericVector fitness_scores_tmp = fitness_scores[chrom_list_order - 1];
@@ -1830,47 +1839,69 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     // store in population
     if (GxE){
 
-      CharacterVector high_risk_exposures = current_fitness_list["high_risk_exposures"];
+      Rcout << "migration step 2 \n";
+
+      List high_risk_exposures = current_fitness_list["high_risk_exposure"];
       high_risk_exposures = high_risk_exposures[chrom_list_order - 1];
 
-      NumericVector high_risk_exposure_sum_dif_vecs = current_fitness_list["high_risk_exposure_sum_dif_vecs"];
+      Rcout << "migration step 3 \n";
+
+      List high_risk_exposure_sum_dif_vecs = current_fitness_list["high_risk_exposure_sum_dif_vecs"];
       high_risk_exposure_sum_dif_vecs = high_risk_exposure_sum_dif_vecs[chrom_list_order - 1];
 
-      CharacterVector high_risk_exposure_risk_allele_vecs = current_fitness_list["high_risk_exposure_risk_allele_vecs"];
+      Rcout << "migration step 4 \n";
+
+      List high_risk_exposure_risk_allele_vecs = current_fitness_list["high_risk_exposure_risk_allele_vecs"];
       high_risk_exposure_risk_allele_vecs = high_risk_exposure_risk_allele_vecs[chrom_list_order - 1];
+
+      Rcout << "migration step 5 \n";
 
       IntegerVector high_risk_exposure_n_case_risk_geno_vec = current_fitness_list["high_risk_exposure_n_case_risk_geno_vec"];
       high_risk_exposure_n_case_risk_geno_vec =  high_risk_exposure_n_case_risk_geno_vec[chrom_list_order - 1];
 
+      Rcout << "migration step 6 \n";
+
       IntegerVector high_risk_exposure_n_comp_risk_geno_vec = current_fitness_list["high_risk_exposure_n_comp_risk_geno_vec"];
       high_risk_exposure_n_comp_risk_geno_vec = high_risk_exposure_n_comp_risk_geno_vec[chrom_list_order - 1];
 
-      CharacterVector low_risk_exposures = current_fitness_list["low_risk_exposures"];
+      Rcout << "migration step 7 \n";
+
+      List low_risk_exposures = current_fitness_list["low_risk_exposure"];
       low_risk_exposures = low_risk_exposures[chrom_list_order - 1];
 
-      NumericVector low_risk_exposure_sum_dif_vecs = current_fitness_list["low_risk_exposure_sum_dif_vecs"];
+      Rcout << "migration step 8 \n";
+
+      List low_risk_exposure_sum_dif_vecs = current_fitness_list["low_risk_exposure_sum_dif_vecs"];
       low_risk_exposure_sum_dif_vecs = low_risk_exposure_sum_dif_vecs[chrom_list_order - 1];
 
-      CharacterVector low_risk_exposure_risk_allele_vecs = current_fitness_list["low_risk_exposure_risk_allele_vecs"];
+      Rcout << "migration step 9 \n";
+
+      List low_risk_exposure_risk_allele_vecs = current_fitness_list["low_risk_exposure_risk_allele_vecs"];
       low_risk_exposure_risk_allele_vecs = low_risk_exposure_risk_allele_vecs[chrom_list_order - 1];
+
+      Rcout << "migration step 10 \n";
 
       IntegerVector low_risk_exposure_n_case_risk_geno_vec = current_fitness_list["low_risk_exposure_n_case_risk_geno_vec"];
       low_risk_exposure_n_case_risk_geno_vec =  low_risk_exposure_n_case_risk_geno_vec[chrom_list_order - 1];
 
+      Rcout << "migration step 11 \n";
+
       IntegerVector low_risk_exposure_n_comp_risk_geno_vec = current_fitness_list["low_risk_exposure_n_comp_risk_geno_vec"];
       low_risk_exposure_n_comp_risk_geno_vec = low_risk_exposure_n_comp_risk_geno_vec[chrom_list_order - 1];
+
+      Rcout << "migration step 12 \n";
 
       List pop_current_fitness_list = population["current_fitness"];
       pop_current_fitness_list["chromosome_list"] = chromosome_list;
       pop_current_fitness_list["fitness_scores"] = fitness_scores;
       pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
       pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      pop_current_fitness_list["high_risk_exposures"] = high_risk_exposures;
+      pop_current_fitness_list["high_risk_exposure"] = high_risk_exposures;
       pop_current_fitness_list["high_risk_exposure_sum_dif_vecs"] = high_risk_exposure_sum_dif_vecs;
       pop_current_fitness_list["high_risk_exposure_risk_allele_vecs"] = high_risk_exposure_risk_allele_vecs;
       pop_current_fitness_list["high_risk_exposure_n_case_risk_geno_vec"] = high_risk_exposure_n_case_risk_geno_vec;
       pop_current_fitness_list["high_risk_exposure_n_comp_risk_geno_vec"] = high_risk_exposure_n_comp_risk_geno_vec;
-      pop_current_fitness_list["low_risk_exposures"] = low_risk_exposures;
+      pop_current_fitness_list["low_risk_exposure"] = low_risk_exposures;
       pop_current_fitness_list["low_risk_exposure_sum_dif_vecs"] = low_risk_exposure_sum_dif_vecs;
       pop_current_fitness_list["low_risk_exposure_risk_allele_vecs"] = low_risk_exposure_risk_allele_vecs;
       pop_current_fitness_list["low_risk_exposure_n_case_risk_geno_vec"] = low_risk_exposure_n_case_risk_geno_vec;
@@ -1921,14 +1952,16 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   // otherwise just store the current generation and return the population
   } else {
 
+    Rcout << "algorithm terminating \n";
+
     if (GxE){
 
-      CharacterVector high_risk_exposures = current_fitness_list["high_risk_exposures"];
+      CharacterVector high_risk_exposures = current_fitness_list["high_risk_exposure"];
       NumericVector high_risk_exposure_sum_dif_vecs = current_fitness_list["high_risk_exposure_sum_dif_vecs"];
       CharacterVector high_risk_exposure_risk_allele_vecs = current_fitness_list["high_risk_exposure_risk_allele_vecs"];
       IntegerVector high_risk_exposure_n_case_risk_geno_vec = current_fitness_list["high_risk_exposure_n_case_risk_geno_vec"];
       IntegerVector high_risk_exposure_n_comp_risk_geno_vec = current_fitness_list["high_risk_exposure_n_comp_risk_geno_vec"];
-      CharacterVector low_risk_exposures = current_fitness_list["low_risk_exposures"];
+      CharacterVector low_risk_exposures = current_fitness_list["low_risk_exposure"];
       NumericVector low_risk_exposure_sum_dif_vecs = current_fitness_list["low_risk_exposure_sum_dif_vecs"];
       CharacterVector low_risk_exposure_risk_allele_vecs = current_fitness_list["low_risk_exposure_risk_allele_vecs"];
       IntegerVector low_risk_exposure_n_case_risk_geno_vec = current_fitness_list["low_risk_exposure_n_case_risk_geno_vec"];
@@ -1939,12 +1972,12 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
       pop_current_fitness_list["fitness_scores"] = fitness_scores;
       pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
       pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      pop_current_fitness_list["high_risk_exposures"] = high_risk_exposures;
+      pop_current_fitness_list["high_risk_exposure"] = high_risk_exposures;
       pop_current_fitness_list["high_risk_exposure_sum_dif_vecs"] = high_risk_exposure_sum_dif_vecs;
       pop_current_fitness_list["high_risk_exposure_risk_allele_vecs"] = high_risk_exposure_risk_allele_vecs;
       pop_current_fitness_list["high_risk_exposure_n_case_risk_geno_vec"] = high_risk_exposure_n_case_risk_geno_vec;
       pop_current_fitness_list["high_risk_exposure_n_comp_risk_geno_vec"] = high_risk_exposure_n_comp_risk_geno_vec;
-      pop_current_fitness_list["low_risk_exposures"] = low_risk_exposures;
+      pop_current_fitness_list["low_risk_exposure"] = low_risk_exposures;
       pop_current_fitness_list["low_risk_exposure_sum_dif_vecs"] = low_risk_exposure_sum_dif_vecs;
       pop_current_fitness_list["low_risk_exposure_risk_allele_vecs"] = low_risk_exposure_risk_allele_vecs;
       pop_current_fitness_list["low_risk_exposure_n_case_risk_geno_vec"] = low_risk_exposure_n_case_risk_geno_vec;
@@ -2148,6 +2181,10 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 
   for (int i = 0; i < island_cluster_size; i++){
 
+    Rcout << "i = " << i << "\n";
+
+    Rcout << "here 1 \n";
+
     List island_population_i = initiate_population(case_genetic_data, complement_genetic_data,
                                                    case_comp_different, case_minus_comp, both_one_mat,
                                                    block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers,
@@ -2162,6 +2199,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                                    recessive_ref_prop, recode_test_stat,
                                                    max_generations, initial_sample_duplicates, dif_coding, GxE);
 
+    Rcout << "here 2 \n";
+
     island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                           case_comp_different, case_minus_comp, both_one_mat,
                                           block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
@@ -2175,6 +2214,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                           migration_interval, gen_same_fitness, max_generations,
                                           initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
                                           dif_coding, GxE);
+
+    Rcout << "here 3 \n";
   }
 
   // check convergence
@@ -2236,9 +2277,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
       if (GxE){
 
         // migrate high risk exposures
-        IntegerVector first_island_high_risk_exposures = first_island_current["high_risk_exposures"];
-        IntegerVector second_island_high_risk_exposures = second_island_current["high_risk_exposures"];
-        IntegerVector high_risk_exposure_migrations = second_island_high_risk_exposures[donor_idx];
+        List first_island_high_risk_exposures = first_island_current["high_risk_exposure"];
+        List second_island_high_risk_exposures = second_island_current["high_risk_exposure"];
+        List high_risk_exposure_migrations = second_island_high_risk_exposures[donor_idx];
         first_island_high_risk_exposures[receiver_idx] = high_risk_exposure_migrations;
 
         // migrate high risk dif vecs
@@ -2266,9 +2307,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
         first_island_high_risk_n_comp_risk_geno[receiver_idx] = high_risk_n_comp_risk_geno_migrations;
 
         // migrate low risk exposures
-        IntegerVector first_island_low_risk_exposures = first_island_current["low_risk_exposures"];
-        IntegerVector second_island_low_risk_exposures = second_island_current["low_risk_exposures"];
-        IntegerVector low_risk_exposure_migrations = second_island_low_risk_exposures[donor_idx];
+        List first_island_low_risk_exposures = first_island_current["low_risk_exposure"];
+        List second_island_low_risk_exposures = second_island_current["low_risk_exposure"];
+        List low_risk_exposure_migrations = second_island_low_risk_exposures[donor_idx];
         first_island_low_risk_exposures[receiver_idx] = low_risk_exposure_migrations;
 
         // migrate low risk dif vecs

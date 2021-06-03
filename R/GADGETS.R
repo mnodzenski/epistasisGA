@@ -130,7 +130,7 @@
 
 GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
                    case.minus.comp, both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, island.cluster.size = 4,
+                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat, island.cluster.size = 4,
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500,
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
@@ -140,18 +140,16 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    comp2.mat.list = NULL, comp0.mat.list = NULL) {
 
     ### run rcpp version of GADGETS ##
-    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, case.genetic.data,
+    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, block.ld.mat, n.chromosomes, chromosome.size,
+                            weight.lookup,  snp.chisq, original.col.numbers, case.genetic.data,
                             complement.genetic.data, case.comp.different, case.minus.comp,
-                            both.one.mat, block.ld.mat, n.chromosomes, chromosome.size,
-                            weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat,
+                            both.one.mat, case2.mat, case0.mat, comp2.mat, comp0.mat,
                             case.genetic.data.list, complement.genetic.data.list,
                             case.comp.different.list, case.minus.comp.list, both.one.mat.list,
                             case2.mat.list, case0.mat.list, comp2.mat.list, comp0.mat.list,
-                            exposure.levels, snp.chisq, original.col.numbers,
-                            n.different.snps.weight, n.both.one.weight, migration.interval,
-                            gen.same.fitness, max.generations,
-                            initial.sample.duplicates, crossover.prop, recessive.ref.prop,
-                            recode.test.stat, dif.coding)
+                            exposure.levels, n.different.snps.weight, n.both.one.weight, migration.interval,
+                            gen.same.fitness, max.generations, initial.sample.duplicates, crossover.prop,
+                            recessive.ref.prop, recode.test.stat, dif.coding)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
@@ -181,7 +179,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
 
         } else {
 
-            high.risk.exposure.dt <- data.table(high.risk.exposure = final.population.list[["high_risk_exposures"]])
+            high.risk.exposure.dt <- data.table(high.risk.exposure = unlist(final.population.list[["high_risk_exposure"]]))
 
             high.risk.dif.vec.list <- final.population.list[["high_risk_exposure_sum_dif_vecs"]]
             high.risk.dif.vec.dt <- as.data.table(do.call(rbind, high.risk.dif.vec.list))
@@ -194,7 +192,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
             high.risk.n.case.risk.geno.dt <- data.table(high.risk.n.cases.risk.geno = final.population.list[["high_risk_exposure_n_case_risk_geno_vec"]])
             high.risk.n.comp.risk.geno.dt <- data.table(high.risk.n.comps.risk.geno = final.population.list[["high_risk_exposure_n_comp_risk_geno_vec"]])
 
-            low.risk.exposure.dt <- data.table(low.risk.exposure = final.population.list[["low_risk_exposures"]])
+            low.risk.exposure.dt <- data.table(low.risk.exposure = unlist(final.population.list[["low_risk_exposure"]]))
 
             low.risk.dif.vec.list <- final.population.list[["low_risk_exposure_sum_dif_vecs"]]
             low.risk.dif.vec.dt <- as.data.table(do.call(rbind, low.risk.dif.vec.list))

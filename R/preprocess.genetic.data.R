@@ -303,9 +303,9 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
                 case.comp.geno <- c(case.snp, comp.snp)
                 df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
                 full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
-                full.model.ll <- full.model$loglik
+                full.model.ll <- full.model$loglik[2]
                 reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
-                reduced.model.ll <- reduced.model$loglik
+                reduced.model.ll <- reduced.model$loglik[2]
                 clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
 
                 return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
