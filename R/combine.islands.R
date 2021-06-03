@@ -189,9 +189,10 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         low.risk.end.cols <- c(paste0("snp", seq_len(chromosome.size), ".low.risk.allele.copies"),
                                 "low.risk.n.cases.risk.geno", "low.risk.n.comps.risk.geno")
         low.risk.end <- unique.result[ , ..low.risk.end.cols]
+        n.islands <- unique.result[ , "n.islands.found"]
         final.result <- cbind(snp.cols, rsid.dt, overall.dif.vecs.and.fitness, high.risk.start,
                               high.risk.allele.dt, high.risk.end, low.risk.start, low.risk.allele.dt,
-                              low.risk.end)
+                              low.risk.end, n.islands)
 
     } else {
 
