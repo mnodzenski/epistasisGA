@@ -22,10 +22,6 @@ GADGETS(
   case0.mat,
   comp2.mat,
   comp0.mat,
-  covar.dif.mat,
-  case.covar.mat,
-  comp.covar.mat,
-  covar.weights,
   island.cluster.size = 4,
   n.migrations = 20,
   n.different.snps.weight = 2,
@@ -38,7 +34,16 @@ GADGETS(
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
   dif.coding = FALSE,
-  use.covars = FALSE
+  exposure.levels = NULL,
+  case.genetic.data.list = NULL,
+  complement.genetic.data.list = NULL,
+  case.comp.different.list = NULL,
+  case.minus.comp.list = NULL,
+  both.one.mat.list = NULL,
+  case2.mat.list = NULL,
+  case0.mat.list = NULL,
+  comp2.mat.list = NULL,
+  comp0.mat.list = NULL
 )
 }
 \arguments{
@@ -67,7 +72,7 @@ If NULL, \code{case.minus.comp.list} must be specified.}
 equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}. Defaults to NULL. If NULL,
 \code{both.one.mat.list} must be specified.}
 
-\item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
+\item{block.ld.mat}{A logical diagonal, block diagonal, or uniformly TRUE matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
 to be in LD if they are located on the same biological chromosome.}
@@ -92,14 +97,6 @@ This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.
 \item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
 
 \item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
-
-\item{covar.dif.mat}{An integer matrix = \code{case.covar.mat} - \code{comp.covar.mat}.}
-
-\item{case.covar.mat}{An integer matrix of binary covariates in the cases. Columns represent covariates, rows represent families.}
-
-\item{comp.covar.mat}{An integer matrix of binary covariates in the complements. Columns represent covariates, rows represent families.}
-
-\item{covar.weights}{An integer vector of family weights based on \code{covar.dif.mat}.}
 
 \item{island.cluster.size}{An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.}
 
@@ -129,9 +126,35 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 See the GADGETS paper for specific details.}
 
 \item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
-be coded as the sign of the difference or the raw difference. It defaults to FALSE, meaning the raw differences will be used.}
+be coded as the sign of the difference (defaulting to false) or the raw difference.}
 
-\item{use.covars}{A boolean indicating whether covariates should be used. Defaults to FALSE.}
+\item{exposure.levels}{A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
+gene-environment interactions.}
+
+\item{case.genetic.data.list}{A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
+as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.}
+
+\item{complement.genetic.data.list}{A list of matrices containing complement/unaffected sibling genetic data. Each element of the list corresponds to groups of
+cases with a common environmental exposure, as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP
+minor allele counts. Defaults to NULL.}
+
+\item{case.comp.different.list}{A list of matrices indicating \code{case.genetic.data.list} != \code{complement.genetic.data.list}. Defaults to NULL.}
+
+\item{case.minus.comp.list}{A list of matrices corresponding to \code{case.genetic.data.list} - \code{complement.genetic.data.list}. Defaults to NULL.}
+
+\item{both.one.mat.list}{A list of matrices indicating \code{case.genetic.data.list} == \code{complement.genetic.data.list} == 1. Defaults to NULL.}
+
+\item{case2.mat.list}{A list of logical matrices indicating whether, for each matrix in \code{case.genetic.data.list} and for each SNP,
+the case carries 2 copies of the minor allele. Defaults to NULL.}
+
+\item{case0.mat.list}{A list of logical matrices indicating whether, for each matrix in \code{case.genetic.data.list} and for each SNP,
+the case carries 0 copies of the minor allele. Defaults to NULL.}
+
+\item{comp2.mat.list}{A list of logical matrices indicating whether, for each matrix in \code{complement.genetic.data.list} and for each SNP,
+the complement/unaffected sibling carries 2 copies of the minor allele. Defaults to NULL.}
+
+\item{comp0.mat.list}{A list of logical matrices indicating whether, for each matrix in \code{complement.genetic.data.list} and for each SNP,
+the complement/unaffected sibling carries 0 copies of the minor allele. Defaults to NULL.}
 }
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
@@ -173,10 +196,6 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
  case0.mat <- case.genetic.data == 0
  comp2.mat <- complement.genetic.data == 2
  comp0.mat <- complement.genetic.data == 0
- case.covar.mat <- matrix(1, 1, 1, drop = FALSE)
- comp.covar.mat <- matrix(1, 1, 1, drop = FALSE)
- covar.dif.mat <- case.covar.mat - comp.covar.mat
- covar.weights <- 0
  snp.chisq <- sqrt(chisq.stats)
  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
  dir.create('tmp')
@@ -189,10 +208,8 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    original.col.numbers = original.col.numbers,
                    weight.lookup = weight.lookup, case2.mat = case2.mat,
                    case0.mat = case0.mat, comp2.mat = comp2.mat,
-                   comp0.mat = comp0.mat, covar.dif.mat = covar.dif.mat,
-                   case.covar.mat = case.covar.mat, comp.covar.mat = comp.covar.mat,
-                   covar.weights = covar.weights, n.migrations = 2,
-                   migration.interval = 5, max.generations = 10, use.covars = FALSE)
+                   comp0.mat = comp0.mat, n.migrations = 2,
+                   migration.interval = 5, max.generations = 10)
 unlink('tmp', recursive = TRUE)
 
 }

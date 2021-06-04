@@ -5,56 +5,36 @@
 \title{A function to pre-process case-parent triad of affected/unaffected sibling data.}
 \usage{
 preprocess.genetic.data(
-  case.genetic.data.trio.study = NULL,
+  case.genetic.data,
+  complement.genetic.data = NULL,
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
-  complement.genetic.data.trio.study = NULL,
-  case.covars.trio.study = NULL,
-  case.genetic.data.sibling.study = NULL,
-  sibling.genetic.data = NULL,
-  case.covars.sibling.study = NULL,
-  sibling.covars = NULL,
-  block.ld.mat = NULL,
+  block.ld.mat,
   min.allele.freq = 0,
   bp.param = bpparam(),
-  snp.sampling.probs = NULL
+  snp.sampling.probs = NULL,
+  categorical.exposures = NULL
 )
 }
 \arguments{
-\item{case.genetic.data.trio.study}{The genetic data of the disease affected children from case-parent trios. Columns are SNP allele counts, and rows are individuals.
-The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}. If using a mix of trio and sibling data, specify the trio
-data here and in \code{father.genetic.data} and \code{mother.genetic.data}. Specify the the sibling study data in argument \code{case.genetic.data.sibling.study} and
-\code{sibling.genetic.data}.}
-
-\item{father.genetic.data}{The genetic data for the fathers of the cases in \code{case.genetic.data.trio.study}. Columns are SNP allele counts, rows are individuals.}
-
-\item{mother.genetic.data}{The genetic data for the mothers of the cases in \code{case.genetic.data.trio.study}. Columns are SNP allele counts, rows are individuals.}
-
-\item{complement.genetic.data.trio.study}{A genetic dataset from the complements of the cases in \code{case.genetic.data.trio.study}, where
-\code{complement.genetic.data.trio.study} = mother SNP counts + father SNP counts - case SNP counts.
-Columns are SNP allele counts, rows are families. Alternatively, \code{father.genetic.data} and \code{mother.genetic.data} can be specified.}
-
-\item{case.covars.trio.study}{A matrix or data.frame of binary covariates to be included in the stochastic search corresponding to the affected cases in
-\code{case.genetic.data.trio.study}. Columns correspond to different covariates, rows correspond to different families.}
-
-\item{case.genetic.data.sibling.study}{The genetic data of the disease affected children from affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
 The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
 
-\item{sibling.genetic.data}{The genetic data of the disease affected children from affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
-The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}. If desired, for case-parent trio studies,
-this argument can be entered as \code{sibling.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. This would be needed, for example, if
-any of the input SNPs are on the X-chromosome. Columns are SNP allele counts, rows are families.}
+\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
+\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
+this should be the genotypes for the unaffected siblings.
+Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
 
-\item{case.covars.sibling.study}{A matrix or data.frame of binary covariates to be included in the stochastic search corresponding to the affected cases in
-\code{case.genetic.data.sibling.study}. Columns correspond to different covariates, rows correspond to different families.}
+\item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
+Does not need to be specified if \code{complement.genetic.data} is specified.}
 
-\item{sibling.covars}{A matrix or data.frame of sibling covariates, with columns matching those specified in \code{case.covars.sibling.study}.}
+\item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
+Does not need to be specified if \code{complement.genetic.data} is specified.}
 
 \item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
 to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
 with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-to be in LD if they are located on the same biological chromosome. If not specified, this defaults to the assumption that all SNPs are potentially in linkage,
-which may adversely affect performance compared to a more carefully and biologically relevant specification.}
+to be in LD if they are located on the same biological chromosome.}
 
 \item{min.allele.freq}{The minimum minor allele frequency required for a SNP to be considered for inclusion in the genetic algorithm.
 Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0 (no filtering).}
@@ -64,9 +44,11 @@ If using a cluster computer, this parameter needs to be set with care. See \code
 
 \item{snp.sampling.probs}{A vector indicating the sampling probabilities of the SNPs in \code{case.genetic.data}. SNPs will be sampled in the
 genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
-each SNP, and sampling will be proportional to the root of these statistics. If covariates are included, the SNPs will be sampled proportional to the
-chi-squared statistic corresponding to the SNP-covariate interaction. If user specified, the  vector values need not sum to 1, they just need to be positive
+each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 real numbers. See argument \code{prob} from function \code{sample} for more details.}
+
+\item{categorical.exposures}{A data.frame of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.
+Families with any missing exposure will be excluded from analysis.}
 }
 \value{
 A list containing the following:

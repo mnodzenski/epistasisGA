@@ -21,7 +21,7 @@ column in the data passed to function \code{preprocess.genetic.data}, the second
 \item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
 
 \item{n.top.chroms.per.island}{The number of top chromosomes per island to save in the final combined list. Defaults to the
-top 1.}
+top 10.}
 }
 \value{
 A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
