@@ -2,130 +2,130 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 scalar_min <- function(x, y) {
-    .Call('_epistasisGA_scalar_min', PACKAGE = 'epistasisGA', x, y)
+    .Call('_epistasisGAGE_scalar_min', PACKAGE = 'epistasisGAGE', x, y)
 }
 
 scalar_max <- function(x, y) {
-    .Call('_epistasisGA_scalar_max', PACKAGE = 'epistasisGA', x, y)
+    .Call('_epistasisGAGE_scalar_max', PACKAGE = 'epistasisGAGE', x, y)
 }
 
 concat <- function(x, y) {
-    .Call('_epistasisGA_concat', PACKAGE = 'epistasisGA', x, y)
+    .Call('_epistasisGAGE_concat', PACKAGE = 'epistasisGAGE', x, y)
 }
 
 concat_list <- function(x, y) {
-    .Call('_epistasisGA_concat_list', PACKAGE = 'epistasisGA', x, y)
+    .Call('_epistasisGAGE_concat_list', PACKAGE = 'epistasisGAGE', x, y)
 }
 
 sort_by_order <- function(x, y, sort_type) {
-    .Call('_epistasisGA_sort_by_order', PACKAGE = 'epistasisGA', x, y, sort_type)
+    .Call('_epistasisGAGE_sort_by_order', PACKAGE = 'epistasisGAGE', x, y, sort_type)
 }
 
 seq_by2 <- function(l) {
-    .Call('_epistasisGA_seq_by2', PACKAGE = 'epistasisGA', l)
+    .Call('_epistasisGAGE_seq_by2', PACKAGE = 'epistasisGAGE', l)
 }
 
 unique_chrom_list <- function(chromosome_list, chrom_size) {
-    .Call('_epistasisGA_unique_chrom_list', PACKAGE = 'epistasisGA', chromosome_list, chrom_size)
+    .Call('_epistasisGAGE_unique_chrom_list', PACKAGE = 'epistasisGAGE', chromosome_list, chrom_size)
 }
 
 subset_matrix_cols <- function(in_matrix, cols) {
-    .Call('_epistasisGA_subset_matrix_cols', PACKAGE = 'epistasisGA', in_matrix, cols)
+    .Call('_epistasisGAGE_subset_matrix_cols', PACKAGE = 'epistasisGAGE', in_matrix, cols)
 }
 
 subset_lmatrix_cols <- function(in_matrix, cols) {
-    .Call('_epistasisGA_subset_lmatrix_cols', PACKAGE = 'epistasisGA', in_matrix, cols)
+    .Call('_epistasisGAGE_subset_lmatrix_cols', PACKAGE = 'epistasisGAGE', in_matrix, cols)
 }
 
 subset_matrix_rows <- function(in_matrix, rows) {
-    .Call('_epistasisGA_subset_matrix_rows', PACKAGE = 'epistasisGA', in_matrix, rows)
+    .Call('_epistasisGAGE_subset_matrix_rows', PACKAGE = 'epistasisGAGE', in_matrix, rows)
 }
 
 sign_scalar <- function(x) {
-    .Call('_epistasisGA_sign_scalar', PACKAGE = 'epistasisGA', x)
+    .Call('_epistasisGAGE_sign_scalar', PACKAGE = 'epistasisGAGE', x)
 }
 
 subset_matrix <- function(in_matrix, rows, cols) {
-    .Call('_epistasisGA_subset_matrix', PACKAGE = 'epistasisGA', in_matrix, rows, cols)
+    .Call('_epistasisGAGE_subset_matrix', PACKAGE = 'epistasisGAGE', in_matrix, rows, cols)
 }
 
 subset_lmatrix <- function(in_matrix, rows, cols) {
-    .Call('_epistasisGA_subset_lmatrix', PACKAGE = 'epistasisGA', in_matrix, rows, cols)
+    .Call('_epistasisGAGE_subset_lmatrix', PACKAGE = 'epistasisGAGE', in_matrix, rows, cols)
 }
 
 weighted_sub_colsums <- function(in_mat, target_rows, target_cols, row_weights) {
-    .Call('_epistasisGA_weighted_sub_colsums', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols, row_weights)
+    .Call('_epistasisGAGE_weighted_sub_colsums', PACKAGE = 'epistasisGAGE', in_mat, target_rows, target_cols, row_weights)
 }
 
 sub_rowsums_start <- function(in_mat, target_cols) {
-    .Call('_epistasisGA_sub_rowsums_start', PACKAGE = 'epistasisGA', in_mat, target_cols)
+    .Call('_epistasisGAGE_sub_rowsums_start', PACKAGE = 'epistasisGAGE', in_mat, target_cols)
 }
 
 sub_colsumsl <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_sub_colsumsl', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+    .Call('_epistasisGAGE_sub_colsumsl', PACKAGE = 'epistasisGAGE', in_mat, target_rows, target_cols)
 }
 
 sub_rowsumsl <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_sub_rowsumsl', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+    .Call('_epistasisGAGE_sub_rowsumsl', PACKAGE = 'epistasisGAGE', in_mat, target_rows, target_cols)
 }
 
 n_pos_high_risk <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_n_pos_high_risk', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+    .Call('_epistasisGAGE_n_pos_high_risk', PACKAGE = 'epistasisGAGE', in_mat, target_rows, target_cols)
 }
 
 n_neg_high_risk <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_n_neg_high_risk', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+    .Call('_epistasisGAGE_n_neg_high_risk', PACKAGE = 'epistasisGAGE', in_mat, target_rows, target_cols)
 }
 
 sub_colmeans <- function(in_mat, target_rows, target_cols) {
-    .Call('_epistasisGA_sub_colmeans', PACKAGE = 'epistasisGA', in_mat, target_rows, target_cols)
+    .Call('_epistasisGAGE_sub_colmeans', PACKAGE = 'epistasisGAGE', in_mat, target_rows, target_cols)
 }
 
 find_high_risk <- function(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps) {
-    .Call('_epistasisGA_find_high_risk', PACKAGE = 'epistasisGA', n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps)
+    .Call('_epistasisGAGE_find_high_risk', PACKAGE = 'epistasisGAGE', n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_data, comp, informative_families, target_snps)
 }
 
 compute_dif_vecs <- function(case_genetic_data, comp_genetic_data, case_comp_dif, target_snps, cases_minus_complements, both_one_mat, weight_lookup, n_different_snps_weight = 2L, n_both_one_weight = 1L) {
-    .Call('_epistasisGA_compute_dif_vecs', PACKAGE = 'epistasisGA', case_genetic_data, comp_genetic_data, case_comp_dif, target_snps, cases_minus_complements, both_one_mat, weight_lookup, n_different_snps_weight, n_both_one_weight)
+    .Call('_epistasisGAGE_compute_dif_vecs', PACKAGE = 'epistasisGAGE', case_genetic_data, comp_genetic_data, case_comp_dif, target_snps, cases_minus_complements, both_one_mat, weight_lookup, n_different_snps_weight, n_both_one_weight)
 }
 
 chrom_fitness_score <- function(case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, epi_test = FALSE, dif_coding = FALSE, GxE = FALSE) {
-    .Call('_epistasisGA_chrom_fitness_score', PACKAGE = 'epistasisGA', case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test, dif_coding, GxE)
+    .Call('_epistasisGAGE_chrom_fitness_score', PACKAGE = 'epistasisGAGE', case_genetic_data_in, complement_genetic_data_in, case_comp_differences_in, target_snps_in, cases_minus_complements_in, both_one_mat_in, block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test, dif_coding, GxE)
 }
 
 GxE_fitness_score <- function(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, target_snps, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, dif_coding = FALSE) {
-    .Call('_epistasisGA_GxE_fitness_score', PACKAGE = 'epistasisGA', case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, target_snps, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding)
+    .Call('_epistasisGAGE_GxE_fitness_score', PACKAGE = 'epistasisGAGE', case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, target_snps, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding)
 }
 
 chrom_fitness_list <- function(case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, epi_test = FALSE, dif_coding = FALSE) {
-    .Call('_epistasisGA_chrom_fitness_list', PACKAGE = 'epistasisGA', case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test, dif_coding)
+    .Call('_epistasisGAGE_chrom_fitness_list', PACKAGE = 'epistasisGAGE', case_genetic_data, complement_genetic_data, case_comp_differences, chromosome_list, cases_minus_complements, both_one_mat, block_ld_mat, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test, dif_coding)
 }
 
 GxE_fitness_list <- function(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, chromosome_list, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, dif_coding = FALSE) {
-    .Call('_epistasisGA_GxE_fitness_list', PACKAGE = 'epistasisGA', case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, chromosome_list, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding)
+    .Call('_epistasisGAGE_GxE_fitness_list', PACKAGE = 'epistasisGAGE', case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, chromosome_list, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding)
 }
 
 compute_population_fitness <- function(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, dif_coding = FALSE, GxE = FALSE) {
-    .Call('_epistasisGA_compute_population_fitness', PACKAGE = 'epistasisGA', case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE)
+    .Call('_epistasisGAGE_compute_population_fitness', PACKAGE = 'epistasisGAGE', case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE)
 }
 
 find_top_chrom <- function(fitness_scores, chromosome_list, chromosome_size) {
-    .Call('_epistasisGA_find_top_chrom', PACKAGE = 'epistasisGA', fitness_scores, chromosome_list, chromosome_size)
+    .Call('_epistasisGAGE_find_top_chrom', PACKAGE = 'epistasisGAGE', fitness_scores, chromosome_list, chromosome_size)
 }
 
 initiate_population <- function(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, max_generations = 500L, initial_sample_duplicates = FALSE, dif_coding = FALSE, GxE = FALSE) {
-    .Call('_epistasisGA_initiate_population', PACKAGE = 'epistasisGA', case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, dif_coding, GxE)
+    .Call('_epistasisGAGE_initiate_population', PACKAGE = 'epistasisGAGE', case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, dif_coding, GxE)
 }
 
 check_convergence <- function(island_cluster_size, island_populations) {
-    .Call('_epistasisGA_check_convergence', PACKAGE = 'epistasisGA', island_cluster_size, island_populations)
+    .Call('_epistasisGAGE_check_convergence', PACKAGE = 'epistasisGAGE', island_cluster_size, island_populations)
 }
 
 check_max_gens <- function(island_populations, max_generations) {
-    .Call('_epistasisGA_check_max_gens', PACKAGE = 'epistasisGA', island_populations, max_generations)
+    .Call('_epistasisGAGE_check_max_gens', PACKAGE = 'epistasisGAGE', island_populations, max_generations)
 }
 
 run_GADGETS <- function(island_cluster_size, n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, case_genetic_data_in = NULL, complement_genetic_data_in = NULL, case_comp_different_in = NULL, case_minus_comp_in = NULL, both_one_mat_in = NULL, case2_mat_in = NULL, case0_mat_in = NULL, comp2_mat_in = NULL, comp0_mat_in = NULL, case_genetic_data_list_in = NULL, complement_genetic_data_list_in = NULL, case_comp_different_list_in = NULL, case_minus_comp_list_in = NULL, both_one_mat_list_in = NULL, case2_mat_list_in = NULL, case0_mat_list_in = NULL, comp2_mat_list_in = NULL, comp0_mat_list_in = NULL, exposure_levels_in = NULL, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64, dif_coding = FALSE) {
-    .Call('_epistasisGA_run_GADGETS', PACKAGE = 'epistasisGA', island_cluster_size, n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, case_genetic_data_in, complement_genetic_data_in, case_comp_different_in, case_minus_comp_in, both_one_mat_in, case2_mat_in, case0_mat_in, comp2_mat_in, comp0_mat_in, case_genetic_data_list_in, complement_genetic_data_list_in, case_comp_different_list_in, case_minus_comp_list_in, both_one_mat_list_in, case2_mat_list_in, case0_mat_list_in, comp2_mat_list_in, comp0_mat_list_in, exposure_levels_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat, dif_coding)
+    .Call('_epistasisGAGE_run_GADGETS', PACKAGE = 'epistasisGAGE', island_cluster_size, n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, case_genetic_data_in, complement_genetic_data_in, case_comp_different_in, case_minus_comp_in, both_one_mat_in, case2_mat_in, case0_mat_in, comp2_mat_in, comp0_mat_in, case_genetic_data_list_in, complement_genetic_data_list_in, case_comp_different_list_in, case_minus_comp_list_in, both_one_mat_list_in, case2_mat_list_in, case0_mat_list_in, comp2_mat_list_in, comp0_mat_list_in, exposure_levels_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat, dif_coding)
 }
 
