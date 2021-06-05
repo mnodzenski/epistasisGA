@@ -3,7 +3,7 @@
 #' A package implementing the GADGETS method to detect multi-SNP effects in case-parent triad or affected/unaffected sibling studies.
 #'
 #' @docType package
-#' @name epistasisGA
+#' @name epistasisGAGE
 NULL
 
 ## quiets concerns of R CMD check re visible bindings of global vars created via data table

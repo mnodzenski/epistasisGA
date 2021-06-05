@@ -1029,9 +1029,9 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
       arma::rowvec xbar_diff = xbar1 - xbar2;
 
       // cov mat //
-      int w1 = exp1_list["w"];
+      double w1 = exp1_list["w"];
       arma::mat sigma1 = exp1_list["sigma"];
-      int w2 = exp2_list["w"];
+      double w2 = exp2_list["w"];
       arma::mat sigma2 = exp2_list["sigma"];
       arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
 
@@ -1825,10 +1825,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   // if the algorithm hasn't hit the max number of generations prepare for potential migration
   if ((generation < max_generations) & (n_migrations > 0)){
 
-    Rcout << "preparing migration \n";
-
     // order by fitness score
-    Rcout << "migration step 1 \n";
     IntegerVector chrom_list_order = sort_by_order(seq_len(chromosome_list.size()), fitness_scores, 2);
     chromosome_list = chromosome_list[chrom_list_order - 1];
     NumericVector fitness_scores_tmp = fitness_scores[chrom_list_order - 1];
@@ -1839,57 +1836,35 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     // store in population
     if (GxE){
 
-      Rcout << "migration step 2 \n";
-
       List high_risk_exposures = current_fitness_list["high_risk_exposure"];
       high_risk_exposures = high_risk_exposures[chrom_list_order - 1];
-
-      Rcout << "migration step 3 \n";
 
       List high_risk_exposure_sum_dif_vecs = current_fitness_list["high_risk_exposure_sum_dif_vecs"];
       high_risk_exposure_sum_dif_vecs = high_risk_exposure_sum_dif_vecs[chrom_list_order - 1];
 
-      Rcout << "migration step 4 \n";
-
       List high_risk_exposure_risk_allele_vecs = current_fitness_list["high_risk_exposure_risk_allele_vecs"];
       high_risk_exposure_risk_allele_vecs = high_risk_exposure_risk_allele_vecs[chrom_list_order - 1];
-
-      Rcout << "migration step 5 \n";
 
       IntegerVector high_risk_exposure_n_case_risk_geno_vec = current_fitness_list["high_risk_exposure_n_case_risk_geno_vec"];
       high_risk_exposure_n_case_risk_geno_vec =  high_risk_exposure_n_case_risk_geno_vec[chrom_list_order - 1];
 
-      Rcout << "migration step 6 \n";
-
       IntegerVector high_risk_exposure_n_comp_risk_geno_vec = current_fitness_list["high_risk_exposure_n_comp_risk_geno_vec"];
       high_risk_exposure_n_comp_risk_geno_vec = high_risk_exposure_n_comp_risk_geno_vec[chrom_list_order - 1];
-
-      Rcout << "migration step 7 \n";
 
       List low_risk_exposures = current_fitness_list["low_risk_exposure"];
       low_risk_exposures = low_risk_exposures[chrom_list_order - 1];
 
-      Rcout << "migration step 8 \n";
-
       List low_risk_exposure_sum_dif_vecs = current_fitness_list["low_risk_exposure_sum_dif_vecs"];
       low_risk_exposure_sum_dif_vecs = low_risk_exposure_sum_dif_vecs[chrom_list_order - 1];
-
-      Rcout << "migration step 9 \n";
 
       List low_risk_exposure_risk_allele_vecs = current_fitness_list["low_risk_exposure_risk_allele_vecs"];
       low_risk_exposure_risk_allele_vecs = low_risk_exposure_risk_allele_vecs[chrom_list_order - 1];
 
-      Rcout << "migration step 10 \n";
-
       IntegerVector low_risk_exposure_n_case_risk_geno_vec = current_fitness_list["low_risk_exposure_n_case_risk_geno_vec"];
       low_risk_exposure_n_case_risk_geno_vec =  low_risk_exposure_n_case_risk_geno_vec[chrom_list_order - 1];
 
-      Rcout << "migration step 11 \n";
-
       IntegerVector low_risk_exposure_n_comp_risk_geno_vec = current_fitness_list["low_risk_exposure_n_comp_risk_geno_vec"];
       low_risk_exposure_n_comp_risk_geno_vec = low_risk_exposure_n_comp_risk_geno_vec[chrom_list_order - 1];
-
-      Rcout << "migration step 12 \n";
 
       List pop_current_fitness_list = population["current_fitness"];
       pop_current_fitness_list["chromosome_list"] = chromosome_list;
@@ -1951,8 +1926,6 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
   // otherwise just store the current generation and return the population
   } else {
-
-    Rcout << "algorithm terminating \n";
 
     if (GxE){
 
@@ -2181,10 +2154,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 
   for (int i = 0; i < island_cluster_size; i++){
 
-    Rcout << "i = " << i << "\n";
-
-    Rcout << "here 1 \n";
-
     List island_population_i = initiate_population(case_genetic_data, complement_genetic_data,
                                                    case_comp_different, case_minus_comp, both_one_mat,
                                                    block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers,
@@ -2198,8 +2167,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
                                                    max_generations, initial_sample_duplicates, dif_coding, GxE);
-
-    Rcout << "here 2 \n";
 
     island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                           case_comp_different, case_minus_comp, both_one_mat,
@@ -2215,7 +2182,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                           initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
                                           dif_coding, GxE);
 
-    Rcout << "here 3 \n";
   }
 
   // check convergence

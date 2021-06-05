@@ -125,7 +125,7 @@
 #' unlink('tmp', recursive = TRUE)
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
-#' @useDynLib epistasisGA
+#' @useDynLib epistasisGAGE
 #' @export
 
 GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
