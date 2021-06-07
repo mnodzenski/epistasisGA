@@ -569,19 +569,28 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   // require at least one informative family
   if (no_informative_families){
 
-    double fitness_score = pow(10, -10);
-    NumericVector sum_dif_vecs(n_target, 1.0);
-    double q = pow(10, -10);
-    CharacterVector risk_set_alleles(n_target, "1+");
-    double n_case_high_risk = 0.0;
-    double n_comp_high_risk = 0.0;
-    List res = List::create(Named("fitness_score") = fitness_score,
-                            Named("sum_dif_vecs") = sum_dif_vecs,
-                            Named("q") = q,
-                            Named("risk_set_alleles") = risk_set_alleles,
-                            Named("n_case_risk_geno") = n_case_high_risk,
-                            Named("n_comp_risk_geno") = n_comp_high_risk);
-    return(res);
+    if (GxE){
+
+      List res = List::create(Named("no_informative_families") = no_informative_families);
+      return(res);
+
+    } else {
+
+      double fitness_score = pow(10, -10);
+      NumericVector sum_dif_vecs(n_target, 1.0);
+      double q = pow(10, -10);
+      CharacterVector risk_set_alleles(n_target, "1+");
+      double n_case_high_risk = 0.0;
+      double n_comp_high_risk = 0.0;
+      List res = List::create(Named("fitness_score") = fitness_score,
+                              Named("sum_dif_vecs") = sum_dif_vecs,
+                              Named("q") = q,
+                              Named("risk_set_alleles") = risk_set_alleles,
+                              Named("n_case_risk_geno") = n_case_high_risk,
+                              Named("n_comp_risk_geno") = n_comp_high_risk);
+      return(res);
+
+    }
 
   } else {
 
@@ -1023,76 +1032,29 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
       List exp1_list = score_by_exposure[i];
       List exp2_list = score_by_exposure[j];
 
-      // mean difference vector //
-      arma::rowvec xbar1 = exp1_list["xbar"];
-      arma::rowvec xbar2 = exp2_list["xbar"];
-      arma::rowvec xbar_diff = xbar1 - xbar2;
+      // make sure we have at least one informative
+      // family for each exposure level
+      bool exp1_no_inf_families = exp1_list.containsElementNamed("no_informative_families");
+      bool exp2_no_inf_families = exp2_list.containsElementNamed("no_informative_families");
+      double s;
+      if (exp1_no_inf_families | exp2_no_inf_families){
 
-      // cov mat //
-      double w1 = exp1_list["w"];
-      arma::mat sigma1 = exp1_list["sigma"];
-      double w2 = exp2_list["w"];
-      arma::mat sigma2 = exp2_list["sigma"];
-      arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
+        s = pow(10, -10);
+        int n_target = target_snps.length();
+        NumericVector std_diff_vecs(n_target, 1.0);
+        String high_risk_exposure = "NA";
+        NumericVector high_risk_exposure_sum_dif_vecs(n_target, 0.0);
+        CharacterVector high_risk_exposure_risk_set_alleles(n_target, "NA");
+        double high_risk_exposure_n_case_risk_geno = 0;
+        double high_risk_exposure_n_comp_risk_geno = 0;
 
-      // two sample modified hotelling stat //
-      double weight_scalar = (w1*w2)/(w1 + w2);
-      double s = (weight_scalar / 1000) * as_scalar(xbar_diff * arma::pinv(sigma_hat) * xbar_diff.t());
+        String low_risk_exposure = "NA";
+        NumericVector low_risk_exposure_sum_dif_vecs(n_target, 0.0);
+        CharacterVector low_risk_exposure_risk_set_alleles(n_target, "NA");
+        double low_risk_exposure_n_case_risk_geno = 0;
+        double low_risk_exposure_n_comp_risk_geno = 0;
 
-      // prepare results
-       NumericVector se = wrap(sqrt(sigma_hat.diag()));
-       NumericVector xbar_diff_n = wrap(xbar_diff);
-       NumericVector std_diff_vecs = xbar_diff_n/se;
-       std_diff_vecs[se == 0] = pow(10, -10);
-
-       // report allele coding and
-       // also report the number of cases and comps with the nominated
-       // risk genotypes in the high and low exposure groups
-       double s1 = exp1_list["fitness_score"];
-       double s2 = exp2_list["fitness_score"];
-       int high_risk_exposure_n_case_risk_geno = 0;
-       int high_risk_exposure_n_comp_risk_geno = 0;
-       int low_risk_exposure_n_case_risk_geno = 0;
-       int low_risk_exposure_n_comp_risk_geno = 0;
-
-       String high_risk_exposure;
-       CharacterVector high_risk_exposure_risk_set_alleles;
-       NumericVector high_risk_exposure_sum_dif_vecs;
-       String low_risk_exposure;
-       CharacterVector low_risk_exposure_risk_set_alleles;
-       NumericVector low_risk_exposure_sum_dif_vecs;
-
-       if (s2 >= s1){
-
-         high_risk_exposure_risk_set_alleles = exp2_list["risk_set_alleles"];
-         high_risk_exposure = exposure_levels[j];
-         high_risk_exposure_n_case_risk_geno = exp2_list["n_case_risk_geno"];
-         high_risk_exposure_n_comp_risk_geno = exp2_list["n_comp_risk_geno"];
-         high_risk_exposure_sum_dif_vecs = exp2_list["sum_dif_vecs"];
-
-         low_risk_exposure_risk_set_alleles = exp1_list["risk_set_alleles"];
-         low_risk_exposure = exposure_levels[i];
-         low_risk_exposure_n_case_risk_geno = exp1_list["n_case_risk_geno"];
-         low_risk_exposure_n_comp_risk_geno = exp1_list["n_comp_risk_geno"];
-         low_risk_exposure_sum_dif_vecs = exp1_list["sum_dif_vecs"];
-
-       } else {
-
-         high_risk_exposure_risk_set_alleles = exp1_list["risk_set_alleles"];
-         high_risk_exposure = exposure_levels[i];
-         high_risk_exposure_n_case_risk_geno = exp1_list["n_case_risk_geno"];
-         high_risk_exposure_n_comp_risk_geno = exp1_list["n_comp_risk_geno"];
-         high_risk_exposure_sum_dif_vecs = exp1_list["sum_dif_vecs"];
-
-         low_risk_exposure_risk_set_alleles = exp2_list["risk_set_alleles"];
-         low_risk_exposure = exposure_levels[j];
-         low_risk_exposure_n_case_risk_geno = exp2_list["n_case_risk_geno"];
-         low_risk_exposure_n_comp_risk_geno = exp2_list["n_comp_risk_geno"];
-         low_risk_exposure_sum_dif_vecs = exp2_list["sum_dif_vecs"];
-
-       }
-
-       pair_scores_list[pos] = List::create(Named("fitness_score") = s,
+        pair_scores_list[pos] = List::create(Named("fitness_score") = s,
                                              Named("sum_dif_vecs") = std_diff_vecs,
                                              Named("high_risk_exposure") = high_risk_exposure,
                                              Named("high_risk_exposure_sum_dif_vecs") =  high_risk_exposure_sum_dif_vecs,
@@ -1104,6 +1066,94 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
                                              Named("low_risk_exposure_risk_set_alleles") = low_risk_exposure_risk_set_alleles,
                                              Named("low_risk_exposure_n_case_risk_geno") = low_risk_exposure_n_case_risk_geno,
                                              Named("low_risk_exposure_n_comp_risk_geno") = low_risk_exposure_n_comp_risk_geno);
+
+      } else {
+
+        // mean difference vector //
+        arma::rowvec xbar1 = exp1_list["xbar"];
+        arma::rowvec xbar2 = exp2_list["xbar"];
+        arma::rowvec xbar_diff = xbar1 - xbar2;
+
+        // cov mat //
+        double w1 = exp1_list["w"];
+        arma::mat sigma1 = exp1_list["sigma"];
+        double w2 = exp2_list["w"];
+        arma::mat sigma2 = exp2_list["sigma"];
+        arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
+
+        // two sample modified hotelling stat //
+        double weight_scalar = (w1*w2)/(w1 + w2);
+        s = (weight_scalar / 1000) * as_scalar(xbar_diff * arma::pinv(sigma_hat) * xbar_diff.t());
+
+        // prepare results
+        NumericVector se = wrap(sqrt(sigma_hat.diag()));
+        NumericVector xbar_diff_n = wrap(xbar_diff);
+        NumericVector std_diff_vecs = xbar_diff_n/se;
+        std_diff_vecs[se == 0] = pow(10, -10);
+
+        // report allele coding and
+        // also report the number of cases and comps with the nominated
+        // risk genotypes in the high and low exposure groups
+        double s1 = exp1_list["fitness_score"];
+        double s2 = exp2_list["fitness_score"];
+        int high_risk_exposure_n_case_risk_geno = 0;
+        int high_risk_exposure_n_comp_risk_geno = 0;
+        int low_risk_exposure_n_case_risk_geno = 0;
+        int low_risk_exposure_n_comp_risk_geno = 0;
+
+        String high_risk_exposure;
+        CharacterVector high_risk_exposure_risk_set_alleles;
+        NumericVector high_risk_exposure_sum_dif_vecs;
+        String low_risk_exposure;
+        CharacterVector low_risk_exposure_risk_set_alleles;
+        NumericVector low_risk_exposure_sum_dif_vecs;
+
+        if (s2 >= s1){
+
+          high_risk_exposure_risk_set_alleles = exp2_list["risk_set_alleles"];
+          high_risk_exposure = exposure_levels[j];
+          high_risk_exposure_n_case_risk_geno = exp2_list["n_case_risk_geno"];
+          high_risk_exposure_n_comp_risk_geno = exp2_list["n_comp_risk_geno"];
+          high_risk_exposure_sum_dif_vecs = exp2_list["sum_dif_vecs"];
+
+          low_risk_exposure_risk_set_alleles = exp1_list["risk_set_alleles"];
+          low_risk_exposure = exposure_levels[i];
+          low_risk_exposure_n_case_risk_geno = exp1_list["n_case_risk_geno"];
+          low_risk_exposure_n_comp_risk_geno = exp1_list["n_comp_risk_geno"];
+          low_risk_exposure_sum_dif_vecs = exp1_list["sum_dif_vecs"];
+
+        } else {
+
+          high_risk_exposure_risk_set_alleles = exp1_list["risk_set_alleles"];
+          high_risk_exposure = exposure_levels[i];
+          high_risk_exposure_n_case_risk_geno = exp1_list["n_case_risk_geno"];
+          high_risk_exposure_n_comp_risk_geno = exp1_list["n_comp_risk_geno"];
+          high_risk_exposure_sum_dif_vecs = exp1_list["sum_dif_vecs"];
+
+          low_risk_exposure_risk_set_alleles = exp2_list["risk_set_alleles"];
+          low_risk_exposure = exposure_levels[j];
+          low_risk_exposure_n_case_risk_geno = exp2_list["n_case_risk_geno"];
+          low_risk_exposure_n_comp_risk_geno = exp2_list["n_comp_risk_geno"];
+          low_risk_exposure_sum_dif_vecs = exp2_list["sum_dif_vecs"];
+
+        }
+
+        pair_scores_list[pos] = List::create(Named("fitness_score") = s,
+                                             Named("sum_dif_vecs") = std_diff_vecs,
+                                             Named("high_risk_exposure") = high_risk_exposure,
+                                             Named("high_risk_exposure_sum_dif_vecs") =  high_risk_exposure_sum_dif_vecs,
+                                             Named("high_risk_exposure_risk_set_alleles") = high_risk_exposure_risk_set_alleles,
+                                             Named("high_risk_exposure_n_case_risk_geno") = high_risk_exposure_n_case_risk_geno,
+                                             Named("high_risk_exposure_n_comp_risk_geno") = high_risk_exposure_n_comp_risk_geno,
+                                             Named("low_risk_exposure") = low_risk_exposure,
+                                             Named("low_risk_exposure_sum_dif_vecs") =  low_risk_exposure_sum_dif_vecs,
+                                             Named("low_risk_exposure_risk_set_alleles") = low_risk_exposure_risk_set_alleles,
+                                             Named("low_risk_exposure_n_case_risk_geno") = low_risk_exposure_n_case_risk_geno,
+                                             Named("low_risk_exposure_n_comp_risk_geno") = low_risk_exposure_n_comp_risk_geno);
+
+      }
+
+
        if (pos == 0){
 
           max_score = s;
