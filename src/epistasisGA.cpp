@@ -1085,6 +1085,11 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
         double weight_scalar = (w1*w2)/(w1 + w2);
         s = (weight_scalar / 1000) * as_scalar(xbar_diff * arma::pinv(sigma_hat) * xbar_diff.t());
 
+        // if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
+        if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
+          s = pow(10, -10);
+        }
+
         // prepare results
         NumericVector se = wrap(sqrt(sigma_hat.diag()));
         NumericVector xbar_diff_n = wrap(xbar_diff);
@@ -1261,7 +1266,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
   // initiate storage object for fitness scores
   List chrom_fitness_score_list;
 
-  // get correct fitness score depening on whether GxE is desired
+  // get correct fitness score depending on whether GxE is desired
   if (GxE){
 
     chrom_fitness_score_list = GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, case_comp_different_list,
