@@ -322,8 +322,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // GxE_fitness_score
-List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, ListOf<LogicalMatrix> case_comp_differences_list, IntegerVector target_snps, ListOf<IntegerMatrix> cases_minus_complements_list, ListOf<LogicalMatrix> both_one_mat_list, LogicalMatrix block_ld_mat, IntegerVector weight_lookup, ListOf<LogicalMatrix> case2_mat_list, ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list, ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
-RcppExport SEXP _epistasisGAGE_GxE_fitness_score(SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_differences_listSEXP, SEXP target_snpsSEXP, SEXP cases_minus_complements_listSEXP, SEXP both_one_mat_listSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
+List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, ListOf<LogicalMatrix> case_comp_differences_list, IntegerVector target_snps, ListOf<IntegerMatrix> cases_minus_complements_list, ListOf<LogicalMatrix> both_one_mat_list, LogicalMatrix block_ld_mat, IntegerVector weight_lookup, ListOf<LogicalMatrix> case2_mat_list, ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list, ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, List exposure_risk_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
+RcppExport SEXP _epistasisGAGE_GxE_fitness_score(SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_differences_listSEXP, SEXP target_snpsSEXP, SEXP cases_minus_complements_listSEXP, SEXP both_one_mat_listSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP exposure_risk_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -340,12 +340,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< ListOf<LogicalMatrix> >::type comp2_mat_list(comp2_mat_listSEXP);
     Rcpp::traits::input_parameter< ListOf<LogicalMatrix> >::type comp0_mat_list(comp0_mat_listSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type exposure_levels(exposure_levelsSEXP);
+    Rcpp::traits::input_parameter< List >::type exposure_risk_levels(exposure_risk_levelsSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
-    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, target_snps, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding));
+    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, target_snps, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -378,8 +379,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // GxE_fitness_list
-List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List case_comp_differences_list, List chromosome_list, List cases_minus_complements_list, List both_one_mat_list, LogicalMatrix block_ld_mat, IntegerVector weight_lookup, List case2_mat_list, List case0_mat_list, List comp2_mat_list, List comp0_mat_list, CharacterVector exposure_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
-RcppExport SEXP _epistasisGAGE_GxE_fitness_list(SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_differences_listSEXP, SEXP chromosome_listSEXP, SEXP cases_minus_complements_listSEXP, SEXP both_one_mat_listSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
+List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List case_comp_differences_list, List chromosome_list, List cases_minus_complements_list, List both_one_mat_list, LogicalMatrix block_ld_mat, IntegerVector weight_lookup, List case2_mat_list, List case0_mat_list, List comp2_mat_list, List comp0_mat_list, CharacterVector exposure_levels, List exposure_risk_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
+RcppExport SEXP _epistasisGAGE_GxE_fitness_list(SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_differences_listSEXP, SEXP chromosome_listSEXP, SEXP cases_minus_complements_listSEXP, SEXP both_one_mat_listSEXP, SEXP block_ld_matSEXP, SEXP weight_lookupSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP exposure_risk_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -396,18 +397,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type comp2_mat_list(comp2_mat_listSEXP);
     Rcpp::traits::input_parameter< List >::type comp0_mat_list(comp0_mat_listSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type exposure_levels(exposure_levelsSEXP);
+    Rcpp::traits::input_parameter< List >::type exposure_risk_levels(exposure_risk_levelsSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
-    rcpp_result_gen = Rcpp::wrap(GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, chromosome_list, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding));
+    rcpp_result_gen = Rcpp::wrap(GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list, chromosome_list, cases_minus_complements_list, both_one_mat_list, block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding));
     return rcpp_result_gen;
 END_RCPP
 }
 // compute_population_fitness
-List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, List chromosome_list, IntegerVector original_col_numbers, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, ListOf<LogicalMatrix> case_comp_different_list, ListOf<IntegerMatrix> case_minus_comp_list, ListOf<LogicalMatrix> both_one_mat_list, ListOf<LogicalMatrix> case2_mat_list, ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list, ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool dif_coding, bool GxE);
-RcppExport SEXP _epistasisGAGE_compute_population_fitness(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP chromosome_listSEXP, SEXP original_col_numbersSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP comp2_matSEXP, SEXP comp0_matSEXP, SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_different_listSEXP, SEXP case_minus_comp_listSEXP, SEXP both_one_mat_listSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP, SEXP GxESEXP) {
+List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, List chromosome_list, IntegerVector original_col_numbers, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, ListOf<LogicalMatrix> case_comp_different_list, ListOf<IntegerMatrix> case_minus_comp_list, ListOf<LogicalMatrix> both_one_mat_list, ListOf<LogicalMatrix> case2_mat_list, ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list, ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, List exposure_risk_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool dif_coding, bool GxE);
+RcppExport SEXP _epistasisGAGE_compute_population_fitness(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP chromosome_listSEXP, SEXP original_col_numbersSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP comp2_matSEXP, SEXP comp0_matSEXP, SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_different_listSEXP, SEXP case_minus_comp_listSEXP, SEXP both_one_mat_listSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP exposure_risk_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP, SEXP GxESEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -434,13 +436,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< ListOf<LogicalMatrix> >::type comp2_mat_list(comp2_mat_listSEXP);
     Rcpp::traits::input_parameter< ListOf<LogicalMatrix> >::type comp0_mat_list(comp0_mat_listSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type exposure_levels(exposure_levelsSEXP);
+    Rcpp::traits::input_parameter< List >::type exposure_risk_levels(exposure_risk_levelsSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
     Rcpp::traits::input_parameter< bool >::type GxE(GxESEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE));
+    rcpp_result_gen = Rcpp::wrap(compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, chromosome_list, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -458,8 +461,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // initiate_population
-List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector original_col_numbers, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, ListOf<LogicalMatrix> case_comp_different_list, ListOf<IntegerMatrix> case_minus_comp_list, ListOf<LogicalMatrix> both_one_mat_list, ListOf<LogicalMatrix> case2_mat_list, ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list, ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, int max_generations, bool initial_sample_duplicates, bool dif_coding, bool GxE);
-RcppExport SEXP _epistasisGAGE_initiate_population(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP original_col_numbersSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP comp2_matSEXP, SEXP comp0_matSEXP, SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_different_listSEXP, SEXP case_minus_comp_listSEXP, SEXP both_one_mat_listSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP dif_codingSEXP, SEXP GxESEXP) {
+List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector original_col_numbers, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat, LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, ListOf<LogicalMatrix> case_comp_different_list, ListOf<IntegerMatrix> case_minus_comp_list, ListOf<LogicalMatrix> both_one_mat_list, ListOf<LogicalMatrix> case2_mat_list, ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list, ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, List exposure_risk_levels, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, int max_generations, bool initial_sample_duplicates, bool dif_coding, bool GxE);
+RcppExport SEXP _epistasisGAGE_initiate_population(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP case_comp_differentSEXP, SEXP case_minus_compSEXP, SEXP both_one_matSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP original_col_numbersSEXP, SEXP weight_lookupSEXP, SEXP case2_matSEXP, SEXP case0_matSEXP, SEXP comp2_matSEXP, SEXP comp0_matSEXP, SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP case_comp_different_listSEXP, SEXP case_minus_comp_listSEXP, SEXP both_one_mat_listSEXP, SEXP case2_mat_listSEXP, SEXP case0_mat_listSEXP, SEXP comp2_mat_listSEXP, SEXP comp0_mat_listSEXP, SEXP exposure_levelsSEXP, SEXP exposure_risk_levelsSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP dif_codingSEXP, SEXP GxESEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -487,6 +490,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< ListOf<LogicalMatrix> >::type comp2_mat_list(comp2_mat_listSEXP);
     Rcpp::traits::input_parameter< ListOf<LogicalMatrix> >::type comp0_mat_list(comp0_mat_listSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type exposure_levels(exposure_levelsSEXP);
+    Rcpp::traits::input_parameter< List >::type exposure_risk_levels(exposure_risk_levelsSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
@@ -495,7 +499,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
     Rcpp::traits::input_parameter< bool >::type GxE(GxESEXP);
-    rcpp_result_gen = Rcpp::wrap(initiate_population(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, dif_coding, GxE));
+    rcpp_result_gen = Rcpp::wrap(initiate_population(case_genetic_data, complement_genetic_data, case_comp_different, case_minus_comp, both_one_mat, block_ld_mat, n_chromosomes, chromosome_size, original_col_numbers, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat, case_genetic_data_list, complement_genetic_data_list, case_comp_different_list, case_minus_comp_list, both_one_mat_list, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list, exposure_levels, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, dif_coding, GxE));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -524,8 +528,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_GADGETS
-List run_GADGETS(int island_cluster_size, int n_migrations, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, NumericVector snp_chisq, IntegerVector original_col_numbers, Nullable<IntegerMatrix> case_genetic_data_in, Nullable<IntegerMatrix> complement_genetic_data_in, Nullable<LogicalMatrix> case_comp_different_in, Nullable<IntegerMatrix> case_minus_comp_in, Nullable<LogicalMatrix> both_one_mat_in, Nullable<LogicalMatrix> case2_mat_in, Nullable<LogicalMatrix> case0_mat_in, Nullable<LogicalMatrix> comp2_mat_in, Nullable<LogicalMatrix> comp0_mat_in, Nullable<ListOf<IntegerMatrix>> case_genetic_data_list_in, Nullable<ListOf<IntegerMatrix>> complement_genetic_data_list_in, Nullable<ListOf<LogicalMatrix>> case_comp_different_list_in, Nullable<ListOf<IntegerMatrix>> case_minus_comp_list_in, Nullable<ListOf<LogicalMatrix>> both_one_mat_list_in, Nullable<ListOf<LogicalMatrix>> case2_mat_list_in, Nullable<ListOf<LogicalMatrix>> case0_mat_list_in, Nullable<ListOf<LogicalMatrix>> comp2_mat_list_in, Nullable<ListOf<LogicalMatrix>> comp0_mat_list_in, Nullable<CharacterVector> exposure_levels_in, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
-RcppExport SEXP _epistasisGAGE_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_different_inSEXP, SEXP case_minus_comp_inSEXP, SEXP both_one_mat_inSEXP, SEXP case2_mat_inSEXP, SEXP case0_mat_inSEXP, SEXP comp2_mat_inSEXP, SEXP comp0_mat_inSEXP, SEXP case_genetic_data_list_inSEXP, SEXP complement_genetic_data_list_inSEXP, SEXP case_comp_different_list_inSEXP, SEXP case_minus_comp_list_inSEXP, SEXP both_one_mat_list_inSEXP, SEXP case2_mat_list_inSEXP, SEXP case0_mat_list_inSEXP, SEXP comp2_mat_list_inSEXP, SEXP comp0_mat_list_inSEXP, SEXP exposure_levels_inSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
+List run_GADGETS(int island_cluster_size, int n_migrations, LogicalMatrix block_ld_mat, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, NumericVector snp_chisq, IntegerVector original_col_numbers, Nullable<IntegerMatrix> case_genetic_data_in, Nullable<IntegerMatrix> complement_genetic_data_in, Nullable<LogicalMatrix> case_comp_different_in, Nullable<IntegerMatrix> case_minus_comp_in, Nullable<LogicalMatrix> both_one_mat_in, Nullable<LogicalMatrix> case2_mat_in, Nullable<LogicalMatrix> case0_mat_in, Nullable<LogicalMatrix> comp2_mat_in, Nullable<LogicalMatrix> comp0_mat_in, Nullable<ListOf<IntegerMatrix>> case_genetic_data_list_in, Nullable<ListOf<IntegerMatrix>> complement_genetic_data_list_in, Nullable<ListOf<LogicalMatrix>> case_comp_different_list_in, Nullable<ListOf<IntegerMatrix>> case_minus_comp_list_in, Nullable<ListOf<LogicalMatrix>> both_one_mat_list_in, Nullable<ListOf<LogicalMatrix>> case2_mat_list_in, Nullable<ListOf<LogicalMatrix>> case0_mat_list_in, Nullable<ListOf<LogicalMatrix>> comp2_mat_list_in, Nullable<ListOf<LogicalMatrix>> comp0_mat_list_in, Nullable<CharacterVector> exposure_levels_in, Nullable<List> exposure_risk_levels_in, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
+RcppExport SEXP _epistasisGAGE_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP block_ld_matSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP snp_chisqSEXP, SEXP original_col_numbersSEXP, SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP case_comp_different_inSEXP, SEXP case_minus_comp_inSEXP, SEXP both_one_mat_inSEXP, SEXP case2_mat_inSEXP, SEXP case0_mat_inSEXP, SEXP comp2_mat_inSEXP, SEXP comp0_mat_inSEXP, SEXP case_genetic_data_list_inSEXP, SEXP complement_genetic_data_list_inSEXP, SEXP case_comp_different_list_inSEXP, SEXP case_minus_comp_list_inSEXP, SEXP both_one_mat_list_inSEXP, SEXP case2_mat_list_inSEXP, SEXP case0_mat_list_inSEXP, SEXP comp2_mat_list_inSEXP, SEXP comp0_mat_list_inSEXP, SEXP exposure_levels_inSEXP, SEXP exposure_risk_levels_inSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -556,6 +560,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Nullable<ListOf<LogicalMatrix>> >::type comp2_mat_list_in(comp2_mat_list_inSEXP);
     Rcpp::traits::input_parameter< Nullable<ListOf<LogicalMatrix>> >::type comp0_mat_list_in(comp0_mat_list_inSEXP);
     Rcpp::traits::input_parameter< Nullable<CharacterVector> >::type exposure_levels_in(exposure_levels_inSEXP);
+    Rcpp::traits::input_parameter< Nullable<List> >::type exposure_risk_levels_in(exposure_risk_levels_inSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
     Rcpp::traits::input_parameter< int >::type migration_interval(migration_intervalSEXP);
@@ -566,7 +571,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_GADGETS(island_cluster_size, n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, case_genetic_data_in, complement_genetic_data_in, case_comp_different_in, case_minus_comp_in, both_one_mat_in, case2_mat_in, case0_mat_in, comp2_mat_in, comp0_mat_in, case_genetic_data_list_in, complement_genetic_data_list_in, case_comp_different_list_in, case_minus_comp_list_in, both_one_mat_list_in, case2_mat_list_in, case0_mat_list_in, comp2_mat_list_in, comp0_mat_list_in, exposure_levels_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat, dif_coding));
+    rcpp_result_gen = Rcpp::wrap(run_GADGETS(island_cluster_size, n_migrations, block_ld_mat, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, original_col_numbers, case_genetic_data_in, complement_genetic_data_in, case_comp_different_in, case_minus_comp_in, both_one_mat_in, case2_mat_in, case0_mat_in, comp2_mat_in, comp0_mat_in, case_genetic_data_list_in, complement_genetic_data_list_in, case_comp_different_list_in, case_minus_comp_list_in, both_one_mat_list_in, case2_mat_list_in, case0_mat_list_in, comp2_mat_list_in, comp0_mat_list_in, exposure_levels_in, exposure_risk_levels_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat, dif_coding));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -595,15 +600,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGAGE_find_high_risk", (DL_FUNC) &_epistasisGAGE_find_high_risk, 9},
     {"_epistasisGAGE_compute_dif_vecs", (DL_FUNC) &_epistasisGAGE_compute_dif_vecs, 9},
     {"_epistasisGAGE_chrom_fitness_score", (DL_FUNC) &_epistasisGAGE_chrom_fitness_score, 19},
-    {"_epistasisGAGE_GxE_fitness_score", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score, 18},
+    {"_epistasisGAGE_GxE_fitness_score", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score, 19},
     {"_epistasisGAGE_chrom_fitness_list", (DL_FUNC) &_epistasisGAGE_chrom_fitness_list, 18},
-    {"_epistasisGAGE_GxE_fitness_list", (DL_FUNC) &_epistasisGAGE_GxE_fitness_list, 18},
-    {"_epistasisGAGE_compute_population_fitness", (DL_FUNC) &_epistasisGAGE_compute_population_fitness, 29},
+    {"_epistasisGAGE_GxE_fitness_list", (DL_FUNC) &_epistasisGAGE_GxE_fitness_list, 19},
+    {"_epistasisGAGE_compute_population_fitness", (DL_FUNC) &_epistasisGAGE_compute_population_fitness, 30},
     {"_epistasisGAGE_find_top_chrom", (DL_FUNC) &_epistasisGAGE_find_top_chrom, 3},
-    {"_epistasisGAGE_initiate_population", (DL_FUNC) &_epistasisGAGE_initiate_population, 32},
+    {"_epistasisGAGE_initiate_population", (DL_FUNC) &_epistasisGAGE_initiate_population, 33},
     {"_epistasisGAGE_check_convergence", (DL_FUNC) &_epistasisGAGE_check_convergence, 2},
     {"_epistasisGAGE_check_max_gens", (DL_FUNC) &_epistasisGAGE_check_max_gens, 2},
-    {"_epistasisGAGE_run_GADGETS", (DL_FUNC) &_epistasisGAGE_run_GADGETS, 37},
+    {"_epistasisGAGE_run_GADGETS", (DL_FUNC) &_epistasisGAGE_run_GADGETS, 38},
     {NULL, NULL, 0}
 };
 

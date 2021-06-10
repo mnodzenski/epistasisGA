@@ -202,10 +202,21 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     ### if running GxE, split input data into lists based on exposure status ###
     exposure <- data.list$exposure
+    exposure.risk.levels <- data.list$exposure.risk.levels
     if (!is.null(exposure)){
 
         case.genetic.data.split <- split(data.frame(case.genetic.data), exposure)
         exposure.levels <- as.character(names(case.genetic.data.split))
+        if (is.null(exposure.risk.levels)){
+
+            exposure.risk.levels <- lapply(case.genetic.data.split, function(x) return(1))
+            names(exposure.risk.levels) <- exposure.levels
+
+        } else {
+
+            exposure.risk.levels <- exposure.risk.levels[exposure.levels]
+
+        }
         case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)
         complement.genetic.data.list <- lapply(split(data.frame(complement.genetic.data), exposure), as.matrix)
         case.comp.different.list <- lapply(split(data.frame(case.comp.different), exposure), as.matrix)
@@ -239,6 +250,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         comp2.mat.list <- NULL
         comp0.mat.list <- NULL
         exposure.levels <- NULL
+        exposure.risk.levels <- NULL
 
     }
 
@@ -331,9 +343,10 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
         gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
         crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, dif.coding = dif.coding,
-        exposure.levels = exposure.levels, case.genetic.data.list = case.genetic.data.list, complement.genetic.data.list = complement.genetic.data.list,
-        case.comp.different.list = case.comp.different.list, case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list,
-        case2.mat.list = case2.mat.list, case0.mat.list = case0.mat.list, comp2.mat.list = comp2.mat.list, comp0.mat.list = comp0.mat.list),
+        exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels, case.genetic.data.list = case.genetic.data.list,
+        complement.genetic.data.list = complement.genetic.data.list, case.comp.different.list = case.comp.different.list,
+        case.minus.comp.list = case.minus.comp.list, both.one.mat.list = both.one.mat.list, case2.mat.list = case2.mat.list,
+        case0.mat.list = case0.mat.list, comp2.mat.list = comp2.mat.list, comp0.mat.list = comp0.mat.list),
         reg = registry)
 
     # chunk the jobs

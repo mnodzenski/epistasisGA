@@ -24,8 +24,21 @@
 #' genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
 #' each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 #' real numbers. See argument \code{prob} from function \code{sample} for more details.
-#' @param categorical.exposures A data.frame of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.
-#' Families with any missing exposure will be excluded from analysis.
+#' @param categorical.exposures A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
+#' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. Any missing
+#' exposure data should be coded as NA.
+#' @param categorical.exposures.risk.ranks An optional named list indicating the hypothesized relationship to risk
+#' among the levels of \code{categorical.exposures}. The number of list elements must be equal to the number
+#' of distinct levels of \code{categorical.exposures} and the list element names should be the
+#' distinct levels of \code{categorical.exposures}. The list element values should be integers corresponding to
+#' the relative rank of hypothesized risk corresponding to an exposure, with 1 corresponding to the highest risk
+#' level. For example, suppose \code{categorical.exposures} has two levels, 0 and 1, and an analyst is interested
+#' only in identifying SNPs that are synergistically risk-related in the presence of exposure level 1. The analyst
+#' should specify \code{list("1" = 1, "0" = 2)} for \code{categorical.exposures.risk.ranks}. Similarly, for
+#' an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
+#' analyst could specify \code{list("1" = 3, "2" = 2, "3" = 1)}. See the package vignette for more detailed
+#' examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.
+#'
 #' @return A list containing the following:
 #' \describe{
 #'  \item{case.genetic.data}{The pre-processed version of the case genetic data. Any missing genotypes for a given family will be coded as -9 for both case and complement,
@@ -39,6 +52,7 @@
 #'  \item{block.ld.mat}{The pre-processed version of \code{block.ld.mat}.}
 #'  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
 #'  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
+#'  \item{exposure.risk.levels}{The list specified in input argument categorical.exposures.risk.ranks.}
 #' }
 #'
 #' @examples
@@ -65,7 +79,7 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, block.ld.mat, min.allele.freq = 0, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL) {
+    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL) {
 
     # make sure the appropriate genetic data is included
     if (is.null(complement.genetic.data) & (is.null(father.genetic.data) | is.null(mother.genetic.data))) {
@@ -74,44 +88,41 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    ### if environmental exposures are provided, make sure they are stored in a data.frame ###
-    ### and make a new omnibus exposure variable ###
+    ### if environmental exposures are provided, check their formatting ###
     if (!is.null(categorical.exposures)){
 
-        if (class(categorical.exposures) != "data.frame"){
+        # make sure categorical exposures are integers
+        if (class(categorical.exposures) != "integer"){
 
-            stop("categorical.exposures must be a data.frame")
-
-        }
-
-        # make sure the variables are actually categorical
-        categorical <- vapply(categorical.exposures, class, character(1L))
-
-        # if stored as a numeric, make sure the column values are equivalent to integers
-        numeric.cols <- which(categorical == "numeric")
-        non.cat.cols <- vapply(numeric.cols, function(x){
-
-            !all(categorical.exposures$x == as.integer(categorical.exposures$x))
-
-        }, logical(1))
-        if (any(non.cat.cols)){
-
-            stop("all categorical.exposures columns must be categorical variables")
+            stop("categorical.exposures must be of class integer")
 
         }
 
         # identify families with missing exposure data
-        missing.exposure <- apply(categorical.exposures, 1, function(x) any(is.na(x)))
+        missing.exposure <- is.na(categorical.exposures)
         if (sum(missing.exposure) > 0){
+
             message(paste("Removing", sum(missing.exposure), "families from analysis due to missing exposure(s)"))
+
         }
 
         # remove missing exposure families
-        categorical.exposures <- categorical.exposures[!missing.exposure, ]
+        categorical.exposures <- categorical.exposures[!missing.exposure]
         case.genetic.data <- case.genetic.data[!missing.exposure, ]
 
-        # now make an omnibus, factor variable containing categorical exposure groups
-        exposure <- interaction(categorical.exposures)
+        if (!is.null(complement.genetic.data)){
+
+            complement.genetic.data <- complement.genetic.data[!missing.exposure, ]
+
+        } else if (!is.null(father.genetic.data)){
+
+            father.genetic.data <- father.genetic.data[!missing.exposure, ]
+            mohter.genetic.data <- mother.genetic.data[!missing.exposure, ]
+
+        }
+
+        # shorten the name of the exposures variable
+        exposure <- categorical.exposures
 
         # get rid of any levels with only one case
         cases.per.level <- vapply(unique(exposure), function(exp.level){
@@ -122,6 +133,12 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         }, 1)
 
         one.case.levels <- unique(exposure)[cases.per.level == 1]
+        multi.case.levels <- unique(exposure)[cases.per.level > 1]
+        if (length(unique(exposure)) - length(one.case.levels) <= 1){
+
+            stop("Not enough cases per level of categorical.exposures to run the algorithm.")
+
+        }
         if (length(one.case.levels) > 0){
 
             one.case.levels.message <- paste(one.case.levels, collapse = ", ")
@@ -130,6 +147,22 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
             keep.these <- exposure != one.case.levels
             exposure <- exposure[keep.these]
             case.genetic.data <- case.genetic.data[keep.these, ]
+            if (!is.null(categorical.exposures.risk.ranks)){
+
+                categorical.exposures.risk.ranks <- categorical.exposures.risk.ranks[multi.case.levels]
+
+                # make sure we still have different risk ranks
+                cat.exposure.ranks <- unlist(categorical.exposures.risk.ranks)
+
+                # if not, just assume no order
+                if (length(unique(cat.exposure.ranks)) == 1){
+
+                    categorical.exposures.risk.ranks <- NULL
+                    warning("Remaining categorical.exposures.risk.ranks have only 1 level, now assuming no order of risk-relevance.")
+
+                }
+
+            }
             if (!is.null(complement.genetic.data)){
 
                 complement.genetic.data <- complement.genetic.data[keep.these, ]
@@ -173,14 +206,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     ### find the snps with MAF < minimum threshold in the cases ###
     if (!is.null(father.genetic.data) & !is.null(mother.genetic.data)) {
-
-        # remove families with missing exposure data
-        if (!is.null(categorical.exposures)){
-
-            father.genetic.data <- father.genetic.data[!missing.exposure, ]
-            mother.genetic.data <- mother.genetic.data[!missing.exposure, ]
-
-        }
 
         if (!all(round(father.genetic.data) == father.genetic.data, na.rm = TRUE)){
 
@@ -230,13 +255,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         if (!all(round(complement.genetic.data) == complement.genetic.data, na.rm = TRUE)){
 
             stop("complement.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
-
-        }
-
-        # remove families with missing exposure
-        if (!is.null(categorical.exposures)){
-
-            complement.genetic.data <- complement.genetic.data[!missing.exposure, ]
 
         }
 
@@ -334,6 +352,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     return(list(case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
         chisq.stats = chisq.stats, original.col.numbers = original.col.numbers, block.ld.mat = block.ld.mat,
-        minor.allele.vec = minor.alleles, exposure = exposure))
+        minor.allele.vec = minor.alleles, exposure = exposure, exposure.risk.levels = categorical.exposures.risk.ranks))
 
 }

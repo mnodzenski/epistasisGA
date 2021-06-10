@@ -57,6 +57,8 @@
 #' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param exposure.levels A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 #' gene-environment interactions.
+#' @param exposures.risk.levels An optional named list indicating the hypothesized relationship to risk
+#' among the levels of \code{exposure.levels}. See \code{preprocess.genetic.data} for further details.
 #' @param case.genetic.data.list A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
 #' as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.
 #' @param complement.genetic.data.list A list of matrices containing complement/unaffected sibling genetic data. Each element of the list corresponds to groups of
@@ -134,7 +136,7 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                    n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                    gen.same.fitness = 50, max.generations = 500,
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                   recode.test.stat = 1.64, dif.coding = FALSE, exposure.levels = NULL,
+                   recode.test.stat = 1.64, dif.coding = FALSE, exposure.levels = NULL, exposure.risk.levels = NULL,
                    case.genetic.data.list = NULL, complement.genetic.data.list = NULL, case.comp.different.list = NULL,
                    case.minus.comp.list = NULL, both.one.mat.list = NULL, case2.mat.list = NULL, case0.mat.list = NULL,
                    comp2.mat.list = NULL, comp0.mat.list = NULL) {
@@ -147,9 +149,9 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                             case.genetic.data.list, complement.genetic.data.list,
                             case.comp.different.list, case.minus.comp.list, both.one.mat.list,
                             case2.mat.list, case0.mat.list, comp2.mat.list, comp0.mat.list,
-                            exposure.levels, n.different.snps.weight, n.both.one.weight, migration.interval,
-                            gen.same.fitness, max.generations, initial.sample.duplicates, crossover.prop,
-                            recessive.ref.prop, recode.test.stat, dif.coding)
+                            exposure.levels, exposure.risk.levels, n.different.snps.weight, n.both.one.weight,
+                            migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
+                            crossover.prop, recessive.ref.prop, recode.test.stat, dif.coding)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){

@@ -35,6 +35,7 @@ GADGETS(
   recode.test.stat = 1.64,
   dif.coding = FALSE,
   exposure.levels = NULL,
+  exposure.risk.levels = NULL,
   case.genetic.data.list = NULL,
   complement.genetic.data.list = NULL,
   case.comp.different.list = NULL,
@@ -155,6 +156,9 @@ the complement/unaffected sibling carries 2 copies of the minor allele. Defaults
 
 \item{comp0.mat.list}{A list of logical matrices indicating whether, for each matrix in \code{complement.genetic.data.list} and for each SNP,
 the complement/unaffected sibling carries 0 copies of the minor allele. Defaults to NULL.}
+
+\item{exposures.risk.levels}{An optional named list indicating the hypothesized relationship to risk
+among the levels of \code{exposure.levels}. See \code{preprocess.genetic.data} for further details.}
 }
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:

@@ -13,7 +13,8 @@ preprocess.genetic.data(
   min.allele.freq = 0,
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
-  categorical.exposures = NULL
+  categorical.exposures = NULL,
+  categorical.exposures.risk.ranks = NULL
 )
 }
 \arguments{
@@ -47,8 +48,21 @@ genetic algorithm proportional to the values specified. If not specified, by def
 each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 real numbers. See argument \code{prob} from function \code{sample} for more details.}
 
-\item{categorical.exposures}{A data.frame of categorical exposures for the cases. Rows correspond to individuals and columns correspond to categorical exposures.
-Families with any missing exposure will be excluded from analysis.}
+\item{categorical.exposures}{A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
+which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. Any missing
+exposure data should be coded as NA.}
+
+\item{categorical.exposures.risk.ranks}{An optional named list indicating the hypothesized relationship to risk
+among the levels of \code{categorical.exposures}. The number of list elements must be equal to the number
+of distinct levels of \code{categorical.exposures} and the list element names should be the
+distinct levels of \code{categorical.exposures}. The list element values should be integers corresponding to
+the relative rank of hypothesized risk corresponding to an exposure, with 1 corresponding to the highest risk
+level. For example, suppose \code{categorical.exposures} has two levels, 0 and 1, and an analyst is interested
+only in identifying SNPs that are synergistically risk-related in the presence of exposure level 1. The analyst
+should specify \code{list("1" = 1, "0" = 2)} for \code{categorical.exposures.risk.ranks}. Similarly, for
+an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
+analyst could specify \code{list("1" = 3, "2" = 2, "3" = 1)}. See the package vignette for more detailed
+examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.}
 }
 \value{
 A list containing the following:
@@ -64,6 +78,7 @@ A list containing the following:
  \item{block.ld.mat}{The pre-processed version of \code{block.ld.mat}.}
  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
+ \item{exposure.risk.levels}{The list specified in input argument categorical.exposures.risk.ranks.}
 }
 }
 \description{
