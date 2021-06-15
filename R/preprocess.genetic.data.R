@@ -310,7 +310,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         } else {
 
-            exposure.var <- rep(exposure, 2)
+            exposure.var <- factor(rep(exposure, 2))
             res.list <- bplapply(seq_len(ncol(case.genetic.data)), function(snp, case.genetic.data, complement.genetic.data,
                                                                             exposure.var) {
 
