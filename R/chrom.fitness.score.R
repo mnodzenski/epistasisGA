@@ -36,6 +36,7 @@
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
 #' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
 #' be coded as the sign of the difference (defaulting to false) or the raw difference.
+#' @param GxE a logical indicating whether the function is being used to compute a GxE fitness score, defaulting to false.
 #' @return A list:
 #' \describe{
 #'  \item{fitness_score}{The chromosome fitness score.}
@@ -93,12 +94,13 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 block.ld.mat, weight.lookup, case2.mat, case0.mat,
                                 comp2.mat, comp0.mat, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE) {
+                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE,
+                                GxE = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
                       cases.minus.complements, both.one.mat, block.ld.mat, weight.lookup, case2.mat,
                       case0.mat, comp2.mat, comp0.mat, n.different.snps.weight, n.both.one.weight,
-                      recessive.ref.prop, recode.test.stat, epi.test, dif.coding)
+                      recessive.ref.prop, recode.test.stat, epi.test, dif.coding, GxE)
 
 }
 

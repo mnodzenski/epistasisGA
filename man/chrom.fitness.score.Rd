@@ -22,7 +22,8 @@ chrom.fitness.score(
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
   epi.test = FALSE,
-  dif.coding = FALSE
+  dif.coding = FALSE,
+  GxE = FALSE
 )
 }
 \arguments{
@@ -77,6 +78,8 @@ for a given SNP. See the GADGETS paper for specific details on the implementatio
 
 \item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
 be coded as the sign of the difference (defaulting to false) or the raw difference.}
+
+\item{GxE}{a logical indicating whether the function is being used to compute a GxE fitness score, defaulting to false.}
 }
 \value{
 A list:
