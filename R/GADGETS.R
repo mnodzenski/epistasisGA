@@ -57,8 +57,6 @@
 #' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param exposure.levels A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 #' gene-environment interactions.
-#' @param exposures.risk.levels An optional named list indicating the hypothesized relationship to risk
-#' among the levels of \code{exposure.levels}. See \code{preprocess.genetic.data} for further details.
 #' @param case.genetic.data.list A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
 #' as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.
 #' @param complement.genetic.data.list A list of matrices containing complement/unaffected sibling genetic data. Each element of the list corresponds to groups of
@@ -181,36 +179,53 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
 
         } else {
 
-            high.risk.exposure.dt <- data.table(high.risk.exposure = unlist(final.population.list[["high_risk_exposure"]]))
+            # grab exposure level info
+            exposure.info <- final.population.list[["exposure_level_info"]]
 
-            high.risk.dif.vec.list <- final.population.list[["high_risk_exposure_sum_dif_vecs"]]
-            high.risk.dif.vec.dt <- as.data.table(do.call(rbind, high.risk.dif.vec.list))
-            colnames(high.risk.dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".high.risk.diff.vec")
+            # put together results for each chrom
+            exposure.info.dt <- rbindlist(lapply(exposure.info, function(chrom.res){
 
-            high.risk.risk.allele.vec.list <- final.population.list[["high_risk_exposure_risk_allele_vecs"]]
-            high.risk.risk.allele.vec.dt <- as.data.table(do.call(rbind, high.risk.risk.allele.vec.list))
-            colnames(high.risk.risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".high.risk.allele.copies")
+                risk.order <- chrom.res[["xbar_length_order"]]
+                exposure.info.list <- chrom.res[["score_by_exposure"]]
+                dt.list <- lapply(seq_along(risk.order), function(exposure.number){
 
-            high.risk.n.case.risk.geno.dt <- data.table(high.risk.n.cases.risk.geno = final.population.list[["high_risk_exposure_n_case_risk_geno_vec"]])
-            high.risk.n.comp.risk.geno.dt <- data.table(high.risk.n.comps.risk.geno = final.population.list[["high_risk_exposure_n_comp_risk_geno_vec"]])
+                    # pick out results
+                    exposure.level <- exposure.levels[exposure.number]
+                    exposure.res <- exposure.info.list[[exposure.number]]
+                    exposure.res[["rank"]] <- risk.order[exposure.number]
 
-            low.risk.exposure.dt <- data.table(low.risk.exposure = unlist(final.population.list[["low_risk_exposure"]]))
+                    # specify column names
+                    colnames.start <- paste0("exposure", exposure.level)
+                    diff.vec.colnames <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
+                    allele.copy.colnames <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
+                    colnames.end <- c("rank", diff.vec.colnames, allele.copy.colnames,
+                                      "n.cases.risk.geno", "n.comps.risk.geno")
 
-            low.risk.dif.vec.list <- final.population.list[["low_risk_exposure_sum_dif_vecs"]]
-            low.risk.dif.vec.dt <- as.data.table(do.call(rbind, low.risk.dif.vec.list))
-            colnames(low.risk.dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".low.risk.diff.vec")
+                    # pick out results
+                    if ("no_informative_familes" %in% names(exposure.res)){
 
-            low.risk.risk.allele.vec.list <- final.population.list[["low_risk_exposure_risk_allele_vecs"]]
-            low.risk.risk.allele.vec.dt <- as.data.table(do.call(rbind, low.risk.risk.allele.vec.list))
-            colnames(low.risk.risk.allele.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".low.risk.allele.copies")
+                        res <- data.table(matrix(NA, 1, length(colnames.end)))
+                        res[1, 1] <- risk.order[exposure.number]
 
-            low.risk.n.case.risk.geno.dt <- data.table(low.risk.n.cases.risk.geno = final.population.list[["low_risk_exposure_n_case_risk_geno_vec"]])
-            low.risk.n.comp.risk.geno.dt <- data.table(low.risk.n.comps.risk.geno = final.population.list[["low_risk_exposure_n_comp_risk_geno_vec"]])
+                    } else {
 
-            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, high.risk.exposure.dt,
-                                  high.risk.dif.vec.dt, high.risk.risk.allele.vec.dt, high.risk.n.case.risk.geno.dt,
-                                  high.risk.n.comp.risk.geno.dt, low.risk.exposure.dt, low.risk.dif.vec.dt,
-                                  low.risk.risk.allele.vec.dt, low.risk.n.case.risk.geno.dt, low.risk.n.comp.risk.geno.dt)
+                        exposure.res.target <- exposure.res[c("rank", "sum_dif_vecs", "risk_set_alleles", "n_case_risk_geno",
+                                                              "n_comp_risk_geno")]
+                        res <- data.table(t(data.frame(unlist(exposure.res.target))))
+
+                    }
+                    colnames(res) <- paste(colnames.start, colnames.end)
+                    return(res)
+
+                })
+
+                combined.dt <- setDT(unlist(dt.list, recursive = FALSE), check.names = TRUE)[]
+                return(combined.dt)
+
+            }))
+
+
+            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, exposure.info.dt)
             setorder(final.result, -fitness.score)
 
         }

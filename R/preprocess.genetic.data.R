@@ -31,12 +31,12 @@
 #' among the levels of \code{categorical.exposures}. The number of list elements must be equal to the number
 #' of distinct levels of \code{categorical.exposures} and the list element names should be the
 #' distinct levels of \code{categorical.exposures}. The list element values should be integers corresponding to
-#' the relative rank of hypothesized risk corresponding to an exposure, with 1 corresponding to the highest risk
-#' level. For example, suppose \code{categorical.exposures} has two levels, 0 and 1, and an analyst is interested
-#' only in identifying SNPs that are synergistically risk-related in the presence of exposure level 1. The analyst
-#' should specify \code{list("1" = 1, "0" = 2)} for \code{categorical.exposures.risk.ranks}. Similarly, for
+#' the relative rank of hypothesized risk corresponding to an exposure, with 1 corresponding to the lowest risk
+#' level. For example, suppose \code{categorical.exposures} has two levels, 1 and 2, and an analyst is interested
+#' only in identifying SNPs that are synergistically risk-related in the presence of exposure level 2. The analyst
+#' should specify \code{list("1" = 1, "2" = 2)} for \code{categorical.exposures.risk.ranks}. Similarly, for
 #' an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
-#' analyst could specify \code{list("1" = 3, "2" = 2, "3" = 1)}. See the package vignette for more detailed
+#' analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
 #' examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.
 #'
 #' @return A list containing the following:
@@ -95,6 +95,21 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         if (class(categorical.exposures) != "integer"){
 
             stop("categorical.exposures must be of class integer")
+
+        }
+
+        # if specified, make sure the hypothesized risk vector contains the correct number
+        # of elements
+        if (!is.null(categorical.exposures.risk.ranks)){
+
+            rr.names <- names(categorical.exposures.risk.ranks)
+            unique.exposures <- unique(categorical.exposures)
+            correct.rr <- all(unique.exposures %in% rr.names)
+            if (!correct.rr){
+
+                stop("names of categorical.exposures.risk.ranks must match the unique elements of categorical.exposures")
+
+            }
 
         }
 

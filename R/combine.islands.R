@@ -89,16 +89,8 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         chrom.results <- island.data$top.chromosome.results
 
         # subset to unique results
-        GxE <- "high.risk.exposure" %in% colnames(chrom.results)
-        if (GxE){
-
-            chromosome.size <- sum(grepl("snp", colnames(chrom.results)))/6
-
-        } else {
-
-            chromosome.size <- sum(grepl("snp", colnames(chrom.results)))/3
-
-        }
+        GxE <- "exposure" %in% colnames(chrom.results)
+        chromosome.size <- sum(grepl("snp[0-9]$", colnames(chrom.results)))
         chrom.results[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(chrom.results)),
                         .SDcols = seq_len(chromosome.size)]
         chrom.results <- chrom.results[!duplicated(chrom.results), ]
@@ -110,23 +102,8 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     })
     combined.result <- rbindlist(island.list)
     setorder(combined.result, -fitness.score)
-    GxE <- "high.risk.exposure" %in% colnames(combined.result)
-    if (GxE){
-
-        chromosome.size <- sum(grepl("snp", colnames(combined.result)))/6
-        high.risk.sign.cols <- grep("high.risk.diff.vec", colnames(combined.result))
-        low.risk.sign.cols <- grep("low.risk.diff.vec", colnames(combined.result))
-        high.risk.allele.copy.cols <- grep("high.risk.allele.copies", colnames(combined.result))
-        low.risk.allele.copy.cols <- grep("low.risk.allele.copies", colnames(combined.result))
-        allele.copy.cols <- c(high.risk.allele.copy.cols, low.risk.allele.copy.cols)
-
-    } else {
-
-        chromosome.size <- sum(grepl("snp", colnames(combined.result)))/3
-        risk.sign.cols <- seq_len(chromosome.size) + chromosome.size
-        allele.copy.cols <- seq_len(chromosome.size) + 2*chromosome.size
-
-    }
+    GxE <- any(grepl("exposure", colnames(combined.result)))
+    chromosome.size <- sum(grepl("snp[0-9]$", colnames(combined.result)))
 
     # subset to unique results
     unique.result <- combined.result[!duplicated(combined.result$chromosome), ]
@@ -153,49 +130,54 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
 
     if (GxE){
 
-        high.diff.cols <- unique.result[ , ..high.risk.sign.cols]
-        high.diff.vecs <- unlist(high.diff.cols)
-        high.risk.alleles <- rep(NA, length(high.diff.vecs))
-        high.risk.alleles[high.diff.vecs >= 0 ] <- alt.alleles[snp.numbers[high.diff.vecs >= 0]]
-        high.risk.alleles[high.diff.vecs < 0 ] <- ref.alleles[snp.numbers[high.diff.vecs < 0]]
-        high.risk.allele.dt <- data.table(matrix(high.risk.alleles, ncol = chromosome.size,
-                                            byrow = FALSE))
-        colnames(high.risk.allele.dt) <- gsub("diff.vec", "risk.allele",
-                                              colnames(high.diff.cols))
+        dif.vec.cols <- grep("^exposure.*diff.vec$", colnames(unique.result))
+        allele.copy.cols <- grep("^exposure.*allele.copies$", colnames(unique.result))
 
-        low.diff.cols <- unique.result[ , ..low.risk.sign.cols]
-        low.diff.vecs <- unlist(low.diff.cols)
-        low.risk.alleles <- rep(NA, length(low.diff.vecs))
-        low.risk.alleles[low.diff.vecs >= 0 ] <- alt.alleles[snp.numbers[low.diff.vecs >= 0]]
-        low.risk.alleles[low.diff.vecs < 0 ] <- ref.alleles[snp.numbers[low.diff.vecs < 0]]
-        low.risk.allele.dt <- data.table(matrix(low.risk.alleles, ncol = chromosome.size,
-                                                 byrow = FALSE))
-        colnames(low.risk.allele.dt) <- gsub("diff.vec", "risk.allele",
-                                              colnames(low.diff.cols))
+        # loop over exposures and put together exposure specific results
+        exposure.end.cols <- seq(chromosome.size, length(dif.vec.cols), chromosome.size)
+        risk.allele.dt.list <- lapply(exposure.end.cols, function(end.col.idx){
+
+            start.col.idx <- end.col.idx - chromosome.size + 1
+            target.cols <- seq(dif.vec.cols[start.col.idx], dif.vec.cols[end.col.idx], 1)
+            diff.cols <- unique.result[ , ..target.cols]
+            diff.colnames <- colnames(diff.cols)
+            diff.vecs <- unlist(diff.cols)
+            risk.alleles <- rep(NA, length(diff.vecs))
+            risk.alleles[diff.vecs >= 0 ] <- alt.alleles[snp.numbers[diff.vecs >= 0]]
+            risk.alleles[diff.vecs < 0 ] <- ref.alleles[snp.numbers[diff.vecs < 0]]
+            risk.allele.dt <- data.table(matrix(risk.alleles, ncol = chromosome.size,
+                                                byrow = FALSE))
+            exposure.risk.allele.cols <- gsub("diff.vec", "risk.allele", diff.colnames)
+            colnames(risk.allele.dt) <- exposure.risk.allele.cols
+            exposure <- gsub(".snp1.diff.vec", "", diff.colnames[1])
+            exposure.rank.col <- paste0(exposure, ".rank")
+            exposure.risk.n.risk.allele.cols <- gsub("diff.vec", "allele.copies", diff.colnames)
+            exposure.n.cases.risk.geno.col <- paste0(exposure, ".n.cases.risk.geno")
+            exposure.n.comps.risk.geno.col <- paste0(exposure, ".n.comps.risk.geno")
+            orig.target.cols <- c(exposure.rank.col, diff.colnames, exposure.risk.n.risk.allele.cols,
+                                  exposure.n.cases.risk.geno.col, exposure.n.comps.risk.geno.col)
+            exposure.original.dt <- unique.result[ , ..orig.target.cols]
+            combined.dt <- cbind(exposure.original.dt, risk.allele.dt)
+            new.target.cols <- c(exposure.rank.col, diff.colnames, exposure.risk.allele.cols,
+                                 exposure.risk.n.risk.allele.cols, exposure.n.cases.risk.geno.col,
+                                 exposure.n.comps.risk.geno.col)
+            combined.dt <- combined.dt[ , ..new.target.cols]
+            return(combined.dt)
+
+        })
 
         # final results table
         overall.dif.vecs.and.fitness.cols <- c(paste0("snp", seq_len(chromosome.size), ".diff.vec"),
                                                "fitness.score")
         overall.dif.vecs.and.fitness <- unique.result[ , ..overall.dif.vecs.and.fitness.cols]
-        high.risk.start.cols <- c("high.risk.exposure",
-                                  paste0("snp", seq_len(chromosome.size), ".high.risk.diff.vec"))
-        high.risk.start <- unique.result[ , ..high.risk.start.cols]
-        high.risk.end.cols <- c(paste0("snp", seq_len(chromosome.size), ".high.risk.allele.copies"),
-                                "high.risk.n.cases.risk.geno", "high.risk.n.comps.risk.geno")
-        high.risk.end <- unique.result[ , ..high.risk.end.cols]
-        low.risk.start.cols <- c("low.risk.exposure",
-                                  paste0("snp", seq_len(chromosome.size), ".low.risk.diff.vec"))
-        low.risk.start <- unique.result[ , ..low.risk.start.cols]
-        low.risk.end.cols <- c(paste0("snp", seq_len(chromosome.size), ".low.risk.allele.copies"),
-                                "low.risk.n.cases.risk.geno", "low.risk.n.comps.risk.geno")
-        low.risk.end <- unique.result[ , ..low.risk.end.cols]
+        exposure.specific.dt <- do.call(cbind, risk.allele.dt.list)
         n.islands <- unique.result[ , "n.islands.found"]
-        final.result <- cbind(snp.cols, rsid.dt, overall.dif.vecs.and.fitness, high.risk.start,
-                              high.risk.allele.dt, high.risk.end, low.risk.start, low.risk.allele.dt,
-                              low.risk.end, n.islands)
+        final.result <- cbind(snp.cols, rsid.dt, overall.dif.vecs.and.fitness,
+                              exposure.specific.dt, n.islands)
 
     } else {
 
+        risk.sign.cols <- seq_len(chromosome.size) + chromosome.size
         diff.cols <- unique.result[ , ..risk.sign.cols]
         diff.vecs <- unlist(diff.cols)
         risk.alleles <- rep(NA, length(diff.vecs))
@@ -214,4 +196,4 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     return(final.result)
 
 }
-3.48681
+
