@@ -209,12 +209,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         exposure.levels <- as.character(names(case.genetic.data.split))
         if (is.null(exposure.risk.levels)){
 
-            exposure.risk.levels <- lapply(case.genetic.data.split, function(x) return(1))
-            names(exposure.risk.levels) <- exposure.levels
+            exposure.risk.levels <- rep(1, length(case.genetic.data.split))
 
         } else {
 
-            exposure.risk.levels <- exposure.risk.levels[exposure.levels]
+            exposure.risk.levels <- unlist(exposure.risk.levels[exposure.levels])
 
         }
         case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)

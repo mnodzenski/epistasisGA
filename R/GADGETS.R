@@ -57,6 +57,8 @@
 #' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param exposure.levels A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 #' gene-environment interactions.
+#' @param exposure.risk.levels An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.
+#' See argument \code{categorical.exposures.risk.ranks} of \code{preprocess.genetic.data} for more information.
 #' @param case.genetic.data.list A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
 #' as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.
 #' @param complement.genetic.data.list A list of matrices containing complement/unaffected sibling genetic data. Each element of the list corresponds to groups of

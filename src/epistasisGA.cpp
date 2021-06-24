@@ -990,9 +990,9 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
                        ListOf<IntegerMatrix> cases_minus_complements_list, ListOf<LogicalMatrix> both_one_mat_list,
                        LogicalMatrix block_ld_mat, IntegerVector weight_lookup, ListOf<LogicalMatrix> case2_mat_list,
                        ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list,
-                       ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, List exposure_risk_levels,
+                       ListOf<LogicalMatrix> comp0_mat_list, CharacterVector exposure_levels, IntegerVector exposure_risk_levels,
                        int n_different_snps_weight = 2, int n_both_one_weight = 1,  double recessive_ref_prop = 0.75,
-                       double recode_test_stat = 1.64, bool dif_coding = false){
+                       double recode_test_stat = 1.64, bool dif_coding = false, bool check_risk = true){
 
   // divide the input data based on exposure and get components for fitness score //
   List score_by_exposure(exposure_levels.length());
@@ -1043,39 +1043,43 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
   NumericVector sorted_xbar_length_by_exposure = clone(xbar_length_by_exposure).sort();
   IntegerVector xbar_length_order = match(xbar_length_by_exposure, sorted_xbar_length_by_exposure);
 
-  // check that risk model is consistent with mean vector lengths
+  // if needed, check the risk model
   bool correct_risk_model = true;
-  for (int i = 0; i < exposure_levels.length() - 1; i++){
+  if (check_risk){
 
-    for (int j = i + 1; j < exposure_levels.length(); j++){
+    for (int i = 0; i < exposure_levels.length() - 1; i++){
 
-      // risk levels
-      int risk_level_i = exposure_risk_levels[i];
-      int risk_level_j = exposure_risk_levels[j];
+      for (int j = i + 1; j < exposure_levels.length(); j++){
 
-      // vector lengths
-      double xbar_length_i = xbar_length_by_exposure[i];
-      double xbar_length_j = xbar_length_by_exposure[j];
+        // risk levels
+        int risk_level_i = exposure_risk_levels[i];
+        int risk_level_j = exposure_risk_levels[j];
 
-      // make sure the fitness scores correspond to the hypothesized
-      // risk levels (recall risk level 1 is the lowest risk level)
-      if ((risk_level_i > risk_level_j) & (xbar_length_j > xbar_length_i)){
+        // vector lengths
+        double xbar_length_i = xbar_length_by_exposure[i];
+        double xbar_length_j = xbar_length_by_exposure[j];
 
-        correct_risk_model = false;
-        break;
+        // make sure the fitness scores correspond to the hypothesized
+        // risk levels (recall risk level 1 is the lowest risk level)
+        if ((risk_level_i > risk_level_j) & (xbar_length_j > xbar_length_i)){
 
-      } else if ((risk_level_j > risk_level_i) & (xbar_length_i > xbar_length_j)){
+          correct_risk_model = false;
+          break;
 
-        correct_risk_model = false;
-        break;
+        } else if ((risk_level_j > risk_level_i) & (xbar_length_i > xbar_length_j)){
+
+          correct_risk_model = false;
+          break;
+
+        }
 
       }
 
-    }
+      if (!correct_risk_model){
 
-    if (!correct_risk_model){
+        break;
 
-      break;
+      }
 
     }
 
@@ -1222,9 +1226,9 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List case_comp_differences_list,
                         List chromosome_list, List cases_minus_complements_list, List both_one_mat_list,
                         LogicalMatrix block_ld_mat, IntegerVector weight_lookup, List case2_mat_list, List case0_mat_list,
-                        List comp2_mat_list, List comp0_mat_list, CharacterVector exposure_levels, List exposure_risk_levels,
+                        List comp2_mat_list, List comp0_mat_list, CharacterVector exposure_levels, IntegerVector exposure_risk_levels,
                         int n_different_snps_weight = 2, int n_both_one_weight = 1, double recessive_ref_prop = 0.75,
-                        double recode_test_stat = 1.64, bool dif_coding = false){
+                        double recode_test_stat = 1.64, bool dif_coding = false, bool check_risk = true){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
@@ -1234,7 +1238,7 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
                                   target_snps, cases_minus_complements_list, both_one_mat_list,
                                   block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list,
                                   exposure_levels, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
-                                  recode_test_stat, dif_coding);
+                                  recode_test_stat, dif_coding, check_risk);
 
   }
   return(scores);
@@ -1262,10 +1266,10 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                 ListOf<LogicalMatrix> comp2_mat_list,
                                 ListOf<LogicalMatrix> comp0_mat_list,
                                 CharacterVector exposure_levels,
-                                List exposure_risk_levels,
+                                IntegerVector exposure_risk_levels,
                                 int n_different_snps_weight = 2,
                                 int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                bool dif_coding = false, bool GxE = false){
+                                bool dif_coding = false, bool GxE = false, bool check_risk = true){
 
   // initiate storage object for fitness scores
   List chrom_fitness_score_list;
@@ -1277,7 +1281,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                                 chromosome_list, case_minus_comp_list, both_one_mat_list,
                                                 block_ld_mat, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list,
                                                 comp0_mat_list, exposure_levels, exposure_risk_levels, n_different_snps_weight,
-                                                n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding);
+                                                n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, check_risk);
 
     // for storing generation information
 
@@ -1437,11 +1441,11 @@ List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix compleme
                          ListOf<LogicalMatrix> comp2_mat_list,
                          ListOf<LogicalMatrix> comp0_mat_list,
                          CharacterVector exposure_levels,
-                         List exposure_risk_levels,
+                         IntegerVector exposure_risk_levels,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
-                         bool dif_coding = false, bool GxE = false){
+                         bool dif_coding = false, bool GxE = false, bool check_risk = true){
 
   int n_possible_unique_combn = n_chromosomes * chromosome_size;
   if ((case_genetic_data.ncol() < n_possible_unique_combn) & !initial_sample_duplicates) {
@@ -1484,7 +1488,8 @@ List initiate_population(IntegerMatrix case_genetic_data, IntegerMatrix compleme
                                                          case_minus_comp_list, both_one_mat_list, case2_mat_list,
                                                          case0_mat_list, comp2_mat_list, comp0_mat_list,
                                                          exposure_levels, exposure_risk_levels, n_different_snps_weight,
-                                                         n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE);
+                                                         n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE,
+                                                         check_risk);
 
   // pick out the top and bottom scores
   chromosome_list = current_fitness_list["chromosome_list"];
@@ -1526,14 +1531,14 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    ListOf<LogicalMatrix> comp2_mat_list,
                    ListOf<LogicalMatrix> comp0_mat_list,
                    CharacterVector exposure_levels,
-                   List exposure_risk_levels,
+                   IntegerVector exposure_risk_levels,
                    NumericVector snp_chisq, IntegerVector original_col_numbers, List population,
                    int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500,
                    bool initial_sample_duplicates = false,
                    double crossover_prop = 0.8, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                   bool dif_coding = false, bool GxE = false){
+                   bool dif_coding = false, bool GxE = false, bool check_risk = true){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -1782,7 +1787,8 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                                                       case_minus_comp_list, both_one_mat_list, case2_mat_list,
                                                       case0_mat_list, comp2_mat_list, comp0_mat_list,
                                                       exposure_levels, exposure_risk_levels, n_different_snps_weight,
-                                                      n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE);
+                                                      n_both_one_weight, recessive_ref_prop, recode_test_stat, dif_coding, GxE,
+                                                      check_risk);
 
     //7. Increment iterators
     generation += 1;
@@ -2036,7 +2042,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                  Nullable<ListOf<LogicalMatrix>> comp2_mat_list_in = R_NilValue,
                  Nullable<ListOf<LogicalMatrix>> comp0_mat_list_in = R_NilValue,
                  Nullable<CharacterVector> exposure_levels_in = R_NilValue,
-                 Nullable<List> exposure_risk_levels_in = R_NilValue,
+                 Nullable<IntegerVector> exposure_risk_levels_in = R_NilValue,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
@@ -2065,8 +2071,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
   ListOf<LogicalMatrix> comp2_mat_list;
   ListOf<LogicalMatrix> comp0_mat_list;
   CharacterVector exposure_levels;
-  List exposure_risk_levels;
+  IntegerVector exposure_risk_levels;
   bool GxE = false;
+  bool check_risk = true;
 
   if (case_genetic_data_in.isNotNull()){
 
@@ -2115,6 +2122,10 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     case_genetic_data = case_genetic_data_list[1];
     GxE = true;
 
+    // decide if risk model needs to be checked
+    IntegerVector unique_exposure_risk_levels = unique(exposure_risk_levels);
+    check_risk = unique_exposure_risk_levels.length() > 1;
+
   }
 
   // go through first round of island evolution
@@ -2134,7 +2145,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                                    exposure_levels, exposure_risk_levels,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
-                                                   max_generations, initial_sample_duplicates, dif_coding, GxE);
+                                                   max_generations, initial_sample_duplicates, dif_coding, GxE,
+                                                   check_risk);
 
     island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                           case_comp_different, case_minus_comp, both_one_mat,
@@ -2148,7 +2160,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                           island_population_i, n_different_snps_weight, n_both_one_weight,
                                           migration_interval, gen_same_fitness, max_generations,
                                           initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
-                                          dif_coding, GxE);
+                                          dif_coding, GxE, check_risk);
 
   }
 
@@ -2273,7 +2285,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                             island_population_i, n_different_snps_weight, n_both_one_weight,
                                             migration_interval, gen_same_fitness, max_generations,
                                             initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
-                                            dif_coding, GxE);
+                                            dif_coding, GxE, check_risk);
 
     }
 
