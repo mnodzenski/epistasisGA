@@ -204,10 +204,10 @@ GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.
                                       "n.cases.risk.geno", "n.comps.risk.geno")
 
                     # pick out results
-                    if ("no_informative_familes" %in% names(exposure.res)){
+                    if ("no_informative_families" %in% names(exposure.res)){
 
                         res <- data.table(matrix(NA, 1, length(colnames.end)))
-                        res[1, 1] <- risk.order[exposure.number]
+                        res[ , 1] <- risk.order[exposure.number]
 
                     } else {
 
