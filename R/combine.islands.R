@@ -143,8 +143,10 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
             diff.colnames <- colnames(diff.cols)
             diff.vecs <- unlist(diff.cols)
             risk.alleles <- rep(NA, length(diff.vecs))
-            risk.alleles[diff.vecs >= 0 ] <- alt.alleles[snp.numbers[diff.vecs >= 0]]
-            risk.alleles[diff.vecs < 0 ] <- ref.alleles[snp.numbers[diff.vecs < 0]]
+            dv.gte0 <- !is.na(diff.vecs) & diff.vecs >= 0
+            risk.alleles[dv.gte0] <- alt.alleles[snp.numbers[dv.gte0]]
+            dv.lt0 <- !is.na(diff.vecs) & diff.vecs < 0
+            risk.alleles[dv.lt0] <- ref.alleles[snp.numbers[dv.lt0]]
             risk.allele.dt <- data.table(matrix(risk.alleles, ncol = chromosome.size,
                                                 byrow = FALSE))
             exposure.risk.allele.cols <- gsub("diff.vec", "risk.allele", diff.colnames)
