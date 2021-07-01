@@ -129,7 +129,7 @@ See the GADGETS paper for specific details.}
 \item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
 be coded as the sign of the difference (defaulting to false) or the raw difference.}
 
-\item{exposure.levels}{A categorical vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
+\item{exposure.levels}{An integer vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 gene-environment interactions.}
 
 \item{exposure.risk.levels}{An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.

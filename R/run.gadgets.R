@@ -216,6 +216,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
             exposure.risk.levels <- unlist(exposure.risk.levels[exposure.levels])
 
         }
+        exposure.levels <- as.integer(exposure.levels)
         case.genetic.data.list <- lapply(case.genetic.data.split, as.matrix)
         complement.genetic.data.list <- lapply(split(data.frame(complement.genetic.data), exposure), as.matrix)
         case.comp.different.list <- lapply(split(data.frame(case.comp.different), exposure), as.matrix)
