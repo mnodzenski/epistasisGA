@@ -3,7 +3,7 @@
 \docType{data}
 \name{case}
 \alias{case}
-\title{SNP counts for the affected children of case-parent triads.}
+\title{Genotypes for the affected children of case-parent triads.}
 \format{
 A data frame with 1000 rows and 100 variables
 }
