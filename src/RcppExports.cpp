@@ -691,6 +691,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// GxE_test
+List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes, int n_different_snps_weight, int n_both_one_weight, int weight_function_int, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
+RcppExport SEXP _epistasisGAGE_GxE_test(SEXP snp_colsSEXP, SEXP preprocessed_listSEXP, SEXP n_permutesSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP weight_function_intSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type snp_cols(snp_colsSEXP);
+    Rcpp::traits::input_parameter< List >::type preprocessed_list(preprocessed_listSEXP);
+    Rcpp::traits::input_parameter< int >::type n_permutes(n_permutesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type weight_function_int(weight_function_intSEXP);
+    Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
+    Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
+    Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
+    rcpp_result_gen = Rcpp::wrap(GxE_test(snp_cols, preprocessed_list, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, dif_coding));
+    return rcpp_result_gen;
+END_RCPP
+}
 // n2log_epistasis_pvals
 NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List preprocessed_list, int n_permutes, int n_different_snps_weight, int n_both_one_weight, int weight_function_int, double recessive_ref_prop, double recode_test_stat, bool dif_coding);
 RcppExport SEXP _epistasisGAGE_n2log_epistasis_pvals(SEXP chromosome_listSEXP, SEXP preprocessed_listSEXP, SEXP n_permutesSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP weight_function_intSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP dif_codingSEXP) {
@@ -707,26 +726,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
     Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
     rcpp_result_gen = Rcpp::wrap(n2log_epistasis_pvals(chromosome_list, preprocessed_list, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, dif_coding));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GxE_test
-List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes, int n_different_snps_weight, int n_both_one_weight, int weight_function_int, double recessive_ref_prop, double recode_test_stat, bool warn, bool dif_coding);
-RcppExport SEXP _epistasisGAGE_GxE_test(SEXP snp_colsSEXP, SEXP preprocessed_listSEXP, SEXP n_permutesSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP weight_function_intSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP warnSEXP, SEXP dif_codingSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type snp_cols(snp_colsSEXP);
-    Rcpp::traits::input_parameter< List >::type preprocessed_list(preprocessed_listSEXP);
-    Rcpp::traits::input_parameter< int >::type n_permutes(n_permutesSEXP);
-    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
-    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
-    Rcpp::traits::input_parameter< int >::type weight_function_int(weight_function_intSEXP);
-    Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
-    Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
-    Rcpp::traits::input_parameter< bool >::type warn(warnSEXP);
-    Rcpp::traits::input_parameter< bool >::type dif_coding(dif_codingSEXP);
-    rcpp_result_gen = Rcpp::wrap(GxE_test(snp_cols, preprocessed_list, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, warn, dif_coding));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -771,8 +770,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGAGE_epistasis_test_permute", (DL_FUNC) &_epistasisGAGE_epistasis_test_permute, 11},
     {"_epistasisGAGE_epistasis_test_null_scores", (DL_FUNC) &_epistasisGAGE_epistasis_test_null_scores, 12},
     {"_epistasisGAGE_epistasis_test", (DL_FUNC) &_epistasisGAGE_epistasis_test, 10},
+    {"_epistasisGAGE_GxE_test", (DL_FUNC) &_epistasisGAGE_GxE_test, 9},
     {"_epistasisGAGE_n2log_epistasis_pvals", (DL_FUNC) &_epistasisGAGE_n2log_epistasis_pvals, 9},
-    {"_epistasisGAGE_GxE_test", (DL_FUNC) &_epistasisGAGE_GxE_test, 10},
     {NULL, NULL, 0}
 };
 

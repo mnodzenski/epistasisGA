@@ -103,6 +103,9 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
                          high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
                          legend.axis.cex = 1.75, ...) {
 
+    # indicate whether we're doing GxE
+    GxE <- !is.null(pp.list$exposure)
+
     # pick out the pieces of the graphical.score.list
     edge.dt <- graphical.score.list[["pair.scores"]]
     node.dt <- graphical.score.list[["snp.scores"]]
@@ -119,34 +122,43 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
     }
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
+    # for now, only GxG interactions
     original.col.numbers <- preprocessed.list$original.col.numbers
-    r2.vals <- vapply(seq(1, nrow(edge.dt)), function(x){
+    if (!GxE){
 
-        # pick out the snp pair in the preprocessed list
-        snp.pair <- as.vector(t(edge.dt[x, c(1, 2)]))
-        target.snps <- which(original.col.numbers %in% snp.pair)
+        r2.vals <- vapply(seq(1, nrow(edge.dt)), function(x){
 
-        # check if snps are located in same ld block
-        block.ld.mat <- preprocessed.list$block.ld.mat
-        target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
-        same.ld.block <- target.block.ld.mat[2, 1]
+            # pick out the snp pair in the preprocessed list
+            snp.pair <- as.vector(t(edge.dt[x, c(1, 2)]))
+            target.snps <- which(original.col.numbers %in% snp.pair)
 
-        # if on same ld block, compute r2
-        if (!same.ld.block){
+            # check if snps are located in same ld block
+            block.ld.mat <- preprocessed.list$block.ld.mat
+            target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
+            same.ld.block <- target.block.ld.mat[2, 1]
 
-            return(0.0)
+            # if on same ld block, compute r2
+            if (!same.ld.block){
 
-        } else {
+                return(0.0)
 
-            comp.genetic.data <- preprocessed.list$complement.genetic.data
-            snp1 <- target.snps[1]
-            snp2 <- target.snps[2]
-            r2 <- cor(comp.genetic.data[ , snp1], comp.genetic.data[ , snp2])^2
-            return(r2)
+            } else {
 
-        }
+                comp.genetic.data <- preprocessed.list$complement.genetic.data
+                snp1 <- target.snps[1]
+                snp2 <- target.snps[2]
+                r2 <- cor(comp.genetic.data[ , snp1], comp.genetic.data[ , snp2])^2
+                return(r2)
 
-    }, 1.0)
+            }
+
+        }, 1.0)
+
+    } else {
+
+        r2.vals <- rep(0, nrow(edge.dt))
+
+    }
 
     #subset to target cols
     edge.dt <- edge.dt[ , c(1, 2, 5)]

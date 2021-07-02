@@ -2646,59 +2646,16 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
 }
 
-/////////////////////////////////////////////////////////
-// function to loop over a list of chromosomes and
-// compute epistasis p-value, and reuturn the -2log.
-// This is used in the graphical scoring procedure.
-/////////////////////////////////////////////////////////
-
-// [[Rcpp::export]]
-NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List preprocessed_list, int n_permutes = 10000,
-                                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
-                                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                    bool dif_coding = false){
-
-
-  NumericVector n2log_epi_pvals(chromosome_list.size());
-  double N = n_permutes + 1;
-  for (int i = 0; i < chromosome_list.size(); i++){
-
-    IntegerVector chromosome = chromosome_list[i];
-    List epi_res = epistasis_test(chromosome, preprocessed_list, n_permutes,
-                                  n_different_snps_weight, n_both_one_weight, weight_function_int,
-                                  recessive_ref_prop, recode_test_stat, false, dif_coding);
-    NumericVector pval_vec = epi_res["pval"];
-    double pval = pval_vec[0];
-    LogicalVector pval_na_vec = NumericVector::is_na(pval);
-    bool pval_na = pval_na_vec[0];
-    if (pval_na){
-
-      pval = 0.5;
-
-    }
-
-    if (pval == 1){
-
-      pval = 1 - 1/N;
-
-    }
-    pval = -2*log(pval);
-    n2log_epi_pvals[i] = pval;
-
-  }
-  return(n2log_epi_pvals);
-
-}
 
 /////////////////////////////////////////////
-// function to interaction permutation test
+// function to run interaction permutation test
 ////////////////////////////////////////////
 
 // [[Rcpp::export]]
 List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 10000,
-                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
-                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool warn = true,
-                    bool dif_coding = false){
+              int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
+              double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+              bool dif_coding = false){
 
   // pick out target columns in the preprocessed data
   IntegerVector original_col_numbers = preprocessed_list["original.col.numbers"];
@@ -2851,13 +2808,13 @@ List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 1
 
     // compute fitness
     List perm_fitness_list =  GxE_fitness_score(case_genetic_data_list_perm, complement_genetic_data_list_perm,
-                                               case_comp_differences_list_perm, chrom_snps,
-                                               cases_minus_complements_list_perm, both_one_mat_list_perm,
-                                               target_block_ld_mat, weight_lookup, case2_mat_list_perm,
-                                               case0_mat_list_perm, comp2_mat_list_perm,
-                                               comp0_mat_list_perm, exposure_levels_perm, exposure_risk_levels_perm,
-                                               n_different_snps_weight, n_both_one_weight,  recessive_ref_prop,
-                                               recode_test_stat, true, dif_coding, check_risk);
+                                                case_comp_differences_list_perm, chrom_snps,
+                                                cases_minus_complements_list_perm, both_one_mat_list_perm,
+                                                target_block_ld_mat, weight_lookup, case2_mat_list_perm,
+                                                case0_mat_list_perm, comp2_mat_list_perm,
+                                                comp0_mat_list_perm, exposure_levels_perm, exposure_risk_levels_perm,
+                                                n_different_snps_weight, n_both_one_weight,  recessive_ref_prop,
+                                                recode_test_stat, true, dif_coding, check_risk);
     double perm_fitness = perm_fitness_list["fitness_score"];
     perm_fitness_scores[i] = perm_fitness;
 
@@ -2875,6 +2832,69 @@ List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 1
   return(res);
 
 }
+
+/////////////////////////////////////////////////////////
+// function to loop over a list of chromosomes and
+// compute epistasis or GxE interaction p-value, and reuturn the -2log.
+// This is used in the graphical scoring procedure.
+/////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List preprocessed_list, int n_permutes = 10000,
+                                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
+                                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+                                    bool dif_coding = false){
+
+
+  NumericVector n2log_epi_pvals(chromosome_list.size());
+  double N = n_permutes + 1;
+  bool GxE = false;
+  if (preprocessed_list["exposure"] != R_NilValue){
+
+    GxE = true;
+
+  }
+  for (int i = 0; i < chromosome_list.size(); i++){
+
+    IntegerVector chromosome = chromosome_list[i];
+    List perm_res;
+    if (!GxE){
+
+      perm_res = epistasis_test(chromosome, preprocessed_list, n_permutes,
+                                n_different_snps_weight, n_both_one_weight, weight_function_int,
+                                recessive_ref_prop, recode_test_stat, false, dif_coding);
+
+    } else {
+
+      perm_res = GxE_test(chromosome, preprocessed_list, n_permutes,
+                          n_different_snps_weight, n_both_one_weight, weight_function_int,
+                          recessive_ref_prop, recode_test_stat, dif_coding);
+
+    }
+
+    NumericVector pval_vec = perm_res["pval"];
+    double pval = pval_vec[0];
+    LogicalVector pval_na_vec = NumericVector::is_na(pval);
+    bool pval_na = pval_na_vec[0];
+    if (pval_na){
+
+      pval = 0.5;
+
+    }
+
+    if (pval == 1){
+
+      pval = 1 - 1/N;
+
+    }
+    pval = -2*log(pval);
+    n2log_epi_pvals[i] = pval;
+
+  }
+  return(n2log_epi_pvals);
+
+}
+
 
 
 
