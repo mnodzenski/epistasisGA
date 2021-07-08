@@ -79,8 +79,8 @@ permute.dataset <- function(case.genetic.data = NULL, complement.genetic.data = 
 
         permuted.data.list <- lapply(seq_len(n.permutations), function(x) {
 
-            shuffled.order <- sample(seq_along(exposure), length(exposure))
-            exposure.perm <- exposure[shuffled.order]
+            shuffled.order <- sample(seq_along(categorical.exposures), length(categorical.exposures))
+            exposure.perm <- categorical.exposures[shuffled.order]
             return(exposure.perm)
 
 

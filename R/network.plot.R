@@ -104,7 +104,7 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
                          legend.axis.cex = 1.75, ...) {
 
     # indicate whether we're doing GxE
-    GxE <- !is.null(pp.list$exposure)
+    GxE <- !is.null(preprocessed.list$exposure)
 
     # pick out the pieces of the graphical.score.list
     edge.dt <- graphical.score.list[["pair.scores"]]
