@@ -33,14 +33,10 @@
 #' data(mom)
 #' data(snp.annotations)
 #' library(Matrix)
-#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #'
 #' pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
 #'                                mother.genetic.data = mom,
-#'                                block.ld.mat = block.ld.mat)
+#'                                ld.block.vec = rep(25, 4))
 #'
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
 #'        results.dir = "tmp", cluster.type = "interactive",

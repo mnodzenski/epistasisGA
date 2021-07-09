@@ -11,7 +11,7 @@ chrom.fitness.score(
   target.snps,
   cases.minus.complements,
   both.one.mat,
-  block.ld.mat,
+  ld.block.vec,
   weight.lookup,
   case2.mat,
   case0.mat,
@@ -29,7 +29,7 @@ chrom.fitness.score(
 \arguments{
 \item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
  Columns are SNP allele counts, and rows are individuals.
-The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
+The ordering of the columns must be consistent with the LD structure specified in \code{ld.block.vec}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
@@ -46,10 +46,12 @@ where rows correspond to individuals and columns correspond to snps.}
 \item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 
-\item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
-to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
-with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-to be in LD if they are located on the same biological chromosome.}
+\item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
+we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
+SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
+in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
+a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome. If not specified, this defaults
+to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
@@ -123,15 +125,12 @@ case0.mat <- case == 0
 comp2.mat <- comp == 2
 comp0.mat <- comp == 0
 library(Matrix)
-block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25))))
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 storage.mode(weight.lookup) <- "integer"
+block.ld.vec <- cumsum(rep(25, 4))
 chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
                     case.minus.comp, both.one.mat,
-                    block.ld.mat, weight.lookup,
+                    rep(25, 4), weight.lookup,
                     case2.mat, case0.mat, comp2.mat,
                     comp0.mat)
 

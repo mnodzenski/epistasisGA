@@ -46,16 +46,12 @@
 #' data(snp.annotations)
 #' library(Matrix)
 #' set.seed(1400)
-#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #'
 #' #preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
 #'                                mother.genetic.data = mom[ , target.snps],
-#'                                block.ld.mat = block.ld.mat[target.snps , target.snps])
+#'                                ld.block.vec = c(3, 3, 3, 1))
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2

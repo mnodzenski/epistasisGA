@@ -7,8 +7,8 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "April 2, 2020"
-package: epistasisGA
+date: "July 8, 2021"
+package: epistasisGAGE
 output: 
   BiocStyle::html_document:
     toc_float: true
@@ -45,7 +45,7 @@ As a final note, users should be aware this method does not currently scale up t
 We begin our example usage of GADGETS by loading a simulated example of case-parent triad data. 
 
 ```{r}
-library(epistasisGA)
+library(epistasisGAGE)
 data(case)
 data(dad)
 data(mom)
@@ -57,23 +57,20 @@ At present, GADGETS does not support the use of genotypes imputed with uncertain
 
 ## Pre-process Data
 
-The second step in the analysis pipeline is to pre-process the data. We begin pre-processing by constructing a block diagonal matrix to indicate whether a given pair of SNPs should be considered to be in linkage, where `TRUE` indicates a pair of SNPs are in linkage and `FALSE` otherwise. Below, we default to the assumption that SNPs located on the same biological chromosome are in linkage, but users need not make this assumption and are encouraged to more carefully tailor this matrix based on individual circumstances. An important note is that the matrix must be block diagonal (or uniformly set to TRUE), and the ordering of the columns in the input triad data must be consistent with the specified LD structure. For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the matrix as follows:
+The second step in the analysis pipeline is to pre-process the data. Below, we default to the assumption that SNPs located on the same biological chromosome are in linkage, but users need not make this assumption and are encouraged to more carefully tailor this argument based on individual circumstances. For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the vector as follows:
 
 ```{r}
-library(Matrix)
-block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-                               matrix(rep(TRUE, 25^2), nrow = 25),
-                               matrix(rep(TRUE, 25^2), nrow = 25),
-                               matrix(rep(TRUE, 25^2), nrow = 25))))
-
+ld.block.vec <- rep(25, 4)
 ```
+
+This vector indicates that the input genetic data has 4 distinct linkage blocks, with SNPs 1-25 in the first block, 26-50 in the second block, 51-75 in the third block, and 76-100 in the fourth block. Note the ordering of the columns in the input triad data must be consistent with the specified LD structure.
 
 Now, we can execute pre-processing:
 
 ```{r}
 pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    mother.genetic.data = mom,
-                                   block.ld.mat = block.ld.mat)
+                                   ld.block.vec = ld.block.vec)
 ```
 
 For affected/unaffected sibling study, the sibling genetic data should be supplied as the `complement.genetic.data` argument:
@@ -82,7 +79,7 @@ For affected/unaffected sibling study, the sibling genetic data should be suppli
 ### FOR ILLUSTRATION ONLY, DO NOT TRY TO RUN THIS CHUNK ###
 pp.list <- preprocess.genetic.data(affected.sibling.genotypes, 
                                    complement.genetic.data = unaffected.sibling.genotypes,
-                                   block.ld.mat = block.ld.mat)
+                                   ld.block.vec = ld.block.vec)
 
 ```
 
@@ -100,11 +97,13 @@ combined.case <- rbind(case, affected.sibling.genotypes)
 combined.complement <- rbind(complement, unaffected.sibling.genotypes)
 pp.list <- preprocess.genetic.data(case.genetic.data = combined.case, 
                                    complement.genetic.data = combined.complement,
-                                   block.ld.mat = block.ld.mat)
+                                   ld.block.vec = ld.block.vec)
 
 ```
 
-The `preprocess.genetic.data` function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP based on the observed frequency in the mothers and fathers (or both siblings in sibling studies). The coding is then flipped for any SNPs where the allele count corresponds to the major allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 0\% by default (no filtering), are removed. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each SNP assuming a log-additive model using the method of conditioning on the set of transmitted and untransmitted genotypes, regardless of phase, described by @Cordell2002. These statistics are used in GADGETS when SNPs are sampled for mutation, with the sampling probability for a given SNP proportional to its $\sqrt{\chi^2}$ value. Alternatively, users can manually specify a vector proportional to SNP sampling probabilities using argument `snp.sampling.probs`. This may be of interest to users who wish to incorporate prior biological or expert knowledge into the algorithm to prioritize sampling a subset of particularly interesting SNPs.   
+Importantly, X chromosome SNPs can be used as candidates for GADGETS, but some extra attention is required. Specifically, for affected/unaffected sibling data, both siblings in each pair should be of the same biological sex. For case-parent triad data, the 'complement' should be assumed to be of the same sex as the case. As a consequence, analysts must input triad data containing X chromosome SNPs as `case.genetic.data` and `complement.genetic.data`, as shown above, after manually creating the complement data for these triads. To do so, autosomal SNP complements should still be created as above (mother genotype + father genotype - case genotype), but the X chromosome SNP complement genotypes should be the allele transmitted by the father to the case *and* the allele *not* transmitted by the mother to the case. Note this will result in male X chromosome SNP case and complement genotypes being coded as 0 or 1, compared to 0, 1, or 2 for females. If males and females are both contained in the analysis dataset, analysts may wish to double male X chromosome SNP allele counts (male genotype 1 re-coded as 2) because half of the X copies are typically silenced in females. This, however, is not required and analysts can decide on a SNP-by-SNP basis. Alternatively, GADGETS could be run separately for males and females, in which case doubling male X chromosome allele counts would not be necessary. 
+
+The `preprocess.genetic.data` function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP based on the observed frequency in the mothers and fathers (or both siblings in sibling studies). The coding is then flipped for any SNPs where the allele count corresponds to the major allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 0\% by default (no filtering), are removed. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each SNP assuming a log-additive model using the method of conditioning on the set of transmitted and untransmitted genotypes, regardless of phase, described by @Cordell2002. These statistics are used in GADGETS when SNPs are sampled for mutation, with the sampling probability for a given SNP proportional to its $\sqrt{\chi^2}$ value. Alternatively, users can manually specify a vector proportional to SNP sampling probabilities using argument `snp.sampling.probs`. This may be of interest to users who wish to incorporate prior biological or expert knowledge into the algorithm to prioritize sampling a subset of particularly interesting SNPs.     
 
 ## Run GADGETS 
 
@@ -149,7 +148,7 @@ The `cluster.template` must be properly calibrated to the user's HPC cluster. Pa
 
 Regardless of the chosen `cluster.type`, `run.gadgets` uses the functionality from package `r CRANpkg("batchtools")` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.gadgets` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `r Biocpkg("BiocParallel")`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `r CRANpkg("batchtools")`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` distinct sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.gadgets` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
 
-Once users have confirmed `run.gadgets` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`.  
+Once users have confirmed `run.gadgets` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`. 
 
 ```{r}
 data(snp.annotations)
@@ -172,23 +171,12 @@ kable(head(size4.combined.res)) %>%
 
 ```
 
-<<<<<<< HEAD
-In general, the `unique.results` object is more useful for examining interesting sets of SNPs as it contains all of the information in the `all.results` object, just in a more easily digestible form. In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985535, and rs1487251 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
-
-Perhaps the most important elements of the output are the `n.cases.risk.geno`and `n.comps.risk.geno`columns. These report the number of cases and complements/unaffected siblings with the provisional risk genotypes, as determined by GADGETS, at each locus. For true epistatic SNP-sets, many more cases should carry the risk genotypes at each locus than the complements. 
-
-Other useful but subtle components of the results are the `risk.allele`, `allele.copies`, `diff.vec`, and `fitness.score` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be similarly large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs. 
-
-As described in the GADGETS paper, we make a small adjustment to the fitness scores output by GADGETS at algorithm termination to improve the rank ordering of chromosomes. The `fitness.score` column contains these final, adjusted scores, and is the product of the `min.elem` and `raw.fitness.score` columns. The `min.elem` column reports the smallest absolute value of the `diff.vec` columns for each chromosome, and the `raw.fitness.score` is the unadjusted fitness score directly output by GADGETS. Note that the values in the `fitness.score` column are used for follow-up permutation testing. 
-
-=======
 In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985535, and rs1487251 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
 
 Perhaps the most important elements of the output are the `n.cases.risk.geno`and `n.comps.risk.geno`columns. These report the number of cases and complements/unaffected siblings with the provisional risk genotypes, as determined by GADGETS, at each locus, among families where only one of the case and complement carries the risk genotype. For true epistatic SNP-sets, many more cases should carry the risk genotypes at each locus than the complements. 
 
 A few important but subtle components of the results users should note are the `risk.allele`, `allele.copies`, `diff.vec`, `fitness.score`, and `n.islands.found` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `n.islands.found` column reports the number of distinct islands on which a specific chromosome was found. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs.
 
->>>>>>> 8f61fd771ef587683168363a3c2e24e1dd581de1
 ## Permute Datasets
 
 Of course, in real studies we do not know the identity of true risk pathways. We would therefore like a way to determine whether the results from the observed data are consistent with what we expect under the global null hypothesis of no association between any input SNPs and disease status. We do so via permutation testing. Maintaining the case/complement (or case/unaffected sibling) nomenclature from above, in permuting the data, we randomly flip or do not flip the the disease status labels. We create these permuted datasets using the `permute.dataset` command. Here we generate 4 different permuted datasets. In real applications, users are advised to generate at least 100, more if computationally feasible. 
@@ -210,7 +198,7 @@ preprocess.lists <- lapply(perm.data.list, function(permutation){
   
   preprocess.genetic.data(permutation$case,
                           complement.genetic.data = permutation$comp,
-                          block.ld.mat = block.ld.mat)
+                          ld.block.vec = ld.block.vec)
 })
 
 ```
@@ -297,7 +285,7 @@ global.test.res$pval
 
 ```
 
-We see the observed $T$ for our simple example is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. If we overlay the observed $T$ on a boxplot of the permutations, we see the observed distance is a huge outlier even when taking logs: 
+We see the observed $T$ for our simple example is `r global.test.res$obs.test.stat` with associated permutation based p-value `r global.test.res$pval`. Note the permutation p-values for both for the `global.test` and `epistasis.test` functions are computed as one plus the number of permutation test statistics that exceed the observed test statistic divided the number of permutations plus one [@phipson], underscoring the need to run as many permutations as computationally possible. If we overlay the observed $T$ on a boxplot of the permutations, we see the observed distance is a huge outlier even when taking logs: 
 
 ```{r, echo = FALSE}
 library(ggplot2)
@@ -323,8 +311,6 @@ ggplot(plot.data, aes(x = factor(""), y = distance, color = data)) + geom_boxplo
 
 ```
 
-In cases where the p-value is zero, users may wish to report the p-value as $\frac{1}{\#\:permutations + 1}$ or $\lt\frac{1}{\#\:permutations + 1}$. Above, this would be $\frac{1}{5}$. Note that this underscores the need to run as many permutations as is computationally feasible in real applications.   
-
 ## Post-hoc Analyses 
 
 Regardless of result, it is crucial that users are clear about what the test implies. The null hypothesis is that the observed test statistic is drawn from the null distribution, i.e., that the global patterns of transmissions to cases are not systematically different from those to the corresponding complements or unaffected siblings. In situations where we reject the null hypothesis, of course the conclusion is the observed test statistic is very different from from the null distribution. However, to best characterize results, it is incumbent on users to closely examine results beyond the global test. In particular, we would like to be able to identify the specific subsets of SNPs that are collectively related to risk.
@@ -337,7 +323,7 @@ global.test.res$marginal.pvals
 
 ```
 
-The `obs.marginal.test.stats` object reports the fitness score sums for each chromosome size for the observed data. The `marginal.pvals` object reports the proportion of permutation based fitness score sum statistics, $T_d$ that exceed the observed statistic for each chromosome size. In this case, we see that none of the permutation based statistics exceeded the observed value for either chromosome size. 
+The `obs.marginal.test.stats` object reports the fitness score sums for each chromosome size for the observed data. The `marginal.pvals` object reports a permutation p-value for each distinct chromosome size. 
 
 Second, users may also wish to examine the `max.obs.fitness` and `max.order.pvals` elements of the output:
 
@@ -347,7 +333,7 @@ global.test.res$max.order.pvals
 
 ```
 
-The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the proportion of permutations whose maximum fitness score exceeds the maximum observed fitness score. In the example above, we see the maximum observed fitness score exceeds all of the permutation maxima for each chromosome size. Again, given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
+The `max.obs.fitness` element reports the maximum fitness score in the observed data for each chromosome size, and the `max.order.pvals` element reports the corresponding permutation p-values. Given sufficient permutations to estimate the null distribution, these p-values correspond to the test of the null hypothesis that the maximum observed fitness score for a given chromosome size is not greater than what would be expected given no SNP-disease associations. Rejecting the null implies the observed maximum fitness score exceeds what would be expected by random chance. 
 
 Finally, the function provides boxplots of the observed vs. permuted fitness scores for each element of the input results list:
 
@@ -368,9 +354,9 @@ epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. We make use of these p-values primarily in constructing network plots of potentially interesting SNP-sets.  
+The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. We make use of these 'p-values' primarily in constructing network plots of potentially interesting SNP-sets. 
 
-Users may also receive a warning when executing `epistasis.test` that says "All chromosome SNPs in linkage, returning NA for p-value". This is generated because the procedure can only run if at least two SNPs are not in linkage, as specified in matrix `block.ld.mat`, otherwise other methods (not provided in this package) are required. 
+Users may also receive a warning when executing `epistasis.test` that says "All chromosome SNPs in linkage, returning NA for p-value". This is generated because the procedure can only run if at least two SNPs are not in linkage, as specified in `ld.block.vec`, otherwise other methods (not provided in this package) are required. 
 
 ## Visualize Results 
 
@@ -403,7 +389,7 @@ obs.res.list.no.permutes <- list(size3.combined.res[1:5, ], size4.combined.res[1
 
 ```
 
-Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.     
+Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.    
 
 ```{r}
 set.seed(10)

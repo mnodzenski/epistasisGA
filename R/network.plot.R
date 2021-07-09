@@ -46,16 +46,12 @@
 #' data(snp.annotations)
 #' library(Matrix)
 #' set.seed(1400)
-#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #'
 #' #preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
 #'                                mother.genetic.data = mom[ , target.snps],
-#'                                block.ld.mat = block.ld.mat[target.snps , target.snps])
+#'                                ld.block.vec = c(3, 3, 3, 1))
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -133,9 +129,24 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
             target.snps <- which(original.col.numbers %in% snp.pair)
 
             # check if snps are located in same ld block
-            block.ld.mat <- preprocessed.list$block.ld.mat
-            target.block.ld.mat <- block.ld.mat[target.snps, target.snps]
-            same.ld.block <- target.block.ld.mat[2, 1]
+            ld.block.vec <- preprocessed.list$ld.block.vec
+            cs.ld.block.vec <- cumsum(ld.block.vec)
+            same.ld.block <- NA
+            for (upper.limit in cs.ld.block.vec){
+
+                if (all(target.snps <= upper.limit)){
+
+                    same.ld.block <- TRUE
+                    break
+
+                } else if (any(target.snps <= upper.limit)){
+
+                    same.ld.block <- FALSE
+                    break
+
+                }
+
+            }
 
             # if on same ld block, compute r2
             if (!same.ld.block){

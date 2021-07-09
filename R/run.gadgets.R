@@ -65,13 +65,9 @@
 #' data(dad)
 #' data(mom)
 #' library(Matrix)
-#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                block.ld.mat = block.ld.mat[1:10, 1:10])
+#'                                ld.block.vec = c(10))
 #' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
@@ -163,8 +159,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     storage.mode(complement.genetic.data) <- "integer"
     original.col.numbers <- data.list$original.col.numbers
     chisq.stats <- data.list$chisq.stats
-    block.ld.mat <- as.matrix(data.list$block.ld.mat)
-    storage.mode(block.ld.mat) <- "logical"
+    ld.block.vec <- cumsum(data.list$ld.block.vec)
+    storage.mode(ld.block.vec) <- "integer"
 
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
@@ -337,7 +333,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     # write jobs to registry
     ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
         case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.comp.different = case.comp.different,
-        case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, block.ld.mat = block.ld.mat, n.chromosomes = n.chromosomes,
+        case.minus.comp = case.minus.comp, both.one.mat = both.one.mat, ld.block.vec = ld.block.vec, n.chromosomes = n.chromosomes,
         chromosome.size = chromosome.size, snp.chisq = snp.chisq, original.col.numbers = original.col.numbers, weight.lookup = weight.lookup,
         case2.mat = case2.mat, case0.mat = case0.mat, comp2.mat = comp2.mat, comp0.mat = comp0.mat, island.cluster.size = island.cluster.size,
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,

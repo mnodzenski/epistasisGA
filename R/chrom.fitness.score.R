@@ -4,7 +4,7 @@
 #'
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
 #'  Columns are SNP allele counts, and rows are individuals.
-#' The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.
+#' The ordering of the columns must be consistent with the LD structure specified in \code{ld.block.vec}.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
 #' Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
@@ -15,10 +15,12 @@
 #' @param cases.minus.complements A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.
 #' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
 #' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
-#' @param block.ld.mat A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
-#'  to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
-#'  with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-#'  to be in LD if they are located on the same biological chromosome.
+#' @param ld.block.vec An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
+#' we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
+#' SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
+#' in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
+#' a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome. If not specified, this defaults
+#' to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param case2.mat A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.
 #' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
@@ -75,15 +77,12 @@
 #' comp2.mat <- comp == 2
 #' comp0.mat <- comp == 0
 #' library(Matrix)
-#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #' storage.mode(weight.lookup) <- "integer"
+#' block.ld.vec <- cumsum(rep(25, 4))
 #' chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
 #'                     case.minus.comp, both.one.mat,
-#'                     block.ld.mat, weight.lookup,
+#'                     rep(25, 4), weight.lookup,
 #'                     case2.mat, case0.mat, comp2.mat,
 #'                     comp0.mat)
 #'
@@ -91,14 +90,14 @@
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
                                 target.snps, cases.minus.complements, both.one.mat,
-                                block.ld.mat, weight.lookup, case2.mat, case0.mat,
+                                ld.block.vec, weight.lookup, case2.mat, case0.mat,
                                 comp2.mat, comp0.mat, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
                                 recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE,
                                 GxE = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
-                      cases.minus.complements, both.one.mat, block.ld.mat, weight.lookup, case2.mat,
+                      cases.minus.complements, both.one.mat, ld.block.vec, weight.lookup, case2.mat,
                       case0.mat, comp2.mat, comp0.mat, n.different.snps.weight, n.both.one.weight,
                       recessive.ref.prop, recode.test.stat, epi.test, dif.coding, GxE)
 

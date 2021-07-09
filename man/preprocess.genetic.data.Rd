@@ -9,7 +9,7 @@ preprocess.genetic.data(
   complement.genetic.data = NULL,
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
-  block.ld.mat,
+  ld.block.vec = NULL,
   min.allele.freq = 0,
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
@@ -19,7 +19,7 @@ preprocess.genetic.data(
 }
 \arguments{
 \item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
-The ordering of the columns must be consistent with the LD structure specified in \code{block.ld.mat}.}
+The ordering of the columns must be consistent with the LD structure specified in \code{ld.block.vec}.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
@@ -32,10 +32,12 @@ Does not need to be specified if \code{complement.genetic.data} is specified.}
 \item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
 Does not need to be specified if \code{complement.genetic.data} is specified.}
 
-\item{block.ld.mat}{A logical, block diagonal matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
-to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
-with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-to be in LD if they are located on the same biological chromosome.}
+\item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
+we specify \code{ld.block.vec <- c(25, 50, 25)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
+SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
+in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
+a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome. If not specified, this defaults
+to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.}
 
 \item{min.allele.freq}{The minimum minor allele frequency required for a SNP to be considered for inclusion in the genetic algorithm.
 Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0 (no filtering).}
@@ -75,7 +77,7 @@ A list containing the following:
  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
  is not specified, and \code{snp.sampling.probs} if specified.}
  \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
- \item{block.ld.mat}{The pre-processed version of \code{block.ld.mat}.}
+ \item{ld.block.vec}{The pre-processed version of \code{ld.block.vec}.}
  \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
  \item{exposure.risk.levels}{The list specified in input argument categorical.exposures.risk.ranks.}
@@ -90,12 +92,8 @@ data(case)
 data(dad)
 data(mom)
 library(Matrix)
-block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25))))
 res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               block.ld.mat = block.ld.mat[ , 1:10])
+                               ld.block.vec = c(10))
 
 }

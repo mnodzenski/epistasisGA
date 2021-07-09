@@ -125,13 +125,9 @@ data(case)
 data(dad)
 data(mom)
 library(Matrix)
-block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25))))
 pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               block.ld.mat = block.ld.mat[1:10, 1:10])
+                               ld.block.vec = c(10))
 run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1,

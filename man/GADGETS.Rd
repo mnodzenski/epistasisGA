@@ -12,7 +12,7 @@ GADGETS(
   case.comp.different,
   case.minus.comp,
   both.one.mat,
-  block.ld.mat,
+  ld.block.vec,
   n.chromosomes,
   chromosome.size,
   snp.chisq,
@@ -54,7 +54,7 @@ GADGETS(
 
 \item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
 Columns are SNP allele counts, and rows are individuals. The ordering of the columns must be consistent with the LD structure specified in
-\code{block.ld.mat}. Defaults to NULL. If NULL, \code{case.genetic.data.list} must be specified.}
+\code{ld.block.vec}. Defaults to NULL. If NULL, \code{case.genetic.data.list} must be specified.}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
@@ -73,10 +73,11 @@ If NULL, \code{case.minus.comp.list} must be specified.}
 equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}. Defaults to NULL. If NULL,
 \code{both.one.mat.list} must be specified.}
 
-\item{block.ld.mat}{A logical diagonal, block diagonal, or uniformly TRUE matrix indicating whether the SNPs in \code{case.genetic.data} should be considered
-to be in linkage disequilibrium. Note that this means the ordering of the columns (SNPs) in \code{case.genetic.data} must be consistent
-with the LD blocks specified in \code{ld.block.mat}. In the absence of outside information, a reasonable default is to consider SNPs
-to be in LD if they are located on the same biological chromosome.}
+\item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
+we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
+SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
+in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
+a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome.}
 
 \item{n.chromosomes}{An integer specifying the number of chromosomes to use in the GA.}
 
@@ -180,19 +181,15 @@ data(case)
 data(dad)
 data(mom)
 library(Matrix)
-block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25),
-                              matrix(rep(TRUE, 25^2), nrow = 25))))
 data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               block.ld.mat = block.ld.mat[1:10, 1:10])
+                               ld.block.vec = c(10))
 
  case.genetic.data <- as.matrix(data.list$case.genetic.data)
  complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
  original.col.numbers <- data.list$original.col.numbers
  chisq.stats <- data.list$chisq.stats
- block.ld.mat <- data.list$block.ld.mat
+ ld.block.vec <- cumsum(data.list$ld.block.vec)
  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
  case.comp.different <- case.minus.comp != 0
  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
@@ -207,7 +204,7 @@ data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 
                    complement.genetic.data = complement.genetic.data,
                    case.comp.different = case.comp.different,
                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                   block.ld.mat = block.ld.mat, n.chromosomes = 10,
+                   ld.block.vec = ld.block.vec, n.chromosomes = 10,
                    chromosome.size = 3, snp.chisq = snp.chisq,
                    original.col.numbers = original.col.numbers,
                    weight.lookup = weight.lookup, case2.mat = case2.mat,

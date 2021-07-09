@@ -39,15 +39,11 @@
 #' data(snp.annotations)
 #' library(Matrix)
 #' set.seed(1400)
-#' block.ld.mat <- as.matrix(bdiag(list(matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25),
-#'                               matrix(rep(TRUE, 25^2), nrow = 25))))
 #'
 # #preprocess data
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                block.ld.mat = block.ld.mat[1:10, 1:10])
+#'                                ld.block.vec = c(10))
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -76,15 +72,15 @@
 #' #pre-process permuted data
 #' p1.list <- preprocess.genetic.data(perm.data.list[['permutation1']]$case,
 #'                                    complement.genetic.data = perm.data.list[['permutation1']]$comp,
-#'                                    block.ld.mat = block.ld.mat[1:10, 1:10])
+#'                                     ld.block.vec = c(10))
 #'
 #' p2.list <- preprocess.genetic.data(perm.data.list[['permutation2']]$case,
 #'                                    complement.genetic.data = perm.data.list[['permutation2']]$comp,
-#'                                    block.ld.mat = block.ld.mat[1:10, 1:10])
+#'                                     ld.block.vec = c(10))
 #'
 #' p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
 #'                                    complement.genetic.data = perm.data.list[['permutation3']]$comp,
-#'                                    block.ld.mat = block.ld.mat[1:10, 1:10])
+#'                                    ld.block.vec = c(10))
 #'
 #' ##run GA for permuted data
 #'
@@ -241,7 +237,9 @@ global.test <- function(results.list, n.top.scores = 10) {
     # pval
     obs.test.stat <- global.scores[1]
     perm.test.stats <- global.scores[-1]
-    global.pval <- sum(perm.test.stats >= obs.test.stat)/(length(perm.test.stats) + 1)
+    B <- sum(perm.test.stats >= obs.test.stat)
+    N <- length(perm.test.stats) + 1
+    global.pval <- (B + 1)/N
 
     # also look at element-wise results
     marginal.pvals <- vapply(seq_len(ncol(chrom.size.ranks)), function(x){
@@ -249,7 +247,9 @@ global.test <- function(results.list, n.top.scores = 10) {
         chrom.size.res <- chrom.size.ranks[, x]
         obs.test.stat <- chrom.size.res[1]
         perm.test.stats <- chrom.size.res[-1]
-        pval <- sum(perm.test.stats >= obs.test.stat)/(length(perm.test.stats) + 1)
+        B <- sum(perm.test.stats >= obs.test.stat)
+        N <- length(perm.test.stats) + 1
+        pval <- (B + 1)/N
         pval
 
     }, 1.0)
@@ -284,7 +284,9 @@ global.test <- function(results.list, n.top.scores = 10) {
 
         max.obs <- max.obs.fitness[chrom.size]
         max.perms <- max.perm.fitness[ , chrom.size]
-        pval <- sum(max.perms >= max.obs)/(length(max.perms) + 1)
+        B <- sum(max.perms >= max.obs)
+        N <- length(max.perms) + 1
+        pval <- (B + 1)/N
         pval
 
     }, 1.0)
@@ -319,7 +321,7 @@ global.test <- function(results.list, n.top.scores = 10) {
     boxplot.plot$plot_env <- new.env()
 
     #store as grob
-   boxplot.grob <- ggplotGrob(boxplot.plot)
+    boxplot.grob <- ggplotGrob(boxplot.plot)
 
     # return results list
     res.list <- list(obs.test.stat = obs.test.stat,  perm.test.stats = perm.test.stats, pval = global.pval,
