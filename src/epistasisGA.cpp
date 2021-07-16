@@ -1137,6 +1137,7 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
 
   }
 
+
   // check lengths of difference vectors
   NumericVector xbar_length_by_exposure(score_by_exposure.length());
 
@@ -1827,9 +1828,11 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     IntegerVector mutation_positions = setdiff(tmp_lower_idx, cross_over_positions);
     if (mutation_positions.length() > 0){
 
-      IntegerVector candiate_snp_idx = seq_len(case_genetic_data.ncol());
+      IntegerVector candiate_snp_idx = seq_along(snp_chisq);
+
       IntegerVector snps_for_mutation = sample(candiate_snp_idx, candiate_snp_idx.length(),
                                                true, snp_chisq);
+
       int ulen = unique(snps_for_mutation).length();
       IntegerVector n_possible_mutations = seq_len(chromosome_size);
       for (int l = 0; l < mutation_positions.length(); l++){

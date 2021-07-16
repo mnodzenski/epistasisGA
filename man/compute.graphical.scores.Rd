@@ -107,7 +107,9 @@ run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 2, results.d
  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
- edge.dt <- compute.graphical.scores(final.results, preprocessed.list, pval.thresh = 0.5)
+ edge.dt <- compute.graphical.scores(final.results,
+                                     preprocessed.list,
+                                     pval.thresh = 0.5)
 
  lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
 

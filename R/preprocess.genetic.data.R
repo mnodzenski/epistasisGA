@@ -147,6 +147,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # shorten the name of the exposures variable
         exposure <- categorical.exposures
+        exposure.risk.levels <- categorical.exposures.risk.ranks
         storage.mode(exposure) <- "integer"
 
         # get rid of any levels with only one case

@@ -57,20 +57,41 @@
 #'
 #' @examples
 #'
-#' data(case)
-#' data(dad)
-#' data(mom)
-#' comp <- mom + dad - case
-#' case.comp.diff <- case != comp
-#' case.minus.comp <- sign(case - comp)
-#' both.one.mat <- case == 1 & comp == 1
-#' case2.mat <- case == 2
-#' case0.mat <- case == 0
+#' data(case.gxe)
+#' data(dad.gxe)
+#' data(mom.gxe)
+#' data(exposure)
+#' exposure <- as.integer(exposure)
+#' comp.gxe <- mom.gxe + dad.gxe - case.gxe
+#' case.comp.diff <- case.gxe != comp.gxe
+#' case.minus.comp <- case.gxe - comp.gxe
+#' both.one.mat <- case.gxe == 1 & comp.gxe == 1
+#' case2.mat <- case.gxe == 2
+#' case0.mat <- case.gxe == 0
+#' comp2.mat <- comp.gxe == 2
+#' comp0.mat <- comp.gxe == 0
 #' ld.block.vec <- cumsum(rep(25, 4))
-#' library(Matrix)
 #' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
-#' set.seed(11)
-#' exposure <- factor(rbinom(nrow(case), 1, 0.3))
+#' case.list <- split(case.gxe, exposure)
+#' exposure.levels <- as.integer(names(case.list))
+#' case.list <- lapply(case.list, as.matrix)
+#' comp.list <- split(comp.gxe, exposure)
+#' comp.list <- lapply(comp.list, as.matrix)
+#' case.comp.diff.list <- split(case.comp.diff, exposure)
+#' case.comp.diff.list <- lapply(case.comp.diff.list, as.matrix)
+#' case.minus.comp.list <- split(case.minus.comp, exposure)
+#' case.minus.comp.list <- lapply(case.minus.comp.list, as.matrix)
+#' both.one.mat.list <- split(both.one.mat, exposure)
+#' both.one.mat.list <- lapply(both.one.mat.list, as.matrix)
+#' case2.mat.list <- split(case2.mat, exposure)
+#' case2.mat.list <- lapply(case2.mat.list, as.matrix)
+#' case0.mat.list <- split(case0.mat, exposure)
+#' case0.mat.list <- lapply(case0.mat.list, as.matrix)
+#' comp2.mat.list <- split(comp2.mat, exposure)
+#' comp2.mat.list <- lapply(comp2.mat.list, as.matrix)
+#' comp0.mat.list <- split(comp0.mat, exposure)
+#' comp0.mat.list <- lapply(comp0.mat.list, as.matrix)
+#'
 #' GxE.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
 #'                     case.minus.comp, both.one.mat,
 #'                     ld.block.vec, weight.lookup,
@@ -84,103 +105,7 @@ GxE.fitness.score <- function(case.genetic.data, complement.genetic.data, case.c
                                 n.different.snps.weight = 2, n.both.one.weight = 1,
                                 recode.threshold = 3) {
 
-  ### divide the input data based on exposure and get components for fitness score ###
-  score.by.exposure <- lapply(unique(exposure), function(exp.level){
 
-    these.rows <- exposure == exp.level
-    case.genetic.data <- case.genetic.data[these.rows, ]
-    complement.genetic.data <- complement.genetic.data[these.rows, ]
-    case.comp.differences <- case.comp.differences[these.rows, ]
-    cases.minus.complements <- cases.minus.complements[these.rows, ]
-    both.one.mat <- both.one.mat[these.rows, ]
-    case2.mat <- case2.mat[these.rows, ]
-    case0.mat <- case0.mat[these.rows, ]
-    chrom.fitness.score(case.genetic.data, complement.genetic.data, case.comp.differences,
-                        target.snps, cases.minus.complements, both.one.mat,
-                        ld.block.vec, weight.lookup, case2.mat, case0.mat,
-                        n.different.snps.weight, n.both.one.weight,
-                        recode.threshold, epi.test = FALSE, GxE = TRUE)
-
-  })
-
-  ### compute two sample hotelling for each pairwise comparison ###
-  all.pairs <- combn(length(unique(exposure)), 2)
-  pair.scores.list <- lapply(seq(1, ncol(all.pairs)), function(pair.number){
-
-    # pick out the required pieces
-    these.two <- all.pairs[ , pair.number]
-    exp1 <- these.two[[1]]
-    exp2 <- these.two[[2]]
-    exp1.list <- score.by.exposure[[exp1]]
-    exp2.list <- score.by.exposure[[exp2]]
-
-    # mean difference vector
-    xbar <- exp1.list$xbar
-    ybar <- exp2.list$xbar
-    xbar.minus.ybar <- xbar - ybar
-
-    # cov mat
-    sigma.x <- exp1.list$sigma*(exp1.list$w)
-    sigma.y <- exp2.list$sigma*(exp2.list$w)
-    w1 <- exp1.list$w
-    w2 <- exp2.list$w
-    q1 <- exp1.list$q
-    q2 <- exp2.list$q
-    sigma.hat <- (sigma.x + sigma.y)/(w1 + w2)
-
-    # svd of cov mat
-    sigma.hat.svd <- svd(sigma.hat)
-    sigma.hat.svd$d[sigma.hat.svd$d < sqrt(.Machine$double.eps)] <- 10^10
-
-    # two sample hotelling stat, using adjusted mean difference
-    weight.scalar <- (w1*w2)/(w1 + w2)
-    adj.xbar.minus.ybar <- q1*xbar - q2*ybar
-    s <- (weight.scalar/1000)*rowSums((t(adj.xbar.minus.ybar) %*% sigma.hat.svd$u)^2/sigma.hat.svd$d)
-
-    # return two-sample hotelling, difference vectors/se's
-    se <- sqrt(diag(sigma.hat))
-    std.diff.vecs <- adj.xbar.minus.ybar/se
-    std.diff.vecs[se == 0] <- 10^-10
-
-    # also use the allele coding for the higher scoring set
-    if (exp2.list$fitness.score >= exp1.list$fitness.score){
-
-      risk.set.alleles <- exp2.list$risk.set.alleles
-      high.risk.exposure <- unique(exposure)[exp2]
-      low.risk.exposure <- unique(exposure)[exp1]
-      diff.vec.signs <- sign(ybar)
-
-    } else {
-
-      risk.set.alleles <- exp1.list$risk.set.alleles
-      high.risk.exposure <- unique(exposure)[exp1]
-      low.risk.exposure <- unique(exposure)[exp2]
-      diff.vec.signs <- sign(xbar)
-
-    }
-
-    return(list(s = s, std.diff.vecs = std.diff.vecs, diff.vec.signs = diff.vec.signs,
-                risk.set.alleles = risk.set.alleles, high.risk.exposure = high.risk.exposure,
-                low.risk.exposure = low.risk.exposure))
-
-  })
-
-  # pick out the biggest difference
-  pair.scores <- vapply(pair.scores.list, function(x) x$s, 1.0)
-  largest.stat <- which(pair.scores == max(pair.scores))
-
-  # return the largest pairwise stat as the fitness score
-  fitness.score <- pair.scores[largest.stat]
-  std.diff.vecs <- pair.scores.list[[largest.stat]]$std.diff.vecs
-  diff.vec.signs <- pair.scores.list[[largest.stat]]$diff.vec.signs
-  risk.set.alleles <- pair.scores.list[[largest.stat]]$risk.set.alleles
-  high.risk.exposure <- pair.scores.list[[largest.stat]]$high.risk.exposure
-  low.risk.exposure <- pair.scores.list[[largest.stat]]$low.risk.exposure
-
-
-  return(list(fitness.score = fitness.score, sum.dif.vecs = std.diff.vecs, risk.set.signs = diff.vec.signs,
-              risk.set.alleles = risk.set.alleles, high.risk.exposure = high.risk.exposure,
-              low.risk.exposure = low.risk.exposure))
 
 }
 
