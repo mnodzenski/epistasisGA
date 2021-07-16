@@ -28,8 +28,7 @@ run.gadgets(
   migration.generations = 50,
   n.migrations = 20,
   recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64,
-  dif.coding = FALSE
+  recode.test.stat = 1.64
 )
 }
 \arguments{
@@ -103,9 +102,6 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
-
-\item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
-be coded as the sign of the difference (defaulting to false) or the raw difference.}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:
@@ -122,17 +118,21 @@ This function runs the GADGETS algorithm to detect multi-SNP effects in case-par
 \examples{
 
 data(case)
+case <- as.matrix(case)
 data(dad)
+dad <- as.matrix(dad)
 data(mom)
-library(Matrix)
+mom <- as.matrix(mom)
 pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10))
+                               ld.block.vec = c(10),
+                               big.matrix.file.path = "tmp_bm")
 run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1,
        n.migrations = 0)
 
+unlink('tmp_bm', recursive = TRUE)
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
 

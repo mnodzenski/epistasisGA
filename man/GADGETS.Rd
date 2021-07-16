@@ -7,21 +7,12 @@
 GADGETS(
   cluster.number,
   results.dir,
-  case.genetic.data,
-  complement.genetic.data,
-  case.comp.different,
-  case.minus.comp,
-  both.one.mat,
+  genetic.data.list,
   ld.block.vec,
   n.chromosomes,
   chromosome.size,
   snp.chisq,
-  original.col.numbers,
   weight.lookup,
-  case2.mat,
-  case0.mat,
-  comp2.mat,
-  comp0.mat,
   island.cluster.size = 4,
   n.migrations = 20,
   n.different.snps.weight = 2,
@@ -33,45 +24,15 @@ GADGETS(
   crossover.prop = 0.8,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  dif.coding = FALSE,
   exposure.levels = NULL,
   exposure.risk.levels = NULL,
-  case.genetic.data.list = NULL,
-  complement.genetic.data.list = NULL,
-  case.comp.different.list = NULL,
-  case.minus.comp.list = NULL,
-  both.one.mat.list = NULL,
-  case2.mat.list = NULL,
-  case0.mat.list = NULL,
-  comp2.mat.list = NULL,
-  comp0.mat.list = NULL
+  exposure = NULL
 )
 }
 \arguments{
 \item{cluster.number}{An integer indicating the cluster number (used for labeling the output file).}
 
 \item{results.dir}{The directory to which island results will be saved.}
-
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
-Columns are SNP allele counts, and rows are individuals. The ordering of the columns must be consistent with the LD structure specified in
-\code{ld.block.vec}. Defaults to NULL. If NULL, \code{case.genetic.data.list} must be specified.}
-
-\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
-\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
-the unaffected sibling genotypes. Defaults to NULL. If NULL, \code{complement.genetic.data.list}
-must be specified.}
-
-\item{case.comp.different}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
-where rows correspond to individuals and columns correspond to SNPs. Defaults to NULL. If NULL, \code{case.comp.different.list}
-must be specified.}
-
-\item{case.minus.comp}{A matrix equal to \code{case.genetic.data} - \code{complement genetic data}. Defaults to NULL.
-If NULL, \code{case.minus.comp.list} must be specified.}
-
-\item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
-equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}. Defaults to NULL. If NULL,
-\code{both.one.mat.list} must be specified.}
 
 \item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
 we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
@@ -87,18 +48,7 @@ a reasonable default is to consider SNPs to be in LD if they are located on the 
 the chi-square marginal SNP-disease association statistics for each column in \code{case.genetic.data}, but can also be manually
 specified or uniformly 1 (corresponding to totally random sampling).}
 
-\item{original.col.numbers}{A vector of integers indicating the original column number of each SNP in \code{case.genetic.data}.
-This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
-
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
-
-\item{case2.mat}{A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.}
-
-\item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
-
-\item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
-
-\item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
 
 \item{island.cluster.size}{An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.}
 
@@ -127,14 +77,43 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
-\item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
-be coded as the sign of the difference (defaulting to false) or the raw difference.}
-
 \item{exposure.levels}{An integer vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 gene-environment interactions.}
 
 \item{exposure.risk.levels}{An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.
 See argument \code{categorical.exposures.risk.ranks} of \code{preprocess.genetic.data} for more information.}
+
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
+Columns are SNP allele counts, and rows are individuals. The ordering of the columns must be consistent with the LD structure specified in
+\code{ld.block.vec}. Defaults to NULL. If NULL, \code{case.genetic.data.list} must be specified.}
+
+\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
+\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
+Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
+the unaffected sibling genotypes. Defaults to NULL. If NULL, \code{complement.genetic.data.list}
+must be specified.}
+
+\item{case.comp.different}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
+where rows correspond to individuals and columns correspond to SNPs. Defaults to NULL. If NULL, \code{case.comp.different.list}
+must be specified.}
+
+\item{case.minus.comp}{A matrix equal to \code{case.genetic.data} - \code{complement genetic data}. Defaults to NULL.
+If NULL, \code{case.minus.comp.list} must be specified.}
+
+\item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
+equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}. Defaults to NULL. If NULL,
+\code{both.one.mat.list} must be specified.}
+
+\item{original.col.numbers}{A vector of integers indicating the original column number of each SNP in \code{case.genetic.data}.
+This is needed due to removal of low frequency SNPs in \code{preprocess.genetic.data}.}
+
+\item{case2.mat}{A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.}
+
+\item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
+
+\item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
+
+\item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
 
 \item{case.genetic.data.list}{A list of matrices containing case genetic data. Each element of the list corresponds to groups of cases with a common environmental exposure,
 as specified in \code{exposure.levels}. For each matrix, rows correspond to individuals and columns correspond to SNP minor allele counts. Defaults to NULL.}
@@ -178,39 +157,26 @@ the underlying Rcpp function run_GADGETS.
 
 set.seed(10)
 data(case)
+case <- as.matrix(case)
 data(dad)
+dad <- as.matrix(dad)
 data(mom)
-library(Matrix)
+mom <- as.matrix(mom)
 data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10))
+                               ld.block.vec = c(10),
+                               big.matrix.file.path = "tmp_bm")
 
- case.genetic.data <- as.matrix(data.list$case.genetic.data)
- complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
- original.col.numbers <- data.list$original.col.numbers
- chisq.stats <- data.list$chisq.stats
- ld.block.vec <- cumsum(data.list$ld.block.vec)
- case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
- case.comp.different <- case.minus.comp != 0
- both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
- case2.mat <- case.genetic.data == 2
- case0.mat <- case.genetic.data == 0
- comp2.mat <- complement.genetic.data == 2
- comp0.mat <- complement.genetic.data == 0
- snp.chisq <- sqrt(chisq.stats)
+ chisq.stats <- sqrt(data.list$chisq.stats)
+ ld.block.vec <- data.list$ld.block.vec
+ genetic.data.list <- data.list$genetic.data.list
  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
  dir.create('tmp')
- GADGETS(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
-                   complement.genetic.data = complement.genetic.data,
-                   case.comp.different = case.comp.different,
-                   case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-                   ld.block.vec = ld.block.vec, n.chromosomes = 10,
-                   chromosome.size = 3, snp.chisq = snp.chisq,
-                   original.col.numbers = original.col.numbers,
-                   weight.lookup = weight.lookup, case2.mat = case2.mat,
-                   case0.mat = case0.mat, comp2.mat = comp2.mat,
-                   comp0.mat = comp0.mat, n.migrations = 2,
-                   migration.interval = 5, max.generations = 10)
+GADGETS(cluster.number = 1, results.dir = 'tmp', genetic.data.list = genetic.data.list,
+       ld.block.vec = ld.block.vec, n.chromosomes = 10, chromosome.size = 3,
+       snp.chisq = chisq.stats, weight.lookup = weight.lookup, n.migrations = 2,
+       migration.interval = 5, gen.same.fitness = 10, max.generations = 10)
 unlink('tmp', recursive = TRUE)
+unlink('tmp_bm', recursive = TRUE)
 
 }

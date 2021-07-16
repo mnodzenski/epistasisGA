@@ -13,8 +13,7 @@ epistasis.test(
   n.both.one.weight = 1,
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64,
-  dif.coding = FALSE
+  recode.test.stat = 1.64
 )
 }
 \arguments{
@@ -39,9 +38,6 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
-
-\item{dif.coding}{A logical indicating whether, for a given SNP, the case - complement genotype difference should
-be coded as the sign of the difference (defaulting to false) or the raw difference.}
 }
 \value{
 A list of thee elements:
@@ -65,7 +61,8 @@ library(Matrix)
 
 pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                mother.genetic.data = mom,
-                               ld.block.vec = rep(25, 4))
+                               ld.block.vec = rep(25, 4),
+                               big.matrix.file.path = "tmp_bm")
 
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
        results.dir = "tmp", cluster.type = "interactive",
@@ -79,7 +76,7 @@ top.snps <- as.vector(t(combined.res[1, 1:3]))
 set.seed(10)
 epi.test.res <- epistasis.test(top.snps, pp.list)
 
+unlink('tmp_bm', recursive = TRUE)
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
-
 }

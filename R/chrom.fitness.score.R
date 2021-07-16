@@ -36,8 +36,6 @@
 #' See the GADGETS paper for specific details.
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
-#' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param GxE a logical indicating whether the function is being used to compute a GxE fitness score, defaulting to false.
 #' @return A list:
 #' \describe{
@@ -69,14 +67,13 @@
 #' mom <- as.matrix(mom)
 #' comp <- mom + dad - case
 #' case.comp.diff <- case != comp
-#' case.minus.comp <- sign(case - comp)
+#' case.minus.comp <- case - comp
 #' storage.mode(case.minus.comp) <- "integer"
 #' both.one.mat <- case == 1 & comp == 1
 #' case2.mat <- case == 2
 #' case0.mat <- case == 0
 #' comp2.mat <- comp == 2
 #' comp0.mat <- comp == 0
-#' library(Matrix)
 #' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #' storage.mode(weight.lookup) <- "integer"
 #' block.ld.vec <- cumsum(rep(25, 4))
@@ -93,13 +90,13 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data, case
                                 ld.block.vec, weight.lookup, case2.mat, case0.mat,
                                 comp2.mat, comp0.mat, n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, epi.test = FALSE, dif.coding = FALSE,
+                                recode.test.stat = 1.64, epi.test = FALSE,
                                 GxE = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, case.comp.differences, target.snps,
                       cases.minus.complements, both.one.mat, ld.block.vec, weight.lookup, case2.mat,
                       case0.mat, comp2.mat, comp0.mat, n.different.snps.weight, n.both.one.weight,
-                      recessive.ref.prop, recode.test.stat, epi.test, dif.coding, GxE)
+                      recessive.ref.prop, recode.test.stat, epi.test, GxE)
 
 }
 

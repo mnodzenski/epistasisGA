@@ -2,93 +2,108 @@
 #'
 #' This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
 #'
-#' @param case.genetic.data The genetic data of the disease affected children. Columns are SNP allele counts, and rows are individuals. If running
-#' permutations for a GxE search, this argument should not be specified.
-#' @param complement.genetic.data A genetic dataset from the complements of the cases, where
-#' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected
-#' sibling pairs, this should be the genetic data for the unaffected sibling. If running
-#' permutations for a GxE search, this argument should not be specified.
-#' Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
-#' @param father.genetic.data The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
-#' Does not need to be specified if \code{complement.genetic.data} is specified. If running
-#' permutations for a GxE search, this argument should not be specified.
-#' @param mother.genetic.data The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
-#' Does not need to be specified if \code{complement.genetic.data} is specified. If running
-#' permutations for a GxE search, this argument should not be specified.
-#' @param categorical.exposures A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
-#' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. Any missing
-#' exposure data should be coded as NA. Does not need to be specified unless a GxE search is being run.
+#' @param preprocessed.list The output list from \code{preprocess.genetic.data} for the original genetic data.
+#' @param permutation.matrix.file.path  If runing GADGETS for GxG interactions, this argument specifies a directory
+#'  where memory mapped files of class 'big.memory' will be saved for each permuted dataset on disk. If searching
+#'  for GxE interactions, permuted versions of the exposure vector will be saved to this directory.
 #' @param n.permutations The number of permuted datasets to create.
+#' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
+#'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
 #' @return If genetic data are specified, a list of \code{n.permutations} pairs of case and complement data,
 #' where the observed case/complement status has been randomly flipped or not flipped. If exposure data are
 #' specified a list of \code{n.permutations} vectors where the exposures have been randomly shuffled.
 #' @examples
 #'
 #' data(case)
+#' case <- as.matrix(case)
 #' data(dad)
+#' dad <- as.matrix(dad)
 #' data(mom)
+#' mom <- as.matrix(mom)
+#' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+#'                                mother.genetic.data = mom[ , 1:10],
+#'                                ld.block.vec = c(10),
+#'                                big.matrix.file.path = "tmp_bm")
 #' set.seed(15)
-#' perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
-#'                  n.permutations = 2)
+#' perm.data.list <- permute.dataset(pp.list, "tmp_perm", n.permutations = 1)
 #'
+#' unlink(c('tmp_perm', 'tmp_bm'))
+#'
+#' @importFrom BiocParallel bplapply bpparam
+#' @importFrom bigmemory deepcopy attach.big.matrix describe
 #' @export
-permute.dataset <- function(case.genetic.data = NULL, complement.genetic.data = NULL, father.genetic.data = NULL,
-    mother.genetic.data = NULL, categorical.exposures = NULL, n.permutations = 100) {
+permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.permutations = 100,
+                            bp.param = bpparam()) {
 
-    # make sure the appropriate genetic data is included
-    if (is.null(complement.genetic.data) & is.null(father.genetic.data) & is.null(mother.genetic.data)
-        & !is.null(case.genetic.data)) {
+    if (!dir.exists(permutation.data.file.path)){
 
-        stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
+        dir.create(permutation.data.file.path, recursive = TRUE)
 
     }
+    permutation.data.file.path <- normalizePath(permutation.data.file.path)
 
-    if (!is.null(categorical.exposures) & (!is.null(complement.genetic.data) | !is.null(father.genetic.data)
-                                           | !is.null(mother.genetic.data) | !is.null(case.genetic.data))) {
-
-        stop("If running permutations for GxE search, please do not specify any genetic.data arguments.")
-
-    }
-
-    ### Compute the complement data if not provided ###
-    if (!is.null(case.genetic.data) & !is.null(father.genetic.data) & !is.null(mother.genetic.data)) {
-
-        complement.genetic.data <- father.genetic.data + mother.genetic.data - case.genetic.data
-
-    }
+    # grab input genetic data
+    genetic.data.list <- preprocessed.list$genetic.data.list
 
     ### permute the data ###
-    n.families <- nrow(case.genetic.data)
-    if (!is.null(case.genetic.data)){
+    n.families <- genetic.data.list[[1]]@description$totalRows
+    if (is.null(preprocessed.list$exposure)){
 
-        permuted.data.list <- lapply(seq_len(n.permutations), function(x) {
+        permuted.data.list <- bplapply(seq_len(n.permutations), function(permute, n.families, genetic.data.list) {
 
-            perm <- as.logical(rbinom(n.families, 1, 0.5))
-            case.perm <- case.genetic.data
-            comp.perm <- complement.genetic.data
-            comp.copy <- complement.genetic.data
-            case.copy <- case.genetic.data
-            case.perm[perm, ] <- comp.copy[perm, ]
-            comp.perm[perm, ] <- case.copy[perm, ]
-            list(case = case.perm, comp = comp.perm)
+            # flip the case/complement status for these families
+            flip.these <- seq_len(n.families)[as.logical(rbinom(n.families, 1, 0.5))]
 
-        })
-        names(permuted.data.list) <- paste0("permutation", seq_len(n.permutations))
+            # make deep copies of the input data
+            trio.study <- length(genetic.data.list) == 3
+            perm.genetic.data <- lapply(genetic.data.list, function(in.data.desc){
+
+                in.data <- attach.big.matrix(in.data.desc)
+                if (trio.study){
+
+                    # don't need a new copy of the parent data
+                    if (grepl("mother|father", in.data.desc@description$filename)){
+
+                        perm.data <- in.data
+
+                    } else {
+
+                        perm.data.name <- paste0(in.data.desc@description$filename, "_p", permute)
+                        desc.data.name <- paste0(perm.data.name, "_desc.rds")
+                        perm.data <- deepcopy(in.data, type = "integer", backingfile = perm.data.name,
+                                              backingpath = permutation.data.file.path,
+                                              descriptorfile = desc.data.name,
+                                              binarydescriptor = TRUE)
+                    }
+
+                }
+
+                return(perm.data)
+
+            })
+            names(perm.genetic.data) <- names(genetic.data.list)
+            perm.data.addresses <- lapply(perm.genetic.data, function(x) x@address)
+            perm.data.desc <- lapply(perm.genetic.data, function(x) describe(x))
+            names(perm.data.desc) <- names(genetic.data.list)
+            names(perm.data.addresses) <- names(genetic.data.list)
+            create_permuted_data(perm.data.addresses, flip.these, trio.study)
+            return(perm.data.desc)
+
+        }, n.families = n.families, genetic.data.list = genetic.data.list, BPPARAM = bp.param)
 
     } else {
 
-        permuted.data.list <- lapply(seq_len(n.permutations), function(x) {
+        permuted.data.list <- lapply(seq_len(n.permutations), function(permute) {
 
             shuffled.order <- sample(seq_along(categorical.exposures), length(categorical.exposures))
             exposure.perm <- categorical.exposures[shuffled.order]
+            out.file <- file.path(permutation.data.file.path, paste0("exposure.p", permute, ".rds"))
+            saveRDS(exposure.perm, out.file)
             return(exposure.perm)
 
-
         })
-        names(permuted.data.list) <- paste0("permutation", seq_len(n.permutations))
 
     }
-
-    permuted.data.list
+    return(permuted.data.list)
 
 }

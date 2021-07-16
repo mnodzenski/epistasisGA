@@ -10,27 +10,40 @@ preprocess.genetic.data(
   father.genetic.data = NULL,
   mother.genetic.data = NULL,
   ld.block.vec = NULL,
-  min.allele.freq = 0,
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
-  categorical.exposures.risk.ranks = NULL
+  categorical.exposures.risk.ranks = NULL,
+  big.matrix.file.path = NULL
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs. Columns are SNP allele counts, and rows are individuals.
-The ordering of the columns must be consistent with the LD structure specified in \code{ld.block.vec}.}
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
+Columns are SNP allele counts, and rows are individuals. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The ordering of the columns must be consistent
+with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
+family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
+\code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).}
 
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
-this should be the genotypes for the unaffected siblings.
-Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
+this argument should be the genotypes for the unaffected siblings. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
+families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
+The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
+should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).}
 
 \item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
-Does not need to be specified if \code{complement.genetic.data} is specified.}
+Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
+(\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).}
 
 \item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
-Does not need to be specified if \code{complement.genetic.data} is specified.}
+Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
+(\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).}
 
 \item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
 we specify \code{ld.block.vec <- c(25, 50, 25)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
@@ -38,9 +51,6 @@ SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in t
 in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
 a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome. If not specified, this defaults
 to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.}
-
-\item{min.allele.freq}{The minimum minor allele frequency required for a SNP to be considered for inclusion in the genetic algorithm.
-Any SNPs with MAF < \code{min.allele.freq} in the parents, or the combined group of affected and unaffected siblings, will be filtered out. Defaults to 0 (no filtering).}
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
@@ -51,8 +61,8 @@ each SNP, and sampling will be proportional to the root of these statistics. If 
 real numbers. See argument \code{prob} from function \code{sample} for more details.}
 
 \item{categorical.exposures}{A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
-which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. Any missing
-exposure data should be coded as NA.}
+which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{categorical.exposures}
+should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
 
 \item{categorical.exposures.risk.ranks}{An optional named list indicating the hypothesized relationship to risk
 among the levels of \code{categorical.exposures}. The number of list elements must be equal to the number
@@ -65,20 +75,22 @@ should specify \code{list("1" = 1, "2" = 2)} for \code{categorical.exposures.ris
 an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
 analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
 examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.}
+
+\item{big.matrix.file.path}{This argument specifies a directory where memory mapped files of class 'big.memory'
+will be saved on disk for use in running the GADGETS method, allowing use of genetic datasets that do no
+fit into RAM. This argument must be specified if (1) \code{case.genetic.data} or \code{complement.genetic.data}
+is not a file backed big.matrix
+(see package bigmemory) or (2) \code{mother.genetic.data} and \code{father.genetic.data} are specified
+and \code{complement.genetic.data} is not specified.}
 }
 \value{
 A list containing the following:
 \describe{
- \item{case.genetic.data}{The pre-processed version of the case genetic data. Any missing genotypes for a given family will be coded as -9 for both case and complement,
- resulting in that family being uninformative for that SNP.}
- \item{complement.genetic.data}{Pre-processed complement or unaffected sibling genetic data. If mother and father data are input,
- the complement genetic data are first created and then pre-processed. Any missing genotypes for a given family will be coded as -9 for both case and complement,
- resulting in that family being uninformative for that SNP.}
+ \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
+ containing the genetic data to be analyzed.}
  \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
  is not specified, and \code{snp.sampling.probs} if specified.}
- \item{original.col.numbers}{A vector indicating the original column number of each non-filtered SNP remaining in the analysis data.}
- \item{ld.block.vec}{The pre-processed version of \code{ld.block.vec}.}
- \item{minor.allele.vec}{A vector indicating whether the alternate allele was the minor allele for each column in the input data.}
+ \item{ld.block.vec}{A vector eaul to \code{cumsum(ld.block.vec)}.}
  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
  \item{exposure.risk.levels}{The list specified in input argument categorical.exposures.risk.ranks.}
 }
@@ -91,9 +103,10 @@ This function performs several pre-processing steps, intended for use before fun
 data(case)
 data(dad)
 data(mom)
-library(Matrix)
 res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10))
+                               ld.block.vec = c(10),
+                               big.matrix.file.path = "tmp")
+unlink(tmp)
 
 }

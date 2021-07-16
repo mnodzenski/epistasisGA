@@ -18,8 +18,6 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
-#' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -36,7 +34,8 @@
 #'
 #' pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
 #'                                mother.genetic.data = mom,
-#'                                ld.block.vec = rep(25, 4))
+#'                                ld.block.vec = rep(25, 4),
+#'                                big.matrix.file.path = "tmp_bm")
 #'
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
 #'        results.dir = "tmp", cluster.type = "interactive",
@@ -50,20 +49,28 @@
 #' set.seed(10)
 #' epi.test.res <- epistasis.test(top.snps, pp.list)
 #'
+#' unlink('tmp_bm', recursive = TRUE)
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
-#'
-#' @importFrom data.table rbindlist setkey setorder `:=`
-#' @importFrom BiocParallel bplapply bpparam
 #' @export
 
 epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
-                     recode.test.stat = 1.64, dif.coding = FALSE) {
+                     recode.test.stat = 1.64) {
 
-    epistasis_test(snp.cols, preprocessed.list, n.permutes,n.different.snps.weight,
-                   n.both.one.weight, weight.function.int, recessive.ref.prop,
-                   recode.test.stat, TRUE, dif.coding)
+    # pick out the required inputs from preprocessed.list
+    ld.block.vec <- preprocessed.list$ld.block.vec
+    bm.genetic.data.list <- lapply(preprocessed.list$genetic.data.list, function(x){
+
+      attach.big.matrix(x)@address
+
+    })
+    names(bm.genetic.data.list) <- names(preprocessed.list$genetic.data.list)
+
+    # run the epistasis test via cpp
+    epistasis_test(snp.cols, ld.block.vec, bm.genetic.data.list, n.permutes,
+                   n.different.snps.weight, n.both.one.weight, weight.function.int,
+                   recessive.ref.prop, recode.test.stat, TRUE)
 
 }

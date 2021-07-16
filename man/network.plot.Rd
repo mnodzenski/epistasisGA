@@ -100,7 +100,8 @@ set.seed(1400)
 target.snps <- c(1:3, 30:32, 60:62, 85)
 pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
                                mother.genetic.data = mom[ , target.snps],
-                               ld.block.vec = c(3, 3, 3, 1))
+                               ld.block.vec = c(3, 3, 3, 1),
+                               big.matrix.file.path = "tmp_bm")
 ## run GA for observed data
 
 #observed data chromosome size 2
@@ -130,6 +131,6 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
 set.seed(10)
 network.plot(graphical.list, pp.list)
 
- lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+ lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
 
 }

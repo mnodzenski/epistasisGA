@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "July 8, 2021"
+date: "July 15, 2021"
 package: epistasisGAGE
 output: 
   BiocStyle::html_document:
@@ -47,8 +47,11 @@ We begin our example usage of GADGETS by loading a simulated example of case-par
 ```{r}
 library(epistasisGAGE)
 data(case)
+case <- as.matrix(case)
 data(dad)
+dad <- as.matrix(dad)
 data(mom)
+mom <- as.matrix(mom)
 ```
 
 These data were simulated based on a case-parent triad study of children with orofacial-clefts using the method described by @Shi2018 for triads consisting of mothers, fathers, and affected children. For each dataset, the rows correspond to families, and the columns correspond to SNPs. Because this is a small example just for illustration, each of these datasets includes only `r ncol(case)` SNPs. The SNPs in columns 51, 52, 76, and 77 are a true risk pathway (rs1731422, rs4237892, rs7985535, rs1487251), where the joint combination of variants substantially increases the penetrance compared to other genotypes.  
@@ -70,7 +73,8 @@ Now, we can execute pre-processing:
 ```{r}
 pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    mother.genetic.data = mom,
-                                   ld.block.vec = ld.block.vec)
+                                   ld.block.vec = ld.block.vec, 
+                                   big.matrix.file.path = "bm_tmp")
 ```
 
 For affected/unaffected sibling study, the sibling genetic data should be supplied as the `complement.genetic.data` argument:
@@ -79,7 +83,8 @@ For affected/unaffected sibling study, the sibling genetic data should be suppli
 ### FOR ILLUSTRATION ONLY, DO NOT TRY TO RUN THIS CHUNK ###
 pp.list <- preprocess.genetic.data(affected.sibling.genotypes, 
                                    complement.genetic.data = unaffected.sibling.genotypes,
-                                   ld.block.vec = ld.block.vec)
+                                   ld.block.vec = ld.block.vec, 
+                                    big.matrix.file.path = "bm_tmp")
 
 ```
 
@@ -97,7 +102,8 @@ combined.case <- rbind(case, affected.sibling.genotypes)
 combined.complement <- rbind(complement, unaffected.sibling.genotypes)
 pp.list <- preprocess.genetic.data(case.genetic.data = combined.case, 
                                    complement.genetic.data = combined.complement,
-                                   ld.block.vec = ld.block.vec)
+                                   ld.block.vec = ld.block.vec, 
+                                    big.matrix.file.path = "bm_tmp")
 
 ```
 
@@ -183,8 +189,8 @@ Of course, in real studies we do not know the identity of true risk pathways. We
 
 ```{r}
 set.seed(1400)
-perm.data.list <- permute.dataset(case, father.genetic.data = dad,
-                                  mother.genetic.data = mom, 
+perm.data.list <- permute.dataset(pp.list, 
+                                  permutation.data.file.path = "perm_data",
                                   n.permutations = 4)
 
 ```
@@ -194,11 +200,18 @@ perm.data.list <- permute.dataset(case, father.genetic.data = dad,
 Once we have created the permuted datasets, for each permutation, we perform exactly the same sequence of analyses shown above. Users should note this step is by far the most time consuming of the workflow and almost certainly requires access to a computing cluster. However, since this vignette provides only a very small example, we are able to run the analyses locally. We begin by pre-processing the permuted datasets:
 
 ```{r}
-preprocess.lists <- lapply(perm.data.list, function(permutation){
+preprocess.lists <- lapply(seq_along(perm.data.list), function(permutation){
   
-  preprocess.genetic.data(permutation$case,
-                          complement.genetic.data = permutation$comp,
-                          ld.block.vec = ld.block.vec)
+  perm.data.desc <- perm.data.list[[permutation]]
+  perm.data.path <- paste0("bm_tmp_p", permutation)
+  perm.case <- bigmemory::attach.big.matrix(perm.data.desc$case)
+  perm.mom <- bigmemory::attach.big.matrix(perm.data.desc$mother)
+  perm.dad <- bigmemory::attach.big.matrix(perm.data.desc$father)
+  
+  preprocess.genetic.data(perm.case, father.genetic.data = perm.dad,
+                          mother.genetic.data = perm.mom, 
+                          ld.block.vec = ld.block.vec, 
+                          big.matrix.file.path = perm.data.path)
 })
 
 ```
@@ -448,7 +461,9 @@ perm.res.dirs <- as.vector(outer(paste0("perm", 1:4),
                                  paste0("_size", chrom.sizes, "_res"), 
                                  paste0))
 lapply(c("size3_res", "size3_reg", "size4_res", "size4_reg",
-         perm.reg.dirs, perm.res.dirs), unlink, recursive = TRUE)
+         perm.reg.dirs, perm.res.dirs, 
+         "bm_tmp", paste0("bm_tmp_p", 1:4), 
+         "perm_data"), unlink, recursive = TRUE)
 
 
 ```

@@ -5,37 +5,23 @@
 \title{A function to create permuted datasets for permutation based hypothesis testing.}
 \usage{
 permute.dataset(
-  case.genetic.data = NULL,
-  complement.genetic.data = NULL,
-  father.genetic.data = NULL,
-  mother.genetic.data = NULL,
-  categorical.exposures = NULL,
-  n.permutations = 100
+  preprocessed.list,
+  permutation.data.file.path,
+  n.permutations = 100,
+  bp.param = bpparam()
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children. Columns are SNP allele counts, and rows are individuals. If running
-permutations for a GxE search, this argument should not be specified.}
-
-\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
-\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected
-sibling pairs, this should be the genetic data for the unaffected sibling. If running
-permutations for a GxE search, this argument should not be specified.
-Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
-
-\item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
-Does not need to be specified if \code{complement.genetic.data} is specified. If running
-permutations for a GxE search, this argument should not be specified.}
-
-\item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
-Does not need to be specified if \code{complement.genetic.data} is specified. If running
-permutations for a GxE search, this argument should not be specified.}
-
-\item{categorical.exposures}{A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
-which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. Any missing
-exposure data should be coded as NA. Does not need to be specified unless a GxE search is being run.}
+\item{preprocessed.list}{The output list from \code{preprocess.genetic.data} for the original genetic data.}
 
 \item{n.permutations}{The number of permuted datasets to create.}
+
+\item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
+If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
+
+\item{permutation.matrix.file.path}{If runing GADGETS for GxG interactions, this argument specifies a directory
+where memory mapped files of class 'big.memory' will be saved for each permuted dataset on disk. If searching
+for GxE interactions, permuted versions of the exposure vector will be saved to this directory.}
 }
 \value{
 If genetic data are specified, a list of \code{n.permutations} pairs of case and complement data,
@@ -48,10 +34,18 @@ This function creates permuted datasets for permutation based hypothesis testing
 \examples{
 
 data(case)
+case <- as.matrix(case)
 data(dad)
+dad <- as.matrix(dad)
 data(mom)
+mom <- as.matrix(mom)
+pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+                               mother.genetic.data = mom[ , 1:10],
+                               ld.block.vec = c(10),
+                               big.matrix.file.path = "tmp_bm")
 set.seed(15)
-perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
-                 n.permutations = 2)
+perm.data.list <- permute.dataset(pp.list, "tmp_perm", n.permutations = 1)
+
+unlink(c('tmp_perm', 'tmp_bm'))
 
 }

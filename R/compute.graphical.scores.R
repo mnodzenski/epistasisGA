@@ -6,7 +6,7 @@
 #'  Each element of the list must be a data.table from \code{combine.islands} for a given chromosome size.
 #'  Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 #'  otherwise an error will be returned.
-#' @param pp.list The list output by \code{preprocess.genetic.data} run on the observed data.
+#' @param preprocessed.list The list output by \code{preprocess.genetic.data} run on the observed data.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
 #' graphical scores of chromosomes containing that pair across chromosome sizes. The choice of 'logsum' rather than 'sum'
@@ -28,8 +28,6 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
-#' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param bp.param The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.
 #' @return A list of two elements:
 #' \describe{
@@ -49,25 +47,26 @@
 #'
 #' #preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
-#' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
+#' preprocessed.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
 #'                                mother.genetic.data = mom[ , target.snps],
-#'                                ld.block.vec = c(3, 3, 3, 1))
+#'                                ld.block.vec = c(3, 3, 3, 1),
+#'                                big.matrix.file.path = "tmp_bm")
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
-#' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
+#' run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
-#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], preprocessed.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  #observed data chromosome size 3
-#'  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
+#'  run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
-#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], preprocessed.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
@@ -75,9 +74,9 @@
 #'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
-#'  edge.dt <- compute.graphical.scores(final.results, pp.list, pval.thresh = 0.5)
+#'  edge.dt <- compute.graphical.scores(final.results, preprocessed.list, pval.thresh = 0.5)
 #'
-#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+#'  lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
 #'
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom matrixStats colSds
@@ -86,11 +85,10 @@
 #' @importFrom data.table melt
 #' @export
 
-compute.graphical.scores <- function(results.list, pp.list,
+compute.graphical.scores <- function(results.list, preprocessed.list,
                                 score.type = "logsum", pval.thresh = 0.05, n.permutes = 10000,
                                 n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
-                                recessive.ref.prop = 0.75, recode.test.stat = 1.64, dif.coding = FALSE,
-                                bp.param = bpparam()) {
+                                recessive.ref.prop = 0.75, recode.test.stat = 1.64, bp.param = bpparam()) {
 
     if (pval.thresh > 0.6){
 
@@ -111,19 +109,34 @@ compute.graphical.scores <- function(results.list, pp.list,
     })
 
     ## compute graphical scores based on epistasis test
-    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, pp.list, n.permutes,
-                                                       n.different.snps.weight, n.both.one.weight,
-                                                       weight.function.int, recessive.ref.prop,
-                                                       recode.test.stat, dif.coding){
+    ld.block.vec <- preprocessed.list$ld.block.vec
+    bm.genetic.data.list <- lapply(preprocessed.list$genetic.data.list, function(x){
 
-        n2log_epistasis_pvals(chrom.size.list, pp.list, n.permutes,
+        attach.big.matrix(x)@address
+
+    })
+    names(bm.genetic.data.list) <- names(preprocessed.list$genetic.data.list)
+    exposure <- preprocessed.list$exposure
+    exposure.levels <- preprocessed.list$exposure.levels
+    exposure.risk.levels <- preprocessed.list$exposure.risk.levels
+
+
+
+    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, ld.block.vec, genetic.data.list,
+                                                     n.permutes, n.different.snps.weight, n.both.one.weight,
+                                                     weight.function.int, recessive.ref.prop, recode.test.stat,
+                                                     exposure, exposure.levels, exposure.risk.levels){
+
+        n2log_epistasis_pvals(chrom.size.list, ld.block.vec, genetic.data.list, n.permutes,
                               n.different.snps.weight, n.both.one.weight, weight.function.int,
-                              recessive.ref.prop, recode.test.stat, dif.coding)
+                              recessive.ref.prop, recode.test.stat, exposure, exposure.levels,
+                              exposure.risk.levels)
 
-    }, pp.list = pp.list, n.permutes = n.permutes, n.different.snps.weight = n.different.snps.weight,
-    n.both.one.weight = n.both.one.weight, weight.function.int = weight.function.int,
-    recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,
-    dif.coding = dif.coding, BPPARAM = bp.param)
+    }, ld.block.vec = ld.block.vec, genetic.data.list = bm.genetic.data.list, n.permutes = n.permutes,
+    n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
+    weight.function.int = weight.function.int, recessive.ref.prop = recessive.ref.prop,
+    recode.test.stat = recode.test.stat, exposure = exposure, exposure.levels = exposure.levels,
+    exposure.risk.levels = exposure.risk.levels, BPPARAM = bp.param)
 
    ## add those scores to the obs data
    for (i in seq_along(n2log.epi.pvals)){

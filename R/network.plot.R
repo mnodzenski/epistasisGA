@@ -51,7 +51,8 @@
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
 #'                                mother.genetic.data = mom[ , target.snps],
-#'                                ld.block.vec = c(3, 3, 3, 1))
+#'                                ld.block.vec = c(3, 3, 3, 1),
+#'                                big.matrix.file.path = "tmp_bm")
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -81,7 +82,7 @@
 #' set.seed(10)
 #' network.plot(graphical.list, pp.list)
 #'
-#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+#'  lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
 #'
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
@@ -119,14 +120,12 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
     # for now, only GxG interactions
-    original.col.numbers <- preprocessed.list$original.col.numbers
     if (!GxE){
 
         r2.vals <- vapply(seq(1, nrow(edge.dt)), function(x){
 
             # pick out the snp pair in the preprocessed list
-            snp.pair <- as.vector(t(edge.dt[x, c(1, 2)]))
-            target.snps <- which(original.col.numbers %in% snp.pair)
+            target.snps <- as.vector(t(edge.dt[x, c(1, 2)]))
 
             # check if snps are located in same ld block
             ld.block.vec <- preprocessed.list$ld.block.vec
@@ -155,10 +154,30 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
 
             } else {
 
-                comp.genetic.data <- preprocessed.list$complement.genetic.data
-                snp1 <- target.snps[1]
-                snp2 <- target.snps[2]
-                r2 <- cor(comp.genetic.data[ , snp1], comp.genetic.data[ , snp2])^2
+                bm.genetic.data.list <- lapply(preprocessed.list$genetic.data.list, function(x){
+
+                    attach.big.matrix(x)
+
+                })
+                names(bm.genetic.data.list) <- names(preprocessed.list$genetic.data.list)
+                if (length(bm.genetic.data.list) == 2){
+
+                    snp1 <- bm.genetic.data.list$complement[ , target.snps[1]]
+                    snp2 <- bm.genetic.data.list$complement[ , target.snps[2]]
+
+                } else {
+
+                    snp1 <- bm.genetic.data.list$mother[ , target.snps[1]] +
+                            bm.genetic.data.list$father[ , target.snps[1]] -
+                            bm.genetic.data.list$case[ , target.snps[1]]
+
+                    snp2 <- bm.genetic.data.list$mother[ , target.snps[2]] +
+                            bm.genetic.data.list$father[ , target.snps[2]] -
+                            bm.genetic.data.list$case[ , target.snps[2]]
+
+                }
+
+                r2 <- cor(snp1, snp2)^2
                 return(r2)
 
             }

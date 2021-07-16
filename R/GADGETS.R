@@ -54,8 +54,6 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
-#' @param dif.coding A logical indicating whether, for a given SNP, the case - complement genotype difference should
-#' be coded as the sign of the difference (defaulting to false) or the raw difference.
 #' @param exposure.levels An integer vector corresponding to environmental exposure categories used to group \code{case.genetic.data.list}. Defaults to NULL. If specified, this function will search for
 #' gene-environment interactions.
 #' @param exposure.risk.levels An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.
@@ -88,67 +86,53 @@
 #'
 #' set.seed(10)
 #' data(case)
+#' case <- as.matrix(case)
 #' data(dad)
+#' dad <- as.matrix(dad)
 #' data(mom)
-#' library(Matrix)
+#' mom <- as.matrix(mom)
 #' data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                ld.block.vec = c(10))
+#'                                ld.block.vec = c(10),
+#'                                big.matrix.file.path = "tmp_bm")
 #'
-#'  case.genetic.data <- as.matrix(data.list$case.genetic.data)
-#'  complement.genetic.data <- as.matrix(data.list$complement.genetic.data)
-#'  original.col.numbers <- data.list$original.col.numbers
-#'  chisq.stats <- data.list$chisq.stats
-#'  ld.block.vec <- cumsum(data.list$ld.block.vec)
-#'  case.minus.comp <- sign(as.matrix(case.genetic.data - complement.genetic.data))
-#'  case.comp.different <- case.minus.comp != 0
-#'  both.one.mat <- complement.genetic.data == 1 & case.genetic.data == 1
-#'  case2.mat <- case.genetic.data == 2
-#'  case0.mat <- case.genetic.data == 0
-#'  comp2.mat <- complement.genetic.data == 2
-#'  comp0.mat <- complement.genetic.data == 0
-#'  snp.chisq <- sqrt(chisq.stats)
+#'  chisq.stats <- sqrt(data.list$chisq.stats)
+#'  ld.block.vec <- data.list$ld.block.vec
+#'  genetic.data.list <- data.list$genetic.data.list
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  dir.create('tmp')
-#'  GADGETS(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
-#'                    complement.genetic.data = complement.genetic.data,
-#'                    case.comp.different = case.comp.different,
-#'                    case.minus.comp = case.minus.comp, both.one.mat = both.one.mat,
-#'                    ld.block.vec = ld.block.vec, n.chromosomes = 10,
-#'                    chromosome.size = 3, snp.chisq = snp.chisq,
-#'                    original.col.numbers = original.col.numbers,
-#'                    weight.lookup = weight.lookup, case2.mat = case2.mat,
-#'                    case0.mat = case0.mat, comp2.mat = comp2.mat,
-#'                    comp0.mat = comp0.mat, n.migrations = 2,
-#'                    migration.interval = 5, max.generations = 10)
+#' GADGETS(cluster.number = 1, results.dir = 'tmp', genetic.data.list = genetic.data.list,
+#'        ld.block.vec = ld.block.vec, n.chromosomes = 10, chromosome.size = 3,
+#'        snp.chisq = chisq.stats, weight.lookup = weight.lookup, n.migrations = 2,
+#'        migration.interval = 5, gen.same.fitness = 10, max.generations = 10)
 #' unlink('tmp', recursive = TRUE)
+#' unlink('tmp_bm', recursive = TRUE)
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
+#' @importFrom bigmemory attach.big.matrix
 #' @useDynLib epistasisGAGE
 #' @export
 
-GADGETS <- function(cluster.number, results.dir , case.genetic.data, complement.genetic.data, case.comp.different,
-                   case.minus.comp, both.one.mat, ld.block.vec, n.chromosomes, chromosome.size,
-                   snp.chisq, original.col.numbers, weight.lookup, case2.mat, case0.mat, comp2.mat, comp0.mat, island.cluster.size = 4,
-                   n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
-                   gen.same.fitness = 50, max.generations = 500,
+GADGETS <- function(cluster.number, results.dir , genetic.data.list, ld.block.vec, n.chromosomes, chromosome.size,
+                   snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
+                   n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                   recode.test.stat = 1.64, dif.coding = FALSE, exposure.levels = NULL, exposure.risk.levels = NULL,
-                   case.genetic.data.list = NULL, complement.genetic.data.list = NULL, case.comp.different.list = NULL,
-                   case.minus.comp.list = NULL, both.one.mat.list = NULL, case2.mat.list = NULL, case0.mat.list = NULL,
-                   comp2.mat.list = NULL, comp0.mat.list = NULL) {
+                   recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
 
     ### run rcpp version of GADGETS ##
+
+    # give the addresses for the input genetic data objects
+    bm.genetic.data.list <- lapply(genetic.data.list, function(x){
+
+        attach.big.matrix(x)@address
+
+    })
+    names(bm.genetic.data.list) <- names(genetic.data.list)
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
-                            weight.lookup,  snp.chisq, original.col.numbers, case.genetic.data,
-                            complement.genetic.data, case.comp.different, case.minus.comp,
-                            both.one.mat, case2.mat, case0.mat, comp2.mat, comp0.mat,
-                            case.genetic.data.list, complement.genetic.data.list,
-                            case.comp.different.list, case.minus.comp.list, both.one.mat.list,
-                            case2.mat.list, case0.mat.list, comp2.mat.list, comp0.mat.list,
-                            exposure.levels, exposure.risk.levels, n.different.snps.weight, n.both.one.weight,
+                            weight.lookup,  snp.chisq, bm.genetic.data.list, exposure.levels, exposure.risk.levels,
+                            exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
-                            crossover.prop, recessive.ref.prop, recode.test.stat, dif.coding)
+                            crossover.prop, recessive.ref.prop, recode.test.stat)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
