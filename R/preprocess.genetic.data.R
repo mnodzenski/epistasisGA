@@ -4,25 +4,25 @@
 #'
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
 #' Columns are SNP allele counts, and rows are individuals. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The ordering of the columns must be consistent
+#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). The ordering of the columns must be consistent
 #' with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
 #' family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
 #' \code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
 #' this argument should be the genotypes for the unaffected siblings. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
+#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
 #' families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
 #' The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
 #' should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).
 #' @param father.genetic.data The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
 #' uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
 #' (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).
 #' @param mother.genetic.data The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
 #' uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
 #' (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).
 #' @param ld.block.vec An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
@@ -186,13 +186,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (any(class(case.genetic.data) == "matrix")){
 
-        if (!all(round(case.genetic.data) == case.genetic.data, na.rm = TRUE)){
-
-            stop("case.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
-
-        }
-
-        storage.mode(case.genetic.data) <- "integer"
+        storage.mode(case.genetic.data) <- "double"
 
         if (is.null(big.matrix.file.path)){
 
@@ -208,15 +202,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         }
         dimnames(case.genetic.data) <- NULL
         big.matrix.file.path <- normalizePath(big.matrix.file.path)
-        case.bm <- as.big.matrix(case.genetic.data, type = "integer", backingfile = "case_bm",
+        case.bm <- as.big.matrix(case.genetic.data, type = "double", backingfile = "case_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "case_bm_desc.rds",
                                  binarydescriptor = TRUE)
+        rm(case.genetic.data)
 
     } else if (class(case.genetic.data) == "big.matrix"){
 
-        if (! describe(case.genetic.data)@description$type %in% c("integer")){
+        if (! describe(case.genetic.data)@description$type %in% c("double")){
 
-            stop("case.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            stop("case.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -238,13 +233,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (!is.null(complement.genetic.data) & any(class(complement.genetic.data) == "matrix")){
 
-        if (!all(round(complement.genetic.data) == complement.genetic.data, na.rm = TRUE)){
-
-            stop("complement.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
-
-        }
-
-        storage.mode(complement.genetic.data) <- "integer"
+        storage.mode(complement.genetic.data) <- "double"
 
         if (is.null(big.matrix.file.path)){
 
@@ -254,15 +243,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(complement.genetic.data) <- NULL
-        comp.bm <- as.big.matrix(complement.genetic.data, type = "integer", backingfile = "comp_bm",
+        comp.bm <- as.big.matrix(complement.genetic.data, type = "double", backingfile = "comp_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "comp_bm_desc.rds",
                                  binarydescriptor = TRUE)
+        rm(complement.genetic.data)
 
     } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
 
-        if (! describe(complement.genetic.data)@description$type %in% c("integer")){
+        if (! describe(complement.genetic.data)@description$type %in% c("double")){
 
-            stop("complement.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            stop("complement.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -284,13 +274,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (!is.null(mother.genetic.data) & any(class(mother.genetic.data) == "matrix")){
 
-        if (!all(round(mother.genetic.data) == mother.genetic.data, na.rm = TRUE)){
-
-            stop("mother.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
-
-        }
-
-        storage.mode(mother.genetic.data) <- "integer"
+        storage.mode(mother.genetic.data) <- "double"
 
         if (is.null(big.matrix.file.path)){
 
@@ -300,15 +284,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(mother.genetic.data) <- NULL
-        mother.bm <- as.big.matrix(mother.genetic.data, type = "integer", backingfile = "mother_bm",
+        mother.bm <- as.big.matrix(mother.genetic.data, type = "double", backingfile = "mother_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "mother_bm_desc.rds",
                                  binarydescriptor = TRUE)
+        rm(mother.genetic.data)
 
     } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
 
-        if (! describe(mother.genetic.data)@description$type %in% c("integer")){
+        if (! describe(mother.genetic.data)@description$type %in% c("double")){
 
-            stop("mother.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            stop("mother.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -330,12 +315,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (!is.null(father.genetic.data) & any(class(father.genetic.data) == "matrix")){
 
-        if (!all(round(father.genetic.data) == father.genetic.data, na.rm = TRUE)){
-
-            stop("father.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
-
-        }
-        storage.mode(father.genetic.data) <- "integer"
+        storage.mode(father.genetic.data) <- "double"
 
         if (is.null(big.matrix.file.path)){
 
@@ -345,15 +325,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(father.genetic.data) <- NULL
-        father.bm <- as.big.matrix(father.genetic.data, type = "integer", backingfile = "father_bm",
+        father.bm <- as.big.matrix(father.genetic.data, type = "double", backingfile = "father_bm",
                                    backingpath = big.matrix.file.path, descriptorfile = "father_bm_desc.rds",
                                    binarydescriptor = TRUE)
+        rm(father.genetic.data)
 
     } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
 
-        if (! describe(father.genetic.data)@description$type %in% c("integer")){
+        if (! describe(father.genetic.data)@description$type %in% c("double")){
 
-            stop("father.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            stop("father.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -384,28 +365,35 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     }
 
     # if needed compute sampling probs
+    n.candidate.snps <- bm.desc.list[[1]]@description$ncol
+
     if (is.null(snp.sampling.probs)){
 
         ### use conditional logistic regression to estimate univariate association ###
-        n.fam <- nrow(case.genetic.data)
-        n.candidate.snps <- ncol(case.genetic.data)
-        case.status <- c(rep(1, n.fam), rep(0, n.fam))
-        ids <- rep(seq_len(n.fam), 2)
 
         if (is.null(categorical.exposures)){
 
             res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list) {
 
                 case.snp <- bm.list$case[ , snp]
+                missing.geno <- case.snp == -9
+                case.snp <- case.snp[!missing.geno]
+                n.fam <- length(case.snp)
+                case.status <- c(rep(1, n.fam), rep(0, n.fam))
+                ids <- rep(seq_len(n.fam), 2)
+
                 if (length(bm.list) == 3){
 
                     mom.snp <- bm.list$mother[ , snp]
+                    mom.snp <- mom.snp[!missing.geno]
                     dad.snp <- bm.list$father[ , snp]
+                    dad.snp <- dad.snp[!missing.geno]
                     comp.snp <- mom.snp + dad.snp - case.snp
 
                 } else {
 
                     comp.snp <- bm.list$complement[ , snp]
+                    comp.snp <- comp.snp[!missing.geno]
 
                 }
 
@@ -421,19 +409,28 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         } else {
 
-            exposure.var <- factor(rep(exposure, 2))
-            res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
+            res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list) {
 
                 case.snp <- bm.list$case[ , snp]
+                missing.geno <- case.snp == -9
+                case.snp <- case.snp[!missing.geno]
+                n.fam <- length(case.snp)
+                exposure.var <- factor(rep(exposure[!missing.geno], 2))
+                case.status <- c(rep(1, n.fam), rep(0, n.fam))
+                ids <- rep(seq_len(n.fam), 2)
+
                 if (length(bm.list) == 3){
 
                     mom.snp <- bm.list$mother[ , snp]
+                    mom.snp <- mom.snp[!missing.geno]
                     dad.snp <- bm.list$father[ , snp]
+                    dad.snp <- dad.snp[!missing.geno]
                     comp.snp <- mom.snp + dad.snp - case.snp
 
                 } else {
 
                     comp.snp <- bm.list$complement[ , snp]
+                    comp.snp <- comp.snp[!missing.geno]
 
                 }
 
@@ -448,7 +445,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
                 return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
 
-            }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
+            }, bm.list = bm.list, BPPARAM = bp.param)
             chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
 
         }
