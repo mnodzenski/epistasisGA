@@ -4,25 +4,25 @@
 #'
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
 #' Columns are SNP allele counts, and rows are individuals. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). The ordering of the columns must be consistent
+#' 'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). The ordering of the columns must be consistent
 #' with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
 #' family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
 #' \code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
 #' this argument should be the genotypes for the unaffected siblings. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
+#' 'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
 #' families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
 #' The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
 #' should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).
 #' @param father.genetic.data The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+#' 'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
 #' uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
 #' (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).
 #' @param mother.genetic.data The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-#' 'big.matrix' it must be file backed as type 'double' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+#' 'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
 #' uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
 #' (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).
 #' @param ld.block.vec An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
@@ -186,7 +186,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (any(class(case.genetic.data) == "matrix")){
 
-        storage.mode(case.genetic.data) <- "double"
+        storage.mode(case.genetic.data) <- "integer"
 
         if (is.null(big.matrix.file.path)){
 
@@ -202,16 +202,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         }
         dimnames(case.genetic.data) <- NULL
         big.matrix.file.path <- normalizePath(big.matrix.file.path)
-        case.bm <- as.big.matrix(case.genetic.data, type = "double", backingfile = "case_bm",
+        case.bm <- as.big.matrix(case.genetic.data, type = "short", backingfile = "case_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "case_bm_desc.rds",
                                  binarydescriptor = TRUE)
         rm(case.genetic.data)
 
     } else if (class(case.genetic.data) == "big.matrix"){
 
-        if (! describe(case.genetic.data)@description$type %in% c("double")){
+        if (! describe(case.genetic.data)@description$type %in% c("short")){
 
-            stop("case.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
+            stop("case.genetic.data must be a big.matrix of type short. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -233,7 +233,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (!is.null(complement.genetic.data) & any(class(complement.genetic.data) == "matrix")){
 
-        storage.mode(complement.genetic.data) <- "double"
+        storage.mode(complement.genetic.data) <- "integer"
 
         if (is.null(big.matrix.file.path)){
 
@@ -243,16 +243,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(complement.genetic.data) <- NULL
-        comp.bm <- as.big.matrix(complement.genetic.data, type = "double", backingfile = "comp_bm",
+        comp.bm <- as.big.matrix(complement.genetic.data, type = "short", backingfile = "comp_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "comp_bm_desc.rds",
                                  binarydescriptor = TRUE)
         rm(complement.genetic.data)
 
     } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
 
-        if (! describe(complement.genetic.data)@description$type %in% c("double")){
+        if (! describe(complement.genetic.data)@description$type %in% c("short")){
 
-            stop("complement.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
+            stop("complement.genetic.data must be a big.matrix of type short. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -274,7 +274,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (!is.null(mother.genetic.data) & any(class(mother.genetic.data) == "matrix")){
 
-        storage.mode(mother.genetic.data) <- "double"
+        storage.mode(mother.genetic.data) <- "integer"
 
         if (is.null(big.matrix.file.path)){
 
@@ -284,16 +284,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(mother.genetic.data) <- NULL
-        mother.bm <- as.big.matrix(mother.genetic.data, type = "double", backingfile = "mother_bm",
+        mother.bm <- as.big.matrix(mother.genetic.data, type = "short", backingfile = "mother_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "mother_bm_desc.rds",
                                  binarydescriptor = TRUE)
         rm(mother.genetic.data)
 
     } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
 
-        if (! describe(mother.genetic.data)@description$type %in% c("double")){
+        if (! describe(mother.genetic.data)@description$type %in% c("short")){
 
-            stop("mother.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
+            stop("mother.genetic.data must be a big.matrix of type short. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -315,7 +315,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     if (!is.null(father.genetic.data) & any(class(father.genetic.data) == "matrix")){
 
-        storage.mode(father.genetic.data) <- "double"
+        storage.mode(father.genetic.data) <- "integer"
 
         if (is.null(big.matrix.file.path)){
 
@@ -325,16 +325,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(father.genetic.data) <- NULL
-        father.bm <- as.big.matrix(father.genetic.data, type = "double", backingfile = "father_bm",
+        father.bm <- as.big.matrix(father.genetic.data, type = "short", backingfile = "father_bm",
                                    backingpath = big.matrix.file.path, descriptorfile = "father_bm_desc.rds",
                                    binarydescriptor = TRUE)
         rm(father.genetic.data)
 
     } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
 
-        if (! describe(father.genetic.data)@description$type %in% c("double")){
+        if (! describe(father.genetic.data)@description$type %in% c("short")){
 
-            stop("father.genetic.data must be a big.matrix of type double. To convert, see function deepcopy from package bigmemory.")
+            stop("father.genetic.data must be a big.matrix of type short. To convert, see function deepcopy from package bigmemory.")
 
         }
 
@@ -348,40 +348,29 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    # make a list of big matrix objects
+
+    # further split the input data by exposure, if specified
     if (!is.null(complement.genetic.data)){
 
         bm.list <- list(case = case.bm, complement = comp.bm)
-        bm.desc.list <- list(case = describe(case.bm),
-                             complement = describe(comp.bm))
+        overall.bm.desc.list <- list(case = describe(case.bm),
+                                     complement = describe(comp.bm))
 
     } else {
 
-        bm.list <- list(case = case.bm, mother = mother.bm, father = father.bm)
-        bm.desc.list <- list(case = describe(case.bm),
-                             mother = describe(mother.bm),
-                             father = describe(father.bm))
+        bm.list <- list(case = case.bm, mother = mother.bm,
+                        father = father.bm)
+        overall.bm.desc.list <- list(case = describe(case.bm),
+                                     mother = describe(mother.bm),
+                                     father = describe(father.bm))
 
     }
 
-
-    # further split the input data by exposure, if specified
     if (is.null(exposure)){
 
-        if (!is.null(complement.genetic.data)){
-
-            bm.desc.list <- list(case = describe(case.bm),
-                                 complement = describe(comp.bm))
-
-        } else {
-
-            bm.desc.list <- list(case = describe(case.bm),
-                                 mother = describe(mother.bm),
-                                 father = describe(father.bm))
-
-        }
         exposure.levels <- NULL
         exposure.risk.levels <- NULL
+        bm.desc.list <- overall.bm.desc.list
 
 
     } else {
@@ -413,13 +402,13 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
             these.rows <- splits[[split.number]]
             if (!is.null(complement.genetic.data)){
 
-                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "double",
+                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "short",
                                       backingfile = paste0("case_bm_exp_", split.number),
                                       backingpath = big.matrix.file.path,
                                       descriptorfile = paste0("case_bm_exp_", split.number, "_desc.rds"),
                                       binarydescriptor = TRUE)
 
-                comp.bm.exp <- deepcopy(comp.bm, rows = these.rows, type = "double",
+                comp.bm.exp <- deepcopy(comp.bm, rows = these.rows, type = "short",
                                         backingfile = paste0("comp_bm_exp_", split.number),
                                         backingpath = big.matrix.file.path,
                                         descriptorfile = paste0("comp_bm_exp_", split.number, "_desc.rds"),
@@ -430,19 +419,19 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
             } else {
 
-                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "double",
+                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "short",
                                         backingfile = paste0("case_bm_exp_", split.number),
                                         backingpath = big.matrix.file.path,
                                         descriptorfile = paste0("case_bm_exp_", split.number, "_desc.rds"),
                                         binarydescriptor = TRUE)
 
-                mother.bm.exp <- deepcopy(mother.bm, rows = these.rows, type = "double",
+                mother.bm.exp <- deepcopy(mother.bm, rows = these.rows, type = "short",
                                         backingfile = paste0("mother_bm_exp_", split.number),
                                         backingpath = big.matrix.file.path,
                                         descriptorfile = paste0("mother_bm_exp_", split.number, "_desc.rds"),
                                         binarydescriptor = TRUE)
 
-                father.bm.exp <- deepcopy(father.bm, rows = these.rows, type = "double",
+                father.bm.exp <- deepcopy(father.bm, rows = these.rows, type = "short",
                                           backingfile = paste0("father_bm_exp_", split.number),
                                           backingpath = big.matrix.file.path,
                                           descriptorfile = paste0("father_bm_exp_", split.number, "_desc.rds"),
@@ -457,6 +446,8 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
             return(bm.desc.list.exp)
 
         })
+        n.exposures <- length(bm.desc.list)
+        bm.desc.list[[n.exposures + 1]] <- overall.bm.desc.list
 
     }
 

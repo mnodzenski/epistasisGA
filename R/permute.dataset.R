@@ -70,7 +70,7 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
 
                         perm.data.name <- paste0(in.data.desc@description$filename, "_p", permute)
                         desc.data.name <- paste0(perm.data.name, "_desc.rds")
-                        perm.data <- deepcopy(in.data, type = "double", backingfile = perm.data.name,
+                        perm.data <- deepcopy(in.data, type = "short", backingfile = perm.data.name,
                                               backingpath = permutation.data.file.path,
                                               descriptorfile = desc.data.name,
                                               binarydescriptor = TRUE)
