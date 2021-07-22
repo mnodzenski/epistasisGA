@@ -86,20 +86,41 @@ GADGETS <- function(cluster.number, results.dir, genetic.data.list, ld.block.vec
     ### run rcpp version of GADGETS ##
 
     # determine number of candidate snps
-    n.candidate.snps <- genetic.data.list[[1]]@description$ncol
+    if (is.null(exposure.levels)){
 
-    # give the addresses for the input genetic data objects
-    bm.genetic.data.list <- lapply(genetic.data.list, function(x){
+        n.candidate.snps <- genetic.data.list[[1]]@description$ncol
 
-        attach.big.matrix(x)@address
+        # give the addresses for the input genetic data objects
+        bm.genetic.data.list <- lapply(genetic.data.list, function(x){
 
-    })
-    names(bm.genetic.data.list) <- names(genetic.data.list)
+            attach.big.matrix(x)@address
+
+        })
+        names(bm.genetic.data.list) <- names(genetic.data.list)
+
+    } else {
+
+        n.candidate.snps <- genetic.data.list[[1]][[1]]@description$ncol
+
+        # give the addresses for the input genetic data objects
+        bm.genetic.data.list <- lapply(genetic.data.list, function(exposure.list){
+
+            exposure.res <- lapply(exposure.list, function(x){
+
+                attach.big.matrix(x)@address
+
+            })
+            names(exposure.res) <- names(exposure.list)
+            return(exposure.res)
+
+        })
+
+    }
+
     rcpp.res <- run_GADGETS(bm.genetic.data.list, n.candidate.snps, island.cluster.size, n.migrations,
-                            ld.block.vec, n.chromosomes, chromosome.size, weight.lookup,
-                            snp.chisq, exposure.levels, exposure.risk.levels, exposure,
-                            n.different.snps.weight, n.both.one.weight, migration.interval,
-                            gen.same.fitness, max.generations, initial.sample.duplicates,
+                            ld.block.vec, n.chromosomes, chromosome.size, weight.lookup, snp.chisq,
+                            exposure.risk.levels, n.different.snps.weight, n.both.one.weight,
+                            migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat)
 
     ### clean up and output results

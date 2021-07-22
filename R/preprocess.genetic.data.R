@@ -80,7 +80,7 @@
 #'                                big.matrix.file.path = "tmp")
 #' unlink(tmp)
 #'
-#' @importFrom bigmemory as.big.matrix describe attach.big.matrix
+#' @importFrom bigmemory as.big.matrix describe attach.big.matrix deepcopy
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom BiocParallel bplapply bpparam
 #' @importFrom survival clogit strata coxph Surv
@@ -364,8 +364,104 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
+
+    # further split the input data by exposure, if specified
+    if (is.null(exposure)){
+
+        if (!is.null(complement.genetic.data)){
+
+            bm.desc.list <- list(case = describe(case.bm),
+                                 complement = describe(comp.bm))
+
+        } else {
+
+            bm.desc.list <- list(case = describe(case.bm),
+                                 mother = describe(mother.bm),
+                                 father = describe(father.bm))
+
+        }
+        exposure.levels <- NULL
+        exposure.risk.levels <- NULL
+
+
+    } else {
+
+        if (is.null(exposure.risk.levels)){
+
+            exposure.risk.levels <- rep(1, length(unique(exposure)))
+
+        } else {
+
+            exposure.risk.levels <- unlist(exposure.risk.levels[as.character(unique(exposure))])
+
+        }
+
+        exposure.levels <- unique(exposure)
+        storage.mode(exposure.levels) <- "integer"
+        storage.mode(exposure.risk.levels) <- "integer"
+
+        # list of rows for each exposure
+        splits <- lapply(exposure.levels, function(exposure.level){
+
+            exposure == exposure.level
+
+        })
+
+        # make big.matrix for each exposure level
+        bm.desc.list <- lapply(seq_along(splits), function(split.number){
+
+            these.rows <- splits[[split.number]]
+            if (!is.null(complement.genetic.data)){
+
+                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "double",
+                                      backingfile = paste0("case_bm_exp_", split.number),
+                                      backingpath = big.matrix.file.path,
+                                      descriptorfile = paste0("case_bm_exp_", split.number, "_desc.rds"),
+                                      binarydescriptor = TRUE)
+
+                comp.bm.exp <- deepcopy(comp.bm, rows = these.rows, type = "double",
+                                        backingfile = paste0("comp_bm_exp_", split.number),
+                                        backingpath = big.matrix.file.path,
+                                        descriptorfile = paste0("comp_bm_exp_", split.number, "_desc.rds"),
+                                        binarydescriptor = TRUE)
+
+                bm.desc.list.exp <- list(case = describe(case.bm.exp),
+                                         complement = describe(comp.bm.exp))
+
+            } else {
+
+                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "double",
+                                        backingfile = paste0("case_bm_exp_", split.number),
+                                        backingpath = big.matrix.file.path,
+                                        descriptorfile = paste0("case_bm_exp_", split.number, "_desc.rds"),
+                                        binarydescriptor = TRUE)
+
+                mother.bm.exp <- deepcopy(mother.bm, rows = these.rows, type = "double",
+                                        backingfile = paste0("mother_bm_exp_", split.number),
+                                        backingpath = big.matrix.file.path,
+                                        descriptorfile = paste0("mother_bm_exp_", split.number, "_desc.rds"),
+                                        binarydescriptor = TRUE)
+
+                father.bm.exp <- deepcopy(father.bm, rows = these.rows, type = "double",
+                                          backingfile = paste0("father_bm_exp_", split.number),
+                                          backingpath = big.matrix.file.path,
+                                          descriptorfile = paste0("father_bm_exp_", split.number, "_desc.rds"),
+                                          binarydescriptor = TRUE)
+
+                bm.desc.list.exp <- list(case = describe(case.bm.exp),
+                                         mother = describe(mother.bm.exp),
+                                         father = describe(father.bm.exp))
+
+            }
+
+            return(bm.desc.list.exp)
+
+        })
+
+    }
+
     # if needed compute sampling probs
-    n.candidate.snps <- bm.desc.list[[1]]@description$ncol
+    n.candidate.snps <- ncol(case.bm)
 
     if (is.null(snp.sampling.probs)){
 
@@ -459,31 +555,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
     chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
-
-    ### if running GxE create required inputs ###
-    if (!is.null(exposure)){
-
-        if (is.null(exposure.risk.levels)){
-
-            exposure.risk.levels <- rep(1, length(unique(exposure)))
-
-        } else {
-
-            exposure.risk.levels <- unlist(exposure.risk.levels[as.character(unique(exposure))])
-
-        }
-
-        exposure.levels <- unique(exposure)
-        storage.mode(exposure.levels) <- "integer"
-        storage.mode(exposure.risk.levels) <- "integer"
-
-    } else {
-
-        exposure.levels <- NULL
-        exposure.risk.levels <- NULL
-
-    }
-
 
     return(list(genetic.data.list = bm.desc.list, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
         exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels))

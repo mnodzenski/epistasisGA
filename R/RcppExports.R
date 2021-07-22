@@ -53,28 +53,28 @@ GxE_fitness_score_internal <- function(case_genetic_data, complement_genetic_dat
     .Call('_epistasisGAGE_GxE_fitness_score_internal', PACKAGE = 'epistasisGAGE', case_genetic_data, complement_genetic_data, target_snps_block, uni_target_blocks, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, check_risk)
 }
 
-GxE_fitness_score <- function(genetic_data_list, target_snps_in, ld_block_vec, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, check_risk = TRUE) {
-    .Call('_epistasisGAGE_GxE_fitness_score', PACKAGE = 'epistasisGAGE', genetic_data_list, target_snps_in, ld_block_vec, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, check_risk)
+GxE_fitness_score <- function(genetic_data_list, target_snps_in, ld_block_vec, weight_lookup, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, check_risk = TRUE) {
+    .Call('_epistasisGAGE_GxE_fitness_score', PACKAGE = 'epistasisGAGE', genetic_data_list, target_snps_in, ld_block_vec, weight_lookup, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, check_risk)
 }
 
 chrom_fitness_list <- function(genetic_data_list, chromosome_list, ld_block_vec, weight_lookup, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
     .Call('_epistasisGAGE_chrom_fitness_list', PACKAGE = 'epistasisGAGE', genetic_data_list, chromosome_list, ld_block_vec, weight_lookup, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat)
 }
 
-GxE_fitness_list <- function(genetic_data_list, chromosome_list, ld_block_vec, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, check_risk = TRUE) {
-    .Call('_epistasisGAGE_GxE_fitness_list', PACKAGE = 'epistasisGAGE', genetic_data_list, chromosome_list, ld_block_vec, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, check_risk)
+GxE_fitness_list <- function(genetic_data_list, chromosome_list, ld_block_vec, weight_lookup, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, check_risk = TRUE) {
+    .Call('_epistasisGAGE_GxE_fitness_list', PACKAGE = 'epistasisGAGE', genetic_data_list, chromosome_list, ld_block_vec, weight_lookup, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, check_risk)
 }
 
-compute_population_fitness <- function(genetic_data_list, ld_block_vec, chromosome_list, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, GxE = FALSE, check_risk = TRUE) {
-    .Call('_epistasisGAGE_compute_population_fitness', PACKAGE = 'epistasisGAGE', genetic_data_list, ld_block_vec, chromosome_list, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE, check_risk)
+compute_population_fitness <- function(genetic_data_list, ld_block_vec, chromosome_list, weight_lookup, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, GxE = FALSE, check_risk = TRUE) {
+    .Call('_epistasisGAGE_compute_population_fitness', PACKAGE = 'epistasisGAGE', genetic_data_list, ld_block_vec, chromosome_list, weight_lookup, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE, check_risk)
 }
 
 find_top_chrom <- function(fitness_scores, chromosome_list, chromosome_size) {
     .Call('_epistasisGAGE_find_top_chrom', PACKAGE = 'epistasisGAGE', fitness_scores, chromosome_list, chromosome_size)
 }
 
-initiate_population <- function(n_candidate_snps, genetic_data_list, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, max_generations = 500L, initial_sample_duplicates = FALSE, GxE = FALSE, check_risk = TRUE) {
-    .Call('_epistasisGAGE_initiate_population', PACKAGE = 'epistasisGAGE', n_candidate_snps, genetic_data_list, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, exposure_field, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, GxE, check_risk)
+initiate_population <- function(n_candidate_snps, genetic_data_list, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, exposure_risk_levels, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, max_generations = 500L, initial_sample_duplicates = FALSE, GxE = FALSE, check_risk = TRUE) {
+    .Call('_epistasisGAGE_initiate_population', PACKAGE = 'epistasisGAGE', n_candidate_snps, genetic_data_list, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, max_generations, initial_sample_duplicates, GxE, check_risk)
 }
 
 check_convergence <- function(island_cluster_size, island_populations) {
@@ -85,8 +85,8 @@ check_max_gens <- function(island_populations, max_generations) {
     .Call('_epistasisGAGE_check_max_gens', PACKAGE = 'epistasisGAGE', island_populations, max_generations)
 }
 
-run_GADGETS <- function(genetic_data_list, n_candidate_snps, island_cluster_size, n_migrations, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, exposure_levels_in = NULL, exposure_risk_levels_in = NULL, exposure_in = NULL, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
-    .Call('_epistasisGAGE_run_GADGETS', PACKAGE = 'epistasisGAGE', genetic_data_list, n_candidate_snps, island_cluster_size, n_migrations, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, exposure_levels_in, exposure_risk_levels_in, exposure_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat)
+run_GADGETS <- function(genetic_data_list, n_candidate_snps, island_cluster_size, n_migrations, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, exposure_risk_levels_in = NULL, n_different_snps_weight = 2L, n_both_one_weight = 1L, migration_interval = 50L, gen_same_fitness = 50L, max_generations = 500L, initial_sample_duplicates = FALSE, crossover_prop = 0.8, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {
+    .Call('_epistasisGAGE_run_GADGETS', PACKAGE = 'epistasisGAGE', genetic_data_list, n_candidate_snps, island_cluster_size, n_migrations, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, exposure_risk_levels_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat)
 }
 
 epistasis_test_permute <- function(case_inf, comp_inf, target_snps_block, uni_target_blocks, n_families, weight_lookup, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64) {

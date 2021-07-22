@@ -58,7 +58,16 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         stop("annotation.data must contain columns RSID, REF, and ALT.")
     }
 
-    n.candidate.snps <- preprocessed.list$genetic.data.list[[1]]@description$ncol
+    if (is.null(preprocessed.list$exposure.levels)){
+
+        n.candidate.snps <- preprocessed.list$genetic.data.list[[1]]@description$ncol
+
+    } else {
+
+        n.candidate.snps <- preprocessed.list$genetic.data.list[[1]][[1]]@description$ncol
+
+    }
+
     if (nrow(annotation.data) != n.candidate.snps){
 
         stop("annotation.data does not contain the same number of SNPs as the input data")
