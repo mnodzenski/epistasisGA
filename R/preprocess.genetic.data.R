@@ -353,16 +353,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     if (!is.null(complement.genetic.data)){
 
         bm.list <- list(case = case.bm, complement = comp.bm)
-        overall.bm.desc.list <- list(case = describe(case.bm),
-                                     complement = describe(comp.bm))
+        bm.desc.list <- list(case = describe(case.bm),
+                             complement = describe(comp.bm))
 
     } else {
 
         bm.list <- list(case = case.bm, mother = mother.bm,
                         father = father.bm)
-        overall.bm.desc.list <- list(case = describe(case.bm),
-                                     mother = describe(mother.bm),
-                                     father = describe(father.bm))
+        bm.desc.list <- list(case = describe(case.bm),
+                             mother = describe(mother.bm),
+                             father = describe(father.bm))
 
     }
 
@@ -370,8 +370,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         exposure.levels <- NULL
         exposure.risk.levels <- NULL
-        bm.desc.list <- overall.bm.desc.list
-
 
     } else {
 
@@ -388,66 +386,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         exposure.levels <- unique(exposure)
         storage.mode(exposure.levels) <- "integer"
         storage.mode(exposure.risk.levels) <- "integer"
-
-        # list of rows for each exposure
-        splits <- lapply(exposure.levels, function(exposure.level){
-
-            exposure == exposure.level
-
-        })
-
-        # make big.matrix for each exposure level
-        bm.desc.list <- lapply(seq_along(splits), function(split.number){
-
-            these.rows <- splits[[split.number]]
-            if (!is.null(complement.genetic.data)){
-
-                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "short",
-                                      backingfile = paste0("case_bm_exp_", split.number),
-                                      backingpath = big.matrix.file.path,
-                                      descriptorfile = paste0("case_bm_exp_", split.number, "_desc.rds"),
-                                      binarydescriptor = TRUE)
-
-                comp.bm.exp <- deepcopy(comp.bm, rows = these.rows, type = "short",
-                                        backingfile = paste0("comp_bm_exp_", split.number),
-                                        backingpath = big.matrix.file.path,
-                                        descriptorfile = paste0("comp_bm_exp_", split.number, "_desc.rds"),
-                                        binarydescriptor = TRUE)
-
-                bm.desc.list.exp <- list(case = describe(case.bm.exp),
-                                         complement = describe(comp.bm.exp))
-
-            } else {
-
-                case.bm.exp <- deepcopy(case.bm, rows = these.rows, type = "short",
-                                        backingfile = paste0("case_bm_exp_", split.number),
-                                        backingpath = big.matrix.file.path,
-                                        descriptorfile = paste0("case_bm_exp_", split.number, "_desc.rds"),
-                                        binarydescriptor = TRUE)
-
-                mother.bm.exp <- deepcopy(mother.bm, rows = these.rows, type = "short",
-                                        backingfile = paste0("mother_bm_exp_", split.number),
-                                        backingpath = big.matrix.file.path,
-                                        descriptorfile = paste0("mother_bm_exp_", split.number, "_desc.rds"),
-                                        binarydescriptor = TRUE)
-
-                father.bm.exp <- deepcopy(father.bm, rows = these.rows, type = "short",
-                                          backingfile = paste0("father_bm_exp_", split.number),
-                                          backingpath = big.matrix.file.path,
-                                          descriptorfile = paste0("father_bm_exp_", split.number, "_desc.rds"),
-                                          binarydescriptor = TRUE)
-
-                bm.desc.list.exp <- list(case = describe(case.bm.exp),
-                                         mother = describe(mother.bm.exp),
-                                         father = describe(father.bm.exp))
-
-            }
-
-            return(bm.desc.list.exp)
-
-        })
-        n.exposures <- length(bm.desc.list)
-        bm.desc.list[[n.exposures + 1]] <- overall.bm.desc.list
 
     }
 

@@ -83,43 +83,21 @@ GADGETS <- function(cluster.number, results.dir, genetic.data.list, ld.block.vec
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
 
-    ### run rcpp version of GADGETS ##
-
     # determine number of candidate snps
-    if (is.null(exposure.levels)){
+    n.candidate.snps <- genetic.data.list[[1]]@description$ncol
 
-        n.candidate.snps <- genetic.data.list[[1]]@description$ncol
+    # give the addresses for the input genetic data objects
+    bm.genetic.data.list <- lapply(genetic.data.list, function(x){
 
-        # give the addresses for the input genetic data objects
-        bm.genetic.data.list <- lapply(genetic.data.list, function(x){
+        attach.big.matrix(x)@address
 
-            attach.big.matrix(x)@address
+    })
+    names(bm.genetic.data.list) <- names(genetic.data.list)
 
-        })
-        names(bm.genetic.data.list) <- names(genetic.data.list)
-
-    } else {
-
-        n.candidate.snps <- genetic.data.list[[1]][[1]]@description$ncol
-
-        # give the addresses for the input genetic data objects
-        bm.genetic.data.list <- lapply(genetic.data.list, function(exposure.list){
-
-            exposure.res <- lapply(exposure.list, function(x){
-
-                attach.big.matrix(x)@address
-
-            })
-            names(exposure.res) <- names(exposure.list)
-            return(exposure.res)
-
-        })
-
-    }
-
+    ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(bm.genetic.data.list, n.candidate.snps, island.cluster.size, n.migrations,
                             ld.block.vec, n.chromosomes, chromosome.size, weight.lookup, snp.chisq,
-                            exposure.risk.levels, n.different.snps.weight, n.both.one.weight,
+                            exposure, exposure.levels, exposure.risk.levels, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat)
 

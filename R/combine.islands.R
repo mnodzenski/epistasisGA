@@ -58,15 +58,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         stop("annotation.data must contain columns RSID, REF, and ALT.")
     }
 
-    if (is.null(preprocessed.list$exposure.levels)){
-
-        n.candidate.snps <- preprocessed.list$genetic.data.list[[1]]@description$ncol
-
-    } else {
-
-        n.candidate.snps <- preprocessed.list$genetic.data.list[[1]][[1]]@description$ncol
-
-    }
+    n.candidate.snps <- preprocessed.list$genetic.data.list[[1]]@description$ncol
 
     if (nrow(annotation.data) != n.candidate.snps){
 
