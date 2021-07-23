@@ -59,7 +59,6 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     }
 
     n.candidate.snps <- preprocessed.list$genetic.data.list[[1]]@description$ncol
-
     if (nrow(annotation.data) != n.candidate.snps){
 
         stop("annotation.data does not contain the same number of SNPs as the input data")

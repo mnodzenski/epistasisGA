@@ -83,8 +83,7 @@ GADGETS <- function(cluster.number, results.dir, genetic.data.list, ld.block.vec
                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
 
-    # determine number of candidate snps
-    n.candidate.snps <- genetic.data.list[[1]]@description$ncol
+    ### run rcpp version of GADGETS ##
 
     # give the addresses for the input genetic data objects
     bm.genetic.data.list <- lapply(genetic.data.list, function(x){
@@ -93,11 +92,9 @@ GADGETS <- function(cluster.number, results.dir, genetic.data.list, ld.block.vec
 
     })
     names(bm.genetic.data.list) <- names(genetic.data.list)
-
-    ### run rcpp version of GADGETS ##
-    rcpp.res <- run_GADGETS(bm.genetic.data.list, n.candidate.snps, island.cluster.size, n.migrations,
-                            ld.block.vec, n.chromosomes, chromosome.size, weight.lookup, snp.chisq,
-                            exposure, exposure.levels, exposure.risk.levels, n.different.snps.weight, n.both.one.weight,
+    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
+                            weight.lookup,  snp.chisq, bm.genetic.data.list, exposure.levels, exposure.risk.levels,
+                            exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat)
 

@@ -194,7 +194,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### evolve populations over island clusters ###
 
     # make registry for submitting batch jobs
-    reg.dir <- file.path(registryargs$file.dir)
+    reg.dir <- file.path(registryargs$file.dir, "registry")
     reg.dir <- gsub("//", "/", reg.dir, fixed = TRUE)
     if (!dir.exists(reg.dir)){
 

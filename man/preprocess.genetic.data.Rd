@@ -20,7 +20,7 @@ preprocess.genetic.data(
 \arguments{
 \item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
 Columns are SNP allele counts, and rows are individuals. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). The ordering of the columns must be consistent
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The ordering of the columns must be consistent
 with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
 family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
 \code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).}
@@ -28,20 +28,20 @@ family for a particular SNP, that SNP's genotype should be coded as -9 for the e
 \item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
 \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
 this argument should be the genotypes for the unaffected siblings. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
 families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
 The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
 should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).}
 
 \item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
 Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
 uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
 (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).}
 
 \item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
 Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'short' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
+'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
 uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
 (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).}
 
