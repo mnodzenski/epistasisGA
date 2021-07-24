@@ -318,9 +318,9 @@ IntegerVector sub_rowsums_start(LogicalMatrix in_mat, IntegerVector target_cols)
 }
 
 // [[Rcpp::export]]
-IntegerVector sub_colsumsl(LogicalMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
+IntegerVector sub_colsums(IntegerMatrix in_mat, IntegerVector target_rows, int target_val){
 
-  int n_cols = target_cols.length();
+  int n_cols = in_mat.ncol();
   int n_rows = target_rows.length();
   IntegerVector out_vec(n_cols, 0);
   for (int i = 0; i < n_rows; i++){
@@ -329,8 +329,12 @@ IntegerVector sub_colsumsl(LogicalMatrix in_mat, IntegerVector target_rows, Inte
 
     for (int j = 0; j < n_cols; j ++){
 
-      int this_col = target_cols[j] - 1;
-      out_vec[j] += in_mat(this_row, this_col);
+      int this_val = in_mat(this_row, j);
+      if (this_val == target_val){
+
+        out_vec[j] += 1;
+
+      }
 
     }
   }
@@ -408,9 +412,9 @@ IntegerVector n_neg_high_risk(IntegerMatrix in_mat, IntegerVector target_rows, I
 
 
 // [[Rcpp::export]]
-NumericVector sub_colmeans(LogicalMatrix in_mat, IntegerVector target_rows, IntegerVector target_cols){
+NumericVector sub_colmeans(IntegerMatrix in_mat, IntegerVector target_rows, int target_val){
 
-  IntegerVector target_colsums = sub_colsumsl(in_mat, target_rows, target_cols);
+  IntegerVector target_colsums = sub_colsums(in_mat, target_rows, target_val);
   NumericVector out_vec = as<NumericVector>(target_colsums);
   double n = target_rows.length();
   out_vec = out_vec / n;
@@ -655,8 +659,7 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 // [[Rcpp::export]]
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, LogicalMatrix case_comp_differences_in,
                                   IntegerVector target_snps_in, IntegerMatrix cases_minus_complements_in, LogicalMatrix both_one_mat_in,
-                                  IntegerVector ld_block_vec, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
-                                  LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                                  IntegerVector ld_block_vec, IntegerVector weight_lookup, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                                   double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                                   bool epi_test = false, bool GxE = false) {
 
@@ -736,8 +739,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
         IntegerVector pos_risk_idx = p_tmp[pos_risk];
         IntegerVector pos_cols = target_snps[pos_risk];
         IntegerVector original_pos_cols = target_snps_in[pos_risk];
-        NumericVector prop2_case = sub_colmeans(case2_mat, case_high_inf_rows, original_pos_cols);
-        NumericVector prop2_comp = sub_colmeans(comp2_mat, comp_high_inf_rows, original_pos_cols);
+        NumericVector prop2_case = sub_colmeans(case_genetic_data, case_high_inf_rows, 2);
+        NumericVector prop2_comp = sub_colmeans(complement_genetic_data, comp_high_inf_rows, 2);
 
         for (int i = 0; i < n_pos; i++){
 
@@ -835,8 +838,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
         IntegerVector neg_risk_idx = n_tmp[neg_risk];
         IntegerVector neg_cols = target_snps[neg_risk];
         IntegerVector original_neg_cols = target_snps_in[neg_risk];
-        NumericVector prop0_case = sub_colmeans(case0_mat, case_high_inf_rows, original_neg_cols);
-        NumericVector prop0_comp = sub_colmeans(comp0_mat, comp_high_inf_rows, original_neg_cols);
+        NumericVector prop0_case = sub_colmeans(case_genetic_data, case_high_inf_rows, 0);
+        NumericVector prop0_comp = sub_colmeans(complement_genetic_data, comp_high_inf_rows, 0);
 
         for (int i = 0; i < n_neg; i++){
 
@@ -1109,11 +1112,10 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
                        ListOf<LogicalMatrix> case_comp_differences_list, IntegerVector target_snps,
                        ListOf<IntegerMatrix> cases_minus_complements_list, ListOf<LogicalMatrix> both_one_mat_list,
-                       IntegerVector ld_block_vec, IntegerVector weight_lookup, ListOf<LogicalMatrix> case2_mat_list,
-                       ListOf<LogicalMatrix> case0_mat_list, ListOf<LogicalMatrix> comp2_mat_list,
-                       ListOf<LogicalMatrix> comp0_mat_list, IntegerVector exposure_levels, IntegerVector exposure_risk_levels,
-                       int n_different_snps_weight = 2, int n_both_one_weight = 1,  double recessive_ref_prop = 0.75,
-                       double recode_test_stat = 1.64, bool epi_test = false, bool check_risk = true){
+                       IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector exposure_levels,
+                       IntegerVector exposure_risk_levels, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                       double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false,
+                       bool check_risk = true){
 
   // divide the input data based on exposure and get components for fitness score //
   List score_by_exposure(exposure_levels.length());
@@ -1125,15 +1127,10 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
     LogicalMatrix case_comp_differences = case_comp_differences_list[i];
     IntegerMatrix cases_minus_complements = cases_minus_complements_list[i];
     LogicalMatrix both_one_mat = both_one_mat_list[i];
-    LogicalMatrix case2_mat = case2_mat_list[i];
-    LogicalMatrix case0_mat = case0_mat_list[i];
-    LogicalMatrix comp2_mat = comp2_mat_list[i];
-    LogicalMatrix comp0_mat = comp0_mat_list[i];
     score_by_exposure[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
                                                target_snps, cases_minus_complements, both_one_mat,
-                                               ld_block_vec, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat,
-                                               n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat,
-                                               epi_test, true);
+                                               ld_block_vec, weight_lookup, n_different_snps_weight, n_both_one_weight,
+                                               recessive_ref_prop, recode_test_stat, epi_test, true);
 
   }
 
@@ -1321,19 +1318,18 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
 // [[Rcpp::export]]
 List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, LogicalMatrix case_comp_differences,
                         List chromosome_list, IntegerMatrix cases_minus_complements, LogicalMatrix both_one_mat,
-                        IntegerVector ld_block_vec, IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
-                        LogicalMatrix comp2_mat, LogicalMatrix comp0_mat, int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                        double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false){
+                        IntegerVector ld_block_vec, IntegerVector weight_lookup, int n_different_snps_weight = 2,
+                        int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
+                        bool epi_test = false){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
 
     IntegerVector target_snps = chromosome_list[i];
     scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_differences,
-                                    target_snps, cases_minus_complements, both_one_mat,
-                                    ld_block_vec, weight_lookup, case2_mat, case0_mat, comp2_mat, comp0_mat,
-                                    n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat,
-                                    epi_test);
+                                    target_snps, cases_minus_complements, both_one_mat, ld_block_vec,
+                                    weight_lookup,  n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
+                                    recode_test_stat, epi_test);
 
   }
   return(scores);
@@ -1347,10 +1343,10 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 // [[Rcpp::export]]
 List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List case_comp_differences_list,
                         List chromosome_list, List cases_minus_complements_list, List both_one_mat_list,
-                        IntegerVector ld_block_vec, IntegerVector weight_lookup, List case2_mat_list, List case0_mat_list,
-                        List comp2_mat_list, List comp0_mat_list, IntegerVector exposure_levels, IntegerVector exposure_risk_levels,
-                        int n_different_snps_weight = 2, int n_both_one_weight = 1, double recessive_ref_prop = 0.75,
-                        double recode_test_stat = 1.64, bool epi_test = false, bool check_risk = true){
+                        IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector exposure_levels,
+                        IntegerVector exposure_risk_levels, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                        double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false,
+                        bool check_risk = true){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
@@ -1358,9 +1354,8 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
     IntegerVector target_snps = chromosome_list[i];
     scores[i] = GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list, case_comp_differences_list,
                                   target_snps, cases_minus_complements_list, both_one_mat_list,
-                                  ld_block_vec, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list, comp0_mat_list,
-                                  exposure_levels, exposure_risk_levels, n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
-                                  recode_test_stat, epi_test, check_risk);
+                                  ld_block_vec, weight_lookup, exposure_levels, exposure_risk_levels, n_different_snps_weight,
+                                  n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test, check_risk);
 
   }
   return(scores);
@@ -1376,17 +1371,12 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
 List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
                                 LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat,
                                 IntegerVector ld_block_vec, List chromosome_list,
-                                IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
-                                LogicalMatrix comp2_mat, LogicalMatrix comp0_mat,
+                                IntegerVector weight_lookup,
                                 ListOf<IntegerMatrix> case_genetic_data_list,
                                 ListOf<IntegerMatrix> complement_genetic_data_list,
                                 ListOf<LogicalMatrix> case_comp_different_list,
                                 ListOf<IntegerMatrix> case_minus_comp_list,
                                 ListOf<LogicalMatrix> both_one_mat_list,
-                                ListOf<LogicalMatrix> case2_mat_list,
-                                ListOf<LogicalMatrix> case0_mat_list,
-                                ListOf<LogicalMatrix> comp2_mat_list,
-                                ListOf<LogicalMatrix> comp0_mat_list,
                                 IntegerVector exposure_levels,
                                 IntegerVector exposure_risk_levels,
                                 int n_different_snps_weight = 2,
@@ -1400,9 +1390,8 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
   if (GxE){
 
     chrom_fitness_score_list = GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, case_comp_different_list,
-                                                chromosome_list, case_minus_comp_list, both_one_mat_list,
-                                                ld_block_vec, weight_lookup, case2_mat_list, case0_mat_list, comp2_mat_list,
-                                                comp0_mat_list, exposure_levels, exposure_risk_levels, n_different_snps_weight,
+                                                chromosome_list, case_minus_comp_list, both_one_mat_list, ld_block_vec, weight_lookup,
+                                                exposure_levels, exposure_risk_levels, n_different_snps_weight,
                                                 n_both_one_weight, recessive_ref_prop, recode_test_stat, false, check_risk);
 
     // for storing generation information
@@ -1446,8 +1435,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
 
     chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, case_comp_different,
                                                   chromosome_list, case_minus_comp, both_one_mat, ld_block_vec, weight_lookup,
-                                                  case2_mat, case0_mat, comp2_mat, comp0_mat, n_different_snps_weight,
-                                                  n_both_one_weight, recessive_ref_prop, recode_test_stat, false);
+                                                  n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, false);
 
     // for storing generation information
     int n_chromosomes = chromosome_list.length();
@@ -1551,17 +1539,12 @@ List find_top_chrom(NumericVector fitness_scores, List chromosome_list, int chro
 List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
                          LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat,
                          IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size,
-                         IntegerVector weight_lookup, LogicalMatrix case2_mat, LogicalMatrix case0_mat,
-                         LogicalMatrix comp2_mat, LogicalMatrix comp0_mat,
+                         IntegerVector weight_lookup,
                          ListOf<IntegerMatrix> case_genetic_data_list,
                          ListOf<IntegerMatrix> complement_genetic_data_list,
                          ListOf<LogicalMatrix> case_comp_different_list,
                          ListOf<IntegerMatrix> case_minus_comp_list,
                          ListOf<LogicalMatrix> both_one_mat_list,
-                         ListOf<LogicalMatrix> case2_mat_list,
-                         ListOf<LogicalMatrix> case0_mat_list,
-                         ListOf<LogicalMatrix> comp2_mat_list,
-                         ListOf<LogicalMatrix> comp0_mat_list,
                          IntegerVector exposure_levels,
                          IntegerVector exposure_risk_levels,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
@@ -1604,11 +1587,9 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
   // compute fitness scores for the chromosome list
   List current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different,
                                                          case_minus_comp, both_one_mat, ld_block_vec, chromosome_list,
-                                                         weight_lookup, case2_mat, case0_mat,
-                                                         comp2_mat, comp0_mat, case_genetic_data_list,
+                                                         weight_lookup, case_genetic_data_list,
                                                          complement_genetic_data_list, case_comp_different_list,
-                                                         case_minus_comp_list, both_one_mat_list, case2_mat_list,
-                                                         case0_mat_list, comp2_mat_list, comp0_mat_list,
+                                                         case_minus_comp_list, both_one_mat_list,
                                                          exposure_levels, exposure_risk_levels, n_different_snps_weight,
                                                          n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
                                                          check_risk);
@@ -1641,17 +1622,11 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
 List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
                    LogicalMatrix case_comp_different, IntegerMatrix case_minus_comp, LogicalMatrix both_one_mat,
                    IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
-                   LogicalMatrix case2_mat, LogicalMatrix case0_mat,
-                   LogicalMatrix comp2_mat, LogicalMatrix comp0_mat,
                    ListOf<IntegerMatrix> case_genetic_data_list,
                    ListOf<IntegerMatrix> complement_genetic_data_list,
                    ListOf<LogicalMatrix> case_comp_different_list,
                    ListOf<IntegerMatrix> case_minus_comp_list,
                    ListOf<LogicalMatrix> both_one_mat_list,
-                   ListOf<LogicalMatrix> case2_mat_list,
-                   ListOf<LogicalMatrix> case0_mat_list,
-                   ListOf<LogicalMatrix> comp2_mat_list,
-                   ListOf<LogicalMatrix> comp0_mat_list,
                    IntegerVector exposure_levels,
                    IntegerVector exposure_risk_levels,
                    NumericVector snp_chisq, List population,
@@ -1905,11 +1880,9 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     // 6. Compute new population fitness
     current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, case_comp_different,
                                                       case_minus_comp, both_one_mat, ld_block_vec, chromosome_list,
-                                                      weight_lookup, case2_mat, case0_mat,
-                                                      comp2_mat, comp0_mat, case_genetic_data_list,
+                                                      weight_lookup, case_genetic_data_list,
                                                       complement_genetic_data_list, case_comp_different_list,
-                                                      case_minus_comp_list, both_one_mat_list, case2_mat_list,
-                                                      case0_mat_list, comp2_mat_list, comp0_mat_list,
+                                                      case_minus_comp_list, both_one_mat_list,
                                                       exposure_levels, exposure_risk_levels, n_different_snps_weight,
                                                       n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
                                                       check_risk);
@@ -2209,30 +2182,18 @@ List parse_input_data(List genetic_data_in,
   arma::Mat<int> case_minus_comp = case_genetic_data - comp_genetic_data;
   arma::umat case_comp_different = case_genetic_data != comp_genetic_data;
   arma::umat both_one_mat = case_genetic_data == 1 && comp_genetic_data == 1;
-  arma::umat case2_mat = case_genetic_data == 2;
-  arma::umat case0_mat = case_genetic_data == 0;
-  arma::umat comp2_mat = comp_genetic_data == 2;
-  arma::umat comp0_mat = comp_genetic_data == 0;
 
   IntegerMatrix case_rcpp = wrap(case_genetic_data);
   IntegerMatrix comp_rcpp = wrap(comp_genetic_data);
   IntegerMatrix case_minus_comp_rcpp = wrap(case_minus_comp);
   LogicalMatrix case_comp_different_rcpp = wrap(case_comp_different);
   LogicalMatrix both_one_mat_rcpp = wrap(both_one_mat);
-  LogicalMatrix case2_mat_rcpp = wrap(case2_mat);
-  LogicalMatrix case0_mat_rcpp = wrap(case0_mat);
-  LogicalMatrix comp2_mat_rcpp = wrap(comp2_mat);
-  LogicalMatrix comp0_mat_rcpp = wrap(comp0_mat);
 
   List res = List::create(Named("case") = case_rcpp,
                           Named("comp") = comp_rcpp,
                           Named("case_minus_comp") = case_minus_comp_rcpp,
                           Named("case_comp_different") =  case_comp_different_rcpp,
-                          Named("both_one_mat") = both_one_mat_rcpp,
-                          Named("case2_mat") = case2_mat_rcpp,
-                          Named("case0_mat") = case0_mat_rcpp,
-                          Named("comp2_mat") = comp2_mat_rcpp,
-                          Named("comp0_mat") = comp0_mat_rcpp);
+                          Named("both_one_mat") = both_one_mat_rcpp);
   return(res);
 
 }
@@ -2263,20 +2224,12 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
   LogicalMatrix case_comp_different;
   IntegerMatrix case_minus_comp;
   LogicalMatrix both_one_mat;
-  LogicalMatrix case2_mat;
-  LogicalMatrix case0_mat;
-  LogicalMatrix comp2_mat;
-  LogicalMatrix comp0_mat;
 
   ListOf<IntegerMatrix> case_genetic_data_list;
   ListOf<IntegerMatrix> complement_genetic_data_list;
   ListOf<LogicalMatrix> case_comp_different_list;
   ListOf<IntegerMatrix> case_minus_comp_list;
   ListOf<LogicalMatrix> both_one_mat_list;
-  ListOf<LogicalMatrix> case2_mat_list;
-  ListOf<LogicalMatrix> case0_mat_list;
-  ListOf<LogicalMatrix> comp2_mat_list;
-  ListOf<LogicalMatrix> comp0_mat_list;
   IntegerVector exposure_levels;
   IntegerVector exposure_risk_levels;
   IntegerVector exposure;
@@ -2297,10 +2250,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     LogicalMatrix case_comp_different_tmp = in_data_list["case_comp_different"];
     IntegerMatrix case_minus_comp_tmp = in_data_list["case_minus_comp"];
     LogicalMatrix both_one_mat_tmp = in_data_list["both_one_mat"];
-    LogicalMatrix case2_mat_tmp = in_data_list["case2_mat"];
-    LogicalMatrix case0_mat_tmp = in_data_list["case0_mat"];
-    LogicalMatrix comp2_mat_tmp = in_data_list["comp2_mat"];
-    LogicalMatrix comp0_mat_tmp = in_data_list["comp0_mat"];
 
     // split the input data into a list by exposure
     case_genetic_data_list = split_int_mat(case_genetic_data_tmp, exposure, exposure_levels);
@@ -2308,10 +2257,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     case_comp_different_list = split_logical_mat(case_comp_different_tmp, exposure, exposure_levels);
     case_minus_comp_list = split_int_mat(case_minus_comp_tmp, exposure, exposure_levels);
     both_one_mat_list = split_logical_mat(both_one_mat_tmp, exposure, exposure_levels);
-    case2_mat_list = split_logical_mat(case2_mat_tmp, exposure, exposure_levels);
-    case0_mat_list = split_logical_mat(case0_mat_tmp, exposure, exposure_levels);
-    comp2_mat_list = split_logical_mat(comp2_mat_tmp, exposure, exposure_levels);
-    comp0_mat_list = split_logical_mat(comp0_mat_tmp, exposure, exposure_levels);
     GxE = true;
 
     // decide if risk model needs to be checked
@@ -2331,14 +2276,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     case_minus_comp = case_minus_comp_tmp;
     LogicalMatrix both_one_mat_tmp = in_data_list["both_one_mat"];
     both_one_mat = both_one_mat_tmp;
-    LogicalMatrix case2_mat_tmp = in_data_list["case2_mat"];
-    case2_mat = case2_mat_tmp;
-    LogicalMatrix case0_mat_tmp = in_data_list["case0_mat"];
-    case0_mat = case0_mat_tmp ;
-    LogicalMatrix comp2_mat_tmp = in_data_list["comp2_mat"];
-    comp2_mat = comp2_mat_tmp;
-    LogicalMatrix comp0_mat_tmp = in_data_list["comp0_mat"];
-    comp0_mat = comp0_mat_tmp;
     n_candidate_snps = case_genetic_data.ncol();
 
   }
@@ -2351,12 +2288,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     List island_population_i = initiate_population(n_candidate_snps, case_genetic_data, complement_genetic_data,
                                                    case_comp_different, case_minus_comp, both_one_mat,
                                                    ld_block_vec, n_chromosomes, chromosome_size,
-                                                   weight_lookup, case2_mat, case0_mat,
-                                                   comp2_mat, comp0_mat, case_genetic_data_list,
+                                                   weight_lookup, case_genetic_data_list,
                                                    complement_genetic_data_list, case_comp_different_list,
                                                    case_minus_comp_list, both_one_mat_list,
-                                                   case2_mat_list, case0_mat_list,
-                                                   comp2_mat_list, comp0_mat_list,
                                                    exposure_levels, exposure_risk_levels,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
@@ -2365,12 +2299,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 
     island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                           case_comp_different, case_minus_comp, both_one_mat,
-                                          ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
-                                          case0_mat, comp2_mat, comp0_mat, case_genetic_data_list,
-                                          complement_genetic_data_list, case_comp_different_list,
-                                          case_minus_comp_list, both_one_mat_list,
-                                          case2_mat_list, case0_mat_list,
-                                          comp2_mat_list, comp0_mat_list,
+                                          ld_block_vec, n_chromosomes, chromosome_size, weight_lookup,
+                                          case_genetic_data_list, complement_genetic_data_list,
+                                          case_comp_different_list, case_minus_comp_list, both_one_mat_list,
                                           exposure_levels, exposure_risk_levels, snp_chisq,
                                           island_population_i, n_different_snps_weight, n_both_one_weight,
                                           migration_interval, gen_same_fitness, max_generations,
@@ -2490,12 +2421,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
       List island_population_i = island_populations[i];
       island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                             case_comp_different, case_minus_comp, both_one_mat,
-                                            ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, case2_mat,
-                                            case0_mat, comp2_mat, comp0_mat, case_genetic_data_list,
-                                            complement_genetic_data_list, case_comp_different_list,
-                                            case_minus_comp_list, both_one_mat_list,
-                                            case2_mat_list, case0_mat_list,
-                                            comp2_mat_list, comp0_mat_list,
+                                            ld_block_vec, n_chromosomes, chromosome_size, weight_lookup,
+                                            case_genetic_data_list, complement_genetic_data_list,
+                                            case_comp_different_list, case_minus_comp_list, both_one_mat_list,
                                             exposure_levels, exposure_risk_levels, snp_chisq,
                                             island_population_i, n_different_snps_weight, n_both_one_weight,
                                             migration_interval, gen_same_fitness, max_generations,
@@ -2566,10 +2494,6 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, IntegerVec
   arma::mat case_minus_comp = case_permuted - comp_permuted;
   arma::umat case_comp_different = case_permuted != comp_permuted;
   arma::umat both_one_mat = case_permuted == 1 && comp_permuted == 1;
-  arma::umat case2_mat = case_permuted == 2;
-  arma::umat case0_mat = case_permuted == 0;
-  arma::umat comp2_mat = comp_permuted == 2;
-  arma::umat comp0_mat = comp_permuted == 0;
 
   // convert back to regular rcpp
   IntegerMatrix case_rcpp = wrap(case_permuted);
@@ -2577,17 +2501,13 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, IntegerVec
   IntegerMatrix case_minus_comp_rcpp = wrap(case_minus_comp);
   LogicalMatrix case_comp_different_rcpp = wrap(case_comp_different);
   LogicalMatrix both_one_mat_rcpp = wrap(both_one_mat);
-  LogicalMatrix case2_mat_rcpp = wrap(case2_mat);
-  LogicalMatrix case0_mat_rcpp = wrap(case0_mat);
-  LogicalMatrix comp2_mat_rcpp = wrap(comp2_mat);
-  LogicalMatrix comp0_mat_rcpp = wrap(comp0_mat);
 
   // compute fitness score for permuted dataset
   IntegerVector target_snps = seq_len(case_rcpp.ncol());
   List fitness_list = chrom_fitness_score(case_rcpp, comp_rcpp, case_comp_different_rcpp,
                                           target_snps, case_minus_comp_rcpp, both_one_mat_rcpp,
-                                          target_snps_ld_blocks, weight_lookup, case2_mat_rcpp, case0_mat_rcpp,
-                                          comp2_mat_rcpp, comp0_mat_rcpp, n_different_snps_weight, n_both_one_weight,
+                                          target_snps_ld_blocks, weight_lookup,
+                                          n_different_snps_weight, n_both_one_weight,
                                           recessive_ref_prop, recode_test_stat, false);
 
   double fitness = fitness_list["fitness_score"];
@@ -2679,18 +2599,13 @@ List epistasis_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List gen
   LogicalMatrix case_comp_different = in_data_list["case_comp_different"];
   IntegerMatrix case_minus_comp = in_data_list["case_minus_comp"];
   LogicalMatrix both_one_mat = in_data_list["both_one_mat"];
-  LogicalMatrix case2_mat = in_data_list["case2_mat"];
-  LogicalMatrix case0_mat = in_data_list["case0_mat"];
-  LogicalMatrix comp2_mat = in_data_list["comp2_mat"];
-  LogicalMatrix comp0_mat = in_data_list["comp0_mat"];
 
   // compute fitness score for observed data
   IntegerVector chrom_snps = seq_len(case_genetic_data.ncol());
   List obs_fitness_list = chrom_fitness_score(case_genetic_data, complement_genetic_data, case_comp_different,
                                               chrom_snps, case_minus_comp, both_one_mat,
-                                              target_snps_ld_blocks, weight_lookup, case2_mat, case0_mat,
-                                              comp2_mat, comp0_mat, n_different_snps_weight, n_both_one_weight,
-                                              recessive_ref_prop, recode_test_stat, true);
+                                              target_snps_ld_blocks, weight_lookup, n_different_snps_weight,
+                                              n_both_one_weight, recessive_ref_prop, recode_test_stat, true);
 
   double obs_fitness_score = obs_fitness_list["fitness_score"];
 
@@ -2762,10 +2677,6 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
   LogicalMatrix case_comp_different = in_data_list["case_comp_different"];
   IntegerMatrix case_minus_comp = in_data_list["case_minus_comp"];
   LogicalMatrix both_one_mat = in_data_list["both_one_mat"];
-  LogicalMatrix case2_mat = in_data_list["case2_mat"];
-  LogicalMatrix case0_mat = in_data_list["case0_mat"];
-  LogicalMatrix comp2_mat = in_data_list["comp2_mat"];
-  LogicalMatrix comp0_mat = in_data_list["comp0_mat"];
 
   // split by exposure
   ListOf<IntegerMatrix> case_genetic_data_list = split_int_mat(case_genetic_data, exposure, exposure_levels);
@@ -2773,10 +2684,6 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
   ListOf<LogicalMatrix> case_comp_differences_list = split_logical_mat(case_comp_different, exposure, exposure_levels);
   ListOf<IntegerMatrix> cases_minus_complements_list = split_int_mat(case_minus_comp, exposure, exposure_levels);
   ListOf<LogicalMatrix> both_one_mat_list = split_logical_mat(both_one_mat, exposure, exposure_levels);
-  ListOf<LogicalMatrix> case2_mat_list = split_logical_mat(case2_mat, exposure, exposure_levels);
-  ListOf<LogicalMatrix> case0_mat_list = split_logical_mat(case0_mat, exposure, exposure_levels);
-  ListOf<LogicalMatrix> comp2_mat_list = split_logical_mat(comp2_mat, exposure, exposure_levels);
-  ListOf<LogicalMatrix> comp0_mat_list = split_logical_mat(comp0_mat, exposure, exposure_levels);
 
   int chrom_size = target_snps.length();
   bool check_risk = true;
@@ -2794,9 +2701,7 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
   List obs_fitness_list =  GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list,
                                              case_comp_differences_list, chrom_snps,
                                              cases_minus_complements_list, both_one_mat_list,
-                                             target_snps_ld_blocks, weight_lookup, case2_mat_list,
-                                             case0_mat_list, comp2_mat_list,
-                                             comp0_mat_list, exposure_levels, exposure_risk_levels,
+                                             target_snps_ld_blocks, weight_lookup, exposure_levels, exposure_risk_levels,
                                              n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
                                              recode_test_stat, true, check_risk);
 
@@ -2825,20 +2730,14 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
     ListOf<LogicalMatrix> case_comp_differences_list_perm = split_logical_mat(case_comp_different, exposure_perm, exposure_levels_perm);
     ListOf<IntegerMatrix> cases_minus_complements_list_perm = split_int_mat(case_minus_comp, exposure_perm, exposure_levels_perm);
     ListOf<LogicalMatrix> both_one_mat_list_perm = split_logical_mat(both_one_mat, exposure_perm, exposure_levels_perm);
-    ListOf<LogicalMatrix> case2_mat_list_perm = split_logical_mat(case2_mat, exposure_perm, exposure_levels_perm);
-    ListOf<LogicalMatrix> case0_mat_list_perm = split_logical_mat(case0_mat, exposure_perm, exposure_levels_perm);
-    ListOf<LogicalMatrix> comp2_mat_list_perm = split_logical_mat(comp2_mat, exposure_perm, exposure_levels_perm);
-    ListOf<LogicalMatrix> comp0_mat_list_perm = split_logical_mat(comp0_mat, exposure_perm, exposure_levels_perm);
 
     // compute fitness
     List perm_fitness_list =  GxE_fitness_score(case_genetic_data_list_perm, complement_genetic_data_list_perm,
                                                 case_comp_differences_list_perm, chrom_snps,
                                                 cases_minus_complements_list_perm, both_one_mat_list_perm,
-                                                target_snps_ld_blocks, weight_lookup, case2_mat_list_perm,
-                                                case0_mat_list_perm, comp2_mat_list_perm,
-                                                comp0_mat_list_perm, exposure_levels_perm, exposure_risk_levels_perm,
-                                                n_different_snps_weight, n_both_one_weight,  recessive_ref_prop,
-                                                recode_test_stat, true, check_risk);
+                                                target_snps_ld_blocks, weight_lookup, exposure_levels_perm,
+                                                exposure_risk_levels_perm, n_different_snps_weight, n_both_one_weight,
+                                                recessive_ref_prop, recode_test_stat, true, check_risk);
     double perm_fitness = perm_fitness_list["fitness_score"];
     perm_fitness_scores[i] = perm_fitness;
 
