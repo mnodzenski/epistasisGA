@@ -211,6 +211,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         case.bm <- as.big.matrix(case.genetic.data, type = "integer", backingfile = "case_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "case_bm_desc.rds",
                                  binarydescriptor = TRUE)
+        rm(case.genetic.data)
 
     } else if (class(case.genetic.data) == "big.matrix"){
 
@@ -257,6 +258,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         comp.bm <- as.big.matrix(complement.genetic.data, type = "integer", backingfile = "comp_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "comp_bm_desc.rds",
                                  binarydescriptor = TRUE)
+        rm(complement.genetic.data)
 
     } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
 
@@ -303,6 +305,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         mother.bm <- as.big.matrix(mother.genetic.data, type = "integer", backingfile = "mother_bm",
                                  backingpath = big.matrix.file.path, descriptorfile = "mother_bm_desc.rds",
                                  binarydescriptor = TRUE)
+        rm(mother.genetic.data)
 
     } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
 
@@ -348,6 +351,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         father.bm <- as.big.matrix(father.genetic.data, type = "integer", backingfile = "father_bm",
                                    backingpath = big.matrix.file.path, descriptorfile = "father_bm_desc.rds",
                                    binarydescriptor = TRUE)
+        rm(father.genetic.data)
 
     } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
 
@@ -387,8 +391,8 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     if (is.null(snp.sampling.probs)){
 
         ### use conditional logistic regression to estimate univariate association ###
-        n.fam <- nrow(case.genetic.data)
-        n.candidate.snps <- ncol(case.genetic.data)
+        n.fam <- nrow(case.bm)
+        n.candidate.snps <- ncol(case.bm)
         case.status <- c(rep(1, n.fam), rep(0, n.fam))
         ids <- rep(seq_len(n.fam), 2)
 
