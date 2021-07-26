@@ -7,7 +7,8 @@
 GADGETS(
   cluster.number,
   results.dir,
-  genetic.data.list,
+  case.genetic.data,
+  complement.genetic.data,
   ld.block.vec,
   n.chromosomes,
   chromosome.size,
@@ -34,7 +35,18 @@ GADGETS(
 
 \item{results.dir}{The directory to which island results will be saved.}
 
-\item{genetic.data.list}{The 'genetic.data.list' element of the output list from \code{preprocess.genetic.data}.}
+\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
+Columns are SNP allele counts, and rows are individuals. This object should be of class 'matrix'. The ordering of the columns must be consistent
+with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
+family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
+\code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).}
+
+\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
+\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
+this argument should be the genotypes for the unaffected siblings. This object should be of class 'matrix'. Columns are SNP allele counts, rows are
+families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
+The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
+should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).}
 
 \item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
 we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
@@ -111,8 +123,7 @@ data(mom)
 mom <- as.matrix(mom)
 data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10),
-                               big.matrix.file.path = "tmp_bm")
+                               ld.block.vec = c(10))
 
  chisq.stats <- sqrt(data.list$chisq.stats)
  ld.block.vec <- data.list$ld.block.vec
@@ -123,7 +134,5 @@ GADGETS(cluster.number = 1, results.dir = 'tmp', genetic.data.list = genetic.dat
        ld.block.vec = ld.block.vec, n.chromosomes = 10, chromosome.size = 3,
        snp.chisq = chisq.stats, weight.lookup = weight.lookup, n.migrations = 2,
        migration.interval = 5, gen.same.fitness = 10, max.generations = 10)
-unlink('tmp', recursive = TRUE)
-unlink('tmp_bm', recursive = TRUE)
 
 }

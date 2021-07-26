@@ -51,12 +51,6 @@
 #' an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
 #' analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
 #' examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.
-#' @param big.matrix.file.path  This argument specifies a directory where memory mapped files of class 'big.memory'
-#' will be saved on disk for use in running the GADGETS method, allowing use of genetic datasets that do no
-#' fit into RAM. This argument must be specified if (1) \code{case.genetic.data} or \code{complement.genetic.data}
-#' is not a file backed big.matrix
-#' (see package bigmemory) or (2) \code{mother.genetic.data} and \code{father.genetic.data} are specified
-#' and \code{complement.genetic.data} is not specified.
 #'
 #' @return A list containing the following:
 #' \describe{
@@ -76,9 +70,7 @@
 #' data(mom)
 #' res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                ld.block.vec = c(10),
-#'                                big.matrix.file.path = "tmp")
-#' unlink(tmp)
+#'                                ld.block.vec = c(10))
 #'
 #' @importFrom bigmemory as.big.matrix describe attach.big.matrix
 #' @importFrom data.table data.table rbindlist setorder
@@ -88,7 +80,7 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL, big.matrix.file.path = NULL) {
+    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -194,23 +186,9 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         storage.mode(case.genetic.data) <- "integer"
 
-        if (is.null(big.matrix.file.path)){
-
-            stop("please specify big.matrix.file.path")
-
-        }
-
         # convert to big.matrix
-        if (!dir.exists(big.matrix.file.path)){
-
-            dir.create(big.matrix.file.path, recursive = TRUE)
-
-        }
         dimnames(case.genetic.data) <- NULL
-        big.matrix.file.path <- normalizePath(big.matrix.file.path)
-        case.bm <- as.big.matrix(case.genetic.data, type = "integer", backingfile = "case_bm",
-                                 backingpath = big.matrix.file.path, descriptorfile = "case_bm_desc.rds",
-                                 binarydescriptor = TRUE)
+        case.bm <- as.big.matrix(case.genetic.data, type = "integer")
         rm(case.genetic.data)
 
     } else if (class(case.genetic.data) == "big.matrix"){
@@ -247,17 +225,9 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         storage.mode(complement.genetic.data) <- "integer"
 
-        if (is.null(big.matrix.file.path)){
-
-            stop("please specify big.matrix.file.path")
-
-        }
-
         # convert to big.matrix
         dimnames(complement.genetic.data) <- NULL
-        comp.bm <- as.big.matrix(complement.genetic.data, type = "integer", backingfile = "comp_bm",
-                                 backingpath = big.matrix.file.path, descriptorfile = "comp_bm_desc.rds",
-                                 binarydescriptor = TRUE)
+        comp.bm <- as.big.matrix(complement.genetic.data, type = "integer")
         rm(complement.genetic.data)
 
     } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
@@ -294,17 +264,9 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         storage.mode(mother.genetic.data) <- "integer"
 
-        if (is.null(big.matrix.file.path)){
-
-            stop("please specify big.matrix.file.path")
-
-        }
-
         # convert to big.matrix
         dimnames(mother.genetic.data) <- NULL
-        mother.bm <- as.big.matrix(mother.genetic.data, type = "integer", backingfile = "mother_bm",
-                                 backingpath = big.matrix.file.path, descriptorfile = "mother_bm_desc.rds",
-                                 binarydescriptor = TRUE)
+        mother.bm <- as.big.matrix(mother.genetic.data, type = "integer")
         rm(mother.genetic.data)
 
     } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
@@ -340,17 +302,9 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         }
         storage.mode(father.genetic.data) <- "integer"
 
-        if (is.null(big.matrix.file.path)){
-
-            stop("please specify big.matrix.file.path")
-
-        }
-
         # convert to big.matrix
         dimnames(father.genetic.data) <- NULL
-        father.bm <- as.big.matrix(father.genetic.data, type = "integer", backingfile = "father_bm",
-                                   backingpath = big.matrix.file.path, descriptorfile = "father_bm_desc.rds",
-                                   binarydescriptor = TRUE)
+        father.bm <- as.big.matrix(father.genetic.data, type = "integer")
         rm(father.genetic.data)
 
     } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
@@ -372,18 +326,13 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     }
 
     # make a list of big matrix objects
-    if (!is.null(complement.genetic.data)){
+    if (exists("comp.bm")){
 
         bm.list <- list(case = case.bm, complement = comp.bm)
-        bm.desc.list <- list(case = describe(case.bm),
-                             complement = describe(comp.bm))
 
     } else {
 
         bm.list <- list(case = case.bm, mother = mother.bm, father = father.bm)
-        bm.desc.list <- list(case = describe(case.bm),
-                             mother = describe(mother.bm),
-                             father = describe(father.bm))
 
     }
 
@@ -491,8 +440,17 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
+    if (!"complement" %in% names(bm.list)){
 
-    return(list(genetic.data.list = bm.desc.list, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
+        comp.data <- mother.bm[] + father.bm[] - case.bm[]
+
+    } else {
+
+        comp.data <- comp.bm[]
+
+    }
+
+    return(list(case.genetic.data = case.bm[], complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
         exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels))
 
 }

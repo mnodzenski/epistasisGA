@@ -34,8 +34,7 @@
 #'
 #' pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
 #'                                mother.genetic.data = mom,
-#'                                ld.block.vec = rep(25, 4),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = rep(25, 4))
 #'
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
 #'        results.dir = "tmp", cluster.type = "interactive",
@@ -49,7 +48,6 @@
 #' set.seed(10)
 #' epi.test.res <- epistasis.test(top.snps, pp.list)
 #'
-#' unlink('tmp_bm', recursive = TRUE)
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
 #' @export
@@ -59,17 +57,8 @@ epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
                      recode.test.stat = 1.64) {
 
-    # pick out the required inputs from preprocessed.list
-    ld.block.vec <- preprocessed.list$ld.block.vec
-    bm.genetic.data.list <- lapply(preprocessed.list$genetic.data.list, function(x){
-
-      attach.big.matrix(x)@address
-
-    })
-    names(bm.genetic.data.list) <- names(preprocessed.list$genetic.data.list)
-
     # run the epistasis test via cpp
-    epistasis_test(snp.cols, ld.block.vec, bm.genetic.data.list, n.permutes,
+    epistasis_test(snp.cols, preprocessed.list, n.permutes,
                    n.different.snps.weight, n.both.one.weight, weight.function.int,
                    recessive.ref.prop, recode.test.stat, TRUE)
 

@@ -49,8 +49,7 @@
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' preprocessed.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
 #'                                mother.genetic.data = mom[ , target.snps],
-#'                                ld.block.vec = c(3, 3, 3, 1),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = c(3, 3, 3, 1))
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -78,7 +77,7 @@
 #'                                      preprocessed.list,
 #'                                      pval.thresh = 0.5)
 #'
-#'  lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
+#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom matrixStats colSds
@@ -111,34 +110,20 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
     })
 
     ## compute graphical scores based on epistasis test
-    ld.block.vec <- preprocessed.list$ld.block.vec
-    bm.genetic.data.list <- lapply(preprocessed.list$genetic.data.list, function(x){
-
-        attach.big.matrix(x)@address
-
-    })
-    names(bm.genetic.data.list) <- names(preprocessed.list$genetic.data.list)
-    exposure <- preprocessed.list$exposure
-    exposure.levels <- preprocessed.list$exposure.levels
-    exposure.risk.levels <- preprocessed.list$exposure.risk.levels
-
-
-
-    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, ld.block.vec, genetic.data.list,
+    GxE <- !is.null(preprocessed.list$exposure)
+    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, preprocessed.list,
                                                      n.permutes, n.different.snps.weight, n.both.one.weight,
                                                      weight.function.int, recessive.ref.prop, recode.test.stat,
-                                                     exposure, exposure.levels, exposure.risk.levels){
+                                                     GxE){
 
-        n2log_epistasis_pvals(chrom.size.list, ld.block.vec, genetic.data.list, n.permutes,
+        n2log_epistasis_pvals(chrom.size.list, preprocessed.list, n.permutes,
                               n.different.snps.weight, n.both.one.weight, weight.function.int,
-                              recessive.ref.prop, recode.test.stat, exposure, exposure.levels,
-                              exposure.risk.levels)
+                              recessive.ref.prop, recode.test.stat, GxE)
 
-    }, ld.block.vec = ld.block.vec, genetic.data.list = bm.genetic.data.list, n.permutes = n.permutes,
+    }, preprocessed.list = preprocessed.list, n.permutes = n.permutes,
     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
     weight.function.int = weight.function.int, recessive.ref.prop = recessive.ref.prop,
-    recode.test.stat = recode.test.stat, exposure = exposure, exposure.levels = exposure.levels,
-    exposure.risk.levels = exposure.risk.levels, BPPARAM = bp.param)
+    recode.test.stat = recode.test.stat, GxE = GxE, BPPARAM = bp.param)
 
    ## add those scores to the obs data
    for (i in seq_along(n2log.epi.pvals)){

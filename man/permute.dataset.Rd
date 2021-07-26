@@ -41,11 +41,10 @@ data(mom)
 mom <- as.matrix(mom)
 pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10),
-                               big.matrix.file.path = "tmp_bm")
+                               ld.block.vec = c(10))
 set.seed(15)
 perm.data.list <- permute.dataset(pp.list, "tmp_perm", n.permutations = 1)
 
-unlink(c('tmp_perm', 'tmp_bm'))
+unlink(c('tmp_perm'))
 
 }

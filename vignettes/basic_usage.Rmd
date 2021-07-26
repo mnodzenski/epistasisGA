@@ -73,8 +73,7 @@ Now, we can execute pre-processing:
 ```{r}
 pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    mother.genetic.data = mom,
-                                   ld.block.vec = ld.block.vec, 
-                                   big.matrix.file.path = "bm_tmp")
+                                   ld.block.vec = ld.block.vec)
 ```
 
 For affected/unaffected sibling study, the sibling genetic data should be supplied as the `complement.genetic.data` argument:
@@ -83,8 +82,7 @@ For affected/unaffected sibling study, the sibling genetic data should be suppli
 ### FOR ILLUSTRATION ONLY, DO NOT TRY TO RUN THIS CHUNK ###
 pp.list <- preprocess.genetic.data(affected.sibling.genotypes, 
                                    complement.genetic.data = unaffected.sibling.genotypes,
-                                   ld.block.vec = ld.block.vec, 
-                                    big.matrix.file.path = "bm_tmp")
+                                   ld.block.vec = ld.block.vec)
 
 ```
 
@@ -102,8 +100,7 @@ combined.case <- rbind(case, affected.sibling.genotypes)
 combined.complement <- rbind(complement, unaffected.sibling.genotypes)
 pp.list <- preprocess.genetic.data(case.genetic.data = combined.case, 
                                    complement.genetic.data = combined.complement,
-                                   ld.block.vec = ld.block.vec, 
-                                    big.matrix.file.path = "bm_tmp")
+                                   ld.block.vec = ld.block.vec)
 
 ```
 
@@ -189,9 +186,9 @@ Of course, in real studies we do not know the identity of true risk pathways. We
 
 ```{r}
 set.seed(1400)
-perm.data.list <- permute.dataset(pp.list, 
-                                  permutation.data.file.path = "perm_data",
-                                  n.permutations = 4)
+permute.dataset(pp.list, 
+                permutation.data.file.path = "perm_data",
+                n.permutations = 4)
 
 ```
 
@@ -200,18 +197,16 @@ perm.data.list <- permute.dataset(pp.list,
 Once we have created the permuted datasets, for each permutation, we perform exactly the same sequence of analyses shown above. Users should note this step is by far the most time consuming of the workflow and almost certainly requires access to a computing cluster. However, since this vignette provides only a very small example, we are able to run the analyses locally. We begin by pre-processing the permuted datasets:
 
 ```{r}
-preprocess.lists <- lapply(seq_along(perm.data.list), function(permutation){
+preprocess.lists <- lapply(seq_len(4), function(permutation){
   
-  perm.data.desc <- perm.data.list[[permutation]]
-  perm.data.path <- paste0("bm_tmp_p", permutation)
-  perm.case <- bigmemory::attach.big.matrix(perm.data.desc$case)
-  perm.mom <- bigmemory::attach.big.matrix(perm.data.desc$mother)
-  perm.dad <- bigmemory::attach.big.matrix(perm.data.desc$father)
+  case.perm.file <- file.path("perm_data", paste0("case.permute", permutation, ".rds"))
+  comp.perm.file <- file.path("perm_data", paste0("complement.permute", permutation, ".rds"))
+  case.perm <- readRDS(case.perm.file)
+  comp.perm <- readRDS(comp.perm.file)
   
-  preprocess.genetic.data(perm.case, father.genetic.data = perm.dad,
-                          mother.genetic.data = perm.mom, 
-                          ld.block.vec = ld.block.vec, 
-                          big.matrix.file.path = perm.data.path)
+  preprocess.genetic.data(case.perm, 
+                          complement.genetic.data = comp.perm,
+                          ld.block.vec = ld.block.vec)
 })
 
 ```
@@ -228,7 +223,7 @@ seeds <- 4:7
 #run GADGETS for each permutation and size 
 lapply(chrom.sizes, function(chrom.size){
   
-  lapply(seq_along(preprocess.lists), function(permutation){
+  lapply(seq_len(4), function(permutation){
   
     perm.data.list <- preprocess.lists[[permutation]]
     seed.val <- chrom.size*seeds[permutation]
@@ -248,7 +243,7 @@ lapply(chrom.sizes, function(chrom.size){
 #condense the results 
 perm.res.list <- lapply(chrom.sizes, function(chrom.size){
   
-  lapply(seq_along(preprocess.lists), function(permutation){
+  lapply(seq_len(4), function(permutation){
   
     perm.data.list <- preprocess.lists[[permutation]]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
@@ -462,7 +457,6 @@ perm.res.dirs <- as.vector(outer(paste0("perm", 1:4),
                                  paste0))
 lapply(c("size3_res", "size3_reg", "size4_res", "size4_reg",
          perm.reg.dirs, perm.res.dirs, 
-         "bm_tmp", paste0("bm_tmp_p", 1:4), 
          "perm_data"), unlink, recursive = TRUE)
 
 

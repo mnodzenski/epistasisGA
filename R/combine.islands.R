@@ -21,8 +21,7 @@
 #'
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                ld.block.vec = c(10),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = c(10))
 #'
 #' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
@@ -31,7 +30,6 @@
 #'
 #' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list, 1)
 #'
-#' unlink('tmp_bm', recursive = TRUE)
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
 #'
@@ -58,7 +56,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         stop("annotation.data must contain columns RSID, REF, and ALT.")
     }
 
-    n.candidate.snps <- preprocessed.list$genetic.data.list[[1]]@description$ncol
+    n.candidate.snps <- ncol(preprocessed.list$case.genetic.data)
     if (nrow(annotation.data) != n.candidate.snps){
 
         stop("annotation.data does not contain the same number of SNPs as the input data")

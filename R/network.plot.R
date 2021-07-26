@@ -51,8 +51,7 @@
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
 #'                                mother.genetic.data = mom[ , target.snps],
-#'                                ld.block.vec = c(3, 3, 3, 1),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = c(3, 3, 3, 1))
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
@@ -82,7 +81,7 @@
 #' set.seed(10)
 #' network.plot(graphical.list, pp.list)
 #'
-#'  lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
+#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 #'
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
@@ -154,29 +153,8 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
 
             } else {
 
-                bm.genetic.data.list <- lapply(preprocessed.list$genetic.data.list, function(x){
-
-                    attach.big.matrix(x)
-
-                })
-                names(bm.genetic.data.list) <- names(preprocessed.list$genetic.data.list)
-                if (length(bm.genetic.data.list) == 2){
-
-                    snp1 <- bm.genetic.data.list$complement[ , target.snps[1]]
-                    snp2 <- bm.genetic.data.list$complement[ , target.snps[2]]
-
-                } else {
-
-                    snp1 <- bm.genetic.data.list$mother[ , target.snps[1]] +
-                            bm.genetic.data.list$father[ , target.snps[1]] -
-                            bm.genetic.data.list$case[ , target.snps[1]]
-
-                    snp2 <- bm.genetic.data.list$mother[ , target.snps[2]] +
-                            bm.genetic.data.list$father[ , target.snps[2]] -
-                            bm.genetic.data.list$case[ , target.snps[2]]
-
-                }
-
+                snp1 <- preprocessed.list$complement[ , target.snps[1]]
+                snp2 <- preprocessed.list$complement[ , target.snps[2]]
                 r2 <- cor(snp1, snp2)^2
                 return(r2)
 

@@ -61,8 +61,7 @@ library(Matrix)
 
 pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                mother.genetic.data = mom,
-                               ld.block.vec = rep(25, 4),
-                               big.matrix.file.path = "tmp_bm")
+                               ld.block.vec = rep(25, 4))
 
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
        results.dir = "tmp", cluster.type = "interactive",
@@ -76,7 +75,6 @@ top.snps <- as.vector(t(combined.res[1, 1:3]))
 set.seed(10)
 epi.test.res <- epistasis.test(top.snps, pp.list)
 
-unlink('tmp_bm', recursive = TRUE)
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
 }

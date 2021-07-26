@@ -13,8 +13,7 @@ preprocess.genetic.data(
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
-  categorical.exposures.risk.ranks = NULL,
-  big.matrix.file.path = NULL
+  categorical.exposures.risk.ranks = NULL
 )
 }
 \arguments{
@@ -75,13 +74,6 @@ should specify \code{list("1" = 1, "2" = 2)} for \code{categorical.exposures.ris
 an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
 analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
 examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.}
-
-\item{big.matrix.file.path}{This argument specifies a directory where memory mapped files of class 'big.memory'
-will be saved on disk for use in running the GADGETS method, allowing use of genetic datasets that do no
-fit into RAM. This argument must be specified if (1) \code{case.genetic.data} or \code{complement.genetic.data}
-is not a file backed big.matrix
-(see package bigmemory) or (2) \code{mother.genetic.data} and \code{father.genetic.data} are specified
-and \code{complement.genetic.data} is not specified.}
 }
 \value{
 A list containing the following:
@@ -105,8 +97,6 @@ data(dad)
 data(mom)
 res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10),
-                               big.matrix.file.path = "tmp")
-unlink(tmp)
+                               ld.block.vec = c(10))
 
 }

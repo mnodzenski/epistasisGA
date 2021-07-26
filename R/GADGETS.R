@@ -5,7 +5,17 @@
 #'
 #' @param cluster.number An integer indicating the cluster number (used for labeling the output file).
 #' @param results.dir The directory to which island results will be saved.
-#' @param genetic.data.list The 'genetic.data.list' element of the output list from \code{preprocess.genetic.data}.
+#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
+#' Columns are SNP allele counts, and rows are individuals. This object should be of class 'matrix'. The ordering of the columns must be consistent
+#' with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
+#' family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
+#' \code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).
+#' @param complement.genetic.data A genetic dataset from the complements of the cases, where
+#' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
+#' this argument should be the genotypes for the unaffected siblings. This object should be of class 'matrix'. Columns are SNP allele counts, rows are
+#' families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
+#' The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
+#' should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).
 #' @param ld.block.vec An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
 #' we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
 #' SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
@@ -57,8 +67,7 @@
 #' mom <- as.matrix(mom)
 #' data.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                ld.block.vec = c(10),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = c(10))
 #'
 #'  chisq.stats <- sqrt(data.list$chisq.stats)
 #'  ld.block.vec <- data.list$ld.block.vec
@@ -69,32 +78,21 @@
 #'        ld.block.vec = ld.block.vec, n.chromosomes = 10, chromosome.size = 3,
 #'        snp.chisq = chisq.stats, weight.lookup = weight.lookup, n.migrations = 2,
 #'        migration.interval = 5, gen.same.fitness = 10, max.generations = 10)
-#' unlink('tmp', recursive = TRUE)
-#' unlink('tmp_bm', recursive = TRUE)
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
-#' @importFrom bigmemory attach.big.matrix
 #' @useDynLib epistasisGAGE
 #' @export
 
-GADGETS <- function(cluster.number, results.dir, genetic.data.list, ld.block.vec, n.chromosomes, chromosome.size,
-                   snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
-                   n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
-                   initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                   recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
+GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data, ld.block.vec, n.chromosomes,
+                    chromosome.size, snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
+                    n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
+                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
+                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
 
     ### run rcpp version of GADGETS ##
-
-    # give the addresses for the input genetic data objects
-    bm.genetic.data.list <- lapply(genetic.data.list, function(x){
-
-        attach.big.matrix(x)@address
-
-    })
-    names(bm.genetic.data.list) <- names(genetic.data.list)
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
-                            weight.lookup,  snp.chisq, bm.genetic.data.list, exposure.levels, exposure.risk.levels,
-                            exposure, n.different.snps.weight, n.both.one.weight,
+                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data,
+                            exposure.levels, exposure.risk.levels, exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat)
 

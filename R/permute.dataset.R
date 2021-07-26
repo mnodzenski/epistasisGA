@@ -22,12 +22,11 @@
 #' mom <- as.matrix(mom)
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                ld.block.vec = c(10),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = c(10))
 #' set.seed(15)
 #' perm.data.list <- permute.dataset(pp.list, "tmp_perm", n.permutations = 1)
 #'
-#' unlink(c('tmp_perm', 'tmp_bm'))
+#' unlink(c('tmp_perm'))
 #'
 #' @importFrom BiocParallel bplapply bpparam
 #' @importFrom bigmemory deepcopy attach.big.matrix describe
@@ -43,53 +42,29 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
     permutation.data.file.path <- normalizePath(permutation.data.file.path)
 
     # grab input genetic data
-    genetic.data.list <- preprocessed.list$genetic.data.list
+    case.genetic.data <- preprocessed.list$case.genetic.data
+    complement.genetic.data <- preprocessed.list$complement.genetic.data
 
     ### permute the data ###
-    n.families <- genetic.data.list[[1]]@description$totalRows
+    n.families <- nrow(case.genetic.data)
     if (is.null(preprocessed.list$exposure)){
 
-        permuted.data.list <- bplapply(seq_len(n.permutations), function(permute, n.families, genetic.data.list) {
+        permuted.data.list <- bplapply(seq_len(n.permutations), function(permute, n.families, case.genetic.data,
+                                                                         complement.genetic.data) {
 
             # flip the case/complement status for these families
             flip.these <- seq_len(n.families)[as.logical(rbinom(n.families, 1, 0.5))]
+            case.perm <- case.genetic.data
+            comp.perm <- complement.genetic.data
+            case.perm[flip.these, ] <- complement.genetic.data[flip.these, ]
+            comp.perm[flip.these, ] <- case.genetic.data[flip.these, ]
+            case.out.file <- file.path(permutation.data.file.path, paste0("case.permute", permute, ".rds"))
+            comp.out.file <- file.path(permutation.data.file.path, paste0("complement.permute", permute, ".rds"))
+            saveRDS(case.perm, case.out.file)
+            saveRDS(comp.perm, comp.out.file)
 
-            # make deep copies of the input data
-            trio.study <- length(genetic.data.list) == 3
-            perm.genetic.data <- lapply(genetic.data.list, function(in.data.desc){
-
-                in.data <- attach.big.matrix(in.data.desc)
-                if (trio.study){
-
-                    # don't need a new copy of the parent data
-                    if (grepl("mother|father", in.data.desc@description$filename)){
-
-                        perm.data <- in.data
-
-                    } else {
-
-                        perm.data.name <- paste0(in.data.desc@description$filename, "_p", permute)
-                        desc.data.name <- paste0(perm.data.name, "_desc.rds")
-                        perm.data <- deepcopy(in.data, type = "integer", backingfile = perm.data.name,
-                                              backingpath = permutation.data.file.path,
-                                              descriptorfile = desc.data.name,
-                                              binarydescriptor = TRUE)
-                    }
-
-                }
-
-                return(perm.data)
-
-            })
-            names(perm.genetic.data) <- names(genetic.data.list)
-            perm.data.addresses <- lapply(perm.genetic.data, function(x) x@address)
-            perm.data.desc <- lapply(perm.genetic.data, function(x) describe(x))
-            names(perm.data.desc) <- names(genetic.data.list)
-            names(perm.data.addresses) <- names(genetic.data.list)
-            create_permuted_data(perm.data.addresses, flip.these, trio.study)
-            return(perm.data.desc)
-
-        }, n.families = n.families, genetic.data.list = genetic.data.list, BPPARAM = bp.param)
+        }, n.families = n.families, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
+        BPPARAM = bp.param)
 
     } else {
 
@@ -97,13 +72,11 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
 
             shuffled.order <- sample(seq_along(categorical.exposures), length(categorical.exposures))
             exposure.perm <- categorical.exposures[shuffled.order]
-            out.file <- file.path(permutation.data.file.path, paste0("exposure.p", permute, ".rds"))
+            out.file <- file.path(permutation.data.file.path, paste0("exposure.permute", permute, ".rds"))
             saveRDS(exposure.perm, out.file)
-            return(exposure.perm)
 
         })
 
     }
-    return(permuted.data.list)
 
 }

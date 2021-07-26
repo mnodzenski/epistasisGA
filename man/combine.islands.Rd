@@ -40,8 +40,7 @@ data(snp.annotations)
 
 pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10),
-                               big.matrix.file.path = "tmp_bm")
+                               ld.block.vec = c(10))
 
 run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
@@ -50,7 +49,6 @@ run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp'
 
 combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list, 1)
 
-unlink('tmp_bm', recursive = TRUE)
 unlink('tmp', recursive = TRUE)
 unlink('tmp_reg', recursive = TRUE)
 

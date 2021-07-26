@@ -82,8 +82,7 @@ set.seed(1400)
 target.snps <- c(1:3, 30:32, 60:62, 85)
 preprocessed.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
                                mother.genetic.data = mom[ , target.snps],
-                               ld.block.vec = c(3, 3, 3, 1),
-                               big.matrix.file.path = "tmp_bm")
+                               ld.block.vec = c(3, 3, 3, 1))
 ## run GA for observed data
 
 #observed data chromosome size 2
@@ -111,6 +110,6 @@ run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 2, results.d
                                      preprocessed.list,
                                      pval.thresh = 0.5)
 
- lapply(c('tmp_2', 'tmp_3', 'tmp_bm'), unlink, recursive = TRUE)
+ lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
 
 }

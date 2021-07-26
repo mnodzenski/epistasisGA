@@ -2054,82 +2054,6 @@ bool check_max_gens(List island_populations, int max_generations){
   }
 }
 
-//////////////////////////////////////////////////////////
-// Function to parse the input genetic data and create the
-// required inputs for the GA
-////////////////////////////////////////////////////////////
-
-// [[Rcpp::export]]
-List parse_input_data(List genetic_data_in,
-                      Nullable<IntegerVector> target_snps_in = R_NilValue){
-
-  int n_inputs = genetic_data_in.size();
-  arma::Mat<int> case_genetic_data;
-  arma::Mat<int> comp_genetic_data;
-
-  if (n_inputs == 2){
-
-    SEXP case_sexp = genetic_data_in["case"];
-    XPtr<BigMatrix> case_pointer(case_sexp);
-    case_genetic_data = arma::Mat<int>((int *)case_pointer->matrix(),
-                                       case_pointer->nrow(),
-                                       case_pointer->ncol(),
-                                       false);
-
-    SEXP comp_sexp = genetic_data_in["complement"];
-    XPtr<BigMatrix> comp_pointer(comp_sexp);
-    comp_genetic_data = arma::Mat<int>((int *)comp_pointer->matrix(),
-                                       comp_pointer->nrow(),
-                                       comp_pointer->ncol(),
-                                       false);
-
-  } else if (n_inputs == 3){
-
-    SEXP case_sexp = genetic_data_in["case"];
-    XPtr<BigMatrix> case_pointer(case_sexp);
-    case_genetic_data = arma::Mat<int>((int *)case_pointer->matrix(),
-                                       case_pointer->nrow(),
-                                       case_pointer->ncol(),
-                                       false);
-
-    SEXP mother_sexp = genetic_data_in["mother"];
-    XPtr<BigMatrix> mother_pointer(mother_sexp);
-    arma::Mat<int> mother_genetic_data = arma::Mat<int>((int *)mother_pointer->matrix(),
-                                                        mother_pointer->nrow(),
-                                                        mother_pointer->ncol(),
-                                                        false);
-
-    SEXP father_sexp = genetic_data_in["father"];
-    XPtr<BigMatrix> father_pointer(father_sexp);
-    arma::Mat<int> father_genetic_data = arma::Mat<int>((int *)father_pointer->matrix(),
-                                                        father_pointer->nrow(),
-                                                        father_pointer->ncol(),
-                                                        false);
-
-    // make the comp data
-    comp_genetic_data = mother_genetic_data + father_genetic_data - case_genetic_data;
-
-  }
-
-  // subset if desired
-  if (target_snps_in.isNotNull()){
-
-    arma::uvec target_snps = as<arma::uvec>(target_snps_in) - 1;
-    case_genetic_data = case_genetic_data.cols(target_snps);
-    comp_genetic_data = comp_genetic_data.cols(target_snps);
-
-  }
-
-  IntegerMatrix case_rcpp = wrap(case_genetic_data);
-  IntegerMatrix comp_rcpp = wrap(comp_genetic_data);
-
-  List res = List::create(Named("case") = case_rcpp,
-                          Named("comp") = comp_rcpp);
-  return(res);
-
-}
-
-
 ////////////////////////////////////////////////////////////
 // Function to put all the pieces together and run GADGETS
 ///////////////////////////////////////////////////////////
@@ -2137,7 +2061,7 @@ List parse_input_data(List genetic_data_in,
 // [[Rcpp::export]]
 List run_GADGETS(int island_cluster_size, int n_migrations,
                  IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
-                 NumericVector snp_chisq, List genetic_data_in,
+                 NumericVector snp_chisq, IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in,
                  Nullable<IntegerVector> exposure_levels_in = R_NilValue,
                  Nullable<IntegerVector> exposure_risk_levels_in = R_NilValue,
                  Nullable<IntegerVector> exposure_in = R_NilValue,
@@ -2145,9 +2069,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
                  double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
-
-  // parse the input data
-  List in_data_list = parse_input_data(genetic_data_in);
 
   // instantiate input objects
   IntegerMatrix case_genetic_data;
@@ -2170,8 +2091,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     exposure = exposure_in;
 
     // grab input data
-    IntegerMatrix case_genetic_data_tmp = in_data_list["case"];
-    IntegerMatrix complement_genetic_data_tmp = in_data_list["comp"];
+    IntegerMatrix case_genetic_data_tmp = case_genetic_data_in;
+    IntegerMatrix complement_genetic_data_tmp = complement_genetic_data_in;
 
     // split the input data into a list by exposure
     case_genetic_data_list = split_int_mat(case_genetic_data_tmp, exposure, exposure_levels);
@@ -2185,10 +2106,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 
   } else {
 
-    IntegerMatrix case_genetic_data_tmp = in_data_list["case"];
-    case_genetic_data = case_genetic_data_tmp;
-    IntegerMatrix complement_genetic_data_tmp = in_data_list["comp"];
-    complement_genetic_data = complement_genetic_data_tmp;
+    case_genetic_data = case_genetic_data_in;
+    complement_genetic_data = complement_genetic_data_in;
     n_candidate_snps = case_genetic_data.ncol();
 
   }
@@ -2444,7 +2363,7 @@ NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arm
 /////////////////////////////////
 
 // [[Rcpp::export]]
-List epistasis_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_data_list, int n_permutes = 10000,
+List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 10000,
                     int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
                     double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool warn = true){
 
@@ -2452,6 +2371,7 @@ List epistasis_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List gen
   IntegerVector target_snps = snp_cols;
 
   // grab LD info
+  IntegerVector ld_block_vec = preprocessed_list["ld.block.vec"];
   IntegerVector target_snps_ld_blocks = get_target_snps_ld_blocks(snp_cols, ld_block_vec);
   IntegerVector uni_ld_blocks = unique(target_snps_ld_blocks);
 
@@ -2491,16 +2411,16 @@ List epistasis_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List gen
   }
 
   // get input genetic data
-  List in_data_list = parse_input_data(genetic_data_list, snp_cols);
-  IntegerMatrix case_genetic_data = in_data_list["case"];
-  IntegerMatrix complement_genetic_data = in_data_list["comp"];
+  IntegerMatrix case_genetic_data_in = preprocessed_list["case.genetic.data"];
+  IntegerMatrix complement_genetic_data_in = preprocessed_list["complement.genetic.data"];
+  IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, snp_cols);
+  IntegerMatrix complement_genetic_data = subset_matrix_cols(complement_genetic_data_in, snp_cols);
 
   // compute fitness score for observed data
   IntegerVector chrom_snps = seq_len(case_genetic_data.ncol());
   List obs_fitness_list = chrom_fitness_score(case_genetic_data, complement_genetic_data, chrom_snps,
                                               target_snps_ld_blocks, weight_lookup, n_different_snps_weight,
                                               n_both_one_weight, recessive_ref_prop, recode_test_stat, true);
-
   double obs_fitness_score = obs_fitness_list["fitness_score"];
 
   // restrict to informative families
@@ -2516,6 +2436,7 @@ List epistasis_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List gen
                                                                  uni_ld_blocks, n_families, weight_lookup,
                                                                  n_different_snps_weight, n_both_one_weight,
                                                                  recessive_ref_prop, recode_test_stat);
+
   // compute p-value
   double N = n_permutes + 1;
   double B = sum(perm_fitness_scores >= obs_fitness_score);
@@ -2534,8 +2455,7 @@ List epistasis_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List gen
 ////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_data_list, IntegerVector exposure,
-              IntegerVector exposure_levels, IntegerVector exposure_risk_levels, int n_permutes = 10000,
+List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 10000,
               int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
               double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
 
@@ -2543,7 +2463,13 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
   IntegerVector target_snps = snp_cols;
 
   // grab LD mat
+  IntegerVector ld_block_vec = preprocessed_list["ld.block.vec"];
   IntegerVector target_snps_ld_blocks = get_target_snps_ld_blocks(snp_cols, ld_block_vec);
+
+  // Grab exposure info
+  IntegerVector exposure = preprocessed_list["exposure"];
+  IntegerVector exposure_levels = preprocessed_list["exposure.levels"];
+  IntegerVector exposure_risk_levels = preprocessed_list["exposure.risk.levels"];
 
   // compute weight lookup table
   int max_weight = n_different_snps_weight;
@@ -2565,9 +2491,8 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
   }
 
   // get input genetic data
-  List in_data_list = parse_input_data(genetic_data_list, snp_cols);
-  IntegerMatrix case_genetic_data = in_data_list["case"];
-  IntegerMatrix complement_genetic_data = in_data_list["comp"];
+  IntegerMatrix case_genetic_data = preprocessed_list["case_genetic_data"];
+  IntegerMatrix complement_genetic_data = preprocessed_list["complement_genetic_data"];
 
   // split by exposure
   ListOf<IntegerMatrix> case_genetic_data_list = split_int_mat(case_genetic_data, exposure, exposure_levels);
@@ -2645,30 +2570,12 @@ List GxE_test(IntegerVector snp_cols, IntegerVector ld_block_vec, List genetic_d
 
 
 // [[Rcpp::export]]
-NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, IntegerVector ld_block_vec, List in_data_list,
-                                    int n_permutes = 10000, int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                    int weight_function_int = 2, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                    Nullable<IntegerVector> exposure_in = R_NilValue,
-                                    Nullable<IntegerVector> exposure_levels_in = R_NilValue,
-                                    Nullable<IntegerVector> exposure_risk_levels_in = R_NilValue){
-
+NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List in_data_list, int n_permutes = 10000,
+                                    int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
+                                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool GxE = false){
 
   NumericVector n2log_epi_pvals(chromosome_list.size());
   double N = n_permutes + 1;
-  IntegerVector exposure;
-  IntegerVector exposure_levels;
-  IntegerVector exposure_risk_levels;
-  bool GxE = false;
-
-  if (exposure_in.isNotNull()){
-
-    exposure = exposure_in;
-    exposure_levels = exposure_levels_in;
-    exposure_risk_levels = exposure_risk_levels_in;
-    GxE = true;
-
-  }
-
   for (int i = 0; i < chromosome_list.size(); i++){
 
     IntegerVector chromosome = chromosome_list[i];
@@ -2676,13 +2583,12 @@ NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, Integ
 
     if (GxE){
 
-      perm_res = GxE_test(chromosome, ld_block_vec, in_data_list, exposure, exposure_levels,
-                          exposure_risk_levels, n_permutes, n_different_snps_weight, n_both_one_weight,
+      perm_res = GxE_test(chromosome, in_data_list, n_permutes, n_different_snps_weight, n_both_one_weight,
                           weight_function_int, recessive_ref_prop, recode_test_stat);
 
     } else {
 
-      perm_res = epistasis_test(chromosome, ld_block_vec, in_data_list, n_permutes,
+      perm_res = epistasis_test(chromosome, in_data_list, n_permutes,
                                 n_different_snps_weight, n_both_one_weight, weight_function_int,
                                 recessive_ref_prop, recode_test_stat, false);
 
@@ -2711,90 +2617,7 @@ NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, Integ
 
 }
 
-////////////////////////////////////////////////////
-// This function creates permuted data for
-// use in generating global test results
-/////////////////////////////////////////////////////
 
-// [[Rcpp::export]]
-void create_permuted_data(List genetic_data_list, IntegerVector flip_these_families,
-                          bool trio_study){
-
-  if (trio_study){
-
-    // point to existing matrices
-    SEXP case_sexp = genetic_data_list["case"];
-    XPtr<BigMatrix> case_pointer(case_sexp);
-    MatrixAccessor<int> case_ma(*case_pointer);
-
-    SEXP mom_sexp = genetic_data_list["mother"];
-    XPtr<BigMatrix> mom_pointer(mom_sexp);
-    MatrixAccessor<int> mom_ma(*mom_pointer);
-
-    SEXP dad_sexp = genetic_data_list["father"];
-    XPtr<BigMatrix> dad_pointer(dad_sexp);
-    MatrixAccessor<int> dad_ma(*dad_pointer);
-
-    // note the number of candidate snps
-    int n_candidate_snps = case_ma.ncol();
-
-    // flip case/complement genotypes for a subset of families
-    for (int i = 0; i < flip_these_families.length(); i++){
-
-      int this_family = flip_these_families[i] - 1;
-
-      for (int j = 0; j < n_candidate_snps; j++){
-
-        // deep copies of the original case genotype
-        int case_original_geno = case_ma[j][this_family];
-
-        // not modifying the parental genotypes
-        int mom_geno = mom_ma[j][this_family];
-        int dad_geno = dad_ma[j][this_family];
-
-        // flip case/comp
-        case_ma[j][this_family] = mom_geno + dad_geno - case_original_geno;
-
-      }
-
-    }
-
-  } else {
-
-    // point to existing matrices
-    SEXP case_sexp = genetic_data_list["case"];
-    XPtr<BigMatrix> case_pointer(case_sexp);
-    MatrixAccessor<int> case_ma(*case_pointer);
-
-    SEXP comp_sexp = genetic_data_list["complement"];
-    XPtr<BigMatrix> comp_pointer(comp_sexp);
-    MatrixAccessor<int> comp_ma(*comp_pointer);
-
-    // note the number of candidate snps
-    int n_candidate_snps = case_ma.ncol();
-
-    // flip case/complement genotypes for a subset of families
-    for (int i = 0; i < flip_these_families.length(); i++){
-
-      int this_family = flip_these_families[i] - 1;
-
-      for (int j = 0; j < n_candidate_snps; j++){
-
-        // deep copies of the original genotypes
-        int case_original_geno = case_ma[j][this_family];
-        int comp_original_geno = comp_ma[j][this_family];
-
-        // flip case/comp
-        case_ma[j][this_family] = comp_original_geno;
-        comp_ma[j][this_family] = case_original_geno;
-
-      }
-
-    }
-
-  }
-
-}
 
 
 

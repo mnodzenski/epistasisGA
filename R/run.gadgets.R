@@ -233,12 +233,13 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     # write jobs to registry
     ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
-        genetic.data.list = data.list$genetic.data.list, ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes,
-        chromosome.size = chromosome.size, snp.chisq = snp.chisq, weight.lookup = weight.lookup, island.cluster.size = island.cluster.size,
-        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
-        gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
-        crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,
-        exposure.levels = data.list$exposure.levels, exposure.risk.levels = data.list$exposure.risk.levels, exposure = data.list$exposure),
+        case.genetic.data = data.list$case.genetic.data, complement.genetic.data = data.list$complement.genetic.data,
+        ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
+        weight.lookup = weight.lookup, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
+        n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
+        max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
+        recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
+        exposure.risk.levels = data.list$exposure.risk.levels, exposure = data.list$exposure),
         reg = registry)
 
     # chunk the jobs
