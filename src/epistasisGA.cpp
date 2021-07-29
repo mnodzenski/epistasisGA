@@ -907,7 +907,8 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
     // if there are recessive snps, recompute the weights and associated statistics
     if (recessive_count > 0) {
 
-      both_one_snps = target_snps[!recoded];
+      //both_one_snps = target_snps[!recoded];
+      both_one_snps = target_snps;
 
       //recompute the number of informative families
       List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
@@ -1592,6 +1593,12 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   } else {
 
     generations = generation + migration_interval;
+    if (generations >= max_generations){
+
+      generations = max_generations;
+
+    }
+
 
   }
 
@@ -1639,9 +1646,20 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
     } else {
 
-      n_crosses = rounded_crosses + 1;
+      int n_possible_crosses = possible_crosses.length();
+      if ((rounded_crosses + 1) > n_possible_crosses){
+
+        n_crosses = rounded_crosses - 1;
+
+      } else {
+
+        n_crosses = rounded_crosses + 1;
+
+      }
+
 
     }
+
     IntegerVector cross_these = sample(possible_crosses, n_crosses, false);
     cross_overs[cross_these - 1] = true;
 
@@ -2058,17 +2076,34 @@ bool check_max_gens(List island_populations, int max_generations){
 // Function to put all the pieces together and run GADGETS
 ///////////////////////////////////////////////////////////
 
+
+// int sample_int_vector(IntegerVector sampling_limits_vec){
+//
+//   IntegerVector possible_vals = seq(sampling_limits_vec[0], sampling_limits_vec[1]);
+//   IntegerVector tmp_vec = sample(possible_vals, 1);
+//   int res = tmp_vec[0];
+//   return(res);
+//
+// }
+//
+//
+// double sample_numeric_vector(NumericVector sampling_limits_vec){
+//
+//   NumericVector tmp_vec = Rcpp::runif(1, sampling_limits_vec[0], sampling_limits_vec[1]);
+//   double res = tmp_vec[0];
+//   return(res);
+//
+// }
+
 // [[Rcpp::export]]
 List run_GADGETS(int island_cluster_size, int n_migrations,
                  IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
                  NumericVector snp_chisq, IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in,
-                 Nullable<IntegerVector> exposure_levels_in = R_NilValue,
-                 Nullable<IntegerVector> exposure_risk_levels_in = R_NilValue,
-                 Nullable<IntegerVector> exposure_in = R_NilValue,
-                 int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
-                 int gen_same_fitness = 50, int max_generations = 500,
-                 bool initial_sample_duplicates = false, double crossover_prop = 0.8,
-                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
+                 int migration_interval, int gen_same_fitness, double crossover_prop,
+                 double recessive_ref_prop, Nullable<IntegerVector> exposure_levels_in = R_NilValue,
+                 Nullable<IntegerVector> exposure_risk_levels_in = R_NilValue, Nullable<IntegerVector> exposure_in = R_NilValue,
+                 int n_different_snps_weight = 2, int n_both_one_weight = 1, int max_generations = 500,
+                 bool initial_sample_duplicates = false, double recode_test_stat = 1.64){
 
   // instantiate input objects
   IntegerMatrix case_genetic_data;

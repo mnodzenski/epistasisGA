@@ -106,7 +106,7 @@ pp.list <- preprocess.genetic.data(case.genetic.data = combined.case,
 
 Importantly, X chromosome SNPs can be used as candidates for GADGETS, but some extra attention is required. Specifically, for affected/unaffected sibling data, both siblings in each pair should be of the same biological sex. For case-parent triad data, the 'complement' should be assumed to be of the same sex as the case. As a consequence, analysts must input triad data containing X chromosome SNPs as `case.genetic.data` and `complement.genetic.data`, as shown above, after manually creating the complement data for these triads. To do so, autosomal SNP complements should still be created as above (mother genotype + father genotype - case genotype), but the X chromosome SNP complement genotypes should be the allele transmitted by the father to the case *and* the allele *not* transmitted by the mother to the case. Note this will result in male X chromosome SNP case and complement genotypes being coded as 0 or 1, compared to 0, 1, or 2 for females. If males and females are both contained in the analysis dataset, analysts may wish to double male X chromosome SNP allele counts (male genotype 1 re-coded as 2) because half of the X copies are typically silenced in females. This, however, is not required and analysts can decide on a SNP-by-SNP basis. Alternatively, GADGETS could be run separately for males and females, in which case doubling male X chromosome allele counts would not be necessary. 
 
-The `preprocess.genetic.data` function performs a few disparate tasks that users should note. First, it identifies the minor allele for each input SNP based on the observed frequency in the mothers and fathers (or both siblings in sibling studies). The coding is then flipped for any SNPs where the allele count corresponds to the major allele. The identities of these re-coded SNPs can be found in the output from `preprocess.genetic.data`. Afterwards, any SNPs with minor allele frequency below a given value, 0\% by default (no filtering), are removed. Following SNP filtering, $\chi^2$ statistics for univariable SNP-disease associations are computed for each SNP assuming a log-additive model using the method of conditioning on the set of transmitted and untransmitted genotypes, regardless of phase, described by @Cordell2002. These statistics are used in GADGETS when SNPs are sampled for mutation, with the sampling probability for a given SNP proportional to its $\sqrt{\chi^2}$ value. Alternatively, users can manually specify a vector proportional to SNP sampling probabilities using argument `snp.sampling.probs`. This may be of interest to users who wish to incorporate prior biological or expert knowledge into the algorithm to prioritize sampling a subset of particularly interesting SNPs.     
+The `preprocess.genetic.data` function performs a few disparate tasks, but its main purpose is to compute $\chi^2$ statistics for univariable SNP-disease associations, assuming a log-additive model, using the method of conditioning on the set of transmitted and untransmitted genotypes, regardless of phase, described by @Cordell2002. These statistics are used in GADGETS when SNPs are sampled for mutation, with the sampling probability for a given SNP proportional to its $\sqrt{\chi^2}$ value. Alternatively, users can manually specify a vector proportional to SNP sampling probabilities using argument `snp.sampling.probs`. This may be of interest to users who wish to incorporate prior biological or expert knowledge into the algorithm to prioritize sampling a subset of particularly interesting SNPs.     
 
 ## Run GADGETS 
 
@@ -115,17 +115,19 @@ We now use GADGETS to identify interesting collections of SNPs that appear to be
 Note that `run.gadgets` does not output results directly to the R session, it will instead write results to the directory specified in `results.dir`. Furthermore, as mentioned previously, GADGETS uses a technique known as an 'island model' to identify potentially interesting collections of SNPs. Each 'island' corresponds to a separately initialized population of `n.chromosomes` chromosomes, with each chromosome comprised of `chromosome.size` SNPs and each island randomly assigned to cluster of `island.cluster.size` islands. When GADGETS is run, each island's population evolves independently for intervals of a pre-specified number of generations (controlled by argument `migration.generations`) after which the top `n.migrations` chromosomes from each island 'migrate' to other islands in the cluster. This continues until each island in the cluster converges or the maximum number of generations (argument `generations`) is reached. Island clusters evolve completely independently from one another and, where computational resources permit, in parallel. Results for each island (argument `n.islands`) are written separately to `results.dir`. 
 
 ```{r, message = FALSE}
-run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, 
+run.gadgets(pp.list, n.chromosomes = c(4,5), chromosome.size = 3, 
        results.dir = "size3_res", cluster.type = "interactive",
        registryargs = list(file.dir = "size3_reg", seed = 1300),
-       n.islands = 8, island.cluster.size = 4, 
-       n.migrations = 2)
+       n.islands = 20, island.cluster.size = 4, 
+       n.migrations = c(1, 2), n.different.snps.weight = c(2, 1, 2, 1, 1), 
+       n.both.one.weight = c(1, 0, 1, 0, 0), weight.function.int = c(2, 2, 1, 1, 0))
 
-run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 4, 
+run.gadgets(pp.list, n.chromosomes = c(4,5), chromosome.size = 4, 
        results.dir = "size4_res", cluster.type = "interactive", 
        registryargs = list(file.dir = "size4_reg", seed = 1400),
-       n.islands = 8, island.cluster.size = 4, 
-       n.migrations = 2)
+       n.islands = 20, island.cluster.size = 4, 
+        n.migrations = c(1, 2), n.different.snps.weight = c(2, 1, 2, 1, 1), 
+       n.both.one.weight = c(1, 0, 1, 0, 0), weight.function.int = c(2, 2, 1, 1, 0))
 ```
 
 The population size argument, `n.chromosomes`, does not have a default, so users need to carefully consider how to specify this parameter. In general, run-times are faster with smaller populations, but decreasing the population size may increase the chance of failing to identify true risk pathways. However, this behavior is also depends on parameters `n.islands` and `island.cluster.size`. Broadly, our goal is to maximize the number of distinct subsets of SNPs we examine for evidence of association with disease while maintaining acceptable run-times. Because the package allows island clusters to evolve in parallel, we generally pay less of a run-time price for large island numbers compared to large population sizes. We therefore typically choose to run many islands in small clusters with relatively small population sizes. More concretely, in simulations involving 10,000 input SNPs, we have observed good performance using 1,000 islands in clusters of 4 with populations of 200 chromosomes per island.   
@@ -151,14 +153,20 @@ The `cluster.template` must be properly calibrated to the user's HPC cluster. Pa
 
 Regardless of the chosen `cluster.type`, `run.gadgets` uses the functionality from package `r CRANpkg("batchtools")` to run jobs. In the case of HPC cluster use, with a properly configured `cluster.template`, users simply need to execute `run.gadgets` from an interactive R session and the jobs will be submitted to and executed on the cluster. This approach is well described in section 4.3.2 of the vignette "Introduction to BiocParallel" from package `r Biocpkg("BiocParallel")`. Depending on `cluster.type`, jobs may take minutes to hours to complete. The status of jobs can be queried using the functions in package `r CRANpkg("batchtools")`, most commonly `getStatus`. For users of HPC clusters, commands such as 'squeue' can also be used. For larger numbers of submissions, users may also construct their own automated scripts for checking that jobs have successfully completed. Perhaps the most obvious indication of a job failure is the `results.dir` will not contain `n.islands` distinct sets of results. This is particularly important when running jobs on an HPC cluster, where jobs may fail relatively cryptically. In the case of job failure due to problems with cluster schedulers (jobs fail to launch, node failure, etc.), the failed jobs can be re-run using the exact same `run.gadgets` command. The function will automatically identify the island jobs that still need to be run, and submit only those. This is also true for users running jobs on personal machines, who need to stop computations before all island results are available.
 
+```{r}
+size3.best.weights <- choose.best.weights("size3_res", pp.list)
+size4.best.weights <- choose.best.weights("size4_res", pp.list)
+
+```
+
 Once users have confirmed `run.gadgets` has completed and run properly, the sets of results across islands should be condensed using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`. 
 
 ```{r}
 data(snp.annotations)
 size3.combined.res <- combine.islands("size3_res", snp.annotations,
-                                      pp.list, 2)
+                                      pp.list, 1)
 size4.combined.res <- combine.islands("size4_res", snp.annotations,
-                                      pp.list, 2)
+                                      pp.list, 1)
 
 ```
 
@@ -223,18 +231,38 @@ seeds <- 4:7
 #run GADGETS for each permutation and size 
 lapply(chrom.sizes, function(chrom.size){
   
+  if (chrom.size == 3){
+    
+    best.weights <- size3.best.weights$family.weights
+    n.dif.weight <- best.weights["n.different.snps.weight"]
+    n.both.one.weight <- best.weights["n.both.one.weight"]
+    weight.int <- best.weights["weight.function.int"]
+    recessive.prop <- size3.best.weights$sampled.params$recessive.ref.prop
+    
+  } else {
+    
+    best.weights <- size4.best.weights$family.weights
+    n.dif.weight <- best.weights["n.different.snps.weight"]
+    n.both.one.weight <- best.weights["n.both.one.weight"]
+    weight.int <- best.weights["weight.function.int"]
+    
+  }
+  
   lapply(seq_len(4), function(permutation){
   
     perm.data.list <- preprocess.lists[[permutation]]
     seed.val <- chrom.size*seeds[permutation]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
     reg.dir <- paste0("perm", permutation, "_size", chrom.size, "_reg")
-    run.gadgets(perm.data.list, n.chromosomes = 5, 
+    run.gadgets(perm.data.list, n.chromosomes = c(4, 5), 
            chromosome.size = chrom.size,
            results.dir = res.dir, cluster.type = "interactive", 
            registryargs = list(file.dir = reg.dir, seed = seed.val),
-           n.islands = 8, island.cluster.size = 4,
-           n.migrations = 2)
+           n.islands = 20, island.cluster.size = 4,
+           n.migrations = c(1, 2), 
+           n.different.snps.weight = n.dif.weight, 
+           n.both.one.weight = n.both.one.weight, 
+           weight.function.int = weight.int)
     
   })
   

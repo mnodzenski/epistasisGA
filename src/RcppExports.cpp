@@ -541,8 +541,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_GADGETS
-List run_GADGETS(int island_cluster_size, int n_migrations, IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, NumericVector snp_chisq, IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, Nullable<IntegerVector> exposure_levels_in, Nullable<IntegerVector> exposure_risk_levels_in, Nullable<IntegerVector> exposure_in, int n_different_snps_weight, int n_both_one_weight, int migration_interval, int gen_same_fitness, int max_generations, bool initial_sample_duplicates, double crossover_prop, double recessive_ref_prop, double recode_test_stat);
-RcppExport SEXP _epistasisGAGE_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP ld_block_vecSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP snp_chisqSEXP, SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP exposure_levels_inSEXP, SEXP exposure_risk_levels_inSEXP, SEXP exposure_inSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP) {
+List run_GADGETS(int island_cluster_size, int n_migrations, IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup, NumericVector snp_chisq, IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, int migration_interval, int gen_same_fitness, double crossover_prop, double recessive_ref_prop, Nullable<IntegerVector> exposure_levels_in, Nullable<IntegerVector> exposure_risk_levels_in, Nullable<IntegerVector> exposure_in, int n_different_snps_weight, int n_both_one_weight, int max_generations, bool initial_sample_duplicates, double recode_test_stat);
+RcppExport SEXP _epistasisGAGE_run_GADGETS(SEXP island_cluster_sizeSEXP, SEXP n_migrationsSEXP, SEXP ld_block_vecSEXP, SEXP n_chromosomesSEXP, SEXP chromosome_sizeSEXP, SEXP weight_lookupSEXP, SEXP snp_chisqSEXP, SEXP case_genetic_data_inSEXP, SEXP complement_genetic_data_inSEXP, SEXP migration_intervalSEXP, SEXP gen_same_fitnessSEXP, SEXP crossover_propSEXP, SEXP recessive_ref_propSEXP, SEXP exposure_levels_inSEXP, SEXP exposure_risk_levels_inSEXP, SEXP exposure_inSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP max_generationsSEXP, SEXP initial_sample_duplicatesSEXP, SEXP recode_test_statSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -555,19 +555,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type snp_chisq(snp_chisqSEXP);
     Rcpp::traits::input_parameter< IntegerMatrix >::type case_genetic_data_in(case_genetic_data_inSEXP);
     Rcpp::traits::input_parameter< IntegerMatrix >::type complement_genetic_data_in(complement_genetic_data_inSEXP);
+    Rcpp::traits::input_parameter< int >::type migration_interval(migration_intervalSEXP);
+    Rcpp::traits::input_parameter< int >::type gen_same_fitness(gen_same_fitnessSEXP);
+    Rcpp::traits::input_parameter< double >::type crossover_prop(crossover_propSEXP);
+    Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type exposure_levels_in(exposure_levels_inSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type exposure_risk_levels_in(exposure_risk_levels_inSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type exposure_in(exposure_inSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
-    Rcpp::traits::input_parameter< int >::type migration_interval(migration_intervalSEXP);
-    Rcpp::traits::input_parameter< int >::type gen_same_fitness(gen_same_fitnessSEXP);
     Rcpp::traits::input_parameter< int >::type max_generations(max_generationsSEXP);
     Rcpp::traits::input_parameter< bool >::type initial_sample_duplicates(initial_sample_duplicatesSEXP);
-    Rcpp::traits::input_parameter< double >::type crossover_prop(crossover_propSEXP);
-    Rcpp::traits::input_parameter< double >::type recessive_ref_prop(recessive_ref_propSEXP);
     Rcpp::traits::input_parameter< double >::type recode_test_stat(recode_test_statSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_GADGETS(island_cluster_size, n_migrations, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, case_genetic_data_in, complement_genetic_data_in, exposure_levels_in, exposure_risk_levels_in, exposure_in, n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness, max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat));
+    rcpp_result_gen = Rcpp::wrap(run_GADGETS(island_cluster_size, n_migrations, ld_block_vec, n_chromosomes, chromosome_size, weight_lookup, snp_chisq, case_genetic_data_in, complement_genetic_data_in, migration_interval, gen_same_fitness, crossover_prop, recessive_ref_prop, exposure_levels_in, exposure_risk_levels_in, exposure_in, n_different_snps_weight, n_both_one_weight, max_generations, initial_sample_duplicates, recode_test_stat));
     return rcpp_result_gen;
 END_RCPP
 }

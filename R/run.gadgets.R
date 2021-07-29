@@ -85,37 +85,36 @@
 
 run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, cluster.type, registryargs = list(file.dir = NA,
     seed = 1500), resources = list(), cluster.template = NULL, n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
-    n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
-    generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
-    snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
+    n.chunks = NULL, n.different.snps.weight = c(2, 2, 1, 1, 1), n.both.one.weight = c(1, 1, 0, 0, 0), weight.function.int = c(2, 1, 2, 1, 0),
+    generations = 500, migration.generations = c(40, 60), gen.same.fitness = c(40, 60), initial.sample.duplicates = FALSE,
+    snp.sampling.type = "chisq", crossover.prop = c(0.5, 0.9), n.islands = 1000, island.cluster.size = 4, n.migrations = c(10, 30),
+    recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
-    if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
+    if (island.cluster.size > 1 & max(migration.generations) >= generations) {
 
-        stop("migration.generations must be less than generations. Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
+        stop("max(migration.generations) must be less than generations. Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
 
     }
-    if (n.migrations == 0 & island.cluster.size != 1) {
+    if (length(n.migrations) == 1){
+
+        if (n.migrations == 0 & island.cluster.size != 1) {
+
+            stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
+
+        }
+
+    }
+
+    if (any(n.migrations != 0) & island.cluster.size == 1) {
 
         stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
 
     }
 
-    if (n.migrations != 0 & island.cluster.size == 1) {
+    if (min(migration.generations) == 1) {
 
-        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
-
-    }
-
-    if (migration.generations == 1) {
-
-        stop("migration.generations must be greater than 1")
-
-    }
-    if (island.cluster.size > 1 & generations%%migration.generations != 0) {
-
-        stop("generations must be an integer multiple of migration.generations.")
+        stop("min(migration.generations) must be greater than 1")
 
     }
 
@@ -127,29 +126,61 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     ### make sure number of migrations is specified properly ###
-    if (island.cluster.size > 1 & n.migrations >= n.chromosomes) {
+    if (island.cluster.size > 1 & max(n.migrations) >= min(n.chromosomes)) {
 
-        stop("n.migrations must be less than n.chromosomes")
+        stop("max(n.migrations) must be less than min(n.chromosomes)")
 
     }
 
     ### make sure the weight function integer is actually an integer ###
-    if (as.integer(weight.function.int) != weight.function.int){
+    if (any(as.integer(weight.function.int) != weight.function.int)){
 
-        stop("weight.function.int must be an integer")
+        stop("weight.function.int must contain integers")
 
     }
 
-    ### if no migrations, correctly set the migration.interval
-    if (n.migrations == 0){
+    ### make sure number of cluster are divisible by the number of weight function possibilities ###
+    if ((n.islands/island.cluster.size) %% length(n.different.snps.weight) != 0){
 
-        migration.generations <- generations
+        stop("(n.islands/island.cluster.size) must be divisible by length(n.different.snps.weight)")
+
     }
 
     ### compute the weight lookup table ###
-    max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
-    weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
-    storage.mode(weight.lookup) <- "integer"
+    weight.lookup.list <- lapply(seq_along(n.different.snps.weight), function(idx){
+
+        n.diff <- n.different.snps.weight[idx]
+        n.both.one <- n.both.one.weight[idx]
+        weight.int <- weight.function.int[idx]
+        max.sum <- max(n.diff, n.both.one)*chromosome.size
+
+        if (weight.int == 0){
+
+            weight.lookup <- rep(1, max.sum)
+
+        } else if (weight.int == 1){
+
+            weight.lookup <- seq_len(max.sum)
+
+        } else {
+
+            weight.lookup <- vapply(seq_len(max.sum), function(x) weight.int^x, 1)
+
+        }
+
+        storage.mode(weight.lookup) <- "integer"
+        return(weight.lookup)
+
+    })
+
+    ### divide up the input weight functions for use in batch job submission ###
+    clusters <- seq(1, n.islands, by = island.cluster.size)
+    n.clusters <- length(clusters)
+    n.weight.lookups <- length(weight.lookup.list)
+    weight.lookup.batch <- rep(weight.lookup.list, each = n.clusters/n.weight.lookups)
+    n.both.one.batch <- rep(n.both.one.weight, each = n.clusters/n.weight.lookups)
+    n.diff.snps.batch <- rep(n.different.snps.weight, each = n.clusters/n.weight.lookups)
+    weight.function.int.batch <- rep(weight.function.int, each = n.clusters/n.weight.lookups)
 
     ### set sampling type for mutation snps ###
     if (snp.sampling.type == "chisq") {
@@ -167,8 +198,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     ### determine if islands have already been evolved
-    clusters <- seq(1, n.islands, by = island.cluster.size)
-    n.clusters <- length(clusters)
     cluster.ids <- seq_len(n.clusters)
     clusters.to.run <- cluster.ids
     if (!dir.exists(results.dir)) {
@@ -194,27 +223,23 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### evolve populations over island clusters ###
 
     # make registry for submitting batch jobs
-    reg.dir <- file.path(registryargs$file.dir, "registry")
-    reg.dir <- gsub("//", "/", reg.dir, fixed = TRUE)
-    if (!dir.exists(reg.dir)){
+    reg.dir <- file.path(registryargs$file.dir)
+    if (dir.exists(reg.dir)){
 
-        registry <- do.call(makeRegistry, registryargs)
-        registry$cluster.functions <- switch(cluster.type, interactive = batchtools::makeClusterFunctionsInteractive(),
-                                             socket = batchtools::makeClusterFunctionsSocket(n.workers),
-                                             multicore = batchtools::makeClusterFunctionsMulticore(n.workers),
-                                             sge = batchtools::makeClusterFunctionsSGE(template = cluster.template),
-                                             slurm = batchtools::makeClusterFunctionsSlurm(template = cluster.template),
-                                             lsf = batchtools::makeClusterFunctionsLSF(template = cluster.template),
-                                             openlava = batchtools::makeClusterFunctionsOpenLava(template = cluster.template),
-                                             torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
-                                             default = stop("unsupported cluster type '", cluster, "'"))
-    } else {
-
-        warning(paste("Registry already exists, loading from", reg.dir))
-        registry <- loadRegistry(reg.dir, writeable = TRUE)
-        clearRegistry(reg = registry)
+        unlink(reg.dir, recursive = TRUE)
 
     }
+
+    registry <- do.call(makeRegistry, registryargs)
+    registry$cluster.functions <- switch(cluster.type, interactive = batchtools::makeClusterFunctionsInteractive(),
+                                         socket = batchtools::makeClusterFunctionsSocket(n.workers),
+                                         multicore = batchtools::makeClusterFunctionsMulticore(n.workers),
+                                         sge = batchtools::makeClusterFunctionsSGE(template = cluster.template),
+                                         slurm = batchtools::makeClusterFunctionsSlurm(template = cluster.template),
+                                         lsf = batchtools::makeClusterFunctionsLSF(template = cluster.template),
+                                         openlava = batchtools::makeClusterFunctionsOpenLava(template = cluster.template),
+                                         torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
+                                         default = stop("unsupported cluster type '", cluster.type, "'"))
 
     # specify number of chunks
     if (is.null(n.chunks)) {
@@ -232,15 +257,18 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     # write jobs to registry
-    ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
-        case.genetic.data = data.list$case.genetic.data, complement.genetic.data = data.list$complement.genetic.data,
-        ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
-        weight.lookup = weight.lookup, island.cluster.size = island.cluster.size, n.different.snps.weight = n.different.snps.weight,
-        n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
-        max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
-        recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
-        exposure.risk.levels = data.list$exposure.risk.levels, exposure = data.list$exposure),
-        reg = registry)
+    ids <- batchMap(GADGETS, cluster.number = cluster.ids, weight.lookup = weight.lookup.batch,
+                    n.different.snps.weight = n.diff.snps.batch, n.both.one.weight = n.both.one.batch,
+                    weight.function.int =  weight.function.int.batch,
+                    more.args = list(results.dir = results.dir, n.migrations = n.migrations, cluster.type = cluster.type, registryargs = registryargs,
+                                     resources = resources, cluster.template = cluster.template, n.workers = n.workers, n.chunks = n.chunks,
+                                     snp.sampling.type = snp.sampling.type, n.islands = n.islands, case.genetic.data = data.list$case.genetic.data,
+                                     complement.genetic.data = data.list$complement.genetic.data, ld.block.vec = data.list$ld.block.vec,
+                                     n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
+                                     island.cluster.size = island.cluster.size, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
+                                     max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
+                                     recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
+                                     exposure.risk.levels = data.list$exposure.risk.levels, exposure = data.list$exposure), reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]
