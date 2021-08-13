@@ -15,18 +15,18 @@ run.gadgets(
   cluster.template = NULL,
   n.workers = min(detectCores() - 2, n.islands/island.cluster.size),
   n.chunks = NULL,
-  n.different.snps.weight = c(2, 2, 1, 1, 1),
-  n.both.one.weight = c(1, 1, 0, 0, 0),
-  weight.function.int = c(2, 1, 2, 1, 0),
+  n.different.snps.weight = 2,
+  n.both.one.weight = 1,
+  weight.function.int = 2,
   generations = 500,
-  migration.generations = c(40, 60),
-  gen.same.fitness = c(40, 60),
+  gen.same.fitness = 50,
   initial.sample.duplicates = FALSE,
   snp.sampling.type = "chisq",
-  crossover.prop = c(0.5, 0.9),
+  crossover.prop = 0.8,
   n.islands = 1000,
   island.cluster.size = 4,
-  n.migrations = c(10, 30),
+  migration.generations = 50,
+  n.migrations = 20,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64
 )
@@ -72,9 +72,6 @@ of the number of different SNPs and SNPs both equal to one as an argument, denot
 
 \item{generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
 
-\item{migration.generations}{An integer equal to the number of generations between migrations among islands of a distinct cluster.
-Argument \code{generations} must be an integer multiple of this value. Defaults to 50.}
-
 \item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.}
 
 \item{initial.sample.duplicates}{A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
@@ -94,6 +91,9 @@ The remaining proportion will be mutated. Defaults to 0.8.}
 More specifically, under the default settings, the 1000 \code{n.islands} are split into 250 distinct clusters each containing 4 islands (\code{island.cluster.size}).
 Within a cluster, migrations of top chromosomes from one cluster island to another are periodically permitted (controlled by \code{migration.generations}), and distinct
 clusters evolve completely independently.}
+
+\item{migration.generations}{An integer equal to the number of generations between migrations among islands of a distinct cluster.
+Argument \code{generations} must be an integer multiple of this value. Defaults to 50.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
 

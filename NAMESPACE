@@ -3,7 +3,6 @@
 export(GADGETS)
 export(GxE.fitness.score)
 export(GxE.test)
-export(choose.best.weights)
 export(chrom.fitness.score)
 export(combine.islands)
 export(compute.graphical.scores)

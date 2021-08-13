@@ -83,72 +83,18 @@
 #' @useDynLib epistasisGAGE
 #' @export
 
-GADGETS <- function(cluster.number, cluster.type, registryargs, resources, cluster.template, n.workers, n.chunks, snp.sampling.type,
-                    n.islands, results.dir, case.genetic.data, complement.genetic.data, ld.block.vec, n.chromosomes,
-                    chromosome.size, snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = c(10, 30), n.different.snps.weight = 2,
-                    n.both.one.weight = 1, weight.function.int = 2, migration.interval = c(40, 60), gen.same.fitness = c(40, 60),
-                    max.generations = 500, initial.sample.duplicates = FALSE, crossover.prop = c(0.1, 0.9), recessive.ref.prop = c(0.6, 0.9),
+GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data, ld.block.vec, n.chromosomes,
+                    chromosome.size, snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
+                    n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
+                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                     recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
 
-    ### sample GA tuning parameters ###
-    if (length(n.migrations) == 2){
-
-        n.migrations.int <- sample(seq(n.migrations[1], n.migrations[2]), 1)
-
-    } else {
-
-        n.migrations.int <- n.migrations
-
-    }
-    if (length(n.chromosomes) == 2){
-
-        n.chromosomes.int <- sample(seq(n.chromosomes[1], n.chromosomes[2]), 1)
-
-    } else {
-
-        n.chromosomes.int <- n.chromosomes
-
-    }
-    if (length(migration.interval) == 2){
-
-        migration.interval.int <- sample(seq(migration.interval[1], migration.interval[2]), 1)
-
-    } else {
-
-        migration.interval.int <- migration.interval
-
-    }
-    if (length(gen.same.fitness) == 2){
-
-        gen.same.fitness.int <- sample(seq(gen.same.fitness[1], gen.same.fitness[2]), 1)
-
-    } else {
-
-        gen.same.fitness.int <- gen.same.fitness
-
-    }
-    if (length(crossover.prop) == 2){
-
-        crossover.prop.double <- runif(1, crossover.prop[1], crossover.prop[2])
-
-    } else {
-
-        crossover.prop.double <- crossover.prop
-
-    }
-
-    ### if no migrations, correctly set the migration.interval
-    if (n.migrations.int == 0){
-
-        migration.interval.int <- max.generations
-    }
-
-    ### run rcpp version of GADGETS ###
-    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations.int, ld.block.vec, n.chromosomes.int, chromosome.size,
-                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, migration.interval.int,
-                            gen.same.fitness.int, crossover.prop.double, recessive.ref.prop, exposure.levels, exposure.risk.levels,
-                            exposure, n.different.snps.weight, n.both.one.weight, max.generations, initial.sample.duplicates,
-                            recode.test.stat)
+    ### run rcpp version of GADGETS ##
+    rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
+                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data,
+                            exposure.levels, exposure.risk.levels, exposure, n.different.snps.weight, n.both.one.weight,
+                            migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
+                            crossover.prop, recessive.ref.prop, recode.test.stat)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
@@ -229,29 +175,9 @@ GADGETS <- function(cluster.number, cluster.type, registryargs, resources, clust
 
         }
 
-        # note the weighting scheme
-        family.weight.info <- c(n.different.snps.weight, n.both.one.weight, weight.function.int)
-        names(family.weight.info) <- c("n.different.snps.weight", "n.both.one.weight", "weight.function.int")
-
-        # note the sampled params for the island
-        sampled.params <- list(n.migrations = n.migrations.int, n.chromosomes = n.chromosomes.int,
-                              migration.interval = migration.interval.int, gen.same.fitness = gen.same.fitness.int,
-                              crossover.prop = crossover.prop.double)
-
-        # note other param info
-        additional.param.info <- list(results.dir = results.dir, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size,
-                                      island.cluster.size = island.cluster.size, n.migrations = n.migrations,
-                                      migration.interval = migration.interval, gen.same.fitness = gen.same.fitness,
-                                      max.generations = max.generations, initial.sample.duplicates = initial.sample.duplicates,
-                                      crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop,
-                                      recode.test.stat = recode.test.stat, cluster.type = cluster.type, registryargs = registryargs,
-                                      resources = resources, cluster.template = cluster.template, n.workers = n.workers,
-                                      n.chunks = n.chunks, snp.sampling.type = snp.sampling.type, n.islands = n.islands)
 
         #output list
-        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations,
-                           family.weight.info = family.weight.info, sampled.params = sampled.params,
-                           additional.param.info = additional.param.info)
+        final.list <- list(top.chromosome.results = final.result, n.generations = n.generations)
 
         #write to file
         out.file <- file.path(results.dir, paste0("cluster", cluster.number, ".island", island.number,".rds"))
