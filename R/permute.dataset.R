@@ -68,10 +68,11 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
 
     } else {
 
+        exposure <- preprocessed.list$exposure
         permuted.data.list <- lapply(seq_len(n.permutations), function(permute) {
 
-            shuffled.order <- sample(seq_along(categorical.exposures), length(categorical.exposures))
-            exposure.perm <- categorical.exposures[shuffled.order]
+            shuffled.order <- sample(seq_along(exposure), length(exposure))
+            exposure.perm <- exposure[shuffled.order]
             out.file <- file.path(permutation.data.file.path, paste0("exposure.permute", permute, ".rds"))
             saveRDS(exposure.perm, out.file)
 
