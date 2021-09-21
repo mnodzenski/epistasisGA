@@ -5,26 +5,21 @@
 #' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
 #' Columns are SNP allele counts, and rows are individuals. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
 #' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The ordering of the columns must be consistent
-#' with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular
-#' family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family, (\code{case.genetic.data} and
-#' \code{father.genetic.data}/\code{mother.genetic.data} or \code{case.genetic.data} and \code{complement.genetic.data}).
+#' with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty.
 #' @param complement.genetic.data A genetic dataset from the complements of the cases, where
 #' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
 #' this argument should be the genotypes for the unaffected siblings. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
 #' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
 #' families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
-#' The genotypes cannot be dosages imputed with uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype
-#' should be coded as -9 for the entire family (\code{case.genetic.data} and \code{complement.genetic.data}).
+#' The genotypes cannot be dosages imputed with uncertainty.
 #' @param father.genetic.data The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
 #' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
-#' uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
-#' (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).
+#' uncertainty.
 #' @param mother.genetic.data The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
 #' Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
 #' 'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
-#' uncertainty. If any data are missing for a particular family for a particular SNP, that SNP's genotype should be coded as -9 for the entire family,
-#' (\code{case.genetic.data} and \code{father.genetic.data}/\code{mother.genetic.data}).
+#' uncertainty.
 #' @param ld.block.vec An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
 #' we specify \code{ld.block.vec <- c(25, 50, 25)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
 #' SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
@@ -450,7 +445,17 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    return(list(case.genetic.data = case.bm[], complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
+    case.data <- case.bm[]
+
+    # set missing to -9
+    if (any(is.na(case.data)) | any(is.na(comp.data))){
+
+        case.data[is.na(case.data) | is.na(comp.data)] <- -9
+        comp.data[is.na(case.data) | is.na(comp.data)] <- -9
+
+    }
+
+    return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
         exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels))
 
 }
