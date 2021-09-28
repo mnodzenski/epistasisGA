@@ -1223,11 +1223,15 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
           arma::mat sigma1 = exp1_list["sigma"];
           double w2 = exp2_list["w"];
           arma::mat sigma2 = exp2_list["sigma"];
-          arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
+          arma::mat sigma_hat = (1/w1)*sigma1 + (1/w2)*sigma2;
+          //arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
 
           // two sample modified hotelling stat //
-          double weight_scalar = (w1*w2)/(w1 + w2);
-          s = (weight_scalar / 1000) * as_scalar(xbar_diff * arma::pinv(sigma_hat) * xbar_diff.t());
+          //double weight_scalar = (w1*w2)/(w1 + w2);
+          //s = (weight_scalar / 1000) * as_scalar(xbar_diff * arma::pinv(sigma_hat) * xbar_diff.t());
+          arma::mat sigma_hat_inv = arma::pinv(sigma_hat);
+          s = as_scalar(xbar_diff * sigma_hat_inv * xbar_diff.t());
+          s = s / 1000;
 
           // if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
           if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
