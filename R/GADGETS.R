@@ -48,7 +48,9 @@
 #' @param exposure.risk.levels An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.
 #' See argument \code{categorical.exposures.risk.ranks} of \code{preprocess.genetic.data} for more information.
 #' @param exposure An integer vector corresponding to environmental exposures of the cases.
-#' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
+#' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}.
+#' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
+#' if the population is homogenous with no exposure related population structure.
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 #' and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
@@ -87,14 +89,14 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
                     chromosome.size, snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
                     n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL) {
+                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL, use.parents = FALSE) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
                             weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data,
                             exposure.levels, exposure.risk.levels, exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
-                            crossover.prop, recessive.ref.prop, recode.test.stat)
+                            crossover.prop, recessive.ref.prop, recode.test.stat, use.parents)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){

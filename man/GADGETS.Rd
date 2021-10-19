@@ -27,7 +27,8 @@ GADGETS(
   recode.test.stat = 1.64,
   exposure.levels = NULL,
   exposure.risk.levels = NULL,
-  exposure = NULL
+  exposure = NULL,
+  use.parents = FALSE
 )
 }
 \arguments{
@@ -98,15 +99,18 @@ from \code{exposure}.}
 See argument \code{categorical.exposures.risk.ranks} of \code{preprocess.genetic.data} for more information.}
 
 \item{exposure}{An integer vector corresponding to environmental exposures of the cases.}
-}
-\value{
-For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}:
+
+\item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
+if the population is homogenous with no exposure related population structure.
 \describe{
  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
 See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
  \item{n.generations}{The total number of generations run.}
+}}
 }
+\value{
+For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}.
 }
 \description{
 This function runs the GADGETS method on a given cluster of islands. It is a wrapper for
