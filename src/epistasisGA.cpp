@@ -2522,8 +2522,8 @@ List GxE_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 1
   }
 
   // get input genetic data
-  IntegerMatrix case_genetic_data = preprocessed_list["case_genetic_data"];
-  IntegerMatrix complement_genetic_data = preprocessed_list["complement_genetic_data"];
+  IntegerMatrix case_genetic_data = preprocessed_list["case.genetic.data"];
+  IntegerMatrix complement_genetic_data = preprocessed_list["complement.genetic.data"];
 
   // split by exposure
   ListOf<IntegerMatrix> case_genetic_data_list = split_int_mat(case_genetic_data, exposure, exposure_levels);

@@ -7,16 +7,9 @@
 chrom.fitness.score(
   case.genetic.data,
   complement.genetic.data,
-  case.comp.differences,
   target.snps,
-  cases.minus.complements,
-  both.one.mat,
   ld.block.vec,
   weight.lookup,
-  case2.mat,
-  case0.mat,
-  comp2.mat,
-  comp0.mat,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   recessive.ref.prop = 0.75,
@@ -35,15 +28,7 @@ The ordering of the columns must be consistent with the LD structure specified i
 Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
 the unaffected sibling genotypes.}
 
-\item{case.comp.differences}{A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
-where rows correspond to individuals and columns correspond to snps.}
-
 \item{target.snps}{A numeric vector of the columns corresponding to the collection of SNPs, or chromosome, for which the fitness score will be computed.}
-
-\item{cases.minus.complements}{A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.}
-
-\item{both.one.mat}{A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
-equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.}
 
 \item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
 we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
@@ -53,14 +38,6 @@ a reasonable default is to consider SNPs to be in LD if they are located on the 
 to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
-
-\item{case2.mat}{A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.}
-
-\item{case0.mat}{A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.}
-
-\item{comp2.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 2 copies of the minor allele.}
-
-\item{comp0.mat}{A logical matrix indicating whether, for each SNP, the complement/unaffected sibling carries 0 copies of the minor allele.}
 
 \item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 2.}
@@ -112,21 +89,10 @@ case <- as.matrix(case)
 dad <- as.matrix(dad)
 mom <- as.matrix(mom)
 comp <- mom + dad - case
-case.comp.diff <- case != comp
-case.minus.comp <- case - comp
-storage.mode(case.minus.comp) <- "integer"
-both.one.mat <- case == 1 & comp == 1
-case2.mat <- case == 2
-case0.mat <- case == 0
-comp2.mat <- comp == 2
-comp0.mat <- comp == 0
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 storage.mode(weight.lookup) <- "integer"
 block.ld.vec <- cumsum(rep(25, 4))
-chrom.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
-                    case.minus.comp, both.one.mat,
-                    rep(25, 4), weight.lookup,
-                    case2.mat, case0.mat, comp2.mat,
-                    comp0.mat)
+chrom.fitness.score(case, comp, c(1, 4, 7),
+                    block.ld.vec, weight.lookup)
 
 }

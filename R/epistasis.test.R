@@ -30,10 +30,10 @@
 #' data(dad)
 #' data(mom)
 #' data(snp.annotations)
-#' library(Matrix)
 #'
-#' pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
-#'                                mother.genetic.data = mom,
+#' pp.list <- preprocess.genetic.data(as.matrix(case),
+#'                                father.genetic.data = as.matrix(dad),
+#'                                mother.genetic.data = as.matrix(mom),
 #'                                ld.block.vec = rep(25, 4))
 #'
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,

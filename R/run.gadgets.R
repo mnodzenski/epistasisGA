@@ -50,7 +50,7 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
-#' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
+#' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
 #' if the population is homogenous with no exposure related population structure.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
@@ -70,8 +70,7 @@
 #' mom <- as.matrix(mom)
 #' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
-#'                                ld.block.vec = c(10),
-#'                                big.matrix.file.path = "tmp_bm")
+#'                                ld.block.vec = c(10))
 #' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
 #'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
@@ -91,7 +90,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, use.parents = FALSE) {
+    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, use.parents = TRUE) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
@@ -170,7 +169,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     } else if (snp.sampling.type == "random") {
 
-        snp.chisq <- rep(1, ncol(case.minus.comp))
+        snp.chisq <- rep(1, length(data.list$chisq.stats))
 
     } else if (snp.sampling.type == "manual"){
 

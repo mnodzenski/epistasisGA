@@ -48,8 +48,10 @@ across a range of chromosome sizes
 data(case)
 data(dad)
 data(mom)
+case <- as.matrix(case)
+dad <- as.matrix(dad)
+mom <- as.matrix(mom)
 data(snp.annotations)
-library(Matrix)
 set.seed(1400)
 
 pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
@@ -75,22 +77,26 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_
 
 #create three permuted datasets
 set.seed(1400)
-perm.data.list <- permute.dataset(case[ , 1:10],
-                                  father.genetic.data = dad[ , 1:10],
-                                  mother.genetic.data = mom[ , 1:10],
+perm.data.list <- permute.dataset(pp.list, "perm_data",
                                   n.permutations = 3)
 
 #pre-process permuted data
-p1.list <- preprocess.genetic.data(perm.data.list[['permutation1']]$case,
-                                   complement.genetic.data = perm.data.list[['permutation1']]$comp,
+case.p1 <- readRDS("perm_data/case.permute1.rds")
+comp.p1 <- readRDS("perm_data/complement.permute1.rds")
+p1.list <- preprocess.genetic.data(case.p1,
+                                   complement.genetic.data = comp.p1,
                                     ld.block.vec = c(10))
 
-p2.list <- preprocess.genetic.data(perm.data.list[['permutation2']]$case,
-                                   complement.genetic.data = perm.data.list[['permutation2']]$comp,
+case.p2 <- readRDS("perm_data/case.permute2.rds")
+comp.p2 <- readRDS("perm_data/complement.permute2.rds")
+p2.list <- preprocess.genetic.data(case.p2,
+                                   complement.genetic.data = comp.p2,
                                     ld.block.vec = c(10))
 
-p3.list <- preprocess.genetic.data(perm.data.list[['permutation3']]$case,
-                                   complement.genetic.data = perm.data.list[['permutation3']]$comp,
+case.p3 <- readRDS("perm_data/case.permute3.rds")
+comp.p3 <- readRDS("perm_data/complement.permute3.rds")
+p3.list <- preprocess.genetic.data(case.p3,
+                                   complement.genetic.data = comp.p3,
                                    ld.block.vec = c(10))
 
 ##run GA for permuted data
@@ -163,7 +169,7 @@ run.gadgets(p3.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'p3_t
  global.test.res <- global.test(final.results, 1)
 
  lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
-          'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3'), unlink, recursive = TRUE)
+          'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3', 'perm_data'), unlink, recursive = TRUE)
 
 
 }

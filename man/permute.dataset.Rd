@@ -14,14 +14,14 @@ permute.dataset(
 \arguments{
 \item{preprocessed.list}{The output list from \code{preprocess.genetic.data} for the original genetic data.}
 
+\item{permutation.data.file.path}{If running GADGETS for GxG interactions, this argument specifies a directory
+where each permuted dataset will be saved on disk. If searching
+for GxE interactions, permuted versions of the exposure vector will be saved to this directory.}
+
 \item{n.permutations}{The number of permuted datasets to create.}
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
 If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
-
-\item{permutation.matrix.file.path}{If runing GADGETS for GxG interactions, this argument specifies a directory
-where memory mapped files of class 'big.memory' will be saved for each permuted dataset on disk. If searching
-for GxE interactions, permuted versions of the exposure vector will be saved to this directory.}
 }
 \value{
 If genetic data are specified, a list of \code{n.permutations} pairs of case and complement data,
@@ -44,7 +44,6 @@ pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:
                                ld.block.vec = c(10))
 set.seed(15)
 perm.data.list <- permute.dataset(pp.list, "tmp_perm", n.permutations = 1)
-
-unlink(c('tmp_perm'))
+unlink("tmp_perm", recursive = TRUE)
 
 }

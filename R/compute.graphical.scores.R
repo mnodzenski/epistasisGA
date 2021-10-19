@@ -42,13 +42,13 @@
 #' data(dad)
 #' data(mom)
 #' data(snp.annotations)
-#' library(Matrix)
 #' set.seed(1400)
 #'
 #' #preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
-#' preprocessed.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
-#'                                mother.genetic.data = mom[ , target.snps],
+#' preprocessed.list <- preprocess.genetic.data(as.matrix(case[, target.snps]),
+#'                                father.genetic.data = as.matrix(dad[ , target.snps]),
+#'                                mother.genetic.data = as.matrix(mom[ , target.snps]),
 #'                                ld.block.vec = c(3, 3, 3, 1))
 #' ## run GA for observed data
 #'

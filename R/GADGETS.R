@@ -73,13 +73,15 @@
 #'
 #'  chisq.stats <- sqrt(data.list$chisq.stats)
 #'  ld.block.vec <- data.list$ld.block.vec
-#'  genetic.data.list <- data.list$genetic.data.list
+#'  case.genetic.data <- data.list$case.genetic.data
+#'  complement.genetic.data <- data.list$complement.genetic.data
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  dir.create('tmp')
-#' GADGETS(cluster.number = 1, results.dir = 'tmp', genetic.data.list = genetic.data.list,
-#'        ld.block.vec = ld.block.vec, n.chromosomes = 10, chromosome.size = 3,
-#'        snp.chisq = chisq.stats, weight.lookup = weight.lookup, n.migrations = 2,
-#'        migration.interval = 5, gen.same.fitness = 10, max.generations = 10)
+#' GADGETS(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
+#'        complement.genetic.data = complement.genetic.data, ld.block.vec = ld.block.vec,
+#'        n.chromosomes = 10, chromosome.size = 3, snp.chisq = chisq.stats,
+#'        weight.lookup = weight.lookup, n.migrations = 2, migration.interval = 5,
+#'        gen.same.fitness = 10, max.generations = 10)
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
 #' @useDynLib epistasisGAGE

@@ -63,6 +63,9 @@
 #' data(case)
 #' data(dad)
 #' data(mom)
+#' case <- as.matrix(case)
+#' dad <- as.matrix(dad)
+#' mom <- as.matrix(mom)
 #' res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
 #'                                ld.block.vec = c(10))

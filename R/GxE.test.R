@@ -17,6 +17,8 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
+#' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
+#' if the population is homogenous with no exposure related population structure
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -30,35 +32,36 @@
 #' data(mom.gxe)
 #' data(exposure)
 #' data(snp.annotations)
-#' pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
-#'                                mother.genetic.data = mom,
-#'                                ld.block.vec = rep(25, 4))
+#' pp.list <- preprocess.genetic.data(case.gxe, father.genetic.data = dad.gxe,
+#'                                mother.genetic.data = mom.gxe,
+#'                                ld.block.vec = rep(25, 4),
+#'                                categorical.exposures = exposure)
 #'
 #' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
-#'        results.dir = "tmp", cluster.type = "interactive",
-#'        registryargs = list(file.dir = "tmp_reg", seed = 1300),
+#'        results.dir = "tmp_gxe", cluster.type = "interactive",
+#'        registryargs = list(file.dir = "tmp_reg_gxe", seed = 1300),
 #'        n.islands = 8, island.cluster.size = 4,
-#'        n.migrations = 2)
+#'        n.migrations = 1)
 #'
-#' combined.res <- combine.islands('tmp', snp.annotations, pp.list, 2)
+#' combined.res <- combine.islands('tmp_gxe', snp.annotations, pp.list, 1)
 #'
 #' top.snps <- as.vector(t(combined.res[1, 1:3]))
 #' set.seed(10)
 #' GxE.test.res <- GxE.test(top.snps, pp.list)
 #'
-#' unlink('tmp', recursive = TRUE)
-#' unlink('tmp_reg', recursive = TRUE)
+#' unlink('tmp_gxe', recursive = TRUE)
+#' unlink('tmp_reg_gxe', recursive = TRUE)
 #'
 #' @export
 
 GxE.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
-                     recode.test.stat = 1.64) {
+                     recode.test.stat = 1.64, use.parents = FALSE) {
 
     # run the test via cpp
     GxE_test(snp.cols, preprocessed.list, n.permutes,
              n.different.snps.weight, n.both.one.weight, weight.function.int,
-             recessive.ref.prop, recode.test.stat)
+             recessive.ref.prop, recode.test.stat, use.parents)
 
 }

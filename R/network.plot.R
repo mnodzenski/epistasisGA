@@ -43,8 +43,10 @@
 #' data(case)
 #' data(dad)
 #' data(mom)
+#' case <- as.matrix(case)
+#' dad <- as.matrix(dad)
+#' mom <- as.matrix(mom)
 #' data(snp.annotations)
-#' library(Matrix)
 #' set.seed(1400)
 #'
 #' #preprocess data

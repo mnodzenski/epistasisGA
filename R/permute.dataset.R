@@ -3,8 +3,8 @@
 #' This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
 #'
 #' @param preprocessed.list The output list from \code{preprocess.genetic.data} for the original genetic data.
-#' @param permutation.matrix.file.path  If runing GADGETS for GxG interactions, this argument specifies a directory
-#'  where memory mapped files of class 'big.memory' will be saved for each permuted dataset on disk. If searching
+#' @param permutation.data.file.path  If running GADGETS for GxG interactions, this argument specifies a directory
+#'  where each permuted dataset will be saved on disk. If searching
 #'  for GxE interactions, permuted versions of the exposure vector will be saved to this directory.
 #' @param n.permutations The number of permuted datasets to create.
 #' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
@@ -25,11 +25,10 @@
 #'                                ld.block.vec = c(10))
 #' set.seed(15)
 #' perm.data.list <- permute.dataset(pp.list, "tmp_perm", n.permutations = 1)
-#'
-#' unlink(c('tmp_perm'))
+#' unlink("tmp_perm", recursive = TRUE)
 #'
 #' @importFrom BiocParallel bplapply bpparam
-#' @importFrom bigmemory deepcopy attach.big.matrix describe
+#' @importFrom stats rbinom
 #' @export
 permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.permutations = 100,
                             bp.param = bpparam()) {
