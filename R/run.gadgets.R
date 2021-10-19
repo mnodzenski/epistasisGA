@@ -27,6 +27,7 @@
 #'  is multiplied in computing the family weights. Defaults to 1.
 #' @param weight.function.int An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
 #' of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
+#' If set to null, then the family weight will not be exponentiated and instead set to just x.
 #' @param generations The maximum number of generations for which GADGETS will run. Defaults to 500.
 #' @param gen.same.fitness The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.
 #' @param initial.sample.duplicates A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
@@ -148,7 +149,16 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
-    weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
+    if (!is.null(weight.function.int)){
+
+        weight.lookup <- vapply(seq_len(max.sum), function(x) weight.function.int^x, 1)
+
+    } else {
+
+        weight.lookup <- seq_len(max.sum)
+
+    }
+
     storage.mode(weight.lookup) <- "integer"
 
     ### set sampling type for mutation snps ###

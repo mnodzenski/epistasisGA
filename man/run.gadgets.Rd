@@ -68,7 +68,8 @@ is multiplied in computing the family weights. Defaults to 2.}
 is multiplied in computing the family weights. Defaults to 1.}
 
 \item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
-of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
+of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
+If set to null, then the family weight will not be exponentiated and instead set to just x.}
 
 \item{generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
 
