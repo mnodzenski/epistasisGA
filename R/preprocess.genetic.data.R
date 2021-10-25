@@ -78,27 +78,83 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL) {
+    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL, parents.only = FALSE) {
 
     #make sure the ld.block.vec is correctly specified
-    if (is.null(ld.block.vec)){
+    if (!parents.only){
 
-        ld.block.vec <- ncol(case.genetic.data)
+        if (is.null(ld.block.vec)){
 
-    } else {
+            ld.block.vec <- ncol(case.genetic.data)
 
-        if (sum(ld.block.vec) != ncol(case.genetic.data)){
+        } else {
 
-            stop("sum(ld.block.vec) must be equal to ncol(case.genetic.data)")
+            if (sum(ld.block.vec) != ncol(case.genetic.data)){
+
+                stop("sum(ld.block.vec) must be equal to ncol(case.genetic.data)")
+
+            }
 
         }
 
-    }
+        # make sure the appropriate genetic data is included
+        if (is.null(complement.genetic.data) & (is.null(father.genetic.data) | is.null(mother.genetic.data))) {
 
-    # make sure the appropriate genetic data is included
-    if (is.null(complement.genetic.data) & (is.null(father.genetic.data) | is.null(mother.genetic.data))) {
+            stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
 
-        stop("Must include complement.genetic.data or both father.genetic.data and mother.genetic.data")
+        }
+
+    } else {
+
+        if ((!is.null(father.genetic.data) | is.null(mother.genetic.data)) |
+            (is.null(father.genetic.data) | !is.null(mother.genetic.data))) {
+
+            stop("Must include both father.genetic.data and mother.genetic.data")
+
+        }
+
+        if (!is.null(case.genetic.data) & is.null(complement.genetic.data)) {
+
+            stop("If case.genetic.data is specified, must also include sibling data in argument complement.genetic.data")
+
+        }
+        if (is.null(categorical.exposures)){
+
+            stop("categorical.exposures must be specific for parents.only = TRUE")
+
+        }
+
+        if (!is.null(father.genetic.data) & !is.null(case.genetic.data)){
+
+            study.type <- "mix"
+            n.total <- nrow(father.genetic.data) + nrow(case.genetic.data)
+            if (length(exposure) != n.total){
+
+                stop("length(exposure) must be equal to nrow(father.genetic.data) + nrow(case.genetic.data)")
+
+            }
+
+        } else if (!is.null(father.genetic.data) & is.null(case.genetic.data)){
+
+            study.type <- "triad"
+            n.total <-  nrow(father.genetic.data)
+            if (length(exposure) != n.total){
+
+                stop("length(exposure) must be equal to nrow(father.genetic.data)")
+
+            }
+
+        } else if (is.null(father.genetic.data) & !is.null(case.genetic.data)) {
+
+            study.type <- "sibling"
+            n.total <-  nrow(case.genetic.data)
+            if (length(exposure) != n.total){
+
+                stop("length(exposure) must be equal to nrow(case.genetic.data)")
+
+            }
+
+        }
 
     }
 
@@ -167,298 +223,534 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    # check formatting of input data and, if necessary, create memory mapped files
-    if (!any(class(case.genetic.data) %in% c("matrix", "big.matrix"))){
+    if (!parents.only){
 
-        stop("case.genetic.data must be of class matrix or big.matrix")
+        # check formatting of input data and, if necessary, create memory mapped files
+        if (!any(class(case.genetic.data) %in% c("matrix", "big.matrix"))){
 
-    }
-
-    if (any(class(case.genetic.data) == "matrix")){
-
-        if (!all(round(case.genetic.data) == case.genetic.data, na.rm = TRUE)){
-
-            stop("case.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+            stop("case.genetic.data must be of class matrix or big.matrix")
 
         }
 
-        storage.mode(case.genetic.data) <- "integer"
+        if (any(class(case.genetic.data) == "matrix")){
 
-        # convert to big.matrix
-        dimnames(case.genetic.data) <- NULL
-        case.bm <- as.big.matrix(case.genetic.data, type = "integer")
-        rm(case.genetic.data)
+            if (!all(round(case.genetic.data) == case.genetic.data, na.rm = TRUE)){
 
-    } else if (class(case.genetic.data) == "big.matrix"){
+                stop("case.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
 
-        if (! describe(case.genetic.data)@description$type %in% c("integer")){
+            }
 
-            stop("case.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            storage.mode(case.genetic.data) <- "integer"
 
-        }
+            # convert to big.matrix
+            dimnames(case.genetic.data) <- NULL
+            case.bm <- as.big.matrix(case.genetic.data, type = "integer")
+            rm(case.genetic.data)
 
-        if (describe(case.genetic.data)@description$sharedType != "FileBacked"){
+        } else if (class(case.genetic.data) == "big.matrix"){
 
-            stop("case.genetic.data must be a file backed big.matrix (case.genetic.data@description$sharedType == 'FileBacked')")
+            if (! describe(case.genetic.data)@description$type %in% c("integer")){
 
-        }
+                stop("case.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
 
-        case.bm <- case.genetic.data
+            }
 
-    }
+            if (describe(case.genetic.data)@description$sharedType != "FileBacked"){
 
-    if (!is.null(complement.genetic.data) & !any(class(complement.genetic.data) %in% c("matrix", "big.matrix"))){
+                stop("case.genetic.data must be a file backed big.matrix (case.genetic.data@description$sharedType == 'FileBacked')")
 
-        stop("complement.genetic.data must be of class matrix or big.matrix")
+            }
 
-    }
-
-    if (!is.null(complement.genetic.data) & any(class(complement.genetic.data) == "matrix")){
-
-        if (!all(round(complement.genetic.data) == complement.genetic.data, na.rm = TRUE)){
-
-            stop("complement.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+            case.bm <- case.genetic.data
 
         }
 
-        storage.mode(complement.genetic.data) <- "integer"
+        if (!is.null(complement.genetic.data) & !any(class(complement.genetic.data) %in% c("matrix", "big.matrix"))){
 
-        # convert to big.matrix
-        dimnames(complement.genetic.data) <- NULL
-        comp.bm <- as.big.matrix(complement.genetic.data, type = "integer")
-        rm(complement.genetic.data)
-
-    } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
-
-        if (! describe(complement.genetic.data)@description$type %in% c("integer")){
-
-            stop("complement.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            stop("complement.genetic.data must be of class matrix or big.matrix")
 
         }
 
-        if (describe(complement.genetic.data)@description$sharedType != "FileBacked"){
+        if (!is.null(complement.genetic.data) & any(class(complement.genetic.data) == "matrix")){
 
-            stop("complement.genetic.data must be a file backed big.matrix (complement.genetic.data@description$sharedType == 'FileBacked')")
+            if (!all(round(complement.genetic.data) == complement.genetic.data, na.rm = TRUE)){
 
-        }
+                stop("complement.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
 
-        comp.bm <- complement.genetic.data
+            }
 
-    }
+            storage.mode(complement.genetic.data) <- "integer"
 
-    if (!is.null(mother.genetic.data) & !any(class(mother.genetic.data) %in% c("matrix", "big.matrix"))){
+            # convert to big.matrix
+            dimnames(complement.genetic.data) <- NULL
+            comp.bm <- as.big.matrix(complement.genetic.data, type = "integer")
+            rm(complement.genetic.data)
 
-        stop("mother.genetic.data must be of class matrix or big.matrix")
+        } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
 
-    }
+            if (! describe(complement.genetic.data)@description$type %in% c("integer")){
 
-    if (!is.null(mother.genetic.data) & any(class(mother.genetic.data) == "matrix")){
+                stop("complement.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
 
-        if (!all(round(mother.genetic.data) == mother.genetic.data, na.rm = TRUE)){
+            }
 
-            stop("mother.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+            if (describe(complement.genetic.data)@description$sharedType != "FileBacked"){
 
-        }
+                stop("complement.genetic.data must be a file backed big.matrix (complement.genetic.data@description$sharedType == 'FileBacked')")
 
-        storage.mode(mother.genetic.data) <- "integer"
+            }
 
-        # convert to big.matrix
-        dimnames(mother.genetic.data) <- NULL
-        mother.bm <- as.big.matrix(mother.genetic.data, type = "integer")
-        rm(mother.genetic.data)
-
-    } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
-
-        if (! describe(mother.genetic.data)@description$type %in% c("integer")){
-
-            stop("mother.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            comp.bm <- complement.genetic.data
 
         }
 
-        if (describe(mother.genetic.data)@description$sharedType != "FileBacked"){
+        if (!is.null(mother.genetic.data) & !any(class(mother.genetic.data) %in% c("matrix", "big.matrix"))){
 
-            stop("mother.genetic.data must be a file backed big.matrix (mother.genetic.data@description$sharedType == 'FileBacked')")
-
-        }
-
-        mother.bm <- mother.genetic.data
-
-    }
-
-    if (!is.null(father.genetic.data) & !any(class(father.genetic.data) %in% c("matrix", "big.matrix"))){
-
-        stop("father.genetic.data must be of class matrix or big.matrix")
-
-    }
-
-    if (!is.null(father.genetic.data) & any(class(father.genetic.data) == "matrix")){
-
-        if (!all(round(father.genetic.data) == father.genetic.data, na.rm = TRUE)){
-
-            stop("father.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
-
-        }
-        storage.mode(father.genetic.data) <- "integer"
-
-        # convert to big.matrix
-        dimnames(father.genetic.data) <- NULL
-        father.bm <- as.big.matrix(father.genetic.data, type = "integer")
-        rm(father.genetic.data)
-
-    } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
-
-        if (! describe(father.genetic.data)@description$type %in% c("integer")){
-
-            stop("father.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+            stop("mother.genetic.data must be of class matrix or big.matrix")
 
         }
 
-        if (describe(father.genetic.data)@description$sharedType != "FileBacked"){
+        if (!is.null(mother.genetic.data) & any(class(mother.genetic.data) == "matrix")){
 
-            stop("father.genetic.data must be a file backed big.matrix (father.genetic.data@description$sharedType == 'FileBacked')")
+            if (!all(round(mother.genetic.data) == mother.genetic.data, na.rm = TRUE)){
+
+                stop("mother.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+            }
+
+            storage.mode(mother.genetic.data) <- "integer"
+
+            # convert to big.matrix
+            dimnames(mother.genetic.data) <- NULL
+            mother.bm <- as.big.matrix(mother.genetic.data, type = "integer")
+            rm(mother.genetic.data)
+
+        } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
+
+            if (! describe(mother.genetic.data)@description$type %in% c("integer")){
+
+                stop("mother.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+
+            }
+
+            if (describe(mother.genetic.data)@description$sharedType != "FileBacked"){
+
+                stop("mother.genetic.data must be a file backed big.matrix (mother.genetic.data@description$sharedType == 'FileBacked')")
+
+            }
+
+            mother.bm <- mother.genetic.data
 
         }
 
-        father.bm <- father.genetic.data
+        if (!is.null(father.genetic.data) & !any(class(father.genetic.data) %in% c("matrix", "big.matrix"))){
 
-    }
+            stop("father.genetic.data must be of class matrix or big.matrix")
 
-    # make a list of big matrix objects
-    if (exists("comp.bm")){
+        }
 
-        bm.list <- list(case = case.bm, complement = comp.bm)
+        if (!is.null(father.genetic.data) & any(class(father.genetic.data) == "matrix")){
 
-    } else {
+            if (!all(round(father.genetic.data) == father.genetic.data, na.rm = TRUE)){
 
-        bm.list <- list(case = case.bm, mother = mother.bm, father = father.bm)
+                stop("father.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
 
-    }
+            }
+            storage.mode(father.genetic.data) <- "integer"
 
-    # if needed compute sampling probs
-    if (is.null(snp.sampling.probs)){
+            # convert to big.matrix
+            dimnames(father.genetic.data) <- NULL
+            father.bm <- as.big.matrix(father.genetic.data, type = "integer")
+            rm(father.genetic.data)
 
-        ### use conditional logistic regression to estimate univariate association ###
-        n.fam <- nrow(case.bm)
-        n.candidate.snps <- ncol(case.bm)
-        case.status <- c(rep(1, n.fam), rep(0, n.fam))
-        ids <- rep(seq_len(n.fam), 2)
+        } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
 
-        if (is.null(categorical.exposures)){
+            if (! describe(father.genetic.data)@description$type %in% c("integer")){
 
-            res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list) {
+                stop("father.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
 
-                case.snp <- bm.list$case[ , snp]
-                if (length(bm.list) == 3){
+            }
 
-                    mom.snp <- bm.list$mother[ , snp]
-                    dad.snp <- bm.list$father[ , snp]
-                    comp.snp <- mom.snp + dad.snp - case.snp
+            if (describe(father.genetic.data)@description$sharedType != "FileBacked"){
 
-                } else {
+                stop("father.genetic.data must be a file backed big.matrix (father.genetic.data@description$sharedType == 'FileBacked')")
 
-                    comp.snp <- bm.list$complement[ , snp]
+            }
 
-                }
+            father.bm <- father.genetic.data
 
-                # get p-value of association from conditional logistic regression
-                case.comp.geno <- c(case.snp, comp.snp)
-                clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
-                clogit.chisq <- summary(clogit.res)$logtest[1]
+        }
 
-                return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+        # make a list of big matrix objects
+        if (exists("comp.bm")){
 
-            }, bm.list = bm.list, BPPARAM = bp.param)
-            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+            bm.list <- list(case = case.bm, complement = comp.bm)
 
         } else {
 
-            exposure.var <- factor(rep(exposure, 2))
-            res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
+            bm.list <- list(case = case.bm, mother = mother.bm, father = father.bm)
 
-                case.snp <- bm.list$case[ , snp]
-                if (length(bm.list) == 3){
+        }
 
-                    mom.snp <- bm.list$mother[ , snp]
-                    dad.snp <- bm.list$father[ , snp]
-                    comp.snp <- mom.snp + dad.snp - case.snp
+        # if needed compute sampling probs
+        if (is.null(snp.sampling.probs)){
 
-                } else {
+            ### use conditional logistic regression to estimate univariate association ###
+            n.fam <- nrow(case.bm)
+            n.candidate.snps <- ncol(case.bm)
+            case.status <- c(rep(1, n.fam), rep(0, n.fam))
+            ids <- rep(seq_len(n.fam), 2)
 
-                    comp.snp <- bm.list$complement[ , snp]
+            if (is.null(categorical.exposures)){
+
+                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list) {
+
+                    case.snp <- bm.list$case[ , snp]
+                    if (length(bm.list) == 3){
+
+                        mom.snp <- bm.list$mother[ , snp]
+                        dad.snp <- bm.list$father[ , snp]
+                        comp.snp <- mom.snp + dad.snp - case.snp
+
+                    } else {
+
+                        comp.snp <- bm.list$complement[ , snp]
+
+                    }
+
+                    # get p-value of association from conditional logistic regression
+                    case.comp.geno <- c(case.snp, comp.snp)
+                    clogit.res <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate")
+                    clogit.chisq <- summary(clogit.res)$logtest[1]
+
+                    return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+
+                }, bm.list = bm.list, BPPARAM = bp.param)
+                chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+            } else {
+
+                exposure.var <- factor(rep(exposure, 2))
+                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
+
+                    case.snp <- bm.list$case[ , snp]
+                    if (length(bm.list) == 3){
+
+                        mom.snp <- bm.list$mother[ , snp]
+                        dad.snp <- bm.list$father[ , snp]
+                        comp.snp <- mom.snp + dad.snp - case.snp
+
+                    } else {
+
+                        comp.snp <- bm.list$complement[ , snp]
+
+                    }
+
+                    # get p-value of snp-exposure association from conditional logistic regression
+                    case.comp.geno <- c(case.snp, comp.snp)
+                    df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
+                    full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
+                    full.model.ll <- full.model$loglik[2]
+                    reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
+                    reduced.model.ll <- reduced.model$loglik[2]
+                    clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
+
+                    return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+
+                }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
+                chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+            }
+
+        }
+
+        # take cumulative sum of ld.block.vec for output
+        out.ld.vec <- cumsum(ld.block.vec)
+        storage.mode(out.ld.vec) <- "integer"
+
+        #### clean up chisq stats for models that did not converge ###
+        chisq.stats[chisq.stats <= 0] <- 10^-10
+        chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
+
+        ### if running GxE create required inputs ###
+        if (!is.null(exposure)){
+
+            if (is.null(exposure.risk.levels)){
+
+                exposure.risk.levels <- rep(1, length(unique(exposure)))
+
+            } else {
+
+                exposure.risk.levels <- unlist(exposure.risk.levels[as.character(unique(exposure))])
+
+            }
+
+            exposure.levels <- unique(exposure)
+            storage.mode(exposure.levels) <- "integer"
+            storage.mode(exposure.risk.levels) <- "integer"
+
+        } else {
+
+            exposure.levels <- NULL
+            exposure.risk.levels <- NULL
+
+        }
+
+        if (!"complement" %in% names(bm.list)){
+
+            comp.data <- mother.bm[] + father.bm[] - case.bm[]
+
+        } else {
+
+            comp.data <- comp.bm[]
+
+        }
+
+        case.data <- case.bm[]
+
+        # set missing to -9
+        if (any(is.na(case.data)) | any(is.na(comp.data))){
+
+            case.data[is.na(case.data) | is.na(comp.data)] <- -9
+            comp.data[is.na(case.data) | is.na(comp.data)] <- -9
+
+        }
+
+        return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
+                    exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels))
+
+    } else {
+
+        # check formatting of input data and, if necessary, create memory mapped files
+        if (study.type %in% c("triad", "mix")){
+
+            #first check father
+            if (!any(class(father.genetic.data) %in% c("matrix", "big.matrix"))){
+
+                stop("father.genetic.data must be of class matrix or big.matrix")
+
+            }
+
+            if (any(class(father.genetic.data) == "matrix")){
+
+                if (!all(round(father.genetic.data) == father.genetic.data, na.rm = TRUE)){
+
+                    stop("father.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
 
                 }
+
+                storage.mode(father.genetic.data) <- "integer"
+
+                # convert to big.matrix
+                dimnames(father.genetic.data) <- NULL
+
+            } else if (class(father.genetic.data) == "big.matrix"){
+
+                if (! describe(father.genetic.data)@description$type %in% c("integer")){
+
+                    stop("father.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+
+                }
+
+                if (describe(father.genetic.data)@description$sharedType != "FileBacked"){
+
+                    stop("father.genetic.data must be a file backed big.matrix (father.genetic.data@description$sharedType == 'FileBacked')")
+
+                }
+
+                # convert to regular matrix
+                father.genetic.data <- father.genetic.data[]
+
+            }
+
+            # then mother
+            if (!any(class(mother.genetic.data) %in% c("matrix", "big.matrix"))){
+
+                stop("mother.genetic.data must be of class matrix or big.matrix")
+
+            }
+
+            if (any(class(mother.genetic.data) == "matrix")){
+
+                if (!all(round(mother.genetic.data) == mother.genetic.data, na.rm = TRUE)){
+
+                    stop("mother.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+                }
+
+                storage.mode(mother.genetic.data) <- "integer"
+
+                # convert to big.matrix
+                dimnames(mother.genetic.data) <- NULL
+
+            } else if (class(mother.genetic.data) == "big.matrix"){
+
+                if (! describe(mother.genetic.data)@description$type %in% c("integer")){
+
+                    stop("mother.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+
+                }
+
+                if (describe(mother.genetic.data)@description$sharedType != "FileBacked"){
+
+                    stop("mother.genetic.data must be a file backed big.matrix (mother.genetic.data@description$sharedType == 'FileBacked')")
+
+                }
+
+                # convert to regular matrix
+                mother.genetic.data <- mother.genetic.data[]
+            }
+
+            # make informativeness matrix
+            mom.dad.info.mat <- (mother.genetic.data == 1) + (father.genetic.data == 1)
+            rm(mother.genetic.data)
+            rm(father.genetic.data)
+
+        }
+
+        # check formatting of input data and, if necessary, create memory mapped files
+        if (study.type %in% c("sibling", "mix")){
+
+            #first check case
+            if (!any(class(case.genetic.data) %in% c("matrix", "big.matrix"))){
+
+                stop("case.genetic.data must be of class matrix or big.matrix")
+
+            }
+
+            if (any(class(case.genetic.data) == "matrix")){
+
+                if (!all(round(case.genetic.data) == case.genetic.data, na.rm = TRUE)){
+
+                    stop("case.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+                }
+
+                storage.mode(father.genetic.data) <- "integer"
+                dimnames(father.genetic.data) <- NULL
+
+            } else if (class(case.genetic.data) == "big.matrix"){
+
+                if (! describe(father.genetic.data)@description$type %in% c("integer")){
+
+                    stop("case.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+
+                }
+
+                if (describe(case.genetic.data)@description$sharedType != "FileBacked"){
+
+                    stop("case.genetic.data must be a file backed big.matrix (case.genetic.data@description$sharedType == 'FileBacked')")
+
+                }
+
+                # convert to regular matrix
+                case.genetic.data <- case.genetic.data[]
+
+            }
+
+            # then complement
+            if (!any(class(complement.genetic.data) %in% c("matrix", "big.matrix"))){
+
+                stop("complement.genetic.data must be of class matrix or big.matrix")
+
+            }
+
+            if (any(class(complement.genetic.data) == "matrix")){
+
+                if (!all(round(complement.genetic.data) = complement.genetic.data, na.rm = TRUE)){
+
+                    stop("complement.genetic.data genotypes must be integers, not dosages imputed with uncertainty")
+
+                }
+
+                storage.mode(complement.genetic.data) <- "integer"
+
+                # convert to big.matrix
+                dimnames(complement.genetic.data) <- NULL
+
+            } else if (class(complement.genetic.data) == "big.matrix"){
+
+                if (! describe(complement.genetic.data)@description$type %in% c("integer")){
+
+                    stop("complement.genetic.data must be a big.matrix of type integer. To convert, see function deepcopy from package bigmemory.")
+
+                }
+
+                if (describe(complement.genetic.data)@description$sharedType != "FileBacked"){
+
+                    stop("complement.genetic.data must be a file backed big.matrix (complement.genetic.data@description$sharedType == 'FileBacked')")
+
+                }
+
+                # convert to regular matrix
+                complement.genetic.data <- complement.genetic.data[]
+
+            }
+
+            case.minus.comp <- abs(case.genetic.data - complement.genetic.data
+            case.comp.info.mat <- 2*(case.minus.comp == 2) + (case.minus.comp == 1)
+            rm(case.minus.comp)
+            rm(case.genetic.data)
+            rm(complement.genetic.data)
+
+        }
+
+        if (study.type == "mix"){
+
+            info.mat <- rbind(mom.dad.info.mat, case.comp.info.mat)
+            rm(mom.dad.info.mat)
+            rm(case.comp.info.mat)
+
+        } else if (study.type == "triad"){
+
+            info.mat <- mom.dad.info.mat
+            rm(mom.dad.info.mat)
+
+        } else if (study.type == "sibling"){
+
+            info.mat <- case.comp.info.mat
+            rm(case.comp.info.mat)
+
+        }
+
+        #convert to big matrix
+        info.bm <- as.big.matrix(info.mat, type = "integer")
+        rm(info.mat)
+
+        # look at informatiness/exposure association
+        if (is.null(snp.sampling.probs)){
+
+            n.candidate.snps <- ncol(info.bm)
+
+            exposure.var <- factor(exposure)
+            fstats <- unlist(bplapply(seq_len(n.candidate.snps), function(snp, info.bm, exposure.var) {
+
+                informativeness <- info.bm[ , snp]
 
                 # get p-value of snp-exposure association from conditional logistic regression
-                case.comp.geno <- c(case.snp, comp.snp)
-                df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
-                full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
-                full.model.ll <- full.model$loglik[2]
-                reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
-                reduced.model.ll <- reduced.model$loglik[2]
-                clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
+                res <- lm(snp ~ exposure.var)
+                fstat <- summary(res)$fstatistic[1]
+                return(fstat)
 
-                return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
-
-            }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
-            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+            }, info.bm = info.bm, exposure.var = exposure.var, BPPARAM = bp.param)
 
         }
 
-    }
+        #### clean up fstats for models that did not converge ###
+        fstats[fstats <= 0] <- 10^-10
+        fstats[is.infinite(fstats)] <- max(fstats[is.finite(fstats)])
+        info.mat <- info.bm[]
 
-    # take cumulative sum of ld.block.vec for output
-    out.ld.vec <- cumsum(ld.block.vec)
-    storage.mode(out.ld.vec) <- "integer"
+        # set missing to zero (not informative)
+        if (any(is.na(info.mat))){
 
-    #### clean up chisq stats for models that did not converge ###
-    chisq.stats[chisq.stats <= 0] <- 10^-10
-    chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
-
-    ### if running GxE create required inputs ###
-    if (!is.null(exposure)){
-
-        if (is.null(exposure.risk.levels)){
-
-            exposure.risk.levels <- rep(1, length(unique(exposure)))
-
-        } else {
-
-            exposure.risk.levels <- unlist(exposure.risk.levels[as.character(unique(exposure))])
-
+            info.mat[is.na(info.mat)] <- 0
         }
 
-        exposure.levels <- unique(exposure)
-        storage.mode(exposure.levels) <- "integer"
-        storage.mode(exposure.risk.levels) <- "integer"
-
-    } else {
-
-        exposure.levels <- NULL
-        exposure.risk.levels <- NULL
+        return(list(case.genetic.data = NULL, complement.genetic.data = NULL, chisq.stats = fstats, ld.block.vec = NULL,
+                    exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels,
+                    info.mat = info.mat))
 
     }
-
-    if (!"complement" %in% names(bm.list)){
-
-        comp.data <- mother.bm[] + father.bm[] - case.bm[]
-
-    } else {
-
-        comp.data <- comp.bm[]
-
-    }
-
-    case.data <- case.bm[]
-
-    # set missing to -9
-    if (any(is.na(case.data)) | any(is.na(comp.data))){
-
-        case.data[is.na(case.data) | is.na(comp.data)] <- -9
-        comp.data[is.na(case.data) | is.na(comp.data)] <- -9
-
-    }
-
-    return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-        exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels))
 
 }
