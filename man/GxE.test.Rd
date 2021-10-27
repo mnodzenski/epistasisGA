@@ -13,7 +13,8 @@ GxE.test(
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  use.parents = FALSE
+  use.parents = FALSE,
+  use.parents.only = TRUE
 )
 }
 \arguments{
@@ -41,6 +42,9 @@ See the GADGETS paper for specific details.}
 
 \item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
 if the population is homogenous with no exposure related population structure}
+
+\item{use.parents.only}{A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
+if the population is homogenous with no exposure related population structure.}
 }
 \value{
 A list of thee elements:

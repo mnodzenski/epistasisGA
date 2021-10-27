@@ -19,6 +19,8 @@
 #' See the GADGETS paper for specific details.
 #' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
 #' if the population is homogenous with no exposure related population structure
+#' @param use.parents.only A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
+#' if the population is homogenous with no exposure related population structure.
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -57,11 +59,12 @@
 GxE.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
-                     recode.test.stat = 1.64, use.parents = FALSE) {
+                     recode.test.stat = 1.64, use.parents = FALSE,
+                     use.parents.only = TRUE) {
 
     # run the test via cpp
     GxE_test(snp.cols, preprocessed.list, n.permutes,
              n.different.snps.weight, n.both.one.weight, weight.function.int,
-             recessive.ref.prop, recode.test.stat, use.parents)
+             recessive.ref.prop, recode.test.stat, use.parents, use.parents.only)
 
 }
