@@ -93,15 +93,14 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
                     chromosome.size, snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
                     n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL, use.parents = FALSE,
-                    use.parents.only = TRUE) {
+                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL, use.parents = 1) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
                             weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data,
                             exposure.levels, exposure.risk.levels, exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
-                            crossover.prop, recessive.ref.prop, recode.test.stat, use.parents, use.parents.only)
+                            crossover.prop, recessive.ref.prop, recode.test.stat, use.parents)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
@@ -131,7 +130,7 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
 
         } else {
 
-            if (!use.parents.only){
+            if (use.parents != 2){
 
                 # grab exposure level info
                 exposure.info <- final.population.list[["exposure_level_info"]]

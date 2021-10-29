@@ -46,7 +46,8 @@
 #' an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
 #' analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
 #' examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.
-#'
+#' @param use.parents.only A logical indicating whether only parent data should be used in computing the fitness score for GxE search. Defaults to TRUE.
+#' This should only be set to true if the population is homogenous with no exposure related population structure.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
@@ -78,7 +79,7 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL) {
+    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL, use.parents = 2) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -372,35 +373,67 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         } else {
 
-            exposure.var <- factor(rep(exposure, 2))
-            res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
+            if (use.parents != 2){
 
-                case.snp <- bm.list$case[ , snp]
-                if (length(bm.list) == 3){
+                exposure.var <- factor(rep(exposure, 2))
+                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
 
-                    mom.snp <- bm.list$mother[ , snp]
-                    dad.snp <- bm.list$father[ , snp]
-                    comp.snp <- mom.snp + dad.snp - case.snp
+                    case.snp <- bm.list$case[ , snp]
+                    if (length(bm.list) == 3){
 
-                } else {
+                        mom.snp <- bm.list$mother[ , snp]
+                        dad.snp <- bm.list$father[ , snp]
+                        comp.snp <- mom.snp + dad.snp - case.snp
 
-                    comp.snp <- bm.list$complement[ , snp]
+                    } else {
 
-                }
+                        comp.snp <- bm.list$complement[ , snp]
 
-                # get p-value of snp-exposure association from conditional logistic regression
-                case.comp.geno <- c(case.snp, comp.snp)
-                df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
-                full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
-                full.model.ll <- full.model$loglik[2]
-                reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
-                reduced.model.ll <- reduced.model$loglik[2]
-                clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
+                    }
 
-                return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+                    # get p-value of snp-exposure association from conditional logistic regression
+                    case.comp.geno <- c(case.snp, comp.snp)
+                    df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
+                    full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
+                    full.model.ll <- full.model$loglik[2]
+                    reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
+                    reduced.model.ll <- reduced.model$loglik[2]
+                    clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
 
-            }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
-            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+                    return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
+
+                }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
+                chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+            } else {
+
+                exposure.var <- as.factor(exposure)
+                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
+
+                    case.snp <- bm.list$case[ , snp]
+                    if (length(bm.list) == 3){
+
+                        mom.snp <- bm.list$mother[ , snp]
+                        dad.snp <- bm.list$father[ , snp]
+                        comp.snp <- mom.snp + dad.snp - case.snp
+
+                    } else {
+
+                        comp.snp <- bm.list$complement[ , snp]
+
+                    }
+
+                    # get p-value of snp-exposure association from conditional logistic regression
+                    case.comp.diff <- as.numeric(case.snp != comp.snp)
+                    glm.res <- glm(case.comp.diff ~ exposure.var, family = "binomial")
+                    test.stat <- summary(glm.res)$null.deviance - summary(glm.res)$deviance
+
+                    return(list(chisq = test.stat))
+
+                }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
+                chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+
+            }
 
         }
 
@@ -459,6 +492,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     }
 
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-        exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels))
+        exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels, use.parents = use.parents))
 
 }

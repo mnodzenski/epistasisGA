@@ -28,9 +28,7 @@ run.gadgets(
   migration.generations = 50,
   n.migrations = 20,
   recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64,
-  use.parents = FALSE,
-  use.parents.only = TRUE
+  recode.test.stat = 1.64
 )
 }
 \arguments{
@@ -107,10 +105,7 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 See the GADGETS paper for specific details.}
 
 \item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
-if the population is homogenous with no exposure related population structure.}
-
-\item{use.parents.only}{A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
-if the population is homogenous with no exposure related population structure.}
+if the population is homogenous with no exposure related population structure}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:

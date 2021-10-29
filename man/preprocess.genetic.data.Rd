@@ -13,7 +13,8 @@ preprocess.genetic.data(
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
-  categorical.exposures.risk.ranks = NULL
+  categorical.exposures.risk.ranks = NULL,
+  use.parents = 2
 )
 }
 \arguments{
@@ -69,6 +70,9 @@ should specify \code{list("1" = 1, "2" = 2)} for \code{categorical.exposures.ris
 an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
 analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
 examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.}
+
+\item{use.parents.only}{A logical indicating whether only parent data should be used in computing the fitness score for GxE search. Defaults to TRUE.
+This should only be set to true if the population is homogenous with no exposure related population structure.}
 }
 \value{
 A list containing the following:

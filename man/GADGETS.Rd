@@ -28,8 +28,7 @@ GADGETS(
   exposure.levels = NULL,
   exposure.risk.levels = NULL,
   exposure = NULL,
-  use.parents = FALSE,
-  use.parents.only = TRUE
+  use.parents = 1
 )
 }
 \arguments{

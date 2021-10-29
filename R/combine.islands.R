@@ -91,6 +91,8 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     combined.result <- rbindlist(island.list)
     setorder(combined.result, -fitness.score)
     GxE <- any(grepl("exposure", colnames(combined.result)))
+    parents.only.GxE <- !any(grepl("n.cases.risk.geno", colnames(combined.result))) & !GxE
+    GxG <- !parents.only.GxE & !GxE
     chromosome.size <- sum(grepl("snp[0-9]$", colnames(combined.result)))
 
     # subset to unique results
@@ -165,7 +167,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         final.result <- cbind(snp.cols, rsid.dt, overall.dif.vecs.and.fitness,
                               exposure.specific.dt, n.islands)
 
-    } else {
+    } else if (GxG) {
 
         risk.sign.cols <- seq_len(chromosome.size) + chromosome.size
         diff.cols <- unique.result[ , ..risk.sign.cols]
@@ -177,6 +179,10 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
                                             byrow = FALSE))
         colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele", colnames(diff.cols))
         final.result <- cbind(snp.cols, rsid.dt, risk.allele.dt, unique.result[ , -(1:chromosome.size)])
+
+    } else {
+
+        final.result <- cbind(snp.cols, rsid.dt, unique.result[ , -(1:chromosome.size)])
 
     }
 

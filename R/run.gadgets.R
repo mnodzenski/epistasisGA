@@ -51,9 +51,7 @@
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
 #' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
-#' if the population is homogenous with no exposure related population structure.
-#' @param use.parents.only A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
-#' if the population is homogenous with no exposure related population structure.
+#' if the population is homogenous with no exposure related population structure
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
@@ -92,7 +90,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     n.chunks = NULL, n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
     generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
-    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, use.parents = FALSE, use.parents.only = TRUE) {
+    n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
@@ -138,9 +136,13 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     ### make sure the weight function integer is actually an integer ###
-    if (as.integer(weight.function.int) != weight.function.int){
+    if (!is.null(weight.function.int)){
 
-        stop("weight.function.int must be an integer")
+        if (as.integer(weight.function.int) != weight.function.int){
+
+            stop("weight.function.int must be an integer")
+
+        }
 
     }
 
@@ -149,6 +151,9 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
         migration.generations <- generations
     }
+
+    ### note if we want to use parents only for GxE search
+    use.parents <- data.list$use.parents
 
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
@@ -252,8 +257,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         n.both.one.weight = n.both.one.weight, migration.interval = migration.generations, gen.same.fitness = gen.same.fitness,
         max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
         recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
-        exposure.risk.levels = data.list$exposure.risk.levels, exposure = data.list$exposure, use.parents = use.parents,
-        use.parents.only = use.parents.only),
+        exposure.risk.levels = data.list$exposure.risk.levels, exposure = data.list$exposure, use.parents = use.parents),
         reg = registry)
 
     # chunk the jobs
