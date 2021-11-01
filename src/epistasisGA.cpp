@@ -1242,7 +1242,7 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         arma::vec betas = solve(x, y, solve_opts::fast);
         arma::vec resid = y - x*betas;
         double mse = arma::as_scalar(arma::trans(resid)*resid/dfe);
-        arma::mat cov_mat = mse * arma::inv(arma::trans(x)*x);
+        arma::mat cov_mat = mse * arma::pinv(arma::trans(x)*x);
         arma::vec se = arma::sqrt(arma::diagvec(cov_mat));
         arma::vec abs_tstats = arma::abs(betas/se);
 
