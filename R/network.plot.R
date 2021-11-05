@@ -199,18 +199,18 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
         if (length(unique(edge.colors)) > 1 & plot.legend){
 
             par(mar = plot.margins)
-            layout(matrix(c(1, 1, 2, 3), ncol = 2, byrow = F), widths = c(3.5,0.5), heights = c(1,1))
+            layout(matrix(c(1, 1, 2, 3), ncol = 2, byrow = FALSE), widths = c(3.5,0.5), heights = c(1,1))
             plot(network, layout = coords, asp = 0, ...)
 
             node_legend <- as.raster(matrix(rev(node.colors), ncol = 1))
-            plot(c(0,2),c(0,1),type = 'n', axes = F, xlab = '', ylab = '', main = 'SNP-Score',
+            plot(c(0,2),c(0,1),type = 'n', axes = FALSE, xlab = '', ylab = '', main = 'SNP-Score',
                  cex.main = legend.title.cex)
             rasterImage(node_legend, 0.75, 0, 1, 1)
             n.legend.labels <- round(seq(min(node.size.raw), max(node.size.raw), length.out = 5), digits = 1)
             axis(side = 4, at = seq(0, 1, length.out = 5), labels = n.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
             edge_legend <- as.raster(matrix(rev(raw.edge.colors), ncol=1))
-            plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Pair-Score',
+            plot(c(0,2),c(0,1),type = 'n', axes = FALSE,xlab = '', ylab = '', main = 'Pair-Score',
                  cex.main = legend.title.cex)
             rasterImage(edge_legend, 0.75, 0, 1, 1)
             e.legend.labels <- round(seq(min(raw.edge.widths), max(raw.edge.widths), length.out = 5), digits = 1)

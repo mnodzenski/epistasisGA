@@ -5,11 +5,13 @@ Title: An R package to identify multi-snp effects in nuclear family studies usin
 Version: 0.99.0
 Author: Michael Nodzenski, Juno M. Krahn
 Maintainer: Michael Nodzenski <michael.nodzenski@gmail.com>
-Description: Runs the GADGETS method to identify multi-snp effects in nuclear family studies. 
+Description: This package runs the GADGETS method to identify epistatic effects in nuclear family studies. 
+              It also provides functions for permutation-based inference and graphical visualization of the 
+              results. 
 License: GPL-3
 Encoding: UTF-8
 Imports: BiocParallel, data.table, matrixStats, stats, survival, igraph, batchtools,
-          qgraph, grDevices, parallel, Rcpp (>= 0.11.0), ggplot2, grid
+          qgraph, grDevices, parallel, Rcpp (>= 0.11.0), ggplot2, grid, graphics, utils
 Suggests: Matrix, BiocStyle, knitr, rmarkdown, magrittr, kableExtra, 
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.1.1

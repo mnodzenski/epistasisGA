@@ -1,5 +1,6 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
+//' @import Rcpp
 using namespace Rcpp;
 
 //////////////////////
