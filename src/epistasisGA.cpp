@@ -1214,62 +1214,99 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
 
         arma::mat informativeness_mat_exp1 = family_weights_list_i["difference_mat"];
         arma::mat informativeness_mat_exp2 = family_weights_list_j["difference_mat"];
-        arma::vec y_exp1(weights_exp1.n_elem, fill::zeros);
-        arma::vec y_exp2(weights_exp2.n_elem, fill::ones);
 
-        // prepare for linear model
-        arma::vec weights = join_cols(weights_exp1, weights_exp2);
-        arma::mat informativeness_mat = join_cols(informativeness_mat_exp1, informativeness_mat_exp2);
+        // get overall mean weight
+        double exp1_weights_sum = arma::as_scalar(sum(weights_exp1));
+        double exp2_weights_sum = arma::as_scalar(sum(weights_exp2));
+        arma::uvec exp1_inf_fams = arma::find(weights_exp1 > 0);
+        arma::uvec exp2_inf_fams = arma::find(weights_exp2 > 0);
+        int n_inf_exp1 = exp1_inf_fams.n_elem;
+        int n_inf_exp2 = exp2_inf_fams.n_elem;
+        double n_total = n_inf_exp1 + n_inf_exp2;
+        double mean_weight = (exp1_weights_sum + exp2_weights_sum)/n_total;
 
-        // 'outcome' vector
-        arma::vec y= join_cols(y_exp1, y_exp2);
-        int n_fam = y.n_elem;
+        // get mse for each exposure for informative families
+        arma::vec exp1_sq_errors = arma::pow(weights_exp1 - mean_weight, 2);
+        arma::vec exp1_non_zero_weight = zeros<vec>(exp1_sq_errors.n_elem);
+        exp1_non_zero_weight.elem(exp1_inf_fams).ones();
+        arma::vec exp2_sq_errors = arma::pow(weights_exp2 - mean_weight, 2);
+        arma::vec exp2_non_zero_weight = zeros<vec>(exp2_sq_errors.n_elem);
+        exp2_non_zero_weight.elem(exp2_inf_fams).ones();
+        double exp1_mse = arma::as_scalar(sum(exp1_sq_errors.each_col() % exp1_non_zero_weight)) / (n_inf_exp1 - 1);
+        double exp2_mse = arma::as_scalar(sum(exp2_sq_errors.each_col() % exp2_non_zero_weight)) / (n_inf_exp2 - 1);
+        double s = abs(exp1_mse - exp2_mse);
 
-        // intercept only mat
-        arma::vec x0(n_fam, fill::ones);
-
-        // full model mat
-        arma::mat x = join_rows(x0, informativeness_mat);
-
-        // now transform wls to ols
-        arma::vec sqrt_weights = arma::sqrt(weights);
-        x.each_col() %= sqrt_weights;
-        y.each_col() %= sqrt_weights;
-        double dfe = x.n_rows - x.n_cols;
-        double dfm = x.n_cols - 1;
-
-        // get beta/se, f-stat
-        arma::vec betas = solve(x, y, solve_opts::fast);
-        arma::vec resid = y - x*betas;
-        double mse = arma::as_scalar(arma::trans(resid)*resid/dfe);
-        arma::mat cov_mat = mse * arma::pinv(arma::trans(x)*x);
-        arma::vec se = arma::sqrt(arma::diagvec(cov_mat));
-        arma::vec abs_tstats = arma::abs(betas/se);
-
-        // compute overall test stat
-        betas.head(1).fill(0);
-        cov_mat.col(0).fill(0);
-        cov_mat.row(0).fill(0);
-        double s = arma::as_scalar(betas.t() * arma::pinv(cov_mat) * betas);
-
-        // if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
-        if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
-          s = pow(10, -10);
-        }
-
-        // make sure the t-stats are positive real numbers
-        double fill_val = pow(10, -10);
-        arma::uvec se_zero = arma::find(se == 0);
-        abs_tstats.elem(se_zero).fill(fill_val);
-        arma::uvec beta_zero = arma::find(betas == 0);
-        abs_tstats.elem(beta_zero).fill(fill_val);
-
-        // get rid of intercept abs t-stat
-        abs_tstats = abs_tstats.tail(dfm);
+        // now look at 'marginal' equivalents
+        arma::rowvec exp1_weighted_inf = sum(informativeness_mat_exp1.each_col() % weights_exp1, 0);
+        arma::rowvec exp2_weighted_inf = sum(informativeness_mat_exp2.each_col() % weights_exp2, 0);
+        double sum_weights = exp1_weights_sum + exp2_weights_sum;
+        arma::rowvec weighted_mean_inf = (exp1_weighted_inf + exp2_weighted_inf) / sum_weights;
+        arma::mat exp1_sq_errors_marginal = arma::pow(informativeness_mat_exp1.each_row() - weighted_mean_inf, 2);
+        arma::rowvec exp1_mse_marginal = sum(exp1_sq_errors_marginal.each_col() % weights_exp1, 0) / (exp1_weights_sum - 1);
+        arma::mat exp2_sq_errors_marginal = arma::pow(informativeness_mat_exp2.each_row() - weighted_mean_inf, 2);
+        arma::rowvec exp2_mse_marginal = sum(exp2_sq_errors_marginal.each_col() % weights_exp2, 0) / (exp2_weights_sum - 1);
+        arma::rowvec mse_diff = arma::abs(exp1_mse_marginal - exp2_mse_marginal);
 
         // store in list
         pair_scores_list[pos] = List::create(Named("fitness_score") = s,
-                                             Named("sum_dif_vecs") = abs_tstats.t());
+                                             Named("sum_dif_vecs") = mse_diff);
+
+        // arma::vec y_exp1(weights_exp1.n_elem, fill::zeros);
+        // arma::vec y_exp2(weights_exp2.n_elem, fill::ones);
+        //
+        // // prepare for linear model
+        // arma::vec weights = join_cols(weights_exp1, weights_exp2);
+        // arma::mat informativeness_mat = join_cols(informativeness_mat_exp1, informativeness_mat_exp2);
+        //
+        // // 'outcome' vector
+        // arma::vec y= join_cols(y_exp1, y_exp2);
+        // int n_fam = y.n_elem;
+        //
+        // // intercept only mat
+        // arma::vec x0(n_fam, fill::ones);
+        //
+        // // full model mat
+        // arma::mat x = join_rows(x0, informativeness_mat);
+        //
+        // // now transform wls to ols
+        // arma::vec sqrt_weights = arma::sqrt(weights);
+        // x.each_col() %= sqrt_weights;
+        // y.each_col() %= sqrt_weights;
+        // double dfe = x.n_rows - x.n_cols;
+        // double dfm = x.n_cols - 1;
+        //
+        // // get beta/se, f-stat
+        // arma::vec betas = solve(x, y, solve_opts::fast);
+        // arma::vec resid = y - x*betas;
+        // double mse = arma::as_scalar(arma::trans(resid)*resid/dfe);
+        // arma::mat cov_mat = mse * arma::pinv(arma::trans(x)*x);
+        // arma::vec se = arma::sqrt(arma::diagvec(cov_mat));
+        // arma::vec abs_tstats = arma::abs(betas/se);
+        //
+        // // compute overall test stat
+        // betas.head(1).fill(0);
+        // cov_mat.col(0).fill(0);
+        // cov_mat.row(0).fill(0);
+        // double s = arma::as_scalar(betas.t() * arma::pinv(cov_mat) * betas);
+        //
+        // // if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
+        // if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
+        //   s = pow(10, -10);
+        // }
+        //
+        // // make sure the t-stats are positive real numbers
+        // double fill_val = pow(10, -10);
+        // arma::uvec se_zero = arma::find(se == 0);
+        // abs_tstats.elem(se_zero).fill(fill_val);
+        // arma::uvec beta_zero = arma::find(betas == 0);
+        // abs_tstats.elem(beta_zero).fill(fill_val);
+        //
+        // // get rid of intercept abs t-stat
+        // abs_tstats = abs_tstats.tail(dfm);
+
+        // // store in list
+        // pair_scores_list[pos] = List::create(Named("fitness_score") = s,
+        //                                      Named("sum_dif_vecs") = abs_tstats.t());
 
       }
 

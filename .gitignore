@@ -4,7 +4,8 @@
 .Ruserdata
 scratch.work.R
 knnGA.Rproj
-.DS_Store
-
+*.DS_Store
+*epistasisGA.o
+*epistasisGAGE.so
 doc
 Meta
