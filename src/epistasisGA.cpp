@@ -1164,61 +1164,9 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 // fitness score for gene by environment interactions
 /////////////////////////////////////////////////////////
 
-
-// [[Rcpp::export]]
-List compute_weighted_mean_cov(arma::mat x, arma::vec weight_vec, IntegerVector ld_block_vec,
-                               IntegerVector target_snps_in){
-
-  double sum_weights = arma::sum(weight_vec);
-  arma::rowvec mu_hat_vec= arma::sum(x.each_col() % weight_vec) / sum_weights;
-  arma::mat x_minus_mu_hat = x.each_row() - mu_hat_vec;
-  arma::mat weighted_x_minus_mu_hat = x_minus_mu_hat.each_col() % weight_vec;
-  arma::mat cov_mat = (1 / sum_weights) * trans(weighted_x_minus_mu_hat) * x_minus_mu_hat;
-
-  // set cov elements to zero if SNPs are not in same ld block
-  if (ld_block_vec.length() > 1){
-
-    IntegerVector target_snps_block = get_target_snps_ld_blocks(target_snps_in, ld_block_vec);
-    IntegerVector uni_target_blocks = unique(target_snps_block);
-
-    if (uni_target_blocks.length() > 1){
-
-      IntegerVector target_block_pos = seq_along(target_snps_block);
-
-      for (unsigned int i = 0; i < uni_target_blocks.length(); i++){
-
-        unsigned int block_i = uni_target_blocks[i];
-        LogicalVector these_pos_l = target_snps_block == block_i;
-        IntegerVector these_pos = target_block_pos[these_pos_l];
-        IntegerVector not_these_pos = setdiff(target_block_pos, these_pos);
-        for (unsigned int j = 0; j < these_pos.length(); j++){
-
-          unsigned int these_pos_j = these_pos[j];
-
-          for (unsigned int k = 0; k < not_these_pos.length(); k++){
-
-            unsigned int not_these_pos_k = not_these_pos[k];
-            cov_mat(not_these_pos_k - 1, these_pos_j - 1) = 0;
-
-          }
-
-        }
-
-      }
-
-    }
-
-  }
-  List res = List::create(Named("xbar") = mu_hat_vec,
-                          Named("sigma") = cov_mat,
-                          Named("w") = sum_weights);
-  return(res);
-
-}
-
 // [[Rcpp::export]]
 List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
-                                    IntegerVector target_snps, IntegerVector weight_lookup, IntegerVector ld_block_vec,
+                                    IntegerVector target_snps, IntegerVector weight_lookup,
                                     int n_different_snps_weight = 1, int n_both_one_weight = 0){
 
   // divide the input data based on exposure and get components for fitness score //
@@ -1267,88 +1215,43 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         arma::mat informativeness_mat_exp1 = family_weights_list_i["difference_mat"];
         arma::mat informativeness_mat_exp2 = family_weights_list_j["difference_mat"];
 
-        // compute components of t2
-        List exp1_list = compute_weighted_mean_cov(informativeness_mat_exp1, weights_exp1, ld_block_vec,
-                                                        target_snps);
-        List exp2_list = compute_weighted_mean_cov(informativeness_mat_exp2, weights_exp2, ld_block_vec,
-                                                        target_snps);
+        // get overall mean weight
+        double exp1_weights_sum = arma::as_scalar(sum(weights_exp1));
+        double exp2_weights_sum = arma::as_scalar(sum(weights_exp2));
+        arma::uvec exp1_inf_fams = arma::find(weights_exp1 > 0);
+        arma::uvec exp2_inf_fams = arma::find(weights_exp2 > 0);
+        int n_inf_exp1 = exp1_inf_fams.n_elem;
+        int n_inf_exp2 = exp2_inf_fams.n_elem;
+        double n_total = n_inf_exp1 + n_inf_exp2;
+        double mean_weight = (exp1_weights_sum + exp2_weights_sum)/n_total;
+        double exp1_mean_weight = exp1_weights_sum / n_inf_exp1;
+        double exp2_mean_weight = exp2_weights_sum / n_inf_exp2;
 
-        // mean difference vector //
-        arma::rowvec xbar1 = exp1_list["xbar"];
-        arma::rowvec xbar2 = exp2_list["xbar"];
-        arma::rowvec xbar_diff = xbar1 - xbar2;
+        // get mse for each exposure for informative families
+        arma::vec exp1_sq_errors = arma::pow(weights_exp1 - mean_weight, 2);
+        arma::vec exp1_non_zero_weight = zeros<vec>(exp1_sq_errors.n_elem);
+        exp1_non_zero_weight.elem(exp1_inf_fams).ones();
+        arma::vec exp2_sq_errors = arma::pow(weights_exp2 - mean_weight, 2);
+        arma::vec exp2_non_zero_weight = zeros<vec>(exp2_sq_errors.n_elem);
+        exp2_non_zero_weight.elem(exp2_inf_fams).ones();
+        double exp1_mse = arma::as_scalar(sum(exp1_sq_errors.each_col() % exp1_non_zero_weight)) / (n_inf_exp1 - 1);
+        double exp2_mse = arma::as_scalar(sum(exp2_sq_errors.each_col() % exp2_non_zero_weight)) / (n_inf_exp2 - 1);
+        double s = abs(exp1_mean_weight - exp2_mean_weight) * abs(exp1_mse - exp2_mse);
 
-        // cov mat //
-        double w1 = exp1_list["w"];
-        arma::mat sigma1 = exp1_list["sigma"];
-        double w2 = exp2_list["w"];
-        arma::mat sigma2 = exp2_list["sigma"];
-        //arma::mat sigma_hat = (1/w1)*sigma1 + (1/w2)*sigma2;
-        arma::mat sigma_hat = (w1*sigma1 + w2*sigma2)/(w1 + w2);
-
-        // two sample modified hotelling stat //
-        double weight_scalar = (w1*w2)/(w1 + w2);
-        s = (weight_scalar / 1000) * as_scalar(xbar_diff * arma::pinv(sigma_hat) * xbar_diff.t());
-        // arma::mat sigma_hat_inv = arma::pinv(sigma_hat);
-        // s = as_scalar(xbar_diff * sigma_hat_inv * xbar_diff.t());
-        // s = s / 1000;
-
-        // if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
-        if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
-          s = pow(10, -10);
-        }
-
-        // prepare results
-        NumericVector se = wrap(sqrt(sigma_hat.diag()));
-        NumericVector xbar_diff_n = wrap(xbar_diff);
-        NumericVector std_diff_vecs = xbar_diff_n/se;
-        std_diff_vecs[se == 0] = pow(10, -10);
+        // now look at 'marginal' equivalents
+        arma::rowvec exp1_weighted_inf = sum(informativeness_mat_exp1.each_col() % weights_exp1, 0);
+        arma::rowvec exp2_weighted_inf = sum(informativeness_mat_exp2.each_col() % weights_exp2, 0);
+        double sum_weights = exp1_weights_sum + exp2_weights_sum;
+        arma::rowvec weighted_mean_inf = (exp1_weighted_inf + exp2_weighted_inf) / sum_weights;
+        arma::mat exp1_sq_errors_marginal = arma::pow(informativeness_mat_exp1.each_row() - weighted_mean_inf, 2);
+        arma::rowvec exp1_mse_marginal = sum(exp1_sq_errors_marginal.each_col() % weights_exp1, 0) / (exp1_weights_sum - 1);
+        arma::mat exp2_sq_errors_marginal = arma::pow(informativeness_mat_exp2.each_row() - weighted_mean_inf, 2);
+        arma::rowvec exp2_mse_marginal = sum(exp2_sq_errors_marginal.each_col() % weights_exp2, 0) / (exp2_weights_sum - 1);
+        arma::rowvec mse_diff = arma::abs(exp1_mse_marginal - exp2_mse_marginal);
 
         // store in list
         pair_scores_list[pos] = List::create(Named("fitness_score") = s,
-                                             Named("sum_dif_vecs") = std_diff_vecs);
-
-        // // get overall mean weight
-        // double exp1_weights_sum = arma::as_scalar(sum(weights_exp1));
-        // double exp2_weights_sum = arma::as_scalar(sum(weights_exp2));
-        // arma::uvec exp1_inf_fams = arma::find(weights_exp1 > 0);
-        // arma::uvec exp2_inf_fams = arma::find(weights_exp2 > 0);
-        // int n_inf_exp1 = exp1_inf_fams.n_elem;
-        // int n_inf_exp2 = exp2_inf_fams.n_elem;
-        // double n_total = n_inf_exp1 + n_inf_exp2;
-        // double mean_weight = (exp1_weights_sum + exp2_weights_sum)/n_total;
-        // double exp1_mean_weight = exp1_weights_sum / weights_exp1.n_elem;
-        // double exp2_mean_weight = exp2_weights_sum / weights_exp2.n_elem;
-
-        // get mse for each exposure for informative families
-        // arma::vec exp1_sq_errors = arma::pow(weights_exp1 - mean_weight, 2);
-        // arma::vec exp1_non_zero_weight = zeros<vec>(exp1_sq_errors.n_elem);
-        // exp1_non_zero_weight.elem(exp1_inf_fams).ones();
-        // arma::vec exp2_sq_errors = arma::pow(weights_exp2 - mean_weight, 2);
-        // arma::vec exp2_non_zero_weight = zeros<vec>(exp2_sq_errors.n_elem);
-        // exp2_non_zero_weight.elem(exp2_inf_fams).ones();
-        // double exp1_mse = arma::as_scalar(sum(exp1_sq_errors.each_col() % exp1_non_zero_weight)) / (n_inf_exp1 - 1);
-        // double exp2_mse = arma::as_scalar(sum(exp2_sq_errors.each_col() % exp2_non_zero_weight)) / (n_inf_exp2 - 1);
-        // double s = abs(exp1_mean_weight - exp2_mean_weight) * abs(exp1_mse - exp2_mse);
-        //double s = abs(exp1_mean_weight - exp2_mean_weight);
-
-        // now look at 'marginal' equivalents
-        // arma::rowvec exp1_weighted_inf = sum(informativeness_mat_exp1.each_col() % weights_exp1, 0);
-        // arma::rowvec exp2_weighted_inf = sum(informativeness_mat_exp2.each_col() % weights_exp2, 0);
-        // double sum_weights = exp1_weights_sum + exp2_weights_sum;
-        // arma::rowvec weighted_mean_inf = (exp1_weighted_inf + exp2_weighted_inf) / sum_weights;
-        // arma::mat exp1_sq_errors_marginal = arma::pow(informativeness_mat_exp1.each_row() - weighted_mean_inf, 2);
-        // arma::rowvec exp1_mse_marginal = sum(exp1_sq_errors_marginal.each_col() % weights_exp1, 0) / (exp1_weights_sum - 1);
-        // arma::mat exp2_sq_errors_marginal = arma::pow(informativeness_mat_exp2.each_row() - weighted_mean_inf, 2);
-        // arma::rowvec exp2_mse_marginal = sum(exp2_sq_errors_marginal.each_col() % weights_exp2, 0) / (exp2_weights_sum - 1);
-        // arma::rowvec mse_diff = arma::abs(exp1_mse_marginal - exp2_mse_marginal);
-        // arma::rowvec exp1_weighted_marginal_mean = exp1_weighted_inf / exp1_weights_sum;
-        // arma::rowvec exp2_weighted_marginal_mean = exp2_weighted_inf / exp2_weights_sum;
-        // arma::rowvec weighted_marginal_diff = arma::abs(exp1_weighted_marginal_mean - exp2_weighted_marginal_mean);
-
-        // store in list
-        // pair_scores_list[pos] = List::create(Named("fitness_score") = s,
-        //                                      Named("sum_dif_vecs") = weighted_marginal_diff);
+                                             Named("sum_dif_vecs") = mse_diff);
 
         // arma::vec y_exp1(weights_exp1.n_elem, fill::zeros);
         // arma::vec y_exp2(weights_exp2.n_elem, fill::ones);
@@ -1706,7 +1609,7 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
     } else {
 
       scores[i] = GxE_fitness_score_parents_only(case_genetic_data_list, complement_genetic_data_list, target_snps,
-                                                 weight_lookup, ld_block_vec, n_different_snps_weight, n_both_one_weight);
+                                                 weight_lookup, n_different_snps_weight, n_both_one_weight);
 
     }
 
