@@ -1224,6 +1224,8 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         int n_inf_exp2 = exp2_inf_fams.n_elem;
         double n_total = n_inf_exp1 + n_inf_exp2;
         double mean_weight = (exp1_weights_sum + exp2_weights_sum)/n_total;
+        double exp1_mean_weight = exp1_weights_sum / n_inf_exp1;
+        double exp2_mean_weight = exp2_weights_sum / n_inf_exp2;
 
         // get mse for each exposure for informative families
         arma::vec exp1_sq_errors = arma::pow(weights_exp1 - mean_weight, 2);
@@ -1234,7 +1236,7 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         exp2_non_zero_weight.elem(exp2_inf_fams).ones();
         double exp1_mse = arma::as_scalar(sum(exp1_sq_errors.each_col() % exp1_non_zero_weight)) / (n_inf_exp1 - 1);
         double exp2_mse = arma::as_scalar(sum(exp2_sq_errors.each_col() % exp2_non_zero_weight)) / (n_inf_exp2 - 1);
-        double s = abs(exp1_mse - exp2_mse);
+        double s = abs(exp1_mean_weight - exp2_mean_weight) * abs(exp1_mse - exp2_mse);
 
         // now look at 'marginal' equivalents
         arma::rowvec exp1_weighted_inf = sum(informativeness_mat_exp1.each_col() % weights_exp1, 0);
