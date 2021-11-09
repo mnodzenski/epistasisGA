@@ -1238,9 +1238,20 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         double exp2_mse = arma::as_scalar(sum(exp2_sq_errors.each_col() % exp2_non_zero_weight)) / (n_inf_exp2 - 1);
         double s = abs(exp1_mean_weight - exp2_mean_weight) * abs(exp1_mse - exp2_mse);
 
+        //if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
+        if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
+
+          s = pow(10, -10);
+
+        }
+
         // now look at 'marginal' equivalents
         arma::rowvec exp1_weighted_inf = sum(informativeness_mat_exp1.each_col() % weights_exp1, 0);
         arma::rowvec exp2_weighted_inf = sum(informativeness_mat_exp2.each_col() % weights_exp2, 0);
+        arma::rowvec exp1_weighted_mean = exp1_weighted_inf / exp1_weights_sum;
+        arma::rowvec exp2_weighted_mean = exp2_weighted_inf / exp2_weights_sum;
+        arma::rowvec weighted_mean_diff = arma::abs(exp1_weighted_inf - exp2_weighted_inf);
+
         double sum_weights = exp1_weights_sum + exp2_weights_sum;
         arma::rowvec weighted_mean_inf = (exp1_weighted_inf + exp2_weighted_inf) / sum_weights;
         arma::mat exp1_sq_errors_marginal = arma::pow(informativeness_mat_exp1.each_row() - weighted_mean_inf, 2);
@@ -1248,10 +1259,13 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         arma::mat exp2_sq_errors_marginal = arma::pow(informativeness_mat_exp2.each_row() - weighted_mean_inf, 2);
         arma::rowvec exp2_mse_marginal = sum(exp2_sq_errors_marginal.each_col() % weights_exp2, 0) / (exp2_weights_sum - 1);
         arma::rowvec mse_diff = arma::abs(exp1_mse_marginal - exp2_mse_marginal);
+        arma::rowvec sum_dif_vecs = mse_diff % weighted_mean_diff;
+        sum_dif_vecs.elem(find_nonfinite(sum_dif_vecs)).fill(pow(10, -10));
+        sum_dif_vecs.elem(find(sum_dif_vecs <= 0)).fill(pow(10, -10));
 
         // store in list
         pair_scores_list[pos] = List::create(Named("fitness_score") = s,
-                                             Named("sum_dif_vecs") = mse_diff);
+                                             Named("sum_dif_vecs") = sum_dif_vecs);
 
         // arma::vec y_exp1(weights_exp1.n_elem, fill::zeros);
         // arma::vec y_exp2(weights_exp2.n_elem, fill::ones);
