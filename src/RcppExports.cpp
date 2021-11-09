@@ -412,9 +412,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_weighted_mean_cov
+List compute_weighted_mean_cov(arma::mat x, arma::vec weight_vec, IntegerVector ld_block_vec, IntegerVector target_snps_in);
+RcppExport SEXP _epistasisGAGE_compute_weighted_mean_cov(SEXP xSEXP, SEXP weight_vecSEXP, SEXP ld_block_vecSEXP, SEXP target_snps_inSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weight_vec(weight_vecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type ld_block_vec(ld_block_vecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type target_snps_in(target_snps_inSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_weighted_mean_cov(x, weight_vec, ld_block_vec, target_snps_in));
+    return rcpp_result_gen;
+END_RCPP
+}
 // GxE_fitness_score_parents_only
-List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, IntegerVector target_snps, IntegerVector weight_lookup, int n_different_snps_weight, int n_both_one_weight);
-RcppExport SEXP _epistasisGAGE_GxE_fitness_score_parents_only(SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP target_snpsSEXP, SEXP weight_lookupSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP) {
+List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list, IntegerVector target_snps, IntegerVector weight_lookup, IntegerVector ld_block_vec, int n_different_snps_weight, int n_both_one_weight);
+RcppExport SEXP _epistasisGAGE_GxE_fitness_score_parents_only(SEXP case_genetic_data_listSEXP, SEXP complement_genetic_data_listSEXP, SEXP target_snpsSEXP, SEXP weight_lookupSEXP, SEXP ld_block_vecSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -422,9 +436,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< ListOf<IntegerMatrix> >::type complement_genetic_data_list(complement_genetic_data_listSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type target_snps(target_snpsSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type weight_lookup(weight_lookupSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type ld_block_vec(ld_block_vecSEXP);
     Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
     Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
-    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score_parents_only(case_genetic_data_list, complement_genetic_data_list, target_snps, weight_lookup, n_different_snps_weight, n_both_one_weight));
+    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score_parents_only(case_genetic_data_list, complement_genetic_data_list, target_snps, weight_lookup, ld_block_vec, n_different_snps_weight, n_both_one_weight));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -752,7 +767,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGAGE_compute_dif_vecs", (DL_FUNC) &_epistasisGAGE_compute_dif_vecs, 7},
     {"_epistasisGAGE_compute_parent_weights", (DL_FUNC) &_epistasisGAGE_compute_parent_weights, 6},
     {"_epistasisGAGE_chrom_fitness_score", (DL_FUNC) &_epistasisGAGE_chrom_fitness_score, 12},
-    {"_epistasisGAGE_GxE_fitness_score_parents_only", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score_parents_only, 6},
+    {"_epistasisGAGE_compute_weighted_mean_cov", (DL_FUNC) &_epistasisGAGE_compute_weighted_mean_cov, 4},
+    {"_epistasisGAGE_GxE_fitness_score_parents_only", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score_parents_only, 7},
     {"_epistasisGAGE_GxE_fitness_score", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score, 14},
     {"_epistasisGAGE_chrom_fitness_list", (DL_FUNC) &_epistasisGAGE_chrom_fitness_list, 10},
     {"_epistasisGAGE_GxE_fitness_list", (DL_FUNC) &_epistasisGAGE_GxE_fitness_list, 14},
