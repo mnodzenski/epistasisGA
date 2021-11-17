@@ -1166,7 +1166,7 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 
 // [[Rcpp::export]]
 List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
-                                    IntegerVector target_snps, IntegerVector weight_lookup,
+                                    IntegerVector target_snps, IntegerVector weight_lookup, IntegerVector ld_block_vec,
                                     int n_different_snps_weight = 1, int n_both_one_weight = 0){
 
   // divide the input data based on exposure and get components for fitness score //
@@ -1214,6 +1214,45 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
 
         arma::mat informativeness_mat_exp1 = family_weights_list_i["difference_mat"];
         arma::mat informativeness_mat_exp2 = family_weights_list_j["difference_mat"];
+        arma::mat cov_exp1 = arma::cov(informativeness_mat_exp1);
+        arma::mat cov_exp2 = arma::cov(informativeness_mat_exp2);
+        arma::mat cov_exp1_lt = arma::trimatl(cov_exp1, -1);
+        arma::mat cov_exp2_lt = arma::trimatl(cov_exp2, -1);
+        // set cov elements to zero if SNPs are not in same ld block
+        if (ld_block_vec.length() > 1){
+
+          IntegerVector target_snps_block = get_target_snps_ld_blocks(target_snps, ld_block_vec);
+          IntegerVector uni_target_blocks = unique(target_snps_block);
+
+          if (uni_target_blocks.length() > 1){
+
+            IntegerVector target_block_pos = seq_along(target_snps_block);
+
+            for (unsigned int i = 0; i < uni_target_blocks.length(); i++){
+
+              unsigned int block_i = uni_target_blocks[i];
+              LogicalVector these_pos_l = target_snps_block == block_i;
+              IntegerVector these_pos = target_block_pos[these_pos_l];
+              IntegerVector not_these_pos = setdiff(target_block_pos, these_pos);
+              for (unsigned int j = 0; j < these_pos.length(); j++){
+
+                unsigned int these_pos_j = these_pos[j];
+
+                for (unsigned int k = 0; k < not_these_pos.length(); k++){
+
+                  unsigned int not_these_pos_k = not_these_pos[k];
+                  cov_exp1_lt(not_these_pos_k - 1, these_pos_j - 1) = 0;
+                  cov_exp2_lt(not_these_pos_k - 1, these_pos_j - 1) = 0;
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
 
         // get overall mean weight
         double exp1_weights_sum = arma::as_scalar(sum(weights_exp1));
@@ -1234,6 +1273,38 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
         double exp1_mean_weight = exp1_weights_sum / n_exp1;
         double exp2_mean_weight = exp2_weights_sum / n_exp2;
 
+        // penalty for SNPs in high LD
+        uword exp1_max_cov_idx = arma::abs(cov_exp1_lt).index_max();
+        uword exp2_max_cov_idx = arma::abs(cov_exp2_lt).index_max();
+        double exp1_max_cov = cov_exp1_lt(exp1_max_cov_idx);
+        double exp2_max_cov = cov_exp2_lt(exp2_max_cov_idx);
+        double cov_diff_penalty;
+        if (exp1_mean_weight >= exp2_mean_weight){
+
+          cov_diff_penalty = 1 - abs(exp1_max_cov);
+
+        } else {
+
+          cov_diff_penalty = 1 - abs(exp2_max_cov);
+
+        }
+
+        // double cov_diff_penalty;
+        // if (exp1_mean_weight >= exp2_mean_weight){
+        //
+        //   arma::uvec exp1_idx = trimatl_ind(size(cov_exp1_lt), -1);
+        //   arma::vec exp1_cov_vec = 1 - arma::abs(cov_exp1_lt(exp1_idx));
+        //   cov_diff_penalty = arma::sum(exp1_cov_vec);
+        //
+        // } else {
+        //
+        //   arma::uvec exp2_idx = trimatl_ind(size(cov_exp2_lt), -1);
+        //   arma::vec exp2_cov_vec = 1 - arma::abs(cov_exp2_lt(exp2_idx));
+        //   cov_diff_penalty = arma::sum(exp2_cov_vec);
+        //
+        // }
+        // Rcout << cov_diff_penalty << "\n";
+
         // get mse for each exposure for informative families
         // arma::vec exp1_sq_errors = arma::pow(weights_exp1 - mean_weight, 2);
         // arma::vec exp1_non_zero_weight = zeros<vec>(exp1_sq_errors.n_elem);
@@ -1251,7 +1322,7 @@ List GxE_fitness_score_parents_only(ListOf<IntegerMatrix> case_genetic_data_list
        arma::vec exp2_sq_errors = arma::pow(weights_exp2 - mean_weight, 2);
        double exp1_mse = arma::as_scalar(sum(exp1_sq_errors)) / (n_exp1 - 1);
        double exp2_mse = arma::as_scalar(sum(exp2_sq_errors)) / (n_exp2 - 1);
-       double s = ((exp1_mean_weight - exp2_mean_weight) / mean_weight)* (exp1_mse - exp2_mse);
+       double s = cov_diff_penalty*((exp1_mean_weight - exp2_mean_weight) / mean_weight)* (exp1_mse - exp2_mse);
 
         //if the fitness score is zero or undefined (either due to zero variance or mean), reset to small number
         if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
@@ -1639,7 +1710,7 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
     } else {
 
       scores[i] = GxE_fitness_score_parents_only(case_genetic_data_list, complement_genetic_data_list, target_snps,
-                                                 weight_lookup, n_different_snps_weight, n_both_one_weight);
+                                                 weight_lookup, ld_block_vec, n_different_snps_weight, n_both_one_weight);
 
     }
 
@@ -2968,3 +3039,7 @@ NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List 
   return(n2log_epi_pvals);
 
 }
+
+
+
+
