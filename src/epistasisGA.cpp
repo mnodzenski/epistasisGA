@@ -1597,23 +1597,35 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
           // if parents are to be used, compute the t-stat and multiply
           if (use_parents == 1){
 
-            arma::colvec family_weights_vec = arma::join_cols(family_weights1, family_weights2);
-            int n_exp1 = family_weights1.size();
-            int n_exp2 = family_weights2.size();
-            int n = n_exp1 + n_exp2;
-            arma::colvec exp1_vals = arma::colvec(n_exp1, fill::zeros);
-            arma::colvec exp2_vals = arma::colvec(n_exp2, fill::ones);
-            arma::colvec y = join_cols(exp1_vals, exp2_vals);
-            arma::colvec intercept = arma::colvec(n, fill::ones);
-            arma::mat X = arma::join_horiz(intercept, family_weights_vec);
-            arma::vec coef = solve(X, y, solve_opts::fast);
-            double beta_hat = arma::as_scalar(coef[1]);
-            arma::vec resid = y - X*coef;
-            double sig2 = arma::as_scalar(arma::trans(resid)*resid/(n - 2));
-            arma::vec se = arma::sqrt(sig2 * arma::diagvec(arma::inv(arma::trans(X)*X)));
-            double se_hat = arma::as_scalar(se[1]);
-            double abs_t = std::abs(beta_hat / se_hat);
-            s = abs_t * s;
+            double exp1_weights_sum = arma::as_scalar(sum(family_weights1));
+            double exp2_weights_sum = arma::as_scalar(sum(family_weights2));
+            int n_exp1 = family_weights1.n_elem;
+            int n_exp2 = family_weights2.n_elem;
+            double exp1_mean_weight = exp1_weights_sum / n_exp1;
+            double exp2_mean_weight = exp2_weights_sum / n_exp2;
+            arma::vec exp1_sq_errors = arma::pow(family_weights1 - exp1_mean_weight, 2);
+            arma::vec exp2_sq_errors = arma::pow(family_weights2 - exp2_mean_weight, 2);
+            double exp1_mse = arma::as_scalar(sum(exp1_sq_errors)) / (n_exp1 - 1);
+            double exp2_mse = arma::as_scalar(sum(exp2_sq_errors)) / (n_exp2 - 1);
+            s = abs(exp1_mean_weight - exp2_mean_weight) * abs(exp1_mse - exp2_mse) * s;
+
+            // arma::colvec family_weights_vec = arma::join_cols(family_weights1, family_weights2);
+            // int n_exp1 = family_weights1.size();
+            // int n_exp2 = family_weights2.size();
+            // int n = n_exp1 + n_exp2;
+            // arma::colvec exp1_vals = arma::colvec(n_exp1, fill::zeros);
+            // arma::colvec exp2_vals = arma::colvec(n_exp2, fill::ones);
+            // arma::colvec y = join_cols(exp1_vals, exp2_vals);
+            // arma::colvec intercept = arma::colvec(n, fill::ones);
+            // arma::mat X = arma::join_horiz(intercept, family_weights_vec);
+            // arma::vec coef = solve(X, y, solve_opts::fast);
+            // double beta_hat = arma::as_scalar(coef[1]);
+            // arma::vec resid = y - X*coef;
+            // double sig2 = arma::as_scalar(arma::trans(resid)*resid/(n - 2));
+            // arma::vec se = arma::sqrt(sig2 * arma::diagvec(arma::inv(arma::trans(X)*X)));
+            // double se_hat = arma::as_scalar(se[1]);
+            // double abs_t = std::abs(beta_hat / se_hat);
+            // s = abs_t * s;
 
           }
 

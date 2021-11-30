@@ -14,7 +14,7 @@ preprocess.genetic.data(
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
   categorical.exposures.risk.ranks = NULL,
-  use.parents = 2
+  use.parents = 1
 )
 }
 \arguments{
