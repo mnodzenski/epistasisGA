@@ -14,6 +14,8 @@ GADGETS(
   chromosome.size,
   snp.chisq,
   weight.lookup,
+  null.mean.vec,
+  null.cov.mat,
   island.cluster.size = 4,
   n.migrations = 20,
   n.different.snps.weight = 2,
@@ -26,7 +28,6 @@ GADGETS(
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
   exposure.levels = NULL,
-  exposure.risk.levels = NULL,
   exposure = NULL,
   use.parents = 1
 )
@@ -65,6 +66,12 @@ specified or uniformly 1 (corresponding to totally random sampling).}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.}
 
+\item{null.mean.vec}{A vector of estimated null means for each of the three components of the Mahalanobis distance based
+GxE fitness score. For all other uses, this should be specified as rep(0, 3) and will not be used.}
+
+\item{null.cov.mat}{An estimated null covariance matrix for the three components of the Mahalanobis distance based
+GxE fitness score. For all other uses, this should be specified as diag(3) and will not be used.}
+
 \item{island.cluster.size}{An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
@@ -95,16 +102,10 @@ See the GADGETS paper for specific details.}
 \item{exposure.levels}{An integer vector corresponding to the unique environmental exposure categories
 from \code{exposure}.}
 
-\item{exposure.risk.levels}{An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.
-See argument \code{categorical.exposures.risk.ranks} of \code{preprocess.genetic.data} for more information.}
-
 \item{exposure}{An integer vector corresponding to environmental exposures of the cases.}
 
-\item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
-if the population is homogenous with no exposure related population structure.}
-
-\item{use.parents.only}{A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
-if the population is homogenous with no exposure related population structure.
+\item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+indicating family level informativeness will be used. Specify 0 to only use transmission data.
 \describe{
  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
@@ -142,6 +143,7 @@ GADGETS(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.geneti
        complement.genetic.data = complement.genetic.data, ld.block.vec = ld.block.vec,
        n.chromosomes = 10, chromosome.size = 3, snp.chisq = chisq.stats,
        weight.lookup = weight.lookup, n.migrations = 2, migration.interval = 5,
-       gen.same.fitness = 10, max.generations = 10)
+       gen.same.fitness = 10, max.generations = 10, null.mean.vec = rep(0, 3),
+       null.cov.mat = diag(3))
 
 }

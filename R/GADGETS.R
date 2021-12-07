@@ -27,6 +27,10 @@
 #' the chi-square marginal SNP-disease association statistics for each column in \code{case.genetic.data}, but can also be manually
 #' specified or uniformly 1 (corresponding to totally random sampling).
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
+#' @param null.mean.vec A vector of estimated null means for each of the three components of the Mahalanobis distance based
+#' GxE fitness score. For all other uses, this should be specified as rep(0, 3) and will not be used.
+#' @param null.cov.mat An estimated null covariance matrix for the three components of the Mahalanobis distance based
+#' GxE fitness score. For all other uses, this should be specified as diag(3) and will not be used.
 #' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
@@ -45,14 +49,10 @@
 #' See the GADGETS paper for specific details.
 #' @param exposure.levels An integer vector corresponding to the unique environmental exposure categories
 #' from \code{exposure}.
-#' @param exposure.risk.levels An integer vector of the hypothesized risk levels corresponding to the elements of \code{case.genetic.data.list}.
-#' See argument \code{categorical.exposures.risk.ranks} of \code{preprocess.genetic.data} for more information.
 #' @param exposure An integer vector corresponding to environmental exposures of the cases.
 #' @return For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}.
-#' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
-#' if the population is homogenous with no exposure related population structure.
-#' @param use.parents.only A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
-#' if the population is homogenous with no exposure related population structure.
+#' @param use.parents A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+#' indicating family level informativeness will be used. Specify 0 to only use transmission data.
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
 #' and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
@@ -83,22 +83,23 @@
 #'        complement.genetic.data = complement.genetic.data, ld.block.vec = ld.block.vec,
 #'        n.chromosomes = 10, chromosome.size = 3, snp.chisq = chisq.stats,
 #'        weight.lookup = weight.lookup, n.migrations = 2, migration.interval = 5,
-#'        gen.same.fitness = 10, max.generations = 10)
+#'        gen.same.fitness = 10, max.generations = 10, null.mean.vec = rep(0, 3),
+#'        null.cov.mat = diag(3))
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
 #' @useDynLib epistasisGAGE
 #' @export
 
 GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data, ld.block.vec, n.chromosomes,
-                    chromosome.size, snp.chisq, weight.lookup, island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2,
-                    n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
+                    chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.cov.mat, island.cluster.size = 4, n.migrations = 20,
+                    n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                    recode.test.stat = 1.64, exposure.levels = NULL, exposure.risk.levels = NULL, exposure = NULL, use.parents = 1) {
+                    recode.test.stat = 1.64, exposure.levels = NULL, exposure = NULL, use.parents = 1) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
-                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data,
-                            exposure.levels, exposure.risk.levels, exposure, n.different.snps.weight, n.both.one.weight,
+                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, null.mean.vec,
+                            null.cov.mat, exposure.levels, exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat, use.parents)
 
@@ -130,64 +131,52 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
 
         } else {
 
-            if (use.parents != 2){
+            # grab exposure level info
+            exposure.info <- final.population.list[["exposure_level_info"]]
 
-                # grab exposure level info
-                exposure.info <- final.population.list[["exposure_level_info"]]
+            # put together results for each chrom
+            exposure.info.dt <- rbindlist(lapply(exposure.info, function(chrom.res){
 
-                # put together results for each chrom
-                exposure.info.dt <- rbindlist(lapply(exposure.info, function(chrom.res){
+                exposure.info.list <- chrom.res[["score_by_exposure"]]
+                dt.list <- lapply(seq_along(exposure.info.list), function(exposure.number){
 
-                    risk.order <- chrom.res[["xbar_length_order"]]
-                    exposure.info.list <- chrom.res[["score_by_exposure"]]
-                    dt.list <- lapply(seq_along(risk.order), function(exposure.number){
+                    # pick out results
+                    exposure.level <- exposure.levels[exposure.number]
+                    exposure.res <- exposure.info.list[[exposure.number]]
 
-                        # pick out results
-                        exposure.level <- exposure.levels[exposure.number]
-                        exposure.res <- exposure.info.list[[exposure.number]]
-                        exposure.res[["rank"]] <- risk.order[exposure.number]
+                    # specify column names
+                    colnames.start <- paste0("exposure", exposure.level)
+                    diff.vec.colnames <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
+                    allele.copy.colnames <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
+                    colnames.end <- c(diff.vec.colnames, allele.copy.colnames,
+                                      "n.cases.risk.geno", "n.comps.risk.geno")
 
-                        # specify column names
-                        colnames.start <- paste0("exposure", exposure.level)
-                        diff.vec.colnames <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
-                        allele.copy.colnames <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
-                        colnames.end <- c("rank", diff.vec.colnames, allele.copy.colnames,
-                                          "n.cases.risk.geno", "n.comps.risk.geno")
+                    # pick out results
+                    if ("no_informative_families" %in% names(exposure.res)){
 
-                        # pick out results
-                        if ("no_informative_families" %in% names(exposure.res)){
+                        res <- data.table(matrix(NA, 1, length(colnames.end)))
+                        res[ , 1] <- risk.order[exposure.number]
 
-                            res <- data.table(matrix(NA, 1, length(colnames.end)))
-                            res[ , 1] <- risk.order[exposure.number]
+                    } else {
 
-                        } else {
+                        exposure.res.target <- exposure.res[c("sum_dif_vecs", "risk_set_alleles", "n_case_risk_geno",
+                                                              "n_comp_risk_geno")]
+                        res <- data.table(t(data.frame(unlist(exposure.res.target))))
 
-                            exposure.res.target <- exposure.res[c("rank", "sum_dif_vecs", "risk_set_alleles", "n_case_risk_geno",
-                                                                  "n_comp_risk_geno")]
-                            res <- data.table(t(data.frame(unlist(exposure.res.target))))
+                    }
+                    colnames(res) <- paste(colnames.start, colnames.end)
+                    return(res)
 
-                        }
-                        colnames(res) <- paste(colnames.start, colnames.end)
-                        return(res)
+                })
 
-                    })
+                combined.dt <- setDT(unlist(dt.list, recursive = FALSE), check.names = TRUE)[]
+                return(combined.dt)
 
-                    combined.dt <- setDT(unlist(dt.list, recursive = FALSE), check.names = TRUE)[]
-                    return(combined.dt)
-
-                }))
+            }))
 
 
-                final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, exposure.info.dt)
-                setorder(final.result, -fitness.score)
-
-            } else {
-
-
-                final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt)
-
-            }
-
+            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, exposure.info.dt)
+            setorder(final.result, -fitness.score)
         }
 
         #output list

@@ -7,6 +7,8 @@
 compute.graphical.scores(
   results.list,
   preprocessed.list,
+  null.mean.vec = rep(0, 3),
+  null.cov.mat = diag(3),
   score.type = "logsum",
   pval.thresh = 0.05,
   n.permutes = 10000,
@@ -25,6 +27,12 @@ Each data.table in the list should be subset to the top \code{n.top.scores} scor
 otherwise an error will be returned.}
 
 \item{preprocessed.list}{The list output by \code{preprocess.genetic.data} run on the observed data.}
+
+\item{null.mean.vec}{A vector of null means used for comparison in the Mahalanobis distance based version of the
+GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
+
+\item{null.cov.mat}{A null covariance matrix used for comparison in the Mahalanobis distance based version of the
+GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all

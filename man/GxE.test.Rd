@@ -7,13 +7,15 @@
 GxE.test(
   snp.cols,
   preprocessed.list,
+  null.mean.vec,
+  null.cov.mat,
   n.permutes = 10000,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  use.parents = FALSE,
+  use.parents = 1,
   use.parents.only = TRUE
 )
 }
@@ -40,11 +42,8 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
-\item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to false. This should only be set to true
-if the population is homogenous with no exposure related population structure}
-
-\item{use.parents.only}{A logical indicating whether only parent data should be used in computing the fitness score. Defaults to TRUE. This should only be set to true
-if the population is homogenous with no exposure related population structure.}
+\item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+indicating family level informativeness will be used. Specify 0 to only use transmission data.}
 }
 \value{
 A list of thee elements:
@@ -77,10 +76,13 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
        n.migrations = 1)
 
 combined.res <- combine.islands('tmp_gxe', snp.annotations, pp.list, 1)
+null.info <- readRDS("tmp_gxe/null.mean.cov.info.rds")
+null.mean <- null.info[["null.mean"]]
+null.cov <- null.info[["null.cov"]]
 
 top.snps <- as.vector(t(combined.res[1, 1:3]))
 set.seed(10)
-GxE.test.res <- GxE.test(top.snps, pp.list)
+GxE.test.res <- GxE.test(top.snps, pp.list, null.mean, null.cov)
 
 unlink('tmp_gxe', recursive = TRUE)
 unlink('tmp_reg_gxe', recursive = TRUE)

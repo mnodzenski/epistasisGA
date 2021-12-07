@@ -35,19 +35,8 @@
 #' @param categorical.exposures A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
 #' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{categorical.exposures}
 #' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
-#' @param categorical.exposures.risk.ranks An optional named list indicating the hypothesized relationship to risk
-#' among the levels of \code{categorical.exposures}. The number of list elements must be equal to the number
-#' of distinct levels of \code{categorical.exposures} and the list element names should be the
-#' distinct levels of \code{categorical.exposures}. The list element values should be integers corresponding to
-#' the relative rank of hypothesized risk corresponding to an exposure, with 1 corresponding to the lowest risk
-#' level. For example, suppose \code{categorical.exposures} has two levels, 1 and 2, and an analyst is interested
-#' only in identifying SNPs that are synergistically risk-related in the presence of exposure level 2. The analyst
-#' should specify \code{list("1" = 1, "2" = 2)} for \code{categorical.exposures.risk.ranks}. Similarly, for
-#' an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
-#' analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
-#' examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.
-#' @param use.parents.only A logical indicating whether only parent data should be used in computing the fitness score for GxE search. Defaults to TRUE.
-#' This should only be set to true if the population is homogenous with no exposure related population structure.
+#' @param use.parents A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+#' indicating family level informativeness will be used. Specify 0 to only use transmission data.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
@@ -56,7 +45,6 @@
 #'  is not specified, and \code{snp.sampling.probs} if specified.}
 #'  \item{ld.block.vec}{A vector eaul to \code{cumsum(ld.block.vec)}.}
 #'  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
-#'  \item{exposure.risk.levels}{The list specified in input argument categorical.exposures.risk.ranks.}
 #' }
 #'
 #' @examples
@@ -79,7 +67,7 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, categorical.exposures.risk.ranks = NULL, use.parents = 1) {
+    categorical.exposures = NULL, use.parents = 1) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -112,22 +100,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
             stop("categorical.exposures must be of class integer")
 
         }
-
-        # if specified, make sure the hypothesized risk vector contains the correct number
-        # of elements
-        if (!is.null(categorical.exposures.risk.ranks)){
-
-            rr.names <- names(categorical.exposures.risk.ranks)
-            unique.exposures <- unique(categorical.exposures)
-            correct.rr <- all(unique.exposures %in% rr.names)
-            if (!correct.rr){
-
-                stop("names of categorical.exposures.risk.ranks must match the unique elements of categorical.exposures")
-
-            }
-
-        }
-
         # identify families with missing exposure data
         missing.exposure <- is.na(categorical.exposures)
         if (sum(missing.exposure) > 0){
@@ -138,7 +110,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # shorten the name of the exposures variable
         exposure <- categorical.exposures
-        exposure.risk.levels <- categorical.exposures.risk.ranks
         storage.mode(exposure) <- "integer"
 
         # get rid of any levels with only one case
@@ -450,24 +421,12 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     ### if running GxE create required inputs ###
     if (!is.null(exposure)){
 
-        if (is.null(exposure.risk.levels)){
-
-            exposure.risk.levels <- rep(1, length(unique(exposure)))
-
-        } else {
-
-            exposure.risk.levels <- unlist(exposure.risk.levels[as.character(unique(exposure))])
-
-        }
-
         exposure.levels <- unique(exposure)
         storage.mode(exposure.levels) <- "integer"
-        storage.mode(exposure.risk.levels) <- "integer"
 
     } else {
 
         exposure.levels <- NULL
-        exposure.risk.levels <- NULL
 
     }
 
@@ -492,6 +451,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     }
 
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-        exposure = exposure, exposure.levels = exposure.levels, exposure.risk.levels = exposure.risk.levels, use.parents = use.parents))
+        exposure = exposure, exposure.levels = exposure.levels, use.parents = use.parents))
 
 }

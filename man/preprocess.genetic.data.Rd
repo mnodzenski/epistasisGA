@@ -13,7 +13,6 @@ preprocess.genetic.data(
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
-  categorical.exposures.risk.ranks = NULL,
   use.parents = 1
 )
 }
@@ -59,20 +58,8 @@ real numbers. See argument \code{prob} from function \code{sample} for more deta
 which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{categorical.exposures}
 should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
 
-\item{categorical.exposures.risk.ranks}{An optional named list indicating the hypothesized relationship to risk
-among the levels of \code{categorical.exposures}. The number of list elements must be equal to the number
-of distinct levels of \code{categorical.exposures} and the list element names should be the
-distinct levels of \code{categorical.exposures}. The list element values should be integers corresponding to
-the relative rank of hypothesized risk corresponding to an exposure, with 1 corresponding to the lowest risk
-level. For example, suppose \code{categorical.exposures} has two levels, 1 and 2, and an analyst is interested
-only in identifying SNPs that are synergistically risk-related in the presence of exposure level 2. The analyst
-should specify \code{list("1" = 1, "2" = 2)} for \code{categorical.exposures.risk.ranks}. Similarly, for
-an exposure with levels 1, 2, and 3, with hypothesized increasing risk relevance with each level, an
-analyst could specify \code{list("1" = 1, "2" = 2, "3" = 3)}. See the package vignette for more detailed
-examples. If not specified, no risk-related ordering is assumed among the levels of \code{categorical.exposures}.}
-
-\item{use.parents.only}{A logical indicating whether only parent data should be used in computing the fitness score for GxE search. Defaults to TRUE.
-This should only be set to true if the population is homogenous with no exposure related population structure.}
+\item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+indicating family level informativeness will be used. Specify 0 to only use transmission data.}
 }
 \value{
 A list containing the following:
@@ -83,7 +70,6 @@ A list containing the following:
  is not specified, and \code{snp.sampling.probs} if specified.}
  \item{ld.block.vec}{A vector eaul to \code{cumsum(ld.block.vec)}.}
  \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
- \item{exposure.risk.levels}{The list specified in input argument categorical.exposures.risk.ranks.}
 }
 }
 \description{

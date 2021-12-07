@@ -142,15 +142,14 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
             exposure.risk.allele.cols <- gsub("diff.vec", "risk.allele", diff.colnames)
             colnames(risk.allele.dt) <- exposure.risk.allele.cols
             exposure <- gsub(".snp1.diff.vec", "", diff.colnames[1])
-            exposure.rank.col <- paste0(exposure, ".rank")
             exposure.risk.n.risk.allele.cols <- gsub("diff.vec", "allele.copies", diff.colnames)
             exposure.n.cases.risk.geno.col <- paste0(exposure, ".n.cases.risk.geno")
             exposure.n.comps.risk.geno.col <- paste0(exposure, ".n.comps.risk.geno")
-            orig.target.cols <- c(exposure.rank.col, diff.colnames, exposure.risk.n.risk.allele.cols,
+            orig.target.cols <- c(diff.colnames, exposure.risk.n.risk.allele.cols,
                                   exposure.n.cases.risk.geno.col, exposure.n.comps.risk.geno.col)
             exposure.original.dt <- unique.result[ , ..orig.target.cols]
             combined.dt <- cbind(exposure.original.dt, risk.allele.dt)
-            new.target.cols <- c(exposure.rank.col, diff.colnames, exposure.risk.allele.cols,
+            new.target.cols <- c(diff.colnames, exposure.risk.allele.cols,
                                  exposure.risk.n.risk.allele.cols, exposure.n.cases.risk.geno.col,
                                  exposure.n.comps.risk.geno.col)
             combined.dt <- combined.dt[ , ..new.target.cols]

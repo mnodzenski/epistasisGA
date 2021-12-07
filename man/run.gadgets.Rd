@@ -28,7 +28,10 @@ run.gadgets(
   migration.generations = 50,
   n.migrations = 20,
   recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64
+  recode.test.stat = 1.64,
+  n.random.chroms = 10000,
+  null.mean.vec = NULL,
+  null.cov.mat = NULL
 )
 }
 \arguments{
@@ -104,8 +107,21 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
+\item{n.random.chroms}{The number of random chromosomes used to construct a reference null mean vector and covariance matrix to
+compute the Mahalanobis based GxE fitness score.}
+
+\item{null.mean.vec}{A vector of estimated null means for each of the three components of the Mahalanobis distance based
+GxE fitness score. This does not need to be specified unless an analyst wants to replicate the results of a previous GADGETS
+GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
+In that case, to use the same null mean vector in computing the Mahalanobis distance based fitness score, the analyst can find the
+previously used null mean vector in the file "null.mean.cov.info.rds" stored in the \code{results.dir} directory.}
+
+\item{null.cov.mat}{An estimated null covariance matrix for the three components of the Mahalanobis distance based
+GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
+previously used null covariance matrix can also be found in the file "null.mean.cov.info.rds" stored in the \code{results.dir} directory.}
+
 \item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
-if the population is homogenous with no exposure related population structure}
+if the population is homogenous with no exposure related population structure.}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:

@@ -7,6 +7,10 @@
 #'  Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 #'  otherwise an error will be returned.
 #' @param preprocessed.list The list output by \code{preprocess.genetic.data} run on the observed data.
+#' @param null.mean.vec A vector of null means used for comparison in the Mahalanobis distance based version of the
+#' GxE fitness score. Does not need to be specified otherwise, and can be left at its default.
+#' @param null.cov.mat A null covariance matrix used for comparison in the Mahalanobis distance based version of the
+#' GxE fitness score. Does not need to be specified otherwise, and can be left at its default.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
 #' graphical scores of chromosomes containing that pair across chromosome sizes. The choice of 'logsum' rather than 'sum'
@@ -86,10 +90,11 @@
 #' @importFrom data.table melt
 #' @export
 
-compute.graphical.scores <- function(results.list, preprocessed.list,
-                                score.type = "logsum", pval.thresh = 0.05, n.permutes = 10000,
-                                n.different.snps.weight = 2, n.both.one.weight = 1, weight.function.int = 2,
-                                recessive.ref.prop = 0.75, recode.test.stat = 1.64, bp.param = bpparam()) {
+compute.graphical.scores <- function(results.list, preprocessed.list, null.mean.vec = rep(0, 3),
+                                     null.cov.mat = diag(3), score.type = "logsum", pval.thresh = 0.05,
+                                     n.permutes = 10000, n.different.snps.weight = 2, n.both.one.weight = 1,
+                                     weight.function.int = 2, recessive.ref.prop = 0.75, recode.test.stat = 1.64,
+                                     bp.param = bpparam()) {
 
     if (pval.thresh > 0.6){
 
@@ -111,17 +116,17 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
 
     ## compute graphical scores based on epistasis test
     GxE <- !is.null(preprocessed.list$exposure)
-    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, preprocessed.list,
-                                                     n.permutes, n.different.snps.weight, n.both.one.weight,
+    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, preprocessed.list, null.mean.vec,
+                                                     null.cov.mat, n.permutes, n.different.snps.weight, n.both.one.weight,
                                                      weight.function.int, recessive.ref.prop, recode.test.stat,
                                                      GxE){
 
-        n2log_epistasis_pvals(chrom.size.list, preprocessed.list, n.permutes,
+        n2log_epistasis_pvals(chrom.size.list, preprocessed.list, null.mean.vec, null.cov.mat, n.permutes,
                               n.different.snps.weight, n.both.one.weight, weight.function.int,
                               recessive.ref.prop, recode.test.stat, GxE)
 
-    }, preprocessed.list = preprocessed.list, n.permutes = n.permutes,
-    n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
+    }, preprocessed.list = preprocessed.list, null.mean.vec = null.mean.vec, null.cov.mat = null.cov.mat,
+    n.permutes = n.permutes, n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
     weight.function.int = weight.function.int, recessive.ref.prop = recessive.ref.prop,
     recode.test.stat = recode.test.stat, GxE = GxE, BPPARAM = bp.param)
 
