@@ -191,9 +191,20 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     } else {
 
-        prev.islands <- list.files(results.dir, pattern = "cluster")
-        prev.islands <- prev.islands[!prev.islands %in% c("Old", "old", "combined")]
-        prev.clusters <- unique(as.numeric(gsub("cluster|.island[0-9].rds", "", prev.islands)))
+        concat.results.file <- file.path(results.dir, "all.island.results.concatenated.rds")
+        if (!file.exists(concat.results.file)){
+
+            prev.islands <- list.files(results.dir, pattern = "cluster")
+            prev.islands <- prev.islands[!prev.islands %in% c("Old", "old", "combined")]
+            prev.clusters <- unique(as.numeric(gsub("cluster|.island[0-9].rds", "", prev.islands)))
+
+        } else {
+
+            prev.islands.res <- readRDS(concat.results.file)
+            prev.islands <- unique(prev.islands.res$island)
+            prev.clusters <- unique(as.numeric(gsub("cluster|.island[0-9]", "", prev.islands)))
+
+        }
         clusters.to.run <- setdiff(clusters.to.run, prev.clusters)
         n.clusters.to.run <- length(clusters.to.run)
 

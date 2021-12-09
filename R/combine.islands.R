@@ -11,7 +11,8 @@
 #' top 10.
 #' @return A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
 #' as 'combined.island.unique.chromosome.results.rds'. See the package vignette for more detailed descriptions of the content
-#' of each output column.
+#' of each output column. Secondarilly, this will concatenate all individual island results files and store them
+#' in a single file, called "all.island.results.concatenated.rds".
 #' @examples
 #'
 #' data(case)
@@ -81,15 +82,31 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         chromosome.size <- sum(grepl("snp[0-9]$", colnames(chrom.results)))
         chrom.results[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(chrom.results)),
                         .SDcols = seq_len(chromosome.size)]
+
+        # also saving the full results for combined file
+        all.results <- chrom.results
+        all.results$island <- island
+        all.results$n.generations <- n.generations
         chrom.results <- chrom.results[!duplicated(chrom.results), ]
 
         #take top scorers
         chrom.results <- chrom.results[seq_len(n.top.chroms.per.island), ]
-        return(chrom.results)
+        return(list(chrom.results, all.results))
 
     })
-    combined.result <- rbindlist(island.list)
+    combined.result <- rbindlist(lapply(island.list, function(x) x[[1]]))
     setorder(combined.result, -fitness.score)
+
+    all.island.res <- rbindlist(lapply(island.list, function(x) x[[2]]))
+
+    #remove all the individual island files
+    lapply(island.names, unlink)
+
+    # save concatenated file instead
+    all.islands.out.file <- file.path(dirname(island.names[1]),
+                                      "all.island.results.concatenated.rds")
+    saveRDS(all.island.res, all.islands.out.file)
+
     GxE <- any(grepl("exposure", colnames(combined.result)))
     parents.only.GxE <- !any(grepl("n.cases.risk.geno", colnames(combined.result))) & !GxE
     GxG <- !parents.only.GxE & !GxE
@@ -187,7 +204,6 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
 
     # save
     saveRDS(final.result, file = out.file)
-
     return(final.result)
 
 }

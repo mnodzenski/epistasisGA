@@ -26,7 +26,8 @@ top 10.}
 \value{
 A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
 as 'combined.island.unique.chromosome.results.rds'. See the package vignette for more detailed descriptions of the content
-of each output column.
+of each output column. Secondarilly, this will concatenate all individual island results files and store them
+in a single file, called "all.island.results.concatenated.rds".
 }
 \description{
 This function combines GADGETS results for individual islands into a single dataset.
