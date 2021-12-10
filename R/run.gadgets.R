@@ -52,16 +52,16 @@
 #' See the GADGETS paper for specific details.
 #' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
 #' if the population is homogenous with no exposure related population structure.
-#' @param n.random.chroms The number of random chromosomes used to construct a reference null mean vector and covariance matrix to
-#' compute the Mahalanobis based GxE fitness score.
-#' @param null.mean.vec A vector of estimated null means for each of the three components of the Mahalanobis distance based
+#' @param n.random.chroms The number of random chromosomes used to construct a reference null mean and standard error vectors to
+#' compute the GxE fitness score.
+#' @param null.mean.vec A vector of estimated null means for each of the three components of the
 #' GxE fitness score. This does not need to be specified unless an analyst wants to replicate the results of a previous GADGETS
 #' GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
-#' In that case, to use the same null mean vector in computing the Mahalanobis distance based fitness score, the analyst can find the
-#' previously used null mean vector in the file "null.mean.cov.info.rds" stored in the \code{results.dir} directory.
-#' @param null.cov.mat An estimated null covariance matrix for the three components of the Mahalanobis distance based
+#' In that case, to use the same null mean vector in computing the fitness score, the analyst can find the
+#' previously used null mean vector in the file "null.mean.se.info.rds" stored in the \code{results.dir} directory.
+#' @param null.se.vec A vector of estimated null standard errors for the three components of the
 #' GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
-#' previously used null covariance matrix can also be found in the file "null.mean.cov.info.rds" stored in the \code{results.dir} directory.
+#' previously used vector can also be found in the file "null.mean.se.info.rds" stored in the \code{results.dir} directory.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
@@ -101,7 +101,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
     n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, n.random.chroms = 10000, null.mean.vec = NULL,
-    null.cov.mat = NULL) {
+    null.se.vec = NULL) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
@@ -219,17 +219,17 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### if running GxE, compute the elements required for mahalanobis distance fitness score ###
     exposure <- data.list$exposure
     null.mean <- rep(0, 3)
-    null.cov <- diag(3)
+    null.se <- rep(1, 3)
     if (!is.null(exposure)){
 
         storage.mode(exposure) <- "integer"
 
         if (use.parents == 1){
 
-            if (is.null(null.mean.vec) & is.null(null.cov.mat)){
+            if (is.null(null.mean.vec) & is.null(null.se.vec)){
 
                 # make sure we're not accidentally redoing this
-                out.file.name <- file.path(results.dir, "null.mean.cov.info.rds")
+                out.file.name <- file.path(results.dir, "null.mean.se.info.rds")
 
                 # split genetic data by exposure status
                 case.genetic.data <- data.frame(data.list$case.genetic.data)
@@ -254,10 +254,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                 storage.mode(exposure.levels) <- "integer"
                 null.vec.mat <- GxE_fitness_vec_mat(case.list, comp.list, random.chroms,
                                                     ld.block.vec, weight.lookup, exposure.levels,
-                                                    rep(0, 3), diag(3), n.different.snps.weight, n.both.one.weight,
-                                                    recessive.ref.prop, recode.test.stat)
+                                                    rep(0, 3), rep(1, 3), n.different.snps.weight,
+                                                    n.both.one.weight, recessive.ref.prop,
+                                                    recode.test.stat)
                 null.mean <- colMeans(null.vec.mat)
-                null.cov <- cov(null.vec.mat)
+                null.se <- sqrt(diag(cov(null.vec.mat)))
 
                 #save these if needed later
                 if (file.exists(out.file.name)){
@@ -265,45 +266,47 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                     # if run previously, make sure the seed was the same
                     prev.res <- readRDS(out.file.name)
                     prev.mean <- prev.res$null.mean
-                    prev.cov <- prev.res$null.cov
+                    prev.se <- prev.res$null.se
 
-                    if (null.mean != prev.mean | !(all(prev.cov == null.cov))){
+                    if (any(null.mean != prev.mean) | any(prev.se != null.se)){
 
-                        stop(paste("null mean vector and/or covariance matrix do not match the previous values in",
+                        stop(paste("null mean and/or se vector  do not match the previous values in",
                                    out.file.name))
 
                     }
 
                 } else {
 
-                    out.res <- list(null.mean = null.mean, null.cov = null.cov, random.chroms = random.chroms)
+                    out.res <- list(null.mean = null.mean, null.se = null.se, random.chroms = random.chroms)
                     saveRDS(out.res, file = out.file.name)
 
                 }
 
 
-            } else if (!is.null(null.mean.vec) & !is.null(null.cov.mat)){
+            } else if (!is.null(null.mean.vec) & !is.null(null.se.vec)){
 
                 # make sure we're not accidentally redoing this
-                out.file.name <- file.path(results.dir, "null.mean.cov.info.rds")
+                out.file.name <- file.path(results.dir, "null.mean.se.info.rds")
                 if (file.exists(out.file.name)){
 
                     prev.res <- readRDS(out.file.name)
                     prev.mean <- prev.res$null.mean
-                    prev.cov <- prev.res$null.cov
+                    prev.se <- prev.res$null.se
 
-                    if (null.mean.vec != prev.mean | !(all(prev.cov == null.cov.mat))){
+                    if (any(null.mean != prev.mean) | any(prev.se != null.se)){
 
-                        stop(paste("null mean vector and/or covariance matrix do not match the previous values in",
+                        stop(paste("null mean and/or se vector  do not match the previous values in",
                                    out.file.name))
 
                     }
+                    null.mean <- null.mean.vec
+                    null.se <- null.se.vec
 
                 }
 
             } else {
 
-                stop("null.mean.vec and null.cov.mat must both be null or both not be null")
+                stop("null.mean.vec and null.se.vec must both be null or both not be null")
 
             }
 
@@ -370,7 +373,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
         case.genetic.data = data.list$case.genetic.data, complement.genetic.data = data.list$complement.genetic.data,
         ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
-        weight.lookup = weight.lookup, null.mean.vec = null.mean, null.cov.mat = null.cov, island.cluster.size = island.cluster.size,
+        weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.se, island.cluster.size = island.cluster.size,
         n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
         gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
         recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,

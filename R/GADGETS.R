@@ -29,8 +29,8 @@
 #' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
 #' @param null.mean.vec A vector of estimated null means for each of the three components of the Mahalanobis distance based
 #' GxE fitness score. For all other uses, this should be specified as rep(0, 3) and will not be used.
-#' @param null.cov.mat An estimated null covariance matrix for the three components of the Mahalanobis distance based
-#' GxE fitness score. For all other uses, this should be specified as diag(3) and will not be used.
+#' @param null.se.vec An estimated vector of null standard errors for the three components of the
+#' GxE fitness score. For all other uses, this should be specified as rep(1, 3) and will not be used.
 #' @param island.cluster.size An integer specifying the number of islands in the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.
 #' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement is multiplied in computing the family weights. Defaults to 2.
@@ -84,14 +84,14 @@
 #'        n.chromosomes = 10, chromosome.size = 3, snp.chisq = chisq.stats,
 #'        weight.lookup = weight.lookup, n.migrations = 2, migration.interval = 5,
 #'        gen.same.fitness = 10, max.generations = 10, null.mean.vec = rep(0, 3),
-#'        null.cov.mat = diag(3))
+#'        null.se.vec = rep(1, 3))
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
 #' @useDynLib epistasisGAGE
 #' @export
 
 GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data, ld.block.vec, n.chromosomes,
-                    chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.cov.mat, island.cluster.size = 4, n.migrations = 20,
+                    chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.se.vec, island.cluster.size = 4, n.migrations = 20,
                     n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                     recode.test.stat = 1.64, exposure.levels = NULL, exposure = NULL, use.parents = 1) {
@@ -99,7 +99,7 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
                             weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, null.mean.vec,
-                            null.cov.mat, exposure.levels, exposure, n.different.snps.weight, n.both.one.weight,
+                            null.se.vec, exposure.levels, exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat, use.parents)
 

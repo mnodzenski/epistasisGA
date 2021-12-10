@@ -57,15 +57,14 @@
 #'
 #' @export
 
-GxE.test <- function(snp.cols, preprocessed.list, null.mean.vec, null.cov.mat,
+GxE.test <- function(snp.cols, preprocessed.list, null.mean.vec, null.se.vec,
                      n.permutes = 10000, n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75, recode.test.stat = 1.64,
-                     use.parents = 1,
-                     use.parents.only = TRUE) {
+                     use.parents = 1) {
 
     # run the test via cpp
-    GxE_test(snp.cols, preprocessed.list, null.mean.vec, null.cov.mat, n.permutes,
+    GxE_test(snp.cols, preprocessed.list, null.mean.vec, null.se.vec, n.permutes,
              n.different.snps.weight, n.both.one.weight, weight.function.int,
-             recessive.ref.prop, recode.test.stat, use.parents, use.parents.only)
+             recessive.ref.prop, recode.test.stat, use.parents)
 
 }

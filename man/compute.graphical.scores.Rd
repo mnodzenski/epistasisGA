@@ -8,7 +8,7 @@ compute.graphical.scores(
   results.list,
   preprocessed.list,
   null.mean.vec = rep(0, 3),
-  null.cov.mat = diag(3),
+  null.se.vec = rep(1, 3),
   score.type = "logsum",
   pval.thresh = 0.05,
   n.permutes = 10000,
@@ -31,7 +31,7 @@ otherwise an error will be returned.}
 \item{null.mean.vec}{A vector of null means used for comparison in the Mahalanobis distance based version of the
 GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 
-\item{null.cov.mat}{A null covariance matrix used for comparison in the Mahalanobis distance based version of the
+\item{null.se.vec}{A vector or estimated null standard errors for the components of the
 GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
