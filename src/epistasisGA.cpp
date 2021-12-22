@@ -1165,6 +1165,110 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 /////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
+List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_,
+                                  NumericMatrix exposure_mat_, arma::uvec target_snps, arma::vec weight_lookup,
+                                  arma::vec null_means, arma::vec null_se,
+                                  int n_different_snps_weight = 2, int n_both_one_weight = 1){
+
+  // get target data and take differences
+  arma::mat case_genetic_data(case_genetic_data_.begin(), case_genetic_data_.nrow(),
+                               case_genetic_data_.ncol(), false);
+  arma::mat complement_genetic_data(complement_genetic_data_.begin(), complement_genetic_data_.nrow(),
+                              complement_genetic_data_.ncol(), false);
+  arma::mat exposure_mat(exposure_mat_.begin(), exposure_mat_.nrow(), exposure_mat_.ncol(), false);
+  arma::mat case_target = case_genetic_data.cols(target_snps - 1);
+  arma::mat comp_target = complement_genetic_data.cols(target_snps - 1);
+  arma::mat geno_diff_mat = case_target - comp_target;
+  arma::umat diffs = geno_diff_mat != 0;
+  arma::mat diff_mat = conv_to<mat>::from(diffs);
+  arma::umat both_one = case_target == 1 && comp_target == 1;
+  arma::mat both_one_mat = conv_to<mat>::from(both_one);
+  arma::vec n_diffs = arma::sum(diff_mat, 1);
+  arma::vec n_both_one = arma::sum(both_one_mat, 1);
+  n_both_one.elem( find(n_diffs == 0) ).zeros();
+  arma::vec weight_start = n_different_snps_weight*n_diffs + n_both_one_weight*n_both_one;
+  arma::vec family_weights(case_target.n_rows, fill::zeros);
+
+  // make the family weights
+  for (unsigned int i = 0; i < case_target.n_rows; i++){
+
+    int this_weight = weight_start(i);
+    if (this_weight > 0){
+
+      double fam_weight_i = weight_lookup(this_weight - 1);
+      family_weights(i) = fam_weight_i;
+
+    }
+
+  }
+
+  // prepare for weighted linear model
+
+  // intercept only mat
+  arma::vec x0(case_genetic_data.n_rows, fill::ones);
+
+  // full model mat
+  arma::mat x = join_rows(x0, exposure_mat);
+
+  // compute wald stat for lm of weights
+  arma::vec beta_weights = solve(x, family_weights, solve_opts::fast);
+  arma::colvec resid_weights = family_weights - x*beta_weights;
+  double sig2 = arma::as_scalar(arma::trans(resid_weights)*resid_weights/(x.n_rows - x.n_cols));
+  arma::mat vcov_beta_weights = sig2 * arma::inv(arma::trans(x)*x);
+  beta_weights(0) = 0.0;
+  vcov_beta_weights.col(0).zeros();
+  vcov_beta_weights.row(0).zeros();
+  double wald_test = arma::as_scalar(trans(beta_weights)*pinv(vcov_beta_weights)*beta_weights);
+
+  // now transform wls to ols
+  arma::vec sqrt_weights = arma::sqrt(family_weights);
+  x.each_col() %= sqrt_weights;
+  x0.each_col() %= sqrt_weights;
+  geno_diff_mat.each_col() %= sqrt_weights;
+
+  // fit full model
+  arma::mat beta_full = solve(x, geno_diff_mat, solve_opts::fast);
+  arma::mat resid_full = geno_diff_mat - x*beta_full;
+
+  // fit reduced model
+  arma::mat beta_reduced = solve(x0, geno_diff_mat, solve_opts::fast);
+  arma::mat resid_reduced = geno_diff_mat - x0*beta_reduced;
+
+  // compute hotelling-lawley trace to compare models
+  arma::mat E = trans(resid_full) * resid_full;
+  arma::mat H = trans(resid_reduced) * resid_reduced - E;
+  arma::mat H_Einv = H * arma::pinv(E);
+  double ht_trace = arma::trace(H_Einv);
+
+  // fitness score
+  arma::vec s_vec(2);
+  s_vec(0) = wald_test;
+  s_vec(1) = ht_trace;
+  arma::vec centered_vec = s_vec - null_means;
+  double s = arma::prod(arma::abs(centered_vec / null_se));
+
+  // use the diagonals of H to determine which elements to keep
+  arma::vec H_Einv_diag = H_Einv.diag();
+
+  // if the fitness score is zero or undefined reset to small number
+  if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
+    s = pow(10, -10);
+  }
+
+  // make sure the t-stats are positive real numbers
+  double fill_val = pow(10, -10);
+  arma::uvec zero_vals = arma::find(H_Einv_diag <= 0);
+  H_Einv_diag.elem(zero_vals).fill(fill_val);
+
+  List res = List::create(Named("fitness_score") = s,
+                          Named("sum_dif_vecs") = H_Einv_diag.t(),
+                          Named("ht_trace") = ht_trace,
+                          Named("wald_stat") = wald_test);
+  return(res);
+
+}
+
+// [[Rcpp::export]]
 List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
                        IntegerVector target_snps, IntegerVector ld_block_vec, IntegerVector weight_lookup,
                        IntegerVector exposure_levels, arma::vec null_mean_vec, arma::vec null_se_vec,
@@ -1381,6 +1485,26 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
 
 }
 
+// [[Rcpp::export]]
+List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_,
+                       NumericMatrix exposure_mat_, List chromosome_list,
+                       arma::vec weight_lookup,
+                       arma::vec null_means, arma::vec null_se,
+                       int n_different_snps_weight = 2, int n_both_one_weight = 1){
+
+  List scores = chromosome_list.length();
+  for (int i = 0; i < chromosome_list.length(); i++){
+
+    arma::uvec target_snps = chromosome_list[i];
+    scores[i] = GxE_fitness_score_mvlm(case_genetic_data_, complement_genetic_data_,
+                                       exposure_mat_, target_snps, weight_lookup,
+                                       null_means, null_se,
+                                       n_different_snps_weight, n_both_one_weight);
+
+  }
+  return(scores);
+
+}
 
 // [[Rcpp::export]]
 NumericMatrix GxE_fitness_vec_mat(List case_genetic_data_list, List complement_genetic_data_list, List chromosome_list,
@@ -1411,6 +1535,34 @@ NumericMatrix GxE_fitness_vec_mat(List case_genetic_data_list, List complement_g
 
 }
 
+// [[Rcpp::export]]
+NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_,
+                                       NumericMatrix exposure_mat_, List chromosome_list,
+                                       arma::vec weight_lookup,
+                                       arma::vec null_means, arma::vec null_se,
+                                       int n_different_snps_weight = 2, int n_both_one_weight = 1){
+
+  int n_chroms = chromosome_list.length();
+  NumericMatrix out_mat(n_chroms, 2);
+  for (int i = 0; i < chromosome_list.length(); i++){
+
+    arma::uvec target_snps = chromosome_list[i];
+    List score_i = GxE_fitness_score_mvlm(case_genetic_data_, complement_genetic_data_,
+                                          exposure_mat_, target_snps, weight_lookup,
+                                          null_means, null_se, n_different_snps_weight,
+                                          n_both_one_weight);
+    double ht_trace = score_i["ht_trace"];
+    double wald_stat = score_i["wald_stat"];
+    NumericVector res_vec(2);
+    res_vec[0] = wald_stat;
+    res_vec[1] = ht_trace;
+    out_mat(i , _) = res_vec;
+
+  }
+  return(out_mat);
+
+}
+
 //////////////////////////////////////////////////////////////
 //function to compute fitness score of list of chromosomes
 // and parse the output
@@ -1423,10 +1575,12 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                 ListOf<IntegerMatrix> case_genetic_data_list,
                                 ListOf<IntegerMatrix> complement_genetic_data_list,
                                 IntegerVector exposure_levels,
+                                NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                                NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                                 arma::vec null_mean_vec, arma::vec null_se_vec,
                                 int n_different_snps_weight = 2,
                                 int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                bool GxE = false, int use_parents = 1){
+                                bool GxE = false, int use_parents = 1, bool cont_GxE = false){
 
   // initiate storage object for fitness scores
   List chrom_fitness_score_list;
@@ -1488,6 +1642,42 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
       return(res);
 
     }
+
+  } else if (cont_GxE){
+
+    // compute fitness scores
+    List chrom_fitness_score_list = GxE_fitness_score_mvlm_list(case_genetic_data_n, complement_genetic_data_n,
+                                                                exposure_mat_n, chromosome_list,
+                                                                weight_lookup_n, null_mean_vec, null_se_vec,
+                                                                n_different_snps_weight, n_both_one_weight);
+
+    // initiate obejcts for overall fitness score information
+    int n_chromosomes = chromosome_list.length();
+    NumericVector fitness_scores(n_chromosomes);
+    List sum_dif_vecs(n_chromosomes);
+    List gen_original_cols(n_chromosomes);
+
+    // loop over chromosomes and pick out the information
+    for (int i = 0; i < n_chromosomes; i++){
+
+      // general info
+      List chrom_fitness_score_list_i = chrom_fitness_score_list[i];
+      double fs = chrom_fitness_score_list_i["fitness_score"];
+      NumericVector sdv = chrom_fitness_score_list_i["sum_dif_vecs"];
+      IntegerVector chrom_col_idx = chromosome_list[i];
+
+      fitness_scores[i] = fs;
+      sum_dif_vecs[i] = sdv;
+      gen_original_cols[i] = chrom_col_idx;
+
+    }
+
+    List res = List::create(Named("chromosome_list") = chromosome_list,
+                            Named("fitness_scores") = fitness_scores,
+                            Named("sum_dif_vecs") = sum_dif_vecs,
+                            Named("gen_original_cols") = gen_original_cols);
+    return(res);
+
 
   } else {
 
@@ -1599,11 +1789,13 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
                          ListOf<IntegerMatrix> case_genetic_data_list,
                          ListOf<IntegerMatrix> complement_genetic_data_list,
                          IntegerVector exposure_levels,
+                         NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                         NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                          arma::vec null_mean_vec, arma::vec null_se_vec,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
-                         bool GxE = false, int use_parents = 1){
+                         bool GxE = false, int use_parents = 1, bool cont_GxE = false){
 
   int n_possible_unique_combn = n_chromosomes * chromosome_size;
   if ((n_candidate_snps < n_possible_unique_combn) & !initial_sample_duplicates) {
@@ -1631,18 +1823,18 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
 
   }
 
-
   // initiate storage objects
   int generation = 1;
   bool last_gens_equal = false;
   bool top_chrom_migrated = false;
 
   // compute fitness scores for the chromosome list
-  List current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
-                                                         weight_lookup, case_genetic_data_list, complement_genetic_data_list,
-                                                         exposure_levels, null_mean_vec, null_se_vec, n_different_snps_weight,
-                                                         n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
-                                                         use_parents);
+  List  current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
+                                                      weight_lookup, case_genetic_data_list, complement_genetic_data_list,
+                                                      exposure_levels, case_genetic_data_n, complement_genetic_data_n, exposure_mat_n,
+                                                      weight_lookup_n, null_mean_vec, null_se_vec, n_different_snps_weight,
+                                                      n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
+                                                      use_parents, cont_GxE);
 
   // pick out the top and bottom scores
   chromosome_list = current_fitness_list["chromosome_list"];
@@ -1675,13 +1867,15 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    ListOf<IntegerMatrix> complement_genetic_data_list,
                    IntegerVector exposure_levels,
                    NumericVector snp_chisq, List population,
+                   NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                   NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                    arma::vec null_mean_vec, arma::vec null_se_vec,
                    int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500,
                    bool initial_sample_duplicates = false,
                    double crossover_prop = 0.8, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                   bool GxE = false, int use_parents = 1){
+                   bool GxE = false, int use_parents = 1, bool cont_GxE = false){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -1926,9 +2120,10 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     // 6. Compute new population fitness
     current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
                                                       weight_lookup, case_genetic_data_list, complement_genetic_data_list,
-                                                      exposure_levels, null_mean_vec, null_se_vec, n_different_snps_weight,
+                                                      exposure_levels, case_genetic_data_n, complement_genetic_data_n,
+                                                      exposure_data_n, weight_lookup_n, null_mean_vec, null_se_vec, n_different_snps_weight,
                                                       n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
-                                                      use_parents);
+                                                      use_parents, cont_GxE);
 
     //7. Increment iterators
     generation += 1;
@@ -1998,14 +2193,14 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     gen_original_cols = gen_original_cols[chrom_list_order - 1];
 
     // store in population
-    if (GxE){
+    if (GxE | cont_GxE){
 
       List pop_current_fitness_list = population["current_fitness"];
       pop_current_fitness_list["chromosome_list"] = chromosome_list;
       pop_current_fitness_list["fitness_scores"] = fitness_scores;
       pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
       pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      if (use_parents != 2){
+      if ((use_parents != 2) & GxE){
 
         List exposure_info = current_fitness_list["exposure_level_info"];
         exposure_info = exposure_info[chrom_list_order - 1];
@@ -2058,14 +2253,14 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
   // otherwise just store the current generation and return the population
   } else {
 
-    if (GxE){
+    if (GxE | cont_GxE){
 
       List pop_current_fitness_list = population["current_fitness"];
       pop_current_fitness_list["chromosome_list"] = chromosome_list;
       pop_current_fitness_list["fitness_scores"] = fitness_scores;
       pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
       pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      if (use_parents != 2){
+      if ((use_parents != 2) & GxE){
 
         List exposure_info = current_fitness_list["exposure_level_info"];
         pop_current_fitness_list["exposure_level_info"] = exposure_info;
@@ -2170,13 +2365,16 @@ bool check_max_gens(List island_populations, int max_generations){
 List run_GADGETS(int island_cluster_size, int n_migrations,
                  IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
                  NumericVector snp_chisq, IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in,
+                 NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                 NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                  arma::vec null_mean_vec, arma::vec null_se_vec,
                  Nullable<IntegerVector> exposure_levels_in = R_NilValue,
                  Nullable<IntegerVector> exposure_in = R_NilValue,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
-                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, int use_parents = 1){
+                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, int use_parents = 1,
+                 bool cont_GxE = false){
 
   // instantiate input objects
   IntegerMatrix case_genetic_data;
@@ -2189,7 +2387,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
   bool GxE = false;
   int n_candidate_snps = 0;
 
-  if (exposure_in.isNotNull()){
+  if ((exposure_in.isNotNull()) & (!cont_GxE)){
 
     // grab exposures
     exposure_levels = exposure_levels_in;
@@ -2205,6 +2403,10 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     GxE = true;
 
     n_candidate_snps = case_genetic_data_tmp.ncol();
+
+  }  else if (cont_GxE){
+
+    n_candidate_snps = case_genetic_data_n.ncol();
 
   } else {
 
@@ -2223,20 +2425,23 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                                    ld_block_vec, n_chromosomes, chromosome_size,
                                                    weight_lookup, case_genetic_data_list,
                                                    complement_genetic_data_list,
-                                                   exposure_levels, null_mean_vec, null_se_vec,
+                                                   exposure_levels, case_genetic_data_n,
+                                                   complement_genetic_data_n, exposure_data_n,
+                                                   weight_lookup_n, null_mean_vec, null_se_vec,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
                                                    max_generations, initial_sample_duplicates, GxE,
-                                                   use_parents);
+                                                   use_parents, cont_GxE);
 
     island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                           ld_block_vec, n_chromosomes, chromosome_size, weight_lookup,
                                           case_genetic_data_list, complement_genetic_data_list,
-                                          exposure_levels, snp_chisq, island_population_i,
+                                          exposure_levels, snp_chisq, island_population_i, case_genetic_data_n,
+                                          complement_genetic_data_n, exposure_data_n, weight_lookup_n,
                                           null_mean_vec, null_se_vec, n_different_snps_weight, n_both_one_weight,
                                           migration_interval, gen_same_fitness, max_generations,
                                           initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
-                                          GxE, use_parents);
+                                          GxE, use_parents, cont_GxE);
 
   }
 
@@ -2305,7 +2510,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
         first_island_exposure_info[receiver_idx] = exposure_info_migrations;
 
 
-      } else {
+      } else if (!cont_GxE) {
 
         // migrate risk allele vecs
         List second_island_risk_alleles = second_island_current["risk_allele_vecs"];
@@ -2354,10 +2559,11 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                             ld_block_vec, n_chromosomes, chromosome_size, weight_lookup,
                                             case_genetic_data_list, complement_genetic_data_list,
                                             exposure_levels, snp_chisq, island_population_i,
+                                            case_genetic_data_n, complement_genetic_data_n, exposure_data_n, weight_lookup_n,
                                             null_mean_vec, null_se_vec, n_different_snps_weight, n_both_one_weight,
                                             migration_interval, gen_same_fitness, max_generations,
                                             initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
-                                            GxE, use_parents);
+                                            GxE, use_parents, cont_GxE);
 
     }
 

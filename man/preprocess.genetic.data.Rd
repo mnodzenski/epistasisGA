@@ -13,6 +13,9 @@ preprocess.genetic.data(
   bp.param = bpparam(),
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
+  continuous.exposures = NULL,
+  categorical.exposures.sib = NULL,
+  continuous.exposures.sib = NULL,
   use.parents = 1
 )
 }
@@ -54,9 +57,23 @@ genetic algorithm proportional to the values specified. If not specified, by def
 each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 real numbers. See argument \code{prob} from function \code{sample} for more details.}
 
-\item{categorical.exposures}{A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
+\item{categorical.exposures}{A matrix or data.frame of integers corresponding to categorical exposures for the cases. Defaults to NULL,
 which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{categorical.exposures}
 should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
+
+\item{continuous.exposures}{A matrix or data.frame of numeric values corresponding to continuous exposures for the cases. Defaults to NULL,
+which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{continuous.exposures}
+should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
+
+\item{categorical.exposures.sib}{If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of integers
+corresponding to categorical exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the
+same exposure as the case. Defaults to NULL. \code{categorical.exposures.sib}
+should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
+
+\item{continuous.exposures.sib}{If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of numeric values
+corresponding to continuous exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the same exposure as
+the case. Defaults to NULL. code{continuous.exposures.sib} should not be missing any data, families with missing exposure data should be removed
+from the analysis prior to input.}
 
 \item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
 indicating family level informativeness will be used. Specify 0 to only use transmission data.}

@@ -90,18 +90,25 @@
 #' @useDynLib epistasisGAGE
 #' @export
 
-GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data, ld.block.vec, n.chromosomes,
+GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data,
+                    case.genetic.data.n, complement.genetic.data.n, exposure.mat, weight.lookup.n, ld.block.vec, n.chromosomes,
                     chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.se.vec, island.cluster.size = 4, n.migrations = 20,
                     n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                    recode.test.stat = 1.64, exposure.levels = NULL, exposure = NULL, use.parents = 1) {
+                    recode.test.stat = 1.64, exposure.levels = NULL, exposure = NULL, use.parents = 1, cont.GxE = FALSE) {
 
     ### run rcpp version of GADGETS ##
+    # rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
+    #                         weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, null.mean.vec,
+    #                         null.se.vec, exposure.levels, exposure, n.different.snps.weight, n.both.one.weight,
+    #                         migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
+    #                         crossover.prop, recessive.ref.prop, recode.test.stat, use.parents)
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
-                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, null.mean.vec,
+                            weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, case.genetic.data.n,
+                            complement.genetic.data.n, exposure.mat, weight.lookup.n, null.mean.vec,
                             null.se.vec, exposure.levels, exposure, n.different.snps.weight, n.both.one.weight,
                             migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
-                            crossover.prop, recessive.ref.prop, recode.test.stat, use.parents)
+                            crossover.prop, recessive.ref.prop, recode.test.stat, use.parents, cont.GxE)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number){
@@ -118,7 +125,7 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
         dif.vec.dt <- as.data.table(do.call(rbind, dif.vec.list))
         colnames(dif.vec.dt) <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
 
-        if (is.null(exposure.levels)){
+        if (!cont.GxE){
 
             risk.allele.vec.list <- final.population.list[["risk_allele_vecs"]]
             risk.allele.vec.dt <- as.data.table(do.call(rbind, risk.allele.vec.list))
@@ -128,56 +135,62 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
             final.result <- cbind(chromosome.dt, dif.vec.dt, risk.allele.vec.dt, fitness.score.dt,
                                   n.case.risk.geno.dt, n.comp.risk.geno.dt)
             setorder(final.result, -fitness.score)
-
         } else {
 
-            # grab exposure level info
-            exposure.info <- final.population.list[["exposure_level_info"]]
-
-            # put together results for each chrom
-            exposure.info.dt <- rbindlist(lapply(exposure.info, function(chrom.res){
-
-                exposure.info.list <- chrom.res[["score_by_exposure"]]
-                dt.list <- lapply(seq_along(exposure.info.list), function(exposure.number){
-
-                    # pick out results
-                    exposure.level <- exposure.levels[exposure.number]
-                    exposure.res <- exposure.info.list[[exposure.number]]
-
-                    # specify column names
-                    colnames.start <- paste0("exposure", exposure.level)
-                    diff.vec.colnames <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
-                    allele.copy.colnames <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
-                    colnames.end <- c(diff.vec.colnames, allele.copy.colnames,
-                                      "n.cases.risk.geno", "n.comps.risk.geno")
-
-                    # pick out results
-                    if ("no_informative_families" %in% names(exposure.res)){
-
-                        res <- data.table(matrix(NA, 1, length(colnames.end)))
-                        res[ , 1] <- risk.order[exposure.number]
-
-                    } else {
-
-                        exposure.res.target <- exposure.res[c("sum_dif_vecs", "risk_set_alleles", "n_case_risk_geno",
-                                                              "n_comp_risk_geno")]
-                        res <- data.table(t(data.frame(unlist(exposure.res.target))))
-
-                    }
-                    colnames(res) <- paste(colnames.start, colnames.end)
-                    return(res)
-
-                })
-
-                combined.dt <- setDT(unlist(dt.list, recursive = FALSE), check.names = TRUE)[]
-                return(combined.dt)
-
-            }))
-
-
-            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, exposure.info.dt)
+            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt)
             setorder(final.result, -fitness.score)
+
         }
+
+        # } else {
+        #
+        #     # grab exposure level info
+        #     exposure.info <- final.population.list[["exposure_level_info"]]
+        #
+        #     # put together results for each chrom
+        #     exposure.info.dt <- rbindlist(lapply(exposure.info, function(chrom.res){
+        #
+        #         exposure.info.list <- chrom.res[["score_by_exposure"]]
+        #         dt.list <- lapply(seq_along(exposure.info.list), function(exposure.number){
+        #
+        #             # pick out results
+        #             exposure.level <- exposure.levels[exposure.number]
+        #             exposure.res <- exposure.info.list[[exposure.number]]
+        #
+        #             # specify column names
+        #             colnames.start <- paste0("exposure", exposure.level)
+        #             diff.vec.colnames <- paste0("snp", seq_len(chromosome.size), ".diff.vec")
+        #             allele.copy.colnames <- paste0("snp", seq_len(chromosome.size), ".allele.copies")
+        #             colnames.end <- c(diff.vec.colnames, allele.copy.colnames,
+        #                               "n.cases.risk.geno", "n.comps.risk.geno")
+        #
+        #             # pick out results
+        #             if ("no_informative_families" %in% names(exposure.res)){
+        #
+        #                 res <- data.table(matrix(NA, 1, length(colnames.end)))
+        #                 res[ , 1] <- risk.order[exposure.number]
+        #
+        #             } else {
+        #
+        #                 exposure.res.target <- exposure.res[c("sum_dif_vecs", "risk_set_alleles", "n_case_risk_geno",
+        #                                                       "n_comp_risk_geno")]
+        #                 res <- data.table(t(data.frame(unlist(exposure.res.target))))
+        #
+        #             }
+        #             colnames(res) <- paste(colnames.start, colnames.end)
+        #             return(res)
+        #
+        #         })
+        #
+        #         combined.dt <- setDT(unlist(dt.list, recursive = FALSE), check.names = TRUE)[]
+        #         return(combined.dt)
+        #
+        #     }))
+        #
+        #
+        #     final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt, exposure.info.dt)
+        #     setorder(final.result, -fitness.score)
+        # }
 
         #output list
         final.list <- list(top.chromosome.results = final.result, n.generations = n.generations)

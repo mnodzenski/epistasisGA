@@ -9,6 +9,10 @@ GADGETS(
   results.dir,
   case.genetic.data,
   complement.genetic.data,
+  case.genetic.data.n,
+  complement.genetic.data.n,
+  exposure.mat,
+  weight.lookup.n,
   ld.block.vec,
   n.chromosomes,
   chromosome.size,
@@ -29,7 +33,8 @@ GADGETS(
   recode.test.stat = 1.64,
   exposure.levels = NULL,
   exposure = NULL,
-  use.parents = 1
+  use.parents = 1,
+  cont.GxE = FALSE
 )
 }
 \arguments{

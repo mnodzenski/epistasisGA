@@ -166,6 +166,9 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### note if we want to use parents only for GxE search
     use.parents <- data.list$use.parents
 
+    ### note if we have a continuous exposure
+    cont.GxE <- data.list$cont.GxE
+
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
     if (!is.null(weight.function.int)){
@@ -177,8 +180,31 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
         weight.lookup <- seq_len(max.sum)
 
     }
-
     storage.mode(weight.lookup) <- "integer"
+
+    ### for continuous exposure, make sure all data is stored as numeric
+    case.genetic.data <- data.list$case.genetic.data
+    complement.genetic.data <- data.list$complement.genetic.data
+    exposure.mat <- data.list$exposure.mat + 0.0
+
+    if (cont.GxE){
+
+        case.genetic.data.n <- case.genetic.data + 0.0
+        complement.genetic.data.n <- complement.genetic.data + 0.0
+        case.genetic.data <- case.genetic.data[1, 1, drop = FALSE]
+        complement.genetic.data <- complement.genetic.data[1, 1, drop = FALSE]
+        weight.lookup.n <- weight.lookup + 0.0
+        weight.lookup <- weight.lookup[1]
+        ld.block.vec <- 0
+
+    } else {
+
+        case.genetic.data.n <- matrix(0.0, 1, 1)
+        complement.genetic.data.n <- matrix(0.0, 1, 1)
+        weight.lookup.n <- 0.0
+        ld.block.vec <- data.list$ld.block.vec
+
+    }
 
     ### determine if islands have already been evolved
     clusters <- seq(1, n.islands, by = island.cluster.size)
@@ -217,12 +243,15 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     ### if running GxE, compute the elements required for mahalanobis distance fitness score ###
-    exposure <- data.list$exposure
-    null.mean <- rep(0, 3)
-    null.se <- rep(1, 3)
-    if (!is.null(exposure)){
+    #exposure <- data.list$exposure
+    # null.mean <- rep(0, 3)
+    # null.se <- rep(1, 3)
+    null.mean <- rep(0, 2)
+    null.se <- rep(1, 2)
+    #if (!is.null(exposure)){
 
-        storage.mode(exposure) <- "integer"
+        #storage.mode(exposure) <- "integer"
+    if (cont.GxE){
 
         if (use.parents == 1){
 
@@ -231,16 +260,17 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                 # make sure we're not accidentally redoing this
                 out.file.name <- file.path(results.dir, "null.mean.se.info.rds")
 
-                # split genetic data by exposure status
-                case.genetic.data <- data.frame(data.list$case.genetic.data)
-                n.snps <- ncol(case.genetic.data)
-                comp.genetic.data <- data.frame(data.list$complement.genetic.data)
-                case.list <- split(case.genetic.data, exposure)
-                case.list <- lapply(case.list, as.matrix)
-                comp.list <- split(comp.genetic.data, exposure)
-                comp.list <- lapply(comp.list, as.matrix)
+                # # split genetic data by exposure status
+                # case.genetic.data <- data.frame(data.list$case.genetic.data)
+                # n.snps <- ncol(case.genetic.data)
+                # comp.genetic.data <- data.frame(data.list$complement.genetic.data)
+                # case.list <- split(case.genetic.data, exposure)
+                # case.list <- lapply(case.list, as.matrix)
+                # comp.list <- split(comp.genetic.data, exposure)
+                # comp.list <- lapply(comp.list, as.matrix)
 
                 #sample random chromosomes
+                n.snps <- ncol(case.genetic.data.n)
                 random.chroms <- lapply(seq_len(n.random.chroms), function(x){
 
                     sample(seq_len(n.snps), chromosome.size)
@@ -248,15 +278,19 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                 })
 
                 #get matrix of fitness score components
-                ld.block.vec <- data.list$ld.block.vec
-                storage.mode(ld.block.vec) <- "integer"
-                exposure.levels <- data.list$exposure.levels
-                storage.mode(exposure.levels) <- "integer"
-                null.vec.mat <- GxE_fitness_vec_mat(case.list, comp.list, random.chroms,
-                                                    ld.block.vec, weight.lookup, exposure.levels,
-                                                    rep(0, 3), rep(1, 3), n.different.snps.weight,
-                                                    n.both.one.weight, recessive.ref.prop,
-                                                    recode.test.stat)
+                # ld.block.vec <- data.list$ld.block.vec
+                # storage.mode(ld.block.vec) <- "integer"
+                # exposure.levels <- data.list$exposure.levels
+                # storage.mode(exposure.levels) <- "integer"
+                # null.vec.mat <- GxE_fitness_vec_mat(case.list, comp.list, random.chroms,
+                #                                     ld.block.vec, weight.lookup, exposure.levels,
+                #                                     rep(0, 3), rep(1, 3), n.different.snps.weight,
+                #                                     n.both.one.weight, recessive.ref.prop,
+                #                                     recode.test.stat)
+                null.vec.mat <- GxE_mvlm_fitness_vec_mat(case.genetic.data.n, complement.genetic.data.n,
+                                                         exposure.mat, random.chroms, weight.lookup.n,
+                                                         rep(0, 2), rep(1, 2), n.different.snps.weight,
+                                                         n.both.one.weight)
                 null.mean <- colMeans(null.vec.mat)
                 null.se <- sqrt(diag(cov(null.vec.mat)))
 
@@ -370,15 +404,26 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     # write jobs to registry
-    ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
-        case.genetic.data = data.list$case.genetic.data, complement.genetic.data = data.list$complement.genetic.data,
-        ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
-        weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.se, island.cluster.size = island.cluster.size,
-        n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
-        gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
-        recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
-        exposure = exposure, use.parents = use.parents),
-        reg = registry)
+    # ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
+    #     case.genetic.data = data.list$case.genetic.data, complement.genetic.data = data.list$complement.genetic.data,
+    #     ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
+    #     weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.se, island.cluster.size = island.cluster.size,
+    #     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
+    #     gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
+    #     recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
+    #     exposure = exposure, use.parents = use.parents),
+    #     reg = registry)
+    ids <- batchMap(GADGETS, cluster.number = cluster.ids,
+                    more.args = list(results.dir = results.dir, n.migrations = n.migrations,
+                                    case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.genetic.data.n = case.genetic.data.n,
+                                    complement.genetic.data.n = complement.genetic.data.n, exposure.mat = exposure.mat, weight.lookup.n = weight.lookup.n,
+                                    ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
+                                    weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.se, island.cluster.size = island.cluster.size,
+                                    n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
+                                    gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
+                                    crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,
+                                    exposure.levels = data.list$exposure.levels, exposure = data.list$exposure, use.parents = use.parents, cont.GxE = cont.GxE),
+                    reg = registry)
 
     # chunk the jobs
     ids[, `:=`(chunk, chunk(job.id, n.chunks = n.chunks))]

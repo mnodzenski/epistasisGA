@@ -32,9 +32,20 @@
 #' genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
 #' each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
 #' real numbers. See argument \code{prob} from function \code{sample} for more details.
-#' @param categorical.exposures A vector of integers corresponding to categorical exposures for the cases. Defaults to NULL,
+#' @param categorical.exposures A matrix or data.frame of integers corresponding to categorical exposures for the cases. Defaults to NULL,
 #' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{categorical.exposures}
 #' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
+#' @param continuous.exposures A matrix or data.frame of numeric values corresponding to continuous exposures for the cases. Defaults to NULL,
+#' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{continuous.exposures}
+#' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
+#' @param categorical.exposures.sib If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of integers
+#' corresponding to categorical exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the
+#' same exposure as the case. Defaults to NULL. \code{categorical.exposures.sib}
+#' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
+#' @param continuous.exposures.sib If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of numeric values
+#' corresponding to continuous exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the same exposure as
+#' the case. Defaults to NULL. code{continuous.exposures.sib} should not be missing any data, families with missing exposure data should be removed
+#' from the analysis prior to input.
 #' @param use.parents A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
 #' indicating family level informativeness will be used. Specify 0 to only use transmission data.
 #' @return A list containing the following:
@@ -67,7 +78,8 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, use.parents = 1) {
+    categorical.exposures = NULL, continuous.exposures = NULL, categorical.exposures.sib = NULL, continuous.exposures.sib = NULL,
+    use.parents = 1) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -94,50 +106,119 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     ### if environmental exposures are provided, check their formatting ###
     if (!is.null(categorical.exposures)){
 
-        # make sure categorical exposures are integers
-        if (class(categorical.exposures) != "integer"){
+        #storage.mode(categorical.exposures) <- "integer
+        cat.exposure.df <- as.data.frame(categorical.exposures)
+        cat.exposure.df <- data.frame(apply(cat.exposure.df, 2, as.factor), stringsAsFactors = TRUE)
 
-            stop("categorical.exposures must be of class integer")
-
-        }
         # identify families with missing exposure data
-        missing.exposure <- is.na(categorical.exposures)
+        missing.exposure <- rowSums(is.na(cat.exposure.df)) > 0
         if (sum(missing.exposure) > 0){
 
-            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to missing exposure(s)"))
+            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to missing case categorical exposure(s)"))
 
         }
 
-        # shorten the name of the exposures variable
-        exposure <- categorical.exposures
-        storage.mode(exposure) <- "integer"
+        #name the categorical exposure vars
+        names(cat.exposure.df) <- paste0("cat.exp", seq_len(ncol(cat.exposure.df)))
 
-        # get rid of any levels with only one case
-        cases.per.level <- vapply(unique(exposure), function(exp.level){
+    }
 
-            these.rows <- exposure == exp.level
-            sum(these.rows)
+    if (!is.null(categorical.exposures.sib)){
 
-        }, 1)
+        cat.exposure.df.sib <- as.data.frame(categorical.exposures.sib)
+        cat.exposure.df.sib <- data.frame(apply(cat.exposure.df.sib, 2, as.factor), stringsAsFactors = TRUE)
 
-        one.case.levels <- unique(exposure)[cases.per.level == 1]
-        if (length(one.case.levels) > 0){
+        # identify families with missing exposure data
+        missing.exposure <- rowSums(is.na(cat.exposure.df.sib)) > 0
+        if (sum(missing.exposure) > 0){
 
-            stop("At least two cases are required for each level of categorical.exposures.")
+            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to missing sibling categorical exposure(s)"))
+
+        }
+
+        #name the categorical exposure vars
+        names(cat.exposure.df.sib) <- paste0("cat.exp", seq_len(ncol(cat.exposure.df.sib)))
+
+    }
+
+    cont.GxE <- FALSE
+    if (!is.null(continuous.exposures)){
+
+        cont.GxE <- TRUE
+        cont.exposure.df <- as.data.frame(continuous.exposures)
+
+        # identify families with missing exposure data
+        missing.exposure <- rowSums(is.na(cont.exposure.df)) > 0
+        if (sum(missing.exposure) > 0){
+
+            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to case missing continuous exposure(s)"))
 
         }
 
-        if (length(exposure) == 1){
+        #name the categorical exposure vars
+        names(cont.exposure.df) <- paste0("cont.exp", seq_len(ncol(cont.exposure.df)))
 
-            stop("exposure must have at least two levels")
+
+    }
+
+    if (!is.null(continuous.exposures.sib)){
+
+        cont.exposure.df.sib <- as.data.frame(continuous.exposures.sib)
+
+        # identify families with missing exposure data
+        missing.exposure <- rowSums(is.na(cont.exposure.df.sib)) > 0
+        if (sum(missing.exposure) > 0){
+
+            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to sibling missing continuous exposure(s)"))
 
         }
+
+        #name the categorical exposure vars
+        names(cont.exposure.df.sib) <- paste0("cont.exp", seq_len(ncol(cont.exposure.df.sib)))
+
+    }
+
+    # make full exposure df
+    if (!is.null(continuous.exposures) & !is.null(categorical.exposures)){
+
+        exposure.df <- cbind(cat.exposure.df, cont.exposure.df)
+
+    } else if (!is.null(continuous.exposures) & is.null(categorical.exposures)){
+
+        exposure.df <- cont.exposure.df
+
+    } else if (is.null(continuous.exposures) & !is.null(categorical.exposures)){
+
+        exposure.df <- cat.exposure.df
 
     } else {
 
-        exposure <- NULL
+        exposure.df <- NULL
 
     }
+
+    # make full exposure df
+    if (!is.null(continuous.exposures.sib) & !is.null(categorical.exposures.sib)){
+
+        exposure.df.sib <- cbind(cat.exposure.df.sib, cont.exposure.df.sib)
+
+    } else if (!is.null(continuous.exposures.sib) & is.null(categorical.exposures.sib)){
+
+        exposure.df.sib <- cont.exposure.df.sib
+
+    } else if (is.null(continuous.exposures.sib) & !is.null(categorical.exposures.sib)){
+
+        exposure.df.sib <- cat.exposure.df.sib
+
+    } else if (!is.null(exposure.df)){
+
+        exposure.df.sib <- exposure.df
+
+    } else {
+
+        exposure.df.sib <- NULL
+    }
+
 
     # check formatting of input data and, if necessary, create memory mapped files
     if (!any(class(case.genetic.data) %in% c("matrix", "big.matrix"))){
@@ -315,7 +396,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         case.status <- c(rep(1, n.fam), rep(0, n.fam))
         ids <- rep(seq_len(n.fam), 2)
 
-        if (is.null(categorical.exposures)){
+        if (is.null(exposure.df)){
 
             res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list) {
 
@@ -346,8 +427,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
             if (use.parents != 2){
 
-                exposure.var <- factor(rep(exposure, 2))
-                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
+                if (is.null(exposure.df.sib)){
+
+                    exposures <- rbind(exposure.df, exposure.df)
+
+                } else {
+
+                    exposures <- rbind(exposure.df, exposure.df.sib)
+
+                }
+                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposures) {
 
                     case.snp <- bm.list$case[ , snp]
                     if (length(bm.list) == 3){
@@ -364,8 +453,14 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
                     # get p-value of snp-exposure association from conditional logistic regression
                     case.comp.geno <- c(case.snp, comp.snp)
-                    df <- data.table(case.status = case.status, case.comp.geno = case.comp.geno, exposure = exposure.var, ids = ids)
-                    full.model <- clogit(case.status ~ case.comp.geno + case.comp.geno:exposure + strata(ids), method = "approximate", data  = df)
+                    geno.df <- data.frame(case.status = case.status, case.comp.geno = case.comp.geno, ids = ids)
+                    df <- cbind(geno.df, exposures)
+
+                    #make model formula
+                    exposure.vars <- colnames(exposures)
+                    exposure.part <- paste(exposure.vars, collapse = ":")
+                    model.this <- as.formula(paste0("case.status ~ case.comp.geno + case.comp.geno:", exposure.part, " + strata(ids)"))
+                    full.model <- clogit(model.this, method = "approximate", data  = df)
                     full.model.ll <- full.model$loglik[2]
                     reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
                     reduced.model.ll <- reduced.model$loglik[2]
@@ -373,35 +468,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
                     return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
 
-                }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
-                chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
-
-            } else {
-
-                exposure.var <- as.factor(exposure)
-                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposure.var) {
-
-                    case.snp <- bm.list$case[ , snp]
-                    if (length(bm.list) == 3){
-
-                        mom.snp <- bm.list$mother[ , snp]
-                        dad.snp <- bm.list$father[ , snp]
-                        comp.snp <- mom.snp + dad.snp - case.snp
-
-                    } else {
-
-                        comp.snp <- bm.list$complement[ , snp]
-
-                    }
-
-                    # get p-value of snp-exposure association from conditional logistic regression
-                    case.comp.diff <- as.numeric(case.snp != comp.snp)
-                    glm.res <- glm(case.comp.diff ~ exposure.var, family = "binomial")
-                    test.stat <- summary(glm.res)$null.deviance - summary(glm.res)$deviance
-
-                    return(list(chisq = test.stat))
-
-                }, bm.list = bm.list, exposure.var = exposure.var, BPPARAM = bp.param)
+                }, bm.list = bm.list, exposures = exposures, BPPARAM = bp.param)
                 chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
 
             }
@@ -419,16 +486,16 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
 
     ### if running GxE create required inputs ###
-    if (!is.null(exposure)){
-
-        exposure.levels <- unique(exposure)
-        storage.mode(exposure.levels) <- "integer"
-
-    } else {
-
-        exposure.levels <- NULL
-
-    }
+    # if (!is.null(exposure)){
+    #
+    #     exposure.levels <- unique(exposure)
+    #     storage.mode(exposure.levels) <- "integer"
+    #
+    # } else {
+    #
+    #     exposure.levels <- NULL
+    #
+    # }
 
     if (!"complement" %in% names(bm.list)){
 
@@ -450,7 +517,24 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
+    # make dummies for exposure matrix
+    if (!is.null(exposure.df)){
+
+        exposure.mat <- model.matrix(~ . , data = exposure.df)
+        attributes(exposure.mat)$assign <- NULL
+        attributes(exposure.mat)$contrasts <- NULL
+        exposure.mat <- exposure.mat[ , -1, drop = FALSE]
+        exposure.mat <- exposure.mat + 0.0
+
+    } else {
+
+        exposure.mat <- matrix(0.0, 1, 1)
+
+    }
+
+    cont.GxE <- ifelse(is.null(categorical.exposures) & is.null(continuous.exposures), FALSE, TRUE)
+
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-        exposure = exposure, exposure.levels = exposure.levels, use.parents = use.parents))
+        exposure = NULL, exposure.levels = NULL, use.parents = use.parents, exposure.mat = exposure.mat, cont.GxE = cont.GxE))
 
 }
