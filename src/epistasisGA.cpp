@@ -550,50 +550,191 @@ IntegerVector get_target_snps_ld_blocks(IntegerVector target_snps_in,
 
 // [[Rcpp::export]]
 List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_int, IntegerVector pos_risk_int,
-                    IntegerMatrix case_data, IntegerMatrix comp, IntegerVector informative_families, IntegerVector target_snps){
+                    IntegerMatrix case_data, IntegerMatrix comp, IntegerVector informative_families, IntegerVector target_snps,
+                    Nullable<IntegerVector> mom_snps_in = R_NilValue, Nullable<IntegerVector> child_snps_in = R_NilValue){
 
-  if (n_neg > 0 & n_pos > 0) {
+  if (mom_snps_in.isNotNull() & child_snps_in.isNotNull()){
 
-    IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
-    IntegerVector n1 = n_neg_high_risk(case_data, informative_families, neg_snp_cols);
-    IntegerVector n2 = n_neg_high_risk(comp, informative_families, neg_snp_cols);
+    IntegerVector mom_snps;
+    mom_snps = mom_snps_in;
+    IntegerVector child_snps;
+    child_snps = child_snps_in;
 
-    IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
-    IntegerVector p1 = n_pos_high_risk(case_data, informative_families, pos_snp_cols);
-    IntegerVector p2 = n_pos_high_risk(comp, informative_families, pos_snp_cols);
+    if (n_neg > 0 & n_pos > 0) {
 
-    LogicalVector case_high_risk = (p1 + n1) == n_target;
-    LogicalVector comp_high_risk = (p2 + n2) == n_target;
+      // for maternal fetal interactions, define high risk as having the mom and case risk genotypes
 
-    List res = List::create(Named("case_high_risk") = case_high_risk,
-                            Named("comp_high_risk") = comp_high_risk);
-    return(res);
+      // first negative difference vector elements
+      IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
+      LogicalVector mom_neg_cols_l = in(neg_snp_cols, mom_snps);
+      IntegerVector n1_mom(informative_families.length(), 0);
+      if (is_true(any(mom_neg_cols_l))){
 
-  } else if (n_neg > 0 & n_pos == 0) {
+        IntegerVector neg_snp_cols_mom = neg_snp_cols[mom_neg_cols_l];
+        n1_mom = n_neg_high_risk(case_data, informative_families, neg_snp_cols_mom);
 
-    IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
-    IntegerVector n1 = n_neg_high_risk(case_data, informative_families, neg_snp_cols);
-    IntegerVector n2 = n_neg_high_risk(comp, informative_families, neg_snp_cols);
+      }
 
-    LogicalVector case_high_risk = n1 == n_target;
-    LogicalVector comp_high_risk = n2 == n_target;
+      LogicalVector child_neg_cols_l = in(neg_snp_cols, child_snps);
+      IntegerVector n1_child(informative_families.length(), 0);
+      IntegerVector n2_child(informative_families.length(), 0);
+      if (is_true(any(child_neg_cols_l))){
 
-    List res = List::create(Named("case_high_risk") = case_high_risk,
-                            Named("comp_high_risk") = comp_high_risk);
-    return(res);
+        IntegerVector neg_snp_cols_child = neg_snp_cols[child_neg_cols_l];
+        n1_child = n_neg_high_risk(case_data, informative_families, neg_snp_cols_child);
+        n2_child = n_neg_high_risk(comp, informative_families, neg_snp_cols_child);
+
+      }
+
+      // now positive elements
+      IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
+      LogicalVector mom_pos_cols_l = in(pos_snp_cols, mom_snps);
+      IntegerVector p1_mom(informative_families.length(), 0);
+      if (is_true(any(mom_pos_cols_l))){
+
+        IntegerVector pos_snp_cols_mom = pos_snp_cols[mom_pos_cols_l];
+        p1_mom = n_pos_high_risk(case_data, informative_families, pos_snp_cols_mom);
+
+      }
+
+      LogicalVector child_pos_cols_l = in(pos_snp_cols, child_snps);
+      IntegerVector p1_child(informative_families.length(), 0);
+      IntegerVector p2_child(informative_families.length(), 0);
+      if (is_true(any(child_pos_cols_l))){
+
+        IntegerVector pos_snp_cols_child = pos_snp_cols[child_pos_cols_l];
+        p1_child = n_pos_high_risk(case_data, informative_families, pos_snp_cols_child);
+        p2_child = n_pos_high_risk(comp, informative_families, pos_snp_cols_child);
+
+      }
+
+      IntegerVector n1 = n1_mom + n1_child;
+      IntegerVector n2 = n1_mom + n2_child;
+
+      IntegerVector p1 = p1_mom + p1_child;
+      IntegerVector p2 = p1_mom + p2_child;
+
+      LogicalVector case_high_risk = (p1 + n1) == n_target;
+      LogicalVector comp_high_risk = (p2 + n2) == n_target;
+
+      List res = List::create(Named("case_high_risk") = case_high_risk,
+                              Named("comp_high_risk") = comp_high_risk);
+      return(res);
+
+    } else if (n_neg > 0 & n_pos == 0) {
+
+      IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
+      LogicalVector mom_neg_cols_l = in(neg_snp_cols, mom_snps);
+      IntegerVector n1_mom(informative_families.length(), 0);
+      if (is_true(any(mom_neg_cols_l))){
+
+        IntegerVector neg_snp_cols_mom = neg_snp_cols[mom_neg_cols_l];
+        n1_mom = n_neg_high_risk(case_data, informative_families, neg_snp_cols_mom);
+
+      }
+
+      LogicalVector child_neg_cols_l = in(neg_snp_cols, child_snps);
+      IntegerVector n1_child(informative_families.length(), 0);
+      IntegerVector n2_child(informative_families.length(), 0);
+      if (is_true(any(child_neg_cols_l))){
+
+        IntegerVector neg_snp_cols_child = neg_snp_cols[child_neg_cols_l];
+        n1_child = n_neg_high_risk(case_data, informative_families, neg_snp_cols_child);
+        n2_child = n_neg_high_risk(comp, informative_families, neg_snp_cols_child);
+
+      }
+
+      IntegerVector n1 = n1_mom + n1_child;
+      IntegerVector n2 = n1_mom + n2_child;
+
+      LogicalVector case_high_risk = n1 == n_target;
+      LogicalVector comp_high_risk = n2 == n_target;
+
+      List res = List::create(Named("case_high_risk") = case_high_risk,
+                              Named("comp_high_risk") = comp_high_risk);
+      return(res);
+
+    } else {
+
+      IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
+      LogicalVector mom_pos_cols_l = in(pos_snp_cols, mom_snps);
+      IntegerVector p1_mom(informative_families.length(), 0);
+      if (is_true(any(mom_pos_cols_l))){
+
+        IntegerVector pos_snp_cols_mom = pos_snp_cols[mom_pos_cols_l];
+        p1_mom = n_pos_high_risk(case_data, informative_families, pos_snp_cols_mom);
+
+      }
+
+      LogicalVector child_pos_cols_l = in(pos_snp_cols, child_snps);
+      IntegerVector p1_child(informative_families.length(), 0);
+      IntegerVector p2_child(informative_families.length(), 0);
+      if (is_true(any(child_pos_cols_l))){
+
+        IntegerVector pos_snp_cols_child = pos_snp_cols[child_pos_cols_l];
+        p1_child = n_pos_high_risk(case_data, informative_families, pos_snp_cols_child);
+        p2_child = n_pos_high_risk(comp, informative_families, pos_snp_cols_child);
+
+      }
+
+      IntegerVector p1 = p1_mom + p1_child;
+      IntegerVector p2 = p1_mom + p2_child;
+
+      LogicalVector case_high_risk = p1 == n_target;
+      LogicalVector comp_high_risk = p2 == n_target;
+
+      List res = List::create(Named("case_high_risk") = case_high_risk,
+                              Named("comp_high_risk") = comp_high_risk);
+      return(res);
+
+    }
 
   } else {
 
-    IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
-    IntegerVector p1 = n_pos_high_risk(case_data, informative_families, pos_snp_cols);
-    IntegerVector p2 = n_pos_high_risk(comp, informative_families, pos_snp_cols);
+    if (n_neg > 0 & n_pos > 0) {
 
-    LogicalVector case_high_risk = p1 == n_target;
-    LogicalVector comp_high_risk = p2 == n_target;
+      IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
+      IntegerVector n1 = n_neg_high_risk(case_data, informative_families, neg_snp_cols);
+      IntegerVector n2 = n_neg_high_risk(comp, informative_families, neg_snp_cols);
 
-    List res = List::create(Named("case_high_risk") = case_high_risk,
-                            Named("comp_high_risk") = comp_high_risk);
-    return(res);
+      IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
+      IntegerVector p1 = n_pos_high_risk(case_data, informative_families, pos_snp_cols);
+      IntegerVector p2 = n_pos_high_risk(comp, informative_families, pos_snp_cols);
+
+      LogicalVector case_high_risk = (p1 + n1) == n_target;
+      LogicalVector comp_high_risk = (p2 + n2) == n_target;
+
+      List res = List::create(Named("case_high_risk") = case_high_risk,
+                              Named("comp_high_risk") = comp_high_risk);
+      return(res);
+
+    } else if (n_neg > 0 & n_pos == 0) {
+
+      IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
+      IntegerVector n1 = n_neg_high_risk(case_data, informative_families, neg_snp_cols);
+      IntegerVector n2 = n_neg_high_risk(comp, informative_families, neg_snp_cols);
+
+      LogicalVector case_high_risk = n1 == n_target;
+      LogicalVector comp_high_risk = n2 == n_target;
+
+      List res = List::create(Named("case_high_risk") = case_high_risk,
+                              Named("comp_high_risk") = comp_high_risk);
+      return(res);
+
+    } else {
+
+      IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
+      IntegerVector p1 = n_pos_high_risk(case_data, informative_families, pos_snp_cols);
+      IntegerVector p2 = n_pos_high_risk(comp, informative_families, pos_snp_cols);
+
+      LogicalVector case_high_risk = p1 == n_target;
+      LogicalVector comp_high_risk = p2 == n_target;
+
+      List res = List::create(Named("case_high_risk") = case_high_risk,
+                              Named("comp_high_risk") = comp_high_risk);
+      return(res);
+
+    }
 
   }
 
@@ -606,7 +747,8 @@ List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_i
 // [[Rcpp::export]]
 List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_genetic_data, IntegerVector target_snps,
                       IntegerVector both_one_snps, IntegerVector weight_lookup, int n_different_snps_weight = 2,
-                      int n_both_one_weight = 1){
+                      int n_both_one_weight = 1, Nullable<IntegerVector> mom_snps_in = R_NilValue,
+                      Nullable<IntegerVector> child_snps_in = R_NilValue){
 
   // determine whether families are informative for the set of target_snps
   IntegerVector total_different_snps = sub_rowsums_start(case_genetic_data, comp_genetic_data, target_snps);
@@ -659,8 +801,23 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
     IntegerVector neg_risk_int = idx_vec[neg_risk];
 
     //using helper function to pick out high risk families
-    List high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_genetic_data,
-                                    comp_genetic_data, informative_families, target_snps);
+    List high_risk;
+    if (mom_snps_in.isNotNull() & child_snps_in.isNotNull()){
+
+      IntegerVector mom_snps;
+      mom_snps = mom_snps_in;
+      IntegerVector child_snps;
+      child_snps = child_snps_in;
+      high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_genetic_data,
+                                 comp_genetic_data, informative_families, target_snps, mom_snps, child_snps);
+
+    } else {
+
+      high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_genetic_data,
+                                 comp_genetic_data, informative_families, target_snps);
+
+    }
+
     LogicalVector case_high_risk = high_risk["case_high_risk"];
     LogicalVector comp_high_risk = high_risk["comp_high_risk"];
     LogicalVector both_high_risk = case_high_risk & comp_high_risk;
@@ -691,71 +848,15 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
   }
 }
 
-
-/////////////////////////////////////////////////////////
-// Function to compute the weights for parents only GxE
-/////////////////////////////////////////////////////////
-
-// [[Rcpp::export]]
-List compute_parent_weights(IntegerMatrix case_genetic_data, IntegerMatrix comp_genetic_data, IntegerVector target_snps,
-                      IntegerVector weight_lookup, int n_different_snps_weight = 1, int n_both_one_weight = 0){
-
-  // determine whether families are informative for the set of target_snps
-  List total_different_snps_list = sub_rowsums_parent_weights(case_genetic_data, comp_genetic_data, target_snps);
-  IntegerVector total_different_snps = total_different_snps_list["n_differences_vec"];
-  int n_fams = total_different_snps.length();
-  LogicalVector informative_families_l = total_different_snps != 0;
-  if (sum(informative_families_l) == 0){
-
-    IntegerVector family_weights(n_fams, 0);
-    total_different_snps_list["family_weights"] = family_weights;
-    return(total_different_snps_list);
-
-  } else {
-
-    IntegerVector family_idx = seq_len(n_fams);
-    IntegerVector informative_families = family_idx[informative_families_l];
-
-    total_different_snps = total_different_snps[total_different_snps > 0];
-
-    // compute weights
-    IntegerVector family_weights(n_fams, 0);
-    IntegerVector weighted_informativeness(total_different_snps.length());
-    if (n_both_one_weight > 0){
-
-      IntegerVector both_one = sub_rowsums_both_one(case_genetic_data, comp_genetic_data, informative_families, target_snps);
-      weighted_informativeness = n_both_one_weight * both_one + n_different_snps_weight * total_different_snps;
-
-    } else {
-
-      weighted_informativeness = n_different_snps_weight * total_different_snps;
-
-    }
-
-    for (int i = 0; i < informative_families.length(); i++){
-
-      int inf_family_i = informative_families[i];
-      int weight_i = weighted_informativeness[i];
-      family_weights[inf_family_i - 1] = weight_lookup[weight_i - 1];
-
-    }
-
-    // return vector of family weights
-    total_different_snps_list["family_weights"] = family_weights;
-    return(total_different_snps_list);
-
-  }
-}
-
 ////////////////////////////////////////////////////////////////
 // Function to compute the fitness score
 ///////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerVector target_snps_in,
-                         IntegerVector ld_block_vec, IntegerVector weight_lookup, int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false, bool GxE = false,
-                         Nullable<IntegerVector> both_one_snps_in = R_NilValue) {
+                         IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector mom_snps_in, IntegerVector child_snps_in,
+                         bool maternal_fetal_int = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false, bool GxE = false) {
 
   // need to deep copy inputs to avoid overwriting if we recode recessives
   IntegerMatrix case_genetic_data = subset_matrix_cols(case_genetic_data_in, target_snps_in);
@@ -765,21 +866,44 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   int n_target = target_snps_in.length();
   IntegerVector target_snps = seq_len(n_target);
 
-  // determine which SNPs need to be checked for both one
-  IntegerVector both_one_snps;
-  if (both_one_snps_in.isNotNull()){
+  // note which SNPs are from mom and which are child, for maternal fetal interactions
+  IntegerVector mom_snps;
+  IntegerVector child_snps;
 
-    both_one_snps = both_one_snps_in;
+  if (maternal_fetal_int){
 
-  } else {
+    LogicalVector mom_snps_l = in(target_snps_in, mom_snps_in);
+    LogicalVector child_snps_l = in(target_snps_in, child_snps_in);
+    if ((is_true(any(mom_snps_l))) & (is_true(any(child_snps_l)))){
 
-    both_one_snps = target_snps;
+      mom_snps = target_snps[mom_snps_l];
+      child_snps = target_snps[child_snps_l];
+
+    } else {
+
+      maternal_fetal_int = false;
+
+    }
 
   }
 
+  // start with all SNPs needing to be checked for both one (can change if recessive)
+  IntegerVector both_one_snps = target_snps;
+
   // compute weighted difference vectors, determine risk related alleles
-  List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
-                                       weight_lookup, n_different_snps_weight, n_both_one_weight);
+  List dif_vec_list;
+  if (!maternal_fetal_int){
+
+    dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
+                                    weight_lookup, n_different_snps_weight, n_both_one_weight);
+
+  } else {
+
+    dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
+                                    weight_lookup, n_different_snps_weight, n_both_one_weight, mom_snps,
+                                    child_snps);
+
+  }
 
   // pick out the required pieces from function output
   bool no_informative_families = dif_vec_list["no_informative_families"];
@@ -992,8 +1116,19 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
       both_one_snps = target_snps[!recoded];
 
       //recompute the number of informative families
-      List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
-                                           weight_lookup, n_different_snps_weight, n_both_one_weight);
+      List dif_vec_list;
+      if (!maternal_fetal_int){
+
+        dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
+                                        weight_lookup, n_different_snps_weight, n_both_one_weight);
+
+      } else {
+
+        dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
+                                        weight_lookup, n_different_snps_weight, n_both_one_weight, mom_snps,
+                                        child_snps);
+
+      }
 
       //pick out required pieces
       // the tmp var versions are used because direct reassignment
@@ -1271,7 +1406,8 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix comp
 // [[Rcpp::export]]
 List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<IntegerMatrix> complement_genetic_data_list,
                        IntegerVector target_snps, IntegerVector ld_block_vec, IntegerVector weight_lookup,
-                       IntegerVector exposure_levels, arma::vec null_mean_vec, arma::vec null_se_vec,
+                       IntegerVector exposure_levels, arma::vec null_mean_vec, arma::vec null_se_vec, IntegerVector mom_snps_in,
+                       IntegerVector child_snps_in, bool maternal_fetal_int = false,
                        int n_different_snps_weight = 2, int n_both_one_weight = 1, double recessive_ref_prop = 0.75,
                        double recode_test_stat = 1.64, bool epi_test = false, int use_parents = 1, bool random_level_comp = false){
 
@@ -1283,7 +1419,9 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
     IntegerMatrix case_genetic_data = case_genetic_data_list[i];
     IntegerMatrix complement_genetic_data = complement_genetic_data_list[i];
     score_by_exposure[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, target_snps,
-                                               ld_block_vec, weight_lookup, n_different_snps_weight, n_both_one_weight,
+                                               ld_block_vec, weight_lookup, mom_snps_in, child_snps_in,
+                                               maternal_fetal_int,
+                                               n_different_snps_weight, n_both_one_weight,
                                                recessive_ref_prop, recode_test_stat, epi_test, true);
 
   }
@@ -1444,7 +1582,8 @@ List GxE_fitness_score(ListOf<IntegerMatrix> case_genetic_data_list, ListOf<Inte
 
 // [[Rcpp::export]]
 List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, List chromosome_list,
-                        IntegerVector ld_block_vec, IntegerVector weight_lookup, int n_different_snps_weight = 2,
+                        IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector mom_snps_in,
+                        IntegerVector child_snps_in, bool maternal_fetal_int = false, int n_different_snps_weight = 2,
                         int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                         bool epi_test = false){
 
@@ -1453,8 +1592,9 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 
     IntegerVector target_snps = chromosome_list[i];
     scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, target_snps, ld_block_vec,
-                                    weight_lookup, n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
-                                    recode_test_stat, epi_test);
+                                    weight_lookup, mom_snps_in, child_snps_in, maternal_fetal_int,
+                                    n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
+                                    recode_test_stat, epi_test, false);
 
   }
   return(scores);
@@ -1468,7 +1608,9 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 // [[Rcpp::export]]
 List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_list, List chromosome_list,
                         IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector exposure_levels,
-                        arma::vec null_mean_vec, arma::vec null_se_vec, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                        arma::vec null_mean_vec, arma::vec null_se_vec,
+                        IntegerVector mom_snps_in, IntegerVector child_snps_in,
+                        bool maternal_fetal_int = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false,
                         int use_parents = 1, bool random_level_comp = false){
 
@@ -1478,6 +1620,7 @@ List GxE_fitness_list(List case_genetic_data_list, List complement_genetic_data_
     IntegerVector target_snps = chromosome_list[i];
     scores[i] = GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list, target_snps,
                                   ld_block_vec, weight_lookup, exposure_levels, null_mean_vec, null_se_vec,
+                                  mom_snps_in, child_snps_in, maternal_fetal_int,
                                   n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat,
                                   epi_test, use_parents, random_level_comp);
   }
@@ -1578,6 +1721,8 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                 NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
                                 NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                                 arma::vec null_mean_vec, arma::vec null_se_vec,
+                                IntegerVector mom_snps_in, IntegerVector child_snps_in,
+                                bool maternal_fetal_int = false,
                                 int n_different_snps_weight = 2,
                                 int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                                 bool GxE = false, int use_parents = 1, bool cont_GxE = false){
@@ -1590,6 +1735,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
 
     chrom_fitness_score_list = GxE_fitness_list(case_genetic_data_list, complement_genetic_data_list, chromosome_list,
                                                 ld_block_vec, weight_lookup, exposure_levels, null_mean_vec, null_se_vec,
+                                                mom_snps_in, child_snps_in, maternal_fetal_int,
                                                 n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat,
                                                 false, use_parents);
 
@@ -1682,7 +1828,8 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
   } else {
 
     chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, chromosome_list, ld_block_vec, weight_lookup,
-                                                  n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, false);
+                                                  mom_snps_in, child_snps_in, maternal_fetal_int, n_different_snps_weight, n_both_one_weight,
+                                                  recessive_ref_prop, recode_test_stat, false);
 
     // for storing generation information
     int n_chromosomes = chromosome_list.length();
@@ -1792,6 +1939,8 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
                          NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
                          NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                          arma::vec null_mean_vec, arma::vec null_se_vec,
+                         IntegerVector mom_snps_in, IntegerVector child_snps_in,
+                         bool maternal_fetal_int = false,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
@@ -1832,7 +1981,8 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
   List  current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
                                                       weight_lookup, case_genetic_data_list, complement_genetic_data_list,
                                                       exposure_levels, case_genetic_data_n, complement_genetic_data_n, exposure_mat_n,
-                                                      weight_lookup_n, null_mean_vec, null_se_vec, n_different_snps_weight,
+                                                      weight_lookup_n, null_mean_vec, null_se_vec, mom_snps_in, child_snps_in,
+                                                      maternal_fetal_int, n_different_snps_weight,
                                                       n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
                                                       use_parents, cont_GxE);
 
@@ -1870,6 +2020,8 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
                    NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                    arma::vec null_mean_vec, arma::vec null_se_vec,
+                   IntegerVector mom_snps_in, IntegerVector child_snps_in,
+                   bool maternal_fetal_int = false,
                    int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500,
@@ -2121,8 +2273,9 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
                                                       weight_lookup, case_genetic_data_list, complement_genetic_data_list,
                                                       exposure_levels, case_genetic_data_n, complement_genetic_data_n,
-                                                      exposure_data_n, weight_lookup_n, null_mean_vec, null_se_vec, n_different_snps_weight,
-                                                      n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
+                                                      exposure_data_n, weight_lookup_n, null_mean_vec, null_se_vec,
+                                                      mom_snps_in, child_snps_in, maternal_fetal_int,
+                                                      n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, GxE,
                                                       use_parents, cont_GxE);
 
     //7. Increment iterators
@@ -2368,6 +2521,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                  NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
                  NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                  arma::vec null_mean_vec, arma::vec null_se_vec,
+                 Nullable<IntegerVector> mom_snps_in_ = R_NilValue, Nullable<IntegerVector> child_snps_in_ = R_NilValue,
                  Nullable<IntegerVector> exposure_levels_in = R_NilValue,
                  Nullable<IntegerVector> exposure_in = R_NilValue,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
@@ -2380,6 +2534,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
   IntegerMatrix case_genetic_data;
   IntegerMatrix complement_genetic_data;
 
+  // for GxE
   ListOf<IntegerMatrix> case_genetic_data_list;
   ListOf<IntegerMatrix> complement_genetic_data_list;
   IntegerVector exposure_levels;
@@ -2416,6 +2571,18 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 
   }
 
+  // for maternal fetal interactions
+  IntegerVector mom_snps_in;
+  IntegerVector child_snps_in;
+  bool maternal_fetal_int = false;
+  if ((mom_snps_in_.isNotNull()) & (child_snps_in_.isNotNull())){
+
+    mom_snps_in = mom_snps_in_;
+    child_snps_in = child_snps_in_;
+    maternal_fetal_int = true;
+
+  }
+
   // go through first round of island evolution
   List island_populations(island_cluster_size);
 
@@ -2428,6 +2595,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                                    exposure_levels, case_genetic_data_n,
                                                    complement_genetic_data_n, exposure_data_n,
                                                    weight_lookup_n, null_mean_vec, null_se_vec,
+                                                   mom_snps_in, child_snps_in, maternal_fetal_int,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
                                                    max_generations, initial_sample_duplicates, GxE,
@@ -2438,10 +2606,10 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                           case_genetic_data_list, complement_genetic_data_list,
                                           exposure_levels, snp_chisq, island_population_i, case_genetic_data_n,
                                           complement_genetic_data_n, exposure_data_n, weight_lookup_n,
-                                          null_mean_vec, null_se_vec, n_different_snps_weight, n_both_one_weight,
-                                          migration_interval, gen_same_fitness, max_generations,
-                                          initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
-                                          GxE, use_parents, cont_GxE);
+                                          null_mean_vec, null_se_vec, mom_snps_in, child_snps_in, maternal_fetal_int,
+                                          n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness,
+                                          max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop,
+                                          recode_test_stat, GxE, use_parents, cont_GxE);
 
   }
 
@@ -2560,7 +2728,8 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                             case_genetic_data_list, complement_genetic_data_list,
                                             exposure_levels, snp_chisq, island_population_i,
                                             case_genetic_data_n, complement_genetic_data_n, exposure_data_n, weight_lookup_n,
-                                            null_mean_vec, null_se_vec, n_different_snps_weight, n_both_one_weight,
+                                            null_mean_vec, null_se_vec, mom_snps_in, child_snps_in, maternal_fetal_int,
+                                            n_different_snps_weight, n_both_one_weight,
                                             migration_interval, gen_same_fitness, max_generations,
                                             initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
                                             GxE, use_parents, cont_GxE);
@@ -2631,8 +2800,11 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, IntegerVec
 
   // compute fitness score for permuted dataset
   IntegerVector target_snps = seq_len(case_rcpp.ncol());
+  IntegerVector mom_snps_in;
+  IntegerVector child_snps_in;
   List fitness_list = chrom_fitness_score(case_rcpp, comp_rcpp, target_snps,
                                           target_snps_ld_blocks, weight_lookup,
+                                          mom_snps_in, child_snps_in, false,
                                           n_different_snps_weight, n_both_one_weight,
                                           recessive_ref_prop, recode_test_stat, false);
 
@@ -2727,8 +2899,11 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
   // compute fitness score for observed data
   IntegerVector chrom_snps = seq_len(case_genetic_data.ncol());
+  IntegerVector mom_snps_in;
+  IntegerVector child_snps_in;
   List obs_fitness_list = chrom_fitness_score(case_genetic_data, complement_genetic_data, chrom_snps,
-                                              target_snps_ld_blocks, weight_lookup, n_different_snps_weight,
+                                              target_snps_ld_blocks, weight_lookup, mom_snps_in,
+                                              child_snps_in, false, n_different_snps_weight,
                                               n_both_one_weight, recessive_ref_prop, recode_test_stat, true);
   double obs_fitness_score = obs_fitness_list["fitness_score"];
 
@@ -2811,9 +2986,12 @@ List GxE_test(IntegerVector snp_cols, List preprocessed_list, arma::vec null_mea
 
   // compute fitness score for observed data
   IntegerVector chrom_snps = seq_len(chrom_size);
+  IntegerVector mom_snps_in;
+  IntegerVector child_snps_in;
   List obs_fitness_list =  GxE_fitness_score(case_genetic_data_list, complement_genetic_data_list,
                                              chrom_snps, target_snps_ld_blocks, weight_lookup, exposure_levels,
-                                             null_mean_vec, null_se_vec, n_different_snps_weight, n_both_one_weight,
+                                             null_mean_vec, null_se_vec, mom_snps_in, child_snps_in, false,
+                                             n_different_snps_weight, n_both_one_weight,
                                              recessive_ref_prop, recode_test_stat, true, use_parents);
 
   double obs_fitness_score = obs_fitness_list["fitness_score"];
@@ -2833,7 +3011,8 @@ List GxE_test(IntegerVector snp_cols, List preprocessed_list, arma::vec null_mea
     // compute fitness
     List perm_fitness_list =  GxE_fitness_score(case_genetic_data_list_perm, complement_genetic_data_list_perm,
                                                 chrom_snps, target_snps_ld_blocks, weight_lookup, exposure_levels_perm,
-                                                null_mean_vec, null_se_vec, n_different_snps_weight, n_both_one_weight,
+                                                null_mean_vec, null_se_vec, mom_snps_in, child_snps_in, false,
+                                                n_different_snps_weight, n_both_one_weight,
                                                 recessive_ref_prop, recode_test_stat, true, use_parents);
     double perm_fitness = perm_fitness_list["fitness_score"];
     perm_fitness_scores[i] = perm_fitness;

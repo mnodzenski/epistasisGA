@@ -20,6 +20,8 @@ GADGETS(
   weight.lookup,
   null.mean.vec,
   null.se.vec,
+  mother.snps,
+  child.snps,
   island.cluster.size = 4,
   n.migrations = 20,
   n.different.snps.weight = 2,

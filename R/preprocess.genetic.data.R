@@ -48,6 +48,8 @@
 #' from the analysis prior to input.
 #' @param use.parents A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
 #' indicating family level informativeness will be used. Specify 0 to only use transmission data.
+#' @param mother.snps If searching for maternal-fetal interactions, the indices of the maternal SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.
+#' @param child.snps If searching for maternal-fetal interactions, the indices of the child SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
@@ -79,7 +81,7 @@
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
     categorical.exposures = NULL, continuous.exposures = NULL, categorical.exposures.sib = NULL, continuous.exposures.sib = NULL,
-    use.parents = 1) {
+    use.parents = 1, mother.snps = NULL, child.snps = NULL) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -241,6 +243,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         dimnames(case.genetic.data) <- NULL
         case.bm <- as.big.matrix(case.genetic.data, type = "integer")
         rm(case.genetic.data)
+        gc(verbose = FALSE)
 
     } else if (class(case.genetic.data) == "big.matrix"){
 
@@ -280,6 +283,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         dimnames(complement.genetic.data) <- NULL
         comp.bm <- as.big.matrix(complement.genetic.data, type = "integer")
         rm(complement.genetic.data)
+        gc(verbose = FALSE)
 
     } else if (!is.null(complement.genetic.data) & class(complement.genetic.data) == "big.matrix"){
 
@@ -319,6 +323,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         dimnames(mother.genetic.data) <- NULL
         mother.bm <- as.big.matrix(mother.genetic.data, type = "integer")
         rm(mother.genetic.data)
+        gc(verbose = FALSE)
 
     } else if (!is.null(mother.genetic.data) & class(mother.genetic.data) == "big.matrix"){
 
@@ -357,6 +362,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         dimnames(father.genetic.data) <- NULL
         father.bm <- as.big.matrix(father.genetic.data, type = "integer")
         rm(father.genetic.data)
+        gc(verbose = FALSE)
 
     } else if (!is.null(father.genetic.data) & class(father.genetic.data) == "big.matrix"){
 
@@ -535,6 +541,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     cont.GxE <- ifelse(is.null(categorical.exposures) & is.null(continuous.exposures), FALSE, TRUE)
 
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-        exposure = NULL, exposure.levels = NULL, use.parents = use.parents, exposure.mat = exposure.mat, cont.GxE = cont.GxE))
+        exposure = NULL, exposure.levels = NULL, use.parents = use.parents, exposure.mat = exposure.mat, cont.GxE = cont.GxE,
+        mother.snps = mother.snps, child.snps = child.snps))
 
 }

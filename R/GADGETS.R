@@ -92,9 +92,9 @@
 
 GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.genetic.data,
                     case.genetic.data.n, complement.genetic.data.n, exposure.mat, weight.lookup.n, ld.block.vec, n.chromosomes,
-                    chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.se.vec, island.cluster.size = 4, n.migrations = 20,
-                    n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50, gen.same.fitness = 50, max.generations = 500,
-                    initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
+                    chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.se.vec, mother.snps, child.snps,
+                    island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
+                    gen.same.fitness = 50, max.generations = 500, initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
                     recode.test.stat = 1.64, exposure.levels = NULL, exposure = NULL, use.parents = 1, cont.GxE = FALSE) {
 
     ### run rcpp version of GADGETS ##
@@ -106,8 +106,8 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,
                             weight.lookup,  snp.chisq, case.genetic.data, complement.genetic.data, case.genetic.data.n,
                             complement.genetic.data.n, exposure.mat, weight.lookup.n, null.mean.vec,
-                            null.se.vec, exposure.levels, exposure, n.different.snps.weight, n.both.one.weight,
-                            migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
+                            null.se.vec, mother.snps, child.snps, exposure.levels, exposure, n.different.snps.weight,
+                            n.both.one.weight, migration.interval, gen.same.fitness, max.generations, initial.sample.duplicates,
                             crossover.prop, recessive.ref.prop, recode.test.stat, use.parents, cont.GxE)
 
     ### clean up and output results

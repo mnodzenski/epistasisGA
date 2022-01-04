@@ -16,7 +16,9 @@ preprocess.genetic.data(
   continuous.exposures = NULL,
   categorical.exposures.sib = NULL,
   continuous.exposures.sib = NULL,
-  use.parents = 1
+  use.parents = 1,
+  mother.snps = NULL,
+  child.snps = NULL
 )
 }
 \arguments{
@@ -77,6 +79,10 @@ from the analysis prior to input.}
 
 \item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
 indicating family level informativeness will be used. Specify 0 to only use transmission data.}
+
+\item{mother.snps}{If searching for maternal-fetal interactions, the indices of the maternal SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.}
+
+\item{child.snps}{If searching for maternal-fetal interactions, the indices of the child SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.}
 }
 \value{
 A list containing the following:

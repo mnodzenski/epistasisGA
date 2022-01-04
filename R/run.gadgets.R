@@ -422,7 +422,8 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                                     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
                                     gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
                                     crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,
-                                    exposure.levels = data.list$exposure.levels, exposure = data.list$exposure, use.parents = use.parents, cont.GxE = cont.GxE),
+                                    exposure.levels = data.list$exposure.levels, exposure = data.list$exposure, use.parents = use.parents, cont.GxE = cont.GxE,
+                                    mother.snps = data.list$mother.snps, child.snps = data.list$child.snps),
                     reg = registry)
 
     # chunk the jobs
