@@ -491,28 +491,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     chisq.stats[chisq.stats <= 0] <- 10^-10
     chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
 
-    # standardize chisq stats within group if searching for maternal fetal interactions
-    if (!is.null(mother.snps) & !is.null(child.snps)){
-
-        # first children
-        child.chisq.mean <- mean(chisq.stats[child.snps])
-        child.chisq.sd <- sd(chisq.stats[child.snps])
-        chisq.stats[child.snps] <- (chisq.stats[child.snps] - child.chisq.mean)/child.chisq.sd
-
-        # then mothers
-        mother.chisq.mean <- mean(chisq.stats[mother.snps])
-        mother.chisq.sd <- sd(chisq.stats[mother.snps])
-        chisq.stats[mother.snps] <- (chisq.stats[mother.snps] - mother.chisq.mean)/mother.chisq.sd
-
-    } else {
-
-        child.chisq.mean <- NULL
-        child.chisq.sd <- NULL
-        mother.chisq.mean <- NULL
-        mother.chisq.sd <- NULL
-
-    }
-
     ### if running GxE create required inputs ###
     # if (!is.null(exposure)){
     #
@@ -564,7 +542,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
         exposure = NULL, exposure.levels = NULL, use.parents = use.parents, exposure.mat = exposure.mat, cont.GxE = cont.GxE,
-        mother.snps = mother.snps, child.snps = child.snps, child.chisq.mean = child.chisq.mean, child.chisq.sd = child.chisq.sd,
-        mother.chisq.mean = mother.chisq.mean, mother.chisq.sd = mother.chisq.sd))
+        mother.snps = mother.snps, child.snps = child.snps))
 
 }
