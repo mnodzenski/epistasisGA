@@ -31,7 +31,7 @@ run.gadgets(
   recode.test.stat = 1.64,
   n.random.chroms = 10000,
   null.mean.vec = NULL,
-  null.se.vec = NULL
+  null.sd.vec = NULL
 )
 }
 \arguments{
@@ -114,11 +114,11 @@ compute the GxE fitness score.}
 GxE fitness score. This does not need to be specified unless an analyst wants to replicate the results of a previous GADGETS
 GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
 In that case, to use the same null mean vector in computing the fitness score, the analyst can find the
-previously used null mean vector in the file "null.mean.se.info.rds" stored in the \code{results.dir} directory.}
+previously used null mean vector in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.}
 
-\item{null.se.vec}{A vector of estimated null standard errors for the three components of the
+\item{null.sd.vec}{A vector of estimated null standard errors for the three components of the
 GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
-previously used vector can also be found in the file "null.mean.se.info.rds" stored in the \code{results.dir} directory.}
+previously used vector can also be found in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.}
 
 \item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
 if the population is homogenous with no exposure related population structure.}

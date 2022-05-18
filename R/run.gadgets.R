@@ -58,10 +58,10 @@
 #' GxE fitness score. This does not need to be specified unless an analyst wants to replicate the results of a previous GADGETS
 #' GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
 #' In that case, to use the same null mean vector in computing the fitness score, the analyst can find the
-#' previously used null mean vector in the file "null.mean.se.info.rds" stored in the \code{results.dir} directory.
-#' @param null.se.vec A vector of estimated null standard errors for the three components of the
+#' previously used null mean vector in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.
+#' @param null.sd.vec A vector of estimated null standard errors for the three components of the
 #' GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
-#' previously used vector can also be found in the file "null.mean.se.info.rds" stored in the \code{results.dir} directory.
+#' previously used vector can also be found in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
@@ -101,7 +101,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     generations = 500, gen.same.fitness = 50, initial.sample.duplicates = FALSE,
     snp.sampling.type = "chisq", crossover.prop = 0.8, n.islands = 1000, island.cluster.size = 4, migration.generations = 50,
     n.migrations = 20, recessive.ref.prop = 0.75, recode.test.stat = 1.64, n.random.chroms = 10000, null.mean.vec = NULL,
-    null.se.vec = NULL) {
+    null.sd.vec = NULL) {
 
     ### make sure if island clusters exist, the migration interval is set properly ###
     if (island.cluster.size > 1 & migration.generations >= generations & island.cluster.size != 1) {
@@ -242,12 +242,9 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     }
 
-    ### if running GxE, compute the elements required for mahalanobis distance fitness score ###
-    #exposure <- data.list$exposure
-    # null.mean <- rep(0, 3)
-    # null.se <- rep(1, 3)
+    ### if running GxE, compute the elements required for standardizing elements of the fitness score ###
     null.mean <- rep(0, 2)
-    null.se <- rep(1, 2)
+    null.sd <- rep(1, 2)
     #if (!is.null(exposure)){
 
         #storage.mode(exposure) <- "integer"
@@ -255,10 +252,10 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
         if (use.parents == 1){
 
-            if (is.null(null.mean.vec) & is.null(null.se.vec)){
+            if (is.null(null.mean.vec) & is.null(null.sd.vec)){
 
                 # make sure we're not accidentally redoing this
-                out.file.name <- file.path(results.dir, "null.mean.se.info.rds")
+                out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
 
                 # # split genetic data by exposure status
                 # case.genetic.data <- data.frame(data.list$case.genetic.data)
@@ -292,7 +289,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                                                          rep(0, 2), rep(1, 2), n.different.snps.weight,
                                                          n.both.one.weight)
                 null.mean <- colMeans(null.vec.mat)
-                null.se <- sqrt(diag(cov(null.vec.mat)))
+                null.sd <- sqrt(diag(cov(null.vec.mat)))
 
                 #save these if needed later
                 if (file.exists(out.file.name)){
@@ -317,10 +314,10 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                 }
 
 
-            } else if (!is.null(null.mean.vec) & !is.null(null.se.vec)){
+            } else if (!is.null(null.mean.vec) & !is.null(null.sd.vec)){
 
                 # make sure we're not accidentally redoing this
-                out.file.name <- file.path(results.dir, "null.mean.se.info.rds")
+                out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
                 if (file.exists(out.file.name)){
 
                     prev.res <- readRDS(out.file.name)
@@ -329,18 +326,18 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
                     if (any(null.mean != prev.mean) | any(prev.se != null.se)){
 
-                        stop(paste("null mean and/or se vector  do not match the previous values in",
+                        stop(paste("null mean and/or sd vector  do not match the previous values in",
                                    out.file.name))
 
                     }
                     null.mean <- null.mean.vec
-                    null.se <- null.se.vec
+                    null.sd <- null.sd.vec
 
                 }
 
             } else {
 
-                stop("null.mean.vec and null.se.vec must both be null or both not be null")
+                stop("null.mean.vec and null.sd.vec must both be null or both not be null")
 
             }
 
@@ -404,21 +401,12 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     }
 
     # write jobs to registry
-    # ids <- batchMap(GADGETS, cluster.number = cluster.ids, more.args = list(results.dir = results.dir, n.migrations = n.migrations,
-    #     case.genetic.data = data.list$case.genetic.data, complement.genetic.data = data.list$complement.genetic.data,
-    #     ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
-    #     weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.se, island.cluster.size = island.cluster.size,
-    #     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
-    #     gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates, crossover.prop = crossover.prop,
-    #     recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat, exposure.levels = data.list$exposure.levels,
-    #     exposure = exposure, use.parents = use.parents),
-    #     reg = registry)
     ids <- batchMap(GADGETS, cluster.number = cluster.ids,
                     more.args = list(results.dir = results.dir, n.migrations = n.migrations,
                                     case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data, case.genetic.data.n = case.genetic.data.n,
                                     complement.genetic.data.n = complement.genetic.data.n, exposure.mat = exposure.mat, weight.lookup.n = weight.lookup.n,
                                     ld.block.vec = data.list$ld.block.vec, n.chromosomes = n.chromosomes, chromosome.size = chromosome.size, snp.chisq = snp.chisq,
-                                    weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.se, island.cluster.size = island.cluster.size,
+                                    weight.lookup = weight.lookup, null.mean.vec = null.mean, null.se.vec = null.sd, island.cluster.size = island.cluster.size,
                                     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
                                     gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
                                     crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,

@@ -181,11 +181,11 @@ epistasis_test <- function(snp_cols, preprocessed_list, n_permutes = 10000L, n_d
     .Call('_epistasisGAGE_epistasis_test', PACKAGE = 'epistasisGAGE', snp_cols, preprocessed_list, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, warn)
 }
 
-GxE_test <- function(snp_cols, preprocessed_list, null_mean_vec, null_se_vec, n_permutes = 10000L, n_different_snps_weight = 2L, n_both_one_weight = 1L, weight_function_int = 2L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, use_parents = 1L) {
-    .Call('_epistasisGAGE_GxE_test', PACKAGE = 'epistasisGAGE', snp_cols, preprocessed_list, null_mean_vec, null_se_vec, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, use_parents)
+GxE_test <- function(target_snps, preprocessed_list, null_mean_vec, null_se_vec, n_permutes = 10000L, n_different_snps_weight = 2L, n_both_one_weight = 1L, weight_function_int = 2L) {
+    .Call('_epistasisGAGE_GxE_test', PACKAGE = 'epistasisGAGE', target_snps, preprocessed_list, null_mean_vec, null_se_vec, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int)
 }
 
-n2log_epistasis_pvals <- function(chromosome_list, in_data_list, null_mean_vec, null_se_vec, n_permutes = 10000L, n_different_snps_weight = 2L, n_both_one_weight = 1L, weight_function_int = 2L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, GxE = FALSE, use_parents = 1L) {
-    .Call('_epistasisGAGE_n2log_epistasis_pvals', PACKAGE = 'epistasisGAGE', chromosome_list, in_data_list, null_mean_vec, null_se_vec, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, GxE, use_parents)
+n2log_epistasis_pvals <- function(chromosome_list, preprocessed_list, n_permutes = 10000L, n_different_snps_weight = 2L, n_both_one_weight = 1L, weight_function_int = 2L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, null_mean_vec_ = NULL, null_se_vec_ = NULL) {
+    .Call('_epistasisGAGE_n2log_epistasis_pvals', PACKAGE = 'epistasisGAGE', chromosome_list, preprocessed_list, n_permutes, n_different_snps_weight, n_both_one_weight, weight_function_int, recessive_ref_prop, recode_test_stat, null_mean_vec_, null_se_vec_)
 }
 

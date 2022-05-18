@@ -8,14 +8,11 @@ GxE.test(
   snp.cols,
   preprocessed.list,
   null.mean.vec,
-  null.se.vec,
+  null.sd.vec,
   n.permutes = 10000,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
-  weight.function.int = 2,
-  recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64,
-  use.parents = 1
+  weight.function.int = 2
 )
 }
 \arguments{
@@ -34,18 +31,9 @@ is multiplied in computing the family weights. Defaults to 1.}
 \item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
 of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
 returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
-
-\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
-to determine whether to recode the SNP as recessive. Defaults to 0.75.}
-
-\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
-See the GADGETS paper for specific details.}
-
-\item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
-indicating family level informativeness will be used. Specify 0 to only use transmission data.}
 }
 \value{
-A list of thee elements:
+A list of three elements:
 \describe{
  \item{pval}{The p-value of the test.}
  \item{obs.fitness.score}{The fitness score from the observed data}
@@ -62,26 +50,27 @@ data(case.gxe)
 data(dad.gxe)
 data(mom.gxe)
 data(exposure)
+exposure <- matrix(exposure - 1, ncol = 1, drop = FALSE)
 data(snp.annotations)
 pp.list <- preprocess.genetic.data(case.gxe, father.genetic.data = dad.gxe,
                                mother.genetic.data = mom.gxe,
                                ld.block.vec = rep(25, 4),
-                               categorical.exposures = exposure)
+                               continuous.exposures = exposure)
+ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
+             results.dir = "tmp_gxe", cluster.type = "interactive",
+             registryargs = list(file.dir = "tmp_reg_gxe", seed = 1300),
+             n.islands = 8, island.cluster.size = 4,
+             n.migrations = 1)
 
-run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
-       results.dir = "tmp_gxe", cluster.type = "interactive",
-       registryargs = list(file.dir = "tmp_reg_gxe", seed = 1300),
-       n.islands = 8, island.cluster.size = 4,
-       n.migrations = 1)
 
 combined.res <- combine.islands('tmp_gxe', snp.annotations, pp.list, 1)
-null.info <- readRDS("tmp_gxe/null.mean.cov.info.rds")
+null.info <- readRDS("tmp_gxe/null.mean.sd.info.rds")
 null.mean <- null.info[["null.mean"]]
-null.cov <- null.info[["null.cov"]]
+null.sd <- null.info[["null.sd"]]
 
 top.snps <- as.vector(t(combined.res[1, 1:3]))
 set.seed(10)
-GxE.test.res <- GxE.test(top.snps, pp.list, null.mean, null.cov)
+GxE.test.res <- GxE.test(top.snps, pp.list, null.mean, null.sd)
 
 unlink('tmp_gxe', recursive = TRUE)
 unlink('tmp_reg_gxe', recursive = TRUE)

@@ -7,8 +7,6 @@
 compute.graphical.scores(
   results.list,
   preprocessed.list,
-  null.mean.vec = rep(0, 3),
-  null.se.vec = rep(1, 3),
   score.type = "logsum",
   pval.thresh = 0.05,
   n.permutes = 10000,
@@ -17,7 +15,9 @@ compute.graphical.scores(
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  bp.param = bpparam()
+  bp.param = bpparam(),
+  null.mean.vec = NULL,
+  null.sd.vec = NULL
 )
 }
 \arguments{
@@ -27,12 +27,6 @@ Each data.table in the list should be subset to the top \code{n.top.scores} scor
 otherwise an error will be returned.}
 
 \item{preprocessed.list}{The list output by \code{preprocess.genetic.data} run on the observed data.}
-
-\item{null.mean.vec}{A vector of null means used for comparison in the Mahalanobis distance based version of the
-GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
-
-\item{null.se.vec}{A vector or estimated null standard errors for the components of the
-GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 
 \item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
@@ -64,6 +58,12 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 See the GADGETS paper for specific details.}
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.}
+
+\item{null.mean.vec}{A vector of null means used for comparison in the Mahalanobis distance based version of the
+GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
+
+\item{null.sd.vec}{A vector or estimated null standard deviations for the components of the
+GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 }
 \value{
 A list of two elements:
