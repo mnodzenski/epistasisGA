@@ -90,15 +90,21 @@
 #' @importFrom data.table melt
 #' @export
 
-compute.graphical.scores <- function(results.list, preprocessed.list, null.mean.vec = rep(0, 3),
-                                     null.se.vec = rep(1, 3), score.type = "logsum", pval.thresh = 0.05,
+compute.graphical.scores <- function(results.list, preprocessed.list, score.type = "logsum", pval.thresh = 0.05,
                                      n.permutes = 10000, n.different.snps.weight = 2, n.both.one.weight = 1,
                                      weight.function.int = 2, recessive.ref.prop = 0.75, recode.test.stat = 1.64,
-                                     bp.param = bpparam()) {
+                                     bp.param = bpparam(), null.mean.vec = NULL, null.se.vec = NULL) {
 
     if (pval.thresh > 0.6){
 
         stop("pval.thresh must be <= 0.6")
+
+    }
+
+    #need to specify both or neither of null mean and sd vec
+    if (is.null(null.mean.vec) & !is.null(null.se.vec) | !is.null(null.mean.vec) & is.null(null.se.vec)){
+
+        stop("null.mean.vec and null.se.vec must both be NULL or both not NULL")
 
     }
 
@@ -118,17 +124,16 @@ compute.graphical.scores <- function(results.list, preprocessed.list, null.mean.
     GxE <- !is.null(preprocessed.list$exposure)
     n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, preprocessed.list, null.mean.vec,
                                                      null.se.vec, n.permutes, n.different.snps.weight, n.both.one.weight,
-                                                     weight.function.int, recessive.ref.prop, recode.test.stat,
-                                                     GxE){
+                                                     weight.function.int, recessive.ref.prop, recode.test.stat){
 
-        n2log_epistasis_pvals(chrom.size.list, preprocessed.list, null.mean.vec, null.se.vec, n.permutes,
+        n2log_epistasis_pvals(chrom.size.list, preprocessed.list, n.permutes,
                               n.different.snps.weight, n.both.one.weight, weight.function.int,
-                              recessive.ref.prop, recode.test.stat, GxE)
+                              recessive.ref.prop, recode.test.stat, null.mean.vec, null.se.vec)
 
     }, preprocessed.list = preprocessed.list, null.mean.vec = null.mean.vec, null.se.vec = null.se.vec,
     n.permutes = n.permutes, n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
     weight.function.int = weight.function.int, recessive.ref.prop = recessive.ref.prop,
-    recode.test.stat = recode.test.stat, GxE = GxE, BPPARAM = bp.param)
+    recode.test.stat = recode.test.stat, BPPARAM = bp.param)
 
    ## add those scores to the obs data
    for (i in seq_along(n2log.epi.pvals)){
