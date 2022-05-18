@@ -7,9 +7,9 @@
 #'  Each data.table in the list should be subset to the top \code{n.top.scores} scores,
 #'  otherwise an error will be returned.
 #' @param preprocessed.list The list output by \code{preprocess.genetic.data} run on the observed data.
-#' @param null.mean.vec A vector of null means used for comparison in the Mahalanobis distance based version of the
+#' @param null.mean.vec.list A vector of null means used for comparison in the Mahalanobis distance based version of the
 #' GxE fitness score. Does not need to be specified otherwise, and can be left at its default.
-#' @param null.sd.vec A vector or estimated null standard deviations for the components of the
+#' @param null.sd.vec.list A vector or estimated null standard deviations for the components of the
 #' GxE fitness score. Does not need to be specified otherwise, and can be left at its default.
 #' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
 #' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
@@ -93,7 +93,7 @@
 compute.graphical.scores <- function(results.list, preprocessed.list, score.type = "logsum", pval.thresh = 0.05,
                                      n.permutes = 10000, n.different.snps.weight = 2, n.both.one.weight = 1,
                                      weight.function.int = 2, recessive.ref.prop = 0.75, recode.test.stat = 1.64,
-                                     bp.param = bpparam(), null.mean.vec = NULL, null.sd.vec = NULL) {
+                                     bp.param = bpparam(), null.mean.vec.list = NULL, null.sd.vec.list = NULL) {
 
     if (pval.thresh > 0.6){
 
@@ -102,9 +102,21 @@ compute.graphical.scores <- function(results.list, preprocessed.list, score.type
     }
 
     #need to specify both or neither of null mean and sd vec
-    if (is.null(null.mean.vec) & !is.null(null.sd.vec) | !is.null(null.mean.vec) & is.null(null.sd.vec)){
+    if (is.null(null.mean.vec.list) & !is.null(null.sd.vec.list) | !is.null(null.mean.vec.list) & is.null(null.sd.vec.list)){
 
-        stop("null.mean.vec and null.sd.vec must both be NULL or both not NULL")
+        stop("null.mean.vec.list and null.sd.vec.list must both be NULL or both not NULL")
+
+    }
+
+    #make sure mean and sd vec lists are the same length as results list
+    if (!is.null(null.mean.vec.list)){
+
+        if (length(null.mean.vec.list) != length(results.list) |
+            length(null.sd.vec.list) != length(results.list)){
+
+            stop("null.mean.vec.list and null.sd.vec.list must have the same length as results list.")
+
+        }
 
     }
 
@@ -120,19 +132,31 @@ compute.graphical.scores <- function(results.list, preprocessed.list, score.type
 
     })
 
-    ## compute graphical scores based on epistasis test
-    GxE <- !is.null(preprocessed.list$exposure)
-    n2log.epi.pvals <- bplapply(chrom.list, function(chrom.size.list, preprocessed.list, null.mean.vec,
-                                                     null.sd.vec, n.permutes, n.different.snps.weight, n.both.one.weight,
+    ## compute graphical scores based on epistasis/GxE test
+    GxE <- nrow(preprocessed.list$exposure.mat) != 1
+    n2log.epi.pvals <- bplapply(seq_along(chrom.list), function(i, chrom.list, preprocessed.list, null.mean.vec.list,
+                                                     null.sd.vec.list, n.permutes, n.different.snps.weight, n.both.one.weight,
                                                      weight.function.int, recessive.ref.prop, recode.test.stat){
 
+        chrom.size.list <- chrom.list[[i]]
+        if (!is.null(null.mean.vec.list)){
+
+            null.mean.vec <- null.mean.vec.list[[i]]
+            null.sd.vec <- null.sd.vec.list[[i]]
+
+        } else {
+
+            null.mean.vec <- NULL
+            null.sd.vec <- NULL
+
+        }
         n2log_epistasis_pvals(chrom.size.list, preprocessed.list, n.permutes,
                               n.different.snps.weight, n.both.one.weight, weight.function.int,
                               recessive.ref.prop, recode.test.stat, null.mean.vec, null.sd.vec)
 
-    }, preprocessed.list = preprocessed.list, null.mean.vec = null.mean.vec, null.sd.vec = null.sd.vec,
-    n.permutes = n.permutes, n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight,
-    weight.function.int = weight.function.int, recessive.ref.prop = recessive.ref.prop,
+    }, chrom.list = chrom.list, preprocessed.list = preprocessed.list, null.mean.vec.list = null.mean.vec.list,
+    null.sd.vec.list = null.sd.vec.list, n.permutes = n.permutes, n.different.snps.weight = n.different.snps.weight,
+    n.both.one.weight = n.both.one.weight, weight.function.int = weight.function.int, recessive.ref.prop = recessive.ref.prop,
     recode.test.stat = recode.test.stat, BPPARAM = bp.param)
 
    ## add those scores to the obs data
@@ -157,7 +181,16 @@ compute.graphical.scores <- function(results.list, preprocessed.list, score.type
 
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        if (sum(grepl("risk.allele", colnames(chrom.size.res))) > 0){
+
+            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+
+        } else {
+
+            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/3
+
+        }
+
         chrom.size.pairs <- rbindlist(lapply(seq_len(n.top.chroms), function(res.row) {
 
             chrom.res <- chrom.size.res[res.row, ]
@@ -193,7 +226,15 @@ compute.graphical.scores <- function(results.list, preprocessed.list, score.type
         # chromosome specific results
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        if (sum(grepl("risk.allele", colnames(chrom.size.res))) > 0){
+
+            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+
+        } else {
+
+            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/3
+
+        }
         these.cols <- seq_len(chrom.size)
         scores <- chrom.size.res$graphical.score
 

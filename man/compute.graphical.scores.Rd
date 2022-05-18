@@ -16,8 +16,8 @@ compute.graphical.scores(
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
   bp.param = bpparam(),
-  null.mean.vec = NULL,
-  null.sd.vec = NULL
+  null.mean.vec.list = NULL,
+  null.sd.vec.list = NULL
 )
 }
 \arguments{
@@ -59,10 +59,10 @@ See the GADGETS paper for specific details.}
 
 \item{bp.param}{The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.}
 
-\item{null.mean.vec}{A vector of null means used for comparison in the Mahalanobis distance based version of the
+\item{null.mean.vec.list}{A vector of null means used for comparison in the Mahalanobis distance based version of the
 GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 
-\item{null.sd.vec}{A vector or estimated null standard deviations for the components of the
+\item{null.sd.vec.list}{A vector or estimated null standard deviations for the components of the
 GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
 }
 \value{
