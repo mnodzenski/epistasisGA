@@ -101,9 +101,6 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
                          high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
                          legend.axis.cex = 1.75, ...) {
 
-    # indicate whether we're doing GxE
-    GxE <- !is.null(preprocessed.list$exposure)
-
     # pick out the pieces of the graphical.score.list
     edge.dt <- graphical.score.list[["pair.scores"]]
     node.dt <- graphical.score.list[["snp.scores"]]
@@ -120,55 +117,45 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
     }
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
-    # for now, only GxG interactions
-    if (!GxE){
+    r2.vals <- vapply(seq(1, nrow(edge.dt)), function(x){
 
-        r2.vals <- vapply(seq(1, nrow(edge.dt)), function(x){
+        # pick out the snp pair in the preprocessed list
+        target.snps <- as.vector(t(edge.dt[x, c(1, 2)]))
 
-            # pick out the snp pair in the preprocessed list
-            target.snps <- as.vector(t(edge.dt[x, c(1, 2)]))
+        # check if snps are located in same ld block
+        cs.ld.block.vec <- preprocessed.list$ld.block.vec
+        same.ld.block <- NA
+        for (upper.limit in cs.ld.block.vec){
 
-            # check if snps are located in same ld block
-            ld.block.vec <- preprocessed.list$ld.block.vec
-            cs.ld.block.vec <- cumsum(ld.block.vec)
-            same.ld.block <- NA
-            for (upper.limit in cs.ld.block.vec){
+            if (all(target.snps <= upper.limit)){
 
-                if (all(target.snps <= upper.limit)){
+                same.ld.block <- TRUE
+                break
 
-                    same.ld.block <- TRUE
-                    break
+            } else if (any(target.snps <= upper.limit)){
 
-                } else if (any(target.snps <= upper.limit)){
-
-                    same.ld.block <- FALSE
-                    break
-
-                }
+                same.ld.block <- FALSE
+                break
 
             }
 
-            # if on same ld block, compute r2
-            if (!same.ld.block){
+        }
 
-                return(0.0)
+        # if on same ld block, compute r2
+        if (!same.ld.block){
 
-            } else {
+            return(0.0)
 
-                snp1 <- preprocessed.list$complement[ , target.snps[1]]
-                snp2 <- preprocessed.list$complement[ , target.snps[2]]
-                r2 <- cor(snp1, snp2)^2
-                return(r2)
+        } else {
 
-            }
+            snp1 <- preprocessed.list$complement.genetic.data[ , target.snps[1]]
+            snp2 <- preprocessed.list$complement.genetic.data[ , target.snps[2]]
+            r2 <- cor(snp1, snp2)^2
+            return(r2)
 
-        }, 1.0)
+        }
 
-    } else {
-
-        r2.vals <- rep(0, nrow(edge.dt))
-
-    }
+    }, 1.0)
 
     #subset to target cols
     edge.dt <- edge.dt[ , c(1, 2, 5)]

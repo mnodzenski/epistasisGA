@@ -88,7 +88,7 @@
 #' @importFrom utils combn
 #' @importFrom BiocParallel bplapply bpparam
 #' @importFrom data.table melt
-#' @export
+#' @export compute.graphical.scores
 
 compute.graphical.scores <- function(results.list, preprocessed.list, score.type = "logsum", pval.thresh = 0.05,
                                      n.permutes = 10000, n.different.snps.weight = 2, n.both.one.weight = 1,
