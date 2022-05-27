@@ -42,7 +42,9 @@ Note that "logsum" is actually the log of one plus the sum of the SNP-pair score
 \item{n.top.scoring.pairs}{An integer indicating the number of top scoring pairs to plot. Defaults to, NULL, which plots all pairs.
 For large networks, plotting a subset of the top scoring pairs can improve the appearance of the graph.}
 
-\item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.}
+\item{node.shape}{The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.
+If both maternal and child SNPs are to be plotted, this argument should be a vector of length 2, whose first
+element is the desired child SNP shape, and second SNP is the desired mother SNP shape.}
 
 \item{repulse.rad}{A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
 increase to move nodes closer together.}

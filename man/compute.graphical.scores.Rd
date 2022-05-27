@@ -4,7 +4,7 @@
 \alias{compute.graphical.scores}
 \title{A function to compute SNP-pair scores for network plots of results.}
 \usage{
-\method{compute}{graphical.scores}(
+compute.graphical.scores(
   results.list,
   preprocessed.list,
   score.type = "logsum",

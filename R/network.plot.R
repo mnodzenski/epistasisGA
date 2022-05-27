@@ -14,6 +14,8 @@
 #' @param n.top.scoring.pairs An integer indicating the number of top scoring pairs to plot. Defaults to, NULL, which plots all pairs.
 #' For large networks, plotting a subset of the top scoring pairs can improve the appearance of the graph.
 #' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.
+#' If both maternal and child SNPs are to be plotted, this argument should be a vector of length 2, whose first
+#' element is the desired child SNP shape, and second SNP is the desired mother SNP shape.
 #' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
 #'  increase to move nodes closer together.
 #' @param node.size A scalar affecting the size of the graph nodes. Increase to increase size.
@@ -192,7 +194,23 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
     node.required.colors <- as.integer(as.factor(V(network)$size))
     node.colors <- color_fun_n(length(unique(node.required.colors)))
     V(network)$color <- node.colors[node.required.colors]
-    V(network)$shape <- node.shape
+    if (length(node.shape) == 1){
+
+        V(network)$shape <- node.shape
+
+    } else {
+
+        mom.snps <- preprocessed.list$mother.snps
+        child.snps <- preprocessed.list$child.snps
+        all.snps <- node.dt$SNP
+        child.node.shape <- node.shape[1]
+        mom.node.shape <- node.shape[2]
+        node.shapes <- rep(child.node.shape, length(all.snps))
+        node.shapes[all.snps %in% mom.snps] <- mom.node.shape
+        V(network)$shape <- node.shapes
+
+    }
+
     V(network)$label.cex <- vertex.label.cex*node.df$size/node.size
     V(network)$label <- node.labels[V(network)$name]
 
