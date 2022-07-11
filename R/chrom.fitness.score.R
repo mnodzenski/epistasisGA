@@ -67,13 +67,16 @@
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
                                 target.snps, ld.block.vec, weight.lookup,
+                                mom.snps = 0, child.snps = 0,
+                                maternal.fetal.int = FALSE,
                                 n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
                                 recode.test.stat = 1.64, epi.test = FALSE,
                                 GxE = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, target.snps,
-                      ld.block.vec, weight.lookup, n.different.snps.weight, n.both.one.weight,
+                      ld.block.vec, weight.lookup, mom.snps, child.snps,
+                      maternal.fetal.int, n.different.snps.weight, n.both.one.weight,
                       recessive.ref.prop, recode.test.stat, epi.test, GxE)
 
 }
