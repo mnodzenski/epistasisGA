@@ -515,6 +515,13 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     case.data <- case.bm[]
 
+    # confirm no miscoded genotypes
+    if (any(! case.data %in% c(NA, 0, 1, 2)) | any(! comp.data %in% c(NA, 0, 1, 2))){
+
+        stop("Miscoded genotypes, genotypes must be coded NA, 0, 1, or 2")
+
+    }
+
     # set missing to -9
     if (any(is.na(case.data)) | any(is.na(comp.data))){
 

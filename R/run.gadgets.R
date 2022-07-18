@@ -299,7 +299,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                     prev.mean <- prev.res$null.mean
                     prev.se <- prev.res$null.se
 
-                    if (any(null.mean != prev.mean) | any(prev.se != null.se)){
+                    if (any(null.mean != prev.mean) | any(prev.se != null.sd)){
 
                         stop(paste("null mean and/or se vector  do not match the previous values in",
                                    out.file.name))
@@ -308,7 +308,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
                 } else {
 
-                    out.res <- list(null.mean = null.mean, null.se = null.se, random.chroms = random.chroms)
+                    out.res <- list(null.mean = null.mean, null.se = null.sd, random.chroms = random.chroms)
                     saveRDS(out.res, file = out.file.name)
 
                 }
@@ -324,7 +324,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                     prev.mean <- prev.res$null.mean
                     prev.se <- prev.res$null.se
 
-                    if (any(null.mean != prev.mean) | any(prev.se != null.se)){
+                    if (any(null.mean.vec != prev.mean) | any(prev.se != null.sd.vec)){
 
                         stop(paste("null mean and/or sd vector  do not match the previous values in",
                                    out.file.name))

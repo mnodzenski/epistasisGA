@@ -50,7 +50,7 @@ data(case.gxe)
 data(dad.gxe)
 data(mom.gxe)
 data(exposure)
-exposure <- matrix(exposure - 1, ncol = 1, drop = FALSE)
+exposure <- matrix(exposure - 1, ncol = 1)
 data(snp.annotations)
 pp.list <- preprocess.genetic.data(case.gxe, father.genetic.data = dad.gxe,
                                mother.genetic.data = mom.gxe,
@@ -66,7 +66,7 @@ pp.list <- preprocess.genetic.data(case.gxe, father.genetic.data = dad.gxe,
 combined.res <- combine.islands('tmp_gxe', snp.annotations, pp.list, 1)
 null.info <- readRDS("tmp_gxe/null.mean.sd.info.rds")
 null.mean <- null.info[["null.mean"]]
-null.sd <- null.info[["null.sd"]]
+null.sd <- null.info[["null.se"]]
 
 top.snps <- as.vector(t(combined.res[1, 1:3]))
 set.seed(10)

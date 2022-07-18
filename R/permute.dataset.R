@@ -59,6 +59,10 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
             comp.perm[flip.these, ] <- case.genetic.data[flip.these, ]
             case.out.file <- file.path(permutation.data.file.path, paste0("case.permute", permute, ".rds"))
             comp.out.file <- file.path(permutation.data.file.path, paste0("complement.permute", permute, ".rds"))
+
+            #account for missing vals
+            case.perm[case.perm == -9] <- NA
+            comp.perm[comp.perm == -9] <- NA
             saveRDS(case.perm, case.out.file)
             saveRDS(comp.perm, comp.out.file)
 

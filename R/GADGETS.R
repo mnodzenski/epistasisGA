@@ -77,10 +77,19 @@
 #'  ld.block.vec <- data.list$ld.block.vec
 #'  case.genetic.data <- data.list$case.genetic.data
 #'  complement.genetic.data <- data.list$complement.genetic.data
+#'
+#'  #required inputs but not actually used in function below
+#'  case.genetic.data.n <- matrix(0.0, 1, 1)
+#'  complement.genetic.data.n <- matrix(0.0, 1, 1)
+#'  exposure.mat <- data.list$exposure.mat + 0.0
+#'
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
 #'  dir.create('tmp')
 #' GADGETS(cluster.number = 1, results.dir = 'tmp', case.genetic.data = case.genetic.data,
-#'        complement.genetic.data = complement.genetic.data, ld.block.vec = ld.block.vec,
+#'        complement.genetic.data = complement.genetic.data, case.genetic.data.n = case.genetic.data.n,
+#'        complement.genetic.data.n = complement.genetic.data.n, exposure.mat = exposure.mat,
+#'        weight.lookup.n = weight.lookup + 0.0, mother.snps = NULL, child.snps = NULL,
+#'        ld.block.vec = ld.block.vec,
 #'        n.chromosomes = 10, chromosome.size = 3, snp.chisq = chisq.stats,
 #'        weight.lookup = weight.lookup, n.migrations = 2, migration.interval = 5,
 #'        gen.same.fitness = 10, max.generations = 10, null.mean.vec = rep(0, 3),

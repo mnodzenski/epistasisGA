@@ -152,7 +152,12 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
 
             snp1 <- preprocessed.list$complement.genetic.data[ , target.snps[1]]
             snp2 <- preprocessed.list$complement.genetic.data[ , target.snps[2]]
-            r2 <- cor(snp1, snp2)^2
+
+            # missing are coded as -9
+            snp1[snp1 == -9] <- NA
+            snp2[snp2 == -9] <- NA
+
+            r2 <- cor(snp1, snp2, use = "complete.obs")^2
             return(r2)
 
         }
