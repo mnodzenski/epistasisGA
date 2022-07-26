@@ -40,4 +40,3 @@
 #' @format A data frame with 100 rows and 3 variables
 #' @usage data(snp.annotations)
 "snp.annotations"
-

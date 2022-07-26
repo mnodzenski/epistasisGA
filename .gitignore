@@ -1,4 +1,5 @@
 .Rproj.user
+.Rproj.user*
 .RData
 .Ruserdata
 scratch.work.R

@@ -2,7 +2,8 @@
 % Please edit documentation in R/permute.dataset.R
 \name{permute.dataset}
 \alias{permute.dataset}
-\title{A function to create permuted datasets for permutation based hypothesis testing.}
+\title{A function to create permuted datasets for permutation based hypothesis
+testing.}
 \usage{
 permute.dataset(
   case.genetic.data,
@@ -13,26 +14,34 @@ permute.dataset(
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children. Columns are SNP allele counts, and rows are individuals.}
+\item{case.genetic.data}{The genetic data of the disease affected children.
+Columns are SNP allele counts, and rows are individuals.}
 
-\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
-\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected
+\item{complement.genetic.data}{A genetic dataset from the complements of the
+cases, where \code{complement.genetic.data} = mother SNP counts + father SNP
+ counts - case SNP counts. If using affected/unaffected
 sibling pairs, this should be the genetic data for the unaffected sibling.
-Columns are SNP allele counts, rows are families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
+Columns are SNP allele counts, rows are families. If not specified,
+\code{father.genetic.data} and \code{mother.genetic.data} must be specified.}
 
-\item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
+\item{father.genetic.data}{The genetic data for the fathers of the cases.
+Columns are SNP allele counts, rows are individuals.
 Does not need to be specified if \code{complement.genetic.data} is specified.}
 
-\item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
+\item{mother.genetic.data}{The genetic data for the mothers of the cases.
+Columns are SNP allele counts, rows are individuals.
 Does not need to be specified if \code{complement.genetic.data} is specified.}
 
 \item{n.permutations}{The number of permuted datasets to create.}
 }
 \value{
-A list of \code{n.permutations} pairs of case and complement data, where the observed case/complement status has been randomly flipped or not flipped.
+A list of \code{n.permutations} pairs of case and complement data,
+where the observed case/complement status has been randomly flipped or not
+flipped.
 }
 \description{
-This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
+This function creates permuted datasets for permutation based hypothesis
+testing of GADGETS fitness scores.
 }
 \examples{
 
@@ -40,7 +49,9 @@ data(case)
 data(dad)
 data(mom)
 set.seed(15)
-perm.data.list <- permute.dataset(case, father.genetic.data = dad, mother.genetic.data = mom,
-                 n.permutations = 2)
+perm.data.list <- permute.dataset(case,
+    father.genetic.data = dad, mother.genetic.data = mom,
+    n.permutations = 2
+)
 
 }
