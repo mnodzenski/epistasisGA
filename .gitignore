@@ -15,4 +15,5 @@ R/.DS_Store
 src/.DS_Store
 doc
 Meta
-
+/doc/
+/Meta/

@@ -4,7 +4,6 @@
 # epistasisGA
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The epistasisGA package implements the GADGETS approach for detecting
@@ -23,10 +22,10 @@ Further details for macOS users can be found in the ‘R Administration’
 manual, Appendix C.3:
 <https://cran.r-project.org/doc/manuals/r-release/R-admin.html#macOS>.
 Additionally, to build the package vignette, Pandoc is required. To
-install Pandoc, please follow the instructions here:
-<https://pkgs.rstudio.com/rmarkdown/articles/pandoc.html>. After
-ensuring these prerequisites are installed, epistasisGA can be installed
-using the `devtools` package with the following commands:
+check whether you have pandoc installed, see here:
+<https://rmarkdown.rstudio.com/docs/reference/pandoc_available.html>.
+After ensuring these prerequisites are installed, epistasisGA can be
+installed using the `devtools` package with the following commands:
 
 ``` r
 library(devtools)
