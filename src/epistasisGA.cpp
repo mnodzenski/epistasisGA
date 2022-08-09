@@ -399,7 +399,7 @@ NumericVector sub_colmeans(LogicalMatrix in_mat, IntegerVector target_rows, Inte
 List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_int, IntegerVector pos_risk_int,
                     IntegerMatrix case_data, IntegerMatrix comp, IntegerVector informative_families, IntegerVector target_snps){
 
-  if (n_neg > 0 & n_pos > 0) {
+  if ((n_neg > 0) & (n_pos > 0)) {
 
     IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
     IntegerVector n1 = n_neg_high_risk(case_data, informative_families, neg_snp_cols);
@@ -416,7 +416,7 @@ List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_i
                             Named("comp_high_risk") = comp_high_risk);
     return(res);
 
-  } else if (n_neg > 0 & n_pos == 0) {
+  } else if ((n_neg > 0) & (n_pos == 0)) {
 
     IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
     IntegerVector n1 = n_neg_high_risk(case_data, informative_families, neg_snp_cols);
