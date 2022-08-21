@@ -241,7 +241,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(case.genetic.data) <- NULL
-        case.bm <- as.big.matrix(case.genetic.data, type = "integer")
+        case.bm <- as.big.matrix(case.genetic.data, type = "integer", shared = FALSE)
         rm(case.genetic.data)
         gc(verbose = FALSE)
 
@@ -281,7 +281,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(complement.genetic.data) <- NULL
-        comp.bm <- as.big.matrix(complement.genetic.data, type = "integer")
+        comp.bm <- as.big.matrix(complement.genetic.data, type = "integer", shared = FALSE)
         rm(complement.genetic.data)
         gc(verbose = FALSE)
 
@@ -321,7 +321,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(mother.genetic.data) <- NULL
-        mother.bm <- as.big.matrix(mother.genetic.data, type = "integer")
+        mother.bm <- as.big.matrix(mother.genetic.data, type = "integer", shared = FALSE)
         rm(mother.genetic.data)
         gc(verbose = FALSE)
 
@@ -360,7 +360,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         # convert to big.matrix
         dimnames(father.genetic.data) <- NULL
-        father.bm <- as.big.matrix(father.genetic.data, type = "integer")
+        father.bm <- as.big.matrix(father.genetic.data, type = "integer", shared = FALSE)
         rm(father.genetic.data)
         gc(verbose = FALSE)
 

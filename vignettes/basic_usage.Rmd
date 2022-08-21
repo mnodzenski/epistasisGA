@@ -13,7 +13,6 @@ output:
   BiocStyle::html_document:
     toc_float: true
     fig_width: 5
-  BiocStyle::pdf_document: default
 bibliography: library.bib
 vignette: >
   %\VignetteIndexEntry{GADGETS Usage}
