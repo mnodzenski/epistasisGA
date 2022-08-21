@@ -46,7 +46,7 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
 
     ### permute the data ###
     n.families <- nrow(case.genetic.data)
-    if (is.null(preprocessed.list$exposure)){
+    if (nrow(preprocessed.list$exposure.mat) == 1){
 
         permuted.data.list <- bplapply(seq_len(n.permutations), function(permute, n.families, case.genetic.data,
                                                                          complement.genetic.data) {
@@ -71,11 +71,12 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
 
     } else {
 
-        exposure <- preprocessed.list$exposure
+        exposure <- preprocessed.list$exposure.mat
+        n.fams <- nrow(exposure)
         permuted.data.list <- lapply(seq_len(n.permutations), function(permute) {
 
-            shuffled.order <- sample(seq_along(exposure), length(exposure))
-            exposure.perm <- exposure[shuffled.order]
+            shuffled.order <- sample(seq_len(n.fams), n.fams)
+            exposure.perm <- exposure[shuffled.order, , drop = FALSE]
             out.file <- file.path(permutation.data.file.path, paste0("exposure.permute", permute, ".rds"))
             saveRDS(exposure.perm, out.file)
 
