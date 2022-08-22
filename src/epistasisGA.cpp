@@ -1324,6 +1324,8 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix comp
   arma::vec weight_start = n_different_snps_weight*n_diffs + n_both_one_weight*n_both_one;
   arma::vec family_weights(case_target.n_rows, fill::zeros);
 
+  int chrom_size = case_target.n_cols;
+
   // make the family weights
   for (unsigned int i = 0; i < case_target.n_rows; i++){
 
@@ -1349,116 +1351,115 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix comp
   arma::vec beta_weights = solve(x, family_weights, solve_opts::fast);
   arma::colvec resid_weights = family_weights - x*beta_weights;
   double sig2 = arma::as_scalar(arma::trans(resid_weights)*resid_weights/(x.n_rows - x.n_cols));
-  arma::mat vcov_beta_weights = sig2 * arma::inv(arma::trans(x)*x);
-  beta_weights(0) = 0.0;
-  vcov_beta_weights.col(0).zeros();
-  vcov_beta_weights.row(0).zeros();
-  double wald_test = arma::as_scalar(trans(beta_weights)*pinv(vcov_beta_weights)*beta_weights);
+  arma::mat vcov_beta_weights = sig2 * arma::pinv(arma::trans(x)*x);
 
-  // now transform wls to ols
-  arma::vec sqrt_weights = arma::sqrt(family_weights);
-  x.each_col() %= sqrt_weights;
-  x0.each_col() %= sqrt_weights;
-  geno_diff_mat.each_col() %= sqrt_weights;
+  // make sure cov is positive definite and return small score if not
+  bool vcov_beta_weights_pd = vcov_beta_weights.is_sympd();
 
-  // fit full model
-  arma::mat beta_full = solve(x, geno_diff_mat, solve_opts::fast);
-  arma::mat resid_full = geno_diff_mat - x*beta_full;
+  // return small val if not
+  if (! vcov_beta_weights_pd){
 
-  // for each resid, get vech of the cross product matrix
-  int n_snps = resid_full.n_cols;
-  int vech_size = n_snps*(n_snps + 1) / 2;
-  arma::mat resid_crossprod_vech_mat(resid_full.n_rows, vech_size);
-  for (unsigned int i = 0; i < resid_full.n_rows; i++){
+    arma::vec sum_dif_vecs(chrom_size, fill::ones);
 
-    arma::rowvec resid_vec_i = resid_full.row(i);
-    arma::mat crossprod_i = resid_vec_i.t() * resid_vec_i;
-    int within_fam_pos = 0;
+    List res = List::create(Named("fitness_score") =  pow(10, -10),
+                            Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                            Named("ht_trace") = pow(10, -10),
+                            Named("wald_stat") = pow(10, -10));
 
-    for (unsigned int j = 0; j < crossprod_i.n_cols; j++){
+    return(res);
 
-      for (unsigned int k = 0; k <= j; k++){
+  } else {
 
-        double crossprod_i_val = crossprod_i(k, j);
-        resid_crossprod_vech_mat(i, within_fam_pos) = crossprod_i_val;
-        within_fam_pos += 1;
+    beta_weights(0) = 0.0;
+    vcov_beta_weights.col(0).zeros();
+    vcov_beta_weights.row(0).zeros();
+    double wald_test = arma::as_scalar(trans(beta_weights)*pinv(vcov_beta_weights)*beta_weights);
+
+    // now transform wls to ols
+    arma::vec sqrt_weights = arma::sqrt(family_weights);
+    x.each_col() %= sqrt_weights;
+    x0.each_col() %= sqrt_weights;
+    geno_diff_mat.each_col() %= sqrt_weights;
+
+    // fit full model
+    arma::mat beta_full = solve(x, geno_diff_mat, solve_opts::fast);
+    arma::mat resid_full = geno_diff_mat - x*beta_full;
+
+    // fit reduced model
+    arma::mat beta_reduced= solve(x0, geno_diff_mat, solve_opts::fast);
+    arma::mat resid_reduced = geno_diff_mat - x0*beta_reduced;
+
+    // compute hotelling-lawley trace to compare models
+    arma::mat E = trans(resid_full) * resid_full;
+    arma::mat H = trans(resid_reduced) * resid_reduced - E;
+
+    //make sure E is invertible
+    bool E_pd = E.is_sympd();
+
+    // return small value if not
+    if (!E_pd){
+
+      arma::vec sum_dif_vecs(chrom_size, fill::ones);
+
+      List res = List::create(Named("fitness_score") =  pow(10, -10),
+                              Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                              Named("ht_trace") = pow(10, -10),
+                              Named("wald_stat") = pow(10, -10));
+      return(res);
+
+    } else {
+
+      arma::mat H_Einv = H * arma::inv_sympd(E);
+      double ht_trace = arma::trace(H_Einv);
+
+      // fitness score
+      arma::vec s_vec(2);
+      s_vec(0) = wald_test;
+      s_vec(1) = ht_trace;
+      arma::vec centered_vec = s_vec - null_means;
+
+      //make sure the elements are both greater than the random nulls, otherwise
+      // set to small value
+      bool neg_elem = any(centered_vec <= 0);
+      if (neg_elem){
+
+        arma::vec sum_dif_vecs(chrom_size, fill::ones);
+
+        List res = List::create(Named("fitness_score") =  pow(10, -10),
+                                Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                                Named("ht_trace") = pow(10, -10),
+                                Named("wald_stat") = pow(10, -10));
+
+        return(res);
+
+      } else {
+
+        double s = arma::prod(centered_vec / null_se);
+
+        // use the diagonals of H to determine which elements to keep
+        arma::vec H_Einv_diag = H_Einv.diag();
+
+        // if the fitness score is zero or undefined reset to small number
+        if ( (s <= 0) | (R_isnancpp(s)) | (!arma::is_finite(s)) | any(H_Einv_diag <= 0)){
+          s = pow(10, -10);
+        }
+
+        // make sure the diagonals are positive real numbers
+        double fill_val = pow(10, -10);
+        arma::uvec zero_vals = arma::find(H_Einv_diag <= 0);
+        H_Einv_diag.elem(zero_vals).fill(fill_val);
+
+        List res = List::create(Named("fitness_score") = s,
+                                Named("sum_dif_vecs") = H_Einv_diag.t(),
+                                Named("ht_trace") = ht_trace,
+                                Named("wald_stat") = wald_test);
+        return(res);
 
       }
 
     }
 
   }
-
-  // looking at mahalanobis idea for variance distortion
-  // arma::mat resid_full_2 = arma::square(resid_full);
-  // arma::rowvec mean_resid2 = arma::mean(resid_full_2, 0);
-  // arma::mat cov_resid2 = arma::cov(resid_full_2);
-  // arma::vec md(resid_full_2.n_rows);
-  // for (unsigned int i = 0; i < resid_full_2.n_rows; i++){
-  //
-  //   arma::rowvec resid2_i = resid_full_2.row(i);
-  //   arma::rowvec centered = resid2_i - mean_resid2;
-  //   double d_i = sqrt(arma::as_scalar(centered * arma::inv(cov_resid2) * centered.t()));
-  //   md(i) = d_i;
-  //
-  // }
-  // arma::rowvec mean_resid = arma::mean(resid_full, 0);
-  // arma::mat cov_resid = arma::cov(resid_full);
-  // arma::vec md(resid_full.n_rows);
-  // for (unsigned int i = 0; i < resid_full.n_rows; i++){
-  //
-  //   arma::rowvec resid_i = resid_full.row(i);
-  //   arma::rowvec centered = resid_i - mean_resid;
-  //   double d_i = sqrt(arma::as_scalar(centered * arma::inv(cov_resid) * centered.t()));
-  //   md(i) = d_i;
-  //
-  // }
-
-  // refit
-  //arma::mat geno_diff_mat_new = join_rows(geno_diff_mat, md);
-  arma::mat geno_diff_mat_new = join_rows(geno_diff_mat, resid_crossprod_vech_mat);
-  arma::mat beta_full_new = solve(x, geno_diff_mat_new, solve_opts::fast);
-  arma::mat resid_full_new = geno_diff_mat_new - x*beta_full_new;
-
-  // fit reduced model
-  arma::mat beta_reduced_new = solve(x0, geno_diff_mat_new, solve_opts::fast);
-  arma::mat resid_reduced_new = geno_diff_mat_new - x0*beta_reduced_new;
-
-  // compute hotelling-lawley trace to compare models
-  arma::mat E = trans(resid_full_new) * resid_full_new;
-  arma::mat H = trans(resid_reduced_new) * resid_reduced_new - E;
-  arma::mat H_Einv = H * arma::pinv(E);
-  double ht_trace = arma::trace(H_Einv);
-
-  // fitness score
-  arma::vec s_vec(2);
-  s_vec(0) = wald_test;
-  s_vec(1) = ht_trace;
-  arma::vec centered_vec = s_vec - null_means;
-  double s = arma::prod(arma::abs(centered_vec / null_se));
-
-  // use the diagonals of H to determine which elements to keep
-  arma::vec H_Einv_diag = H_Einv.diag();
-  //double var_comp = arma::as_scalar(H_Einv_diag.tail(1));
-  arma::vec var_comp = H_Einv_diag.tail(vech_size);
-  H_Einv_diag = H_Einv_diag.head(n_snps);
-
-  // if the fitness score is zero or undefined reset to small number
-  if ( (s <= 0) | R_isnancpp(s) | !arma::is_finite(s) ){
-    s = pow(10, -10);
-  }
-
-  // make sure the t-stats are positive real numbers
-  double fill_val = pow(10, -10);
-  arma::uvec zero_vals = arma::find(H_Einv_diag <= 0);
-  H_Einv_diag.elem(zero_vals).fill(fill_val);
-
-  List res = List::create(Named("fitness_score") = s,
-                          Named("sum_dif_vecs") = H_Einv_diag.t(),
-                          Named("ht_trace") = ht_trace,
-                          Named("wald_stat") = wald_test,
-                          Named("var_comp") = var_comp);
-  return(res);
 
 }
 
