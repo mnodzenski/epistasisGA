@@ -5,7 +5,8 @@
 scratch.work.R
 knnGA.Rproj
 *.DS_Store
-*epistasisGA.o
-*epistasisGAGE.so
+src/epistasisGA.o
+src/epistasisGAGE.so
 doc
 Meta
+src/RcppExports.o
