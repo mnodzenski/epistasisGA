@@ -54,12 +54,12 @@
 #' if the population is homogenous with no exposure related population structure.
 #' @param n.random.chroms The number of random chromosomes used to construct a reference null mean and standard error vectors to
 #' compute the GxE fitness score.
-#' @param null.mean.vec A vector of estimated null means for each of the three components of the
-#' GxE fitness score. This does not need to be specified unless an analyst wants to replicate the results of a previous GADGETS
+#' @param null.mean.vec A vector of estimated null means for each of the components of the
+#' GxE fitness score. This needs to be specified if running permutes under the no-GxE null, and should be set to
+#' the values in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory for the observed
+#' data. It also should be specified if analyst wants to replicate the results of a previous GADGETS
 #' GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
-#' In that case, to use the same null mean vector in computing the fitness score, the analyst can find the
-#' previously used null mean vector in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.
-#' @param null.sd.vec A vector of estimated null standard errors for the three components of the
+#' @param null.sd.vec A vector of estimated null standard errors for the components of the
 #' GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
 #' previously used vector can also be found in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
