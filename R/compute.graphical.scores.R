@@ -121,10 +121,19 @@ compute.graphical.scores <- function(results.list, preprocessed.list, score.type
     }
 
     ## divide up results into list of chromosome lists
+    GxE <- nrow(preprocessed.list$exposure.mat) != 1
     chrom.list <- lapply(results.list, function(chrom.size.data){
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
+        if (GxE){
+
+          chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/3
+
+        } else {
+
+          chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
+
+        }
         these.cols <- seq_len(chrom.size)
         chrom.mat <- as.matrix(chrom.size.data[ , ..these.cols])
         chrom.list <- split(chrom.mat, seq_len(nrow(chrom.mat)))
@@ -133,7 +142,6 @@ compute.graphical.scores <- function(results.list, preprocessed.list, score.type
     })
 
     ## compute graphical scores based on epistasis/GxE test
-    GxE <- nrow(preprocessed.list$exposure.mat) != 1
     n2log.epi.pvals <- bplapply(seq_along(chrom.list), function(i, chrom.list, preprocessed.list, null.mean.vec.list,
                                                      null.sd.vec.list, n.permutes, n.different.snps.weight, n.both.one.weight,
                                                      weight.function.int, recessive.ref.prop, recode.test.stat){
