@@ -124,34 +124,45 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
         # pick out the snp pair in the preprocessed list
         target.snps <- as.vector(t(edge.dt[x, c(1, 2)]))
 
-        # check if snps are located in same ld block
-        cs.ld.block.vec <- preprocessed.list$ld.block.vec
-        same.ld.block <- NA
-        for (upper.limit in cs.ld.block.vec){
+        # check to see if they are of the same type (i.e., both child or both mom)
+        s1 <- target.snps[1]
+        s2 <- target.snps[2]
+        s1.type <- ifelse(s1 %in% preprocessed.list$mother.snps, 1, 0)
+        s2.type <- ifelse(s2 %in% preprocessed.list$mother.snps, 1, 0)
+        if (s1.type != s2.type){
 
-            if (all(target.snps <= upper.limit)){
-
-                same.ld.block <- TRUE
-                break
-
-            } else if (any(target.snps <= upper.limit)){
-
-                same.ld.block <- FALSE
-                break
-
-            }
-
-        }
-
-        # if on same ld block, compute r2
-        if (!same.ld.block){
-
-            return(0.0)
+          return(0.0)
 
         } else {
 
-            snp1 <- preprocessed.list$complement.genetic.data[ , target.snps[1]]
-            snp2 <- preprocessed.list$complement.genetic.data[ , target.snps[2]]
+          # check if snps are located in same ld block
+          cs.ld.block.vec <- preprocessed.list$ld.block.vec
+          same.ld.block <- NA
+          for (upper.limit in cs.ld.block.vec){
+
+            if (all(target.snps <= upper.limit)){
+
+              same.ld.block <- TRUE
+              break
+
+            } else if (any(target.snps <= upper.limit)){
+
+              same.ld.block <- FALSE
+              break
+
+            }
+
+          }
+
+          # if on same ld block, compute r2
+          if (!same.ld.block){
+
+            return(0.0)
+
+          } else {
+
+            snp1 <- preprocessed.list$complement.genetic.data[ , s1]
+            snp2 <- preprocessed.list$complement.genetic.data[ , s2]
 
             # missing are coded as -9
             snp1[snp1 == -9] <- NA
@@ -159,6 +170,8 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
 
             r2 <- cor(snp1, snp2, use = "complete.obs")^2
             return(r2)
+
+          }
 
         }
 
