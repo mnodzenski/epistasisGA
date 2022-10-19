@@ -1781,10 +1781,10 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, List ld_bl
                                  bool dif_coding = false){
 
   // make copies of the input data
-  uint nrows = case_inf.n_rows;
-  uint ncols = case_inf.n_cols;
-  arma::mat case_permuted(nrows, ncols);
-  arma::mat comp_permuted(nrows, ncols);
+  int number_rows = case_inf.n_rows;
+  int number_cols = case_inf.n_cols;
+  arma::mat case_permuted(number_rows, number_cols);
+  arma::mat comp_permuted(number_rows, number_cols);
 
   // loop over SNP LD blocks and shuffle rows
   for (arma::uword i = 0; i < ld_blocks.size(); i++){
