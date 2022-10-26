@@ -155,9 +155,9 @@ Once users have confirmed `run.gadgets` has completed and run properly, the sets
 ```{r}
 data(snp.annotations)
 size3.combined.res <- combine.islands("size3_res", snp.annotations,
-                                      pp.list, 2)
+                                      pp.list)
 size4.combined.res <- combine.islands("size4_res", snp.annotations,
-                                      pp.list, 2)
+                                      pp.list)
 
 ```
 
@@ -246,7 +246,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
   
     perm.data.list <- preprocess.lists[[permutation]]
     res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
-    combine.islands(res.dir, snp.annotations, perm.data.list, 2)
+    combine.islands(res.dir, snp.annotations, perm.data.list)
     
   })
   
@@ -415,11 +415,11 @@ We see the true pathway SNPs appear prominently in this plot. Key features of th
 
 This function uses the Fruchterman-Reingold force directed graph drawing algorithm, as implemented in the `qgraph` R package. If other layout algorithms are desired, users can specify `plot = FALSE` to `network.plot`, which will return an `igraph` object that can be used for more customized or interactive plotting. For instance, the `igraph` package function `tkplot` allows for interactive plotting of `igraph` objects. 
 
-In real applications, there may be too many SNPs for a network plot to fit on a single page. In those instances, we plot a subset of the top scoring pairs. For example, we could plot the top 6 scoring pairs as follows:
+In real applications, there may be too many SNPs for a network plot to fit on a single page. In those instances, we plot a subset of the top scoring pairs. For example, we could plot the top 2 scoring pairs as follows:
 
 ```{r, fig.width = 14, fig.height = 12}
 network.plot(graphical.scores, pp.list, 
-             n.top.scoring.pairs = 6, graph.area = 10,
+             n.top.scoring.pairs = 2, graph.area = 10,
              node.size = 40, vertex.label.cex = 2)
 
 ```

@@ -27,7 +27,6 @@
 #' See the GADGETS paper for specific details.
 #' @param epi.test A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 #' for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.
-#' @param GxE a logical indicating whether the function is being used to compute a GxE fitness score, defaulting to false.
 #' @return A list:
 #' \describe{
 #'  \item{fitness_score}{The chromosome fitness score.}
@@ -71,13 +70,12 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
                                 maternal.fetal.int = FALSE,
                                 n.different.snps.weight = 2,
                                 n.both.one.weight = 1, recessive.ref.prop = 0.75,
-                                recode.test.stat = 1.64, epi.test = FALSE,
-                                GxE = FALSE) {
+                                recode.test.stat = 1.64, epi.test = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, target.snps,
                       ld.block.vec, weight.lookup, mom.snps, child.snps,
                       maternal.fetal.int, n.different.snps.weight, n.both.one.weight,
-                      recessive.ref.prop, recode.test.stat, epi.test, GxE)
+                      recessive.ref.prop, recode.test.stat, epi.test)
 
 }
 

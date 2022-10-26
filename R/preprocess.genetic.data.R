@@ -38,18 +38,14 @@
 #' @param continuous.exposures A matrix or data.frame of numeric values corresponding to continuous exposures for the cases. Defaults to NULL,
 #' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{continuous.exposures}
 #' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
-#' @param categorical.exposures.sib If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of integers
-#' corresponding to categorical exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the
-#' same exposure as the case. Defaults to NULL. \code{categorical.exposures.sib}
-#' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
-#' @param continuous.exposures.sib If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of numeric values
-#' corresponding to continuous exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the same exposure as
-#' the case. Defaults to NULL. code{continuous.exposures.sib} should not be missing any data, families with missing exposure data should be removed
-#' from the analysis prior to input.
 #' @param use.parents A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
 #' indicating family level informativeness will be used. Specify 0 to only use transmission data.
 #' @param mother.snps If searching for maternal-fetal interactions, the indices of the maternal SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.
 #' @param child.snps If searching for maternal-fetal interactions, the indices of the child SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.
+#' @param lower.order.gxe A boolean indicating whether, if multiple exposures of interest are input, E-GADGETS should search for only for genetic interactions with the
+#' joint combination of exposures (i.e., GxGxExE interactions), or if it should additionally search for lower-order interactions that involve subsets of the exposures
+#' that were input (i.e., GxGxE in addition to GxGxExE). The default, FALSE, restricts the search to GxGxExE interactions. Users should be cautious about including
+#' large numbers of input exposures, and, if they do, very cautious about setting this argument to TRUE.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
@@ -80,8 +76,8 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, continuous.exposures = NULL, categorical.exposures.sib = NULL, continuous.exposures.sib = NULL,
-    use.parents = 1, mother.snps = NULL, child.snps = NULL) {
+    categorical.exposures = NULL, continuous.exposures = NULL, use.parents = 1, mother.snps = NULL, child.snps = NULL,
+    lower.order.gxe = FALSE) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -108,7 +104,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     ### if environmental exposures are provided, check their formatting ###
     if (!is.null(categorical.exposures)){
 
-        #storage.mode(categorical.exposures) <- "integer
         cat.exposure.df <- as.data.frame(categorical.exposures)
         cat.exposure.df <- data.frame(apply(cat.exposure.df, 2, as.factor), stringsAsFactors = TRUE)
 
@@ -125,28 +120,8 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
     }
 
-    if (!is.null(categorical.exposures.sib)){
-
-        cat.exposure.df.sib <- as.data.frame(categorical.exposures.sib)
-        cat.exposure.df.sib <- data.frame(apply(cat.exposure.df.sib, 2, as.factor), stringsAsFactors = TRUE)
-
-        # identify families with missing exposure data
-        missing.exposure <- rowSums(is.na(cat.exposure.df.sib)) > 0
-        if (sum(missing.exposure) > 0){
-
-            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to missing sibling categorical exposure(s)"))
-
-        }
-
-        #name the categorical exposure vars
-        names(cat.exposure.df.sib) <- paste0("cat.exp", seq_len(ncol(cat.exposure.df.sib)))
-
-    }
-
-    cont.GxE <- FALSE
     if (!is.null(continuous.exposures)){
 
-        cont.GxE <- TRUE
         cont.exposure.df <- as.data.frame(continuous.exposures)
 
         # identify families with missing exposure data
@@ -160,23 +135,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         #name the categorical exposure vars
         names(cont.exposure.df) <- paste0("cont.exp", seq_len(ncol(cont.exposure.df)))
 
-
-    }
-
-    if (!is.null(continuous.exposures.sib)){
-
-        cont.exposure.df.sib <- as.data.frame(continuous.exposures.sib)
-
-        # identify families with missing exposure data
-        missing.exposure <- rowSums(is.na(cont.exposure.df.sib)) > 0
-        if (sum(missing.exposure) > 0){
-
-            stop(paste("Please remove", sum(missing.exposure), "families from analysis due to sibling missing continuous exposure(s)"))
-
-        }
-
-        #name the categorical exposure vars
-        names(cont.exposure.df.sib) <- paste0("cont.exp", seq_len(ncol(cont.exposure.df.sib)))
 
     }
 
@@ -198,29 +156,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
         exposure.df <- NULL
 
     }
-
-    # make full exposure df
-    if (!is.null(continuous.exposures.sib) & !is.null(categorical.exposures.sib)){
-
-        exposure.df.sib <- cbind(cat.exposure.df.sib, cont.exposure.df.sib)
-
-    } else if (!is.null(continuous.exposures.sib) & is.null(categorical.exposures.sib)){
-
-        exposure.df.sib <- cont.exposure.df.sib
-
-    } else if (is.null(continuous.exposures.sib) & !is.null(categorical.exposures.sib)){
-
-        exposure.df.sib <- cat.exposure.df.sib
-
-    } else if (!is.null(exposure.df)){
-
-        exposure.df.sib <- exposure.df
-
-    } else {
-
-        exposure.df.sib <- NULL
-    }
-
 
     # check formatting of input data and, if necessary, create memory mapped files
     if (!any(class(case.genetic.data) %in% c("matrix", "big.matrix"))){
@@ -433,15 +368,8 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
             if (use.parents != 2){
 
-                if (is.null(exposure.df.sib)){
+                exposures <- rbind(exposure.df, exposure.df)
 
-                    exposures <- rbind(exposure.df, exposure.df)
-
-                } else {
-
-                    exposures <- rbind(exposure.df, exposure.df.sib)
-
-                }
                 res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposures) {
 
                     case.snp <- bm.list$case[ , snp]
@@ -464,8 +392,17 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
                     #make model formula
                     exposure.vars <- colnames(exposures)
-                    exposure.part <- paste(exposure.vars, collapse = ":")
-                    model.this <- as.formula(paste0("case.status ~ case.comp.geno + case.comp.geno:", exposure.part, " + strata(ids)"))
+                    if (!lower.order.gxe){
+
+                      exposure.part <- paste0("case.comp.geno:", paste(exposure.vars, collapse = ":"))
+
+                    } else {
+
+                      exposure.part <- paste0("case.comp.geno*", paste(exposure.vars, collapse = "*"))
+
+                    }
+
+                    model.this <- as.formula(paste0("case.status ~ case.comp.geno + ", exposure.part, " + strata(ids)"))
                     full.model <- clogit(model.this, method = "approximate", data  = df)
                     full.model.ll <- full.model$loglik[2]
                     reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
@@ -490,18 +427,6 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     #### clean up chisq stats for models that did not converge ###
     chisq.stats[chisq.stats <= 0] <- 10^-10
     chisq.stats[is.infinite(chisq.stats)] <- max(chisq.stats[is.finite(chisq.stats)])
-
-    ### if running GxE create required inputs ###
-    # if (!is.null(exposure)){
-    #
-    #     exposure.levels <- unique(exposure)
-    #     storage.mode(exposure.levels) <- "integer"
-    #
-    # } else {
-    #
-    #     exposure.levels <- NULL
-    #
-    # }
 
     if (!"complement" %in% names(bm.list)){
 
@@ -533,22 +458,31 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     # make dummies for exposure matrix
     if (!is.null(exposure.df)){
 
-        exposure.mat <- model.matrix(~ . , data = exposure.df)
-        attributes(exposure.mat)$assign <- NULL
-        attributes(exposure.mat)$contrasts <- NULL
-        exposure.mat <- exposure.mat[ , -1, drop = FALSE]
-        exposure.mat <- exposure.mat + 0.0
+      exposure.vars <- colnames(exposure.df)
+      if (!lower.order.gxe){
+
+        model.terms <- paste0("~", paste(exposure.vars, collapse = ":"))
+
+      } else {
+
+        model.terms <- paste0("~", paste(exposure.vars, collapse = "*"))
+
+      }
+      exposure.mat <- model.matrix(as.formula(model.terms) , data = exposure.df)
+      attributes(exposure.mat)$assign <- NULL
+      attributes(exposure.mat)$contrasts <- NULL
+      exposure.mat <- exposure.mat[ , -1, drop = FALSE]
+      exposure.mat <- exposure.mat + 0.0
+      E_GADGETS <- TRUE
 
     } else {
 
-        exposure.mat <- matrix(0.0, 1, 1)
+      exposure.mat <- matrix(0.0, 1, 1)
+      E_GADGETS <- FALSE
 
     }
 
-    cont.GxE <- ifelse(is.null(categorical.exposures) & is.null(continuous.exposures), FALSE, TRUE)
-
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-        exposure = NULL, exposure.levels = NULL, use.parents = use.parents, exposure.mat = exposure.mat, cont.GxE = cont.GxE,
-        mother.snps = mother.snps, child.snps = child.snps))
+                use.parents = use.parents, exposure.mat = exposure.mat, E_GADGETS = E_GADGETS, mother.snps = mother.snps, child.snps = child.snps))
 
 }

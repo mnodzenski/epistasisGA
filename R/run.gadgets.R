@@ -50,17 +50,15 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
-#' @param use.parents A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
-#' if the population is homogenous with no exposure related population structure.
 #' @param n.random.chroms The number of random chromosomes used to construct a reference null mean and standard error vectors to
 #' compute the GxE fitness score.
 #' @param null.mean.vec A vector of estimated null means for each of the components of the
-#' GxE fitness score. This needs to be specified if running permutes under the no-GxE null, and should be set to
+#' E-GADGETS fitness score. This needs to be specified if running permutes under the no-GxE null, and should be set to
 #' the values in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory for the observed
-#' data. It also should be specified if analyst wants to replicate the results of a previous GADGETS
-#' GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
+#' data. It also should be specified if analyst wants to replicate the results of a previous E-GADGETS
+#' run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.
 #' @param null.sd.vec A vector of estimated null standard errors for the components of the
-#' GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
+#' E-GADGETS fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
 #' previously used vector can also be found in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.
 #' @return For each island, a list of two elements will be written to \code{results.dir}:
 #' \describe{
@@ -166,8 +164,17 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### note if we want to use parents only for GxE search
     use.parents <- data.list$use.parents
 
-    ### note if we have a continuous exposure
-    cont.GxE <- data.list$cont.GxE
+    ### decide if running E-GADGETS
+    #maintaining backward compatability with old version of software
+    if ("cont.GxE" %in% names(data.list)){
+
+      E_GADGETS <- data.list$cont.GxE
+
+    } else {
+
+      E_GADGETS <- E_GADGETS
+
+    }
 
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
@@ -187,7 +194,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     complement.genetic.data <- data.list$complement.genetic.data
     exposure.mat <- data.list$exposure.mat + 0.0
 
-    if (cont.GxE){
+    if (E_GADGETS){
 
         case.genetic.data.n <- case.genetic.data + 0.0
         complement.genetic.data.n <- complement.genetic.data + 0.0
@@ -248,7 +255,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     #if (!is.null(exposure)){
 
         #storage.mode(exposure) <- "integer"
-    if (cont.GxE){
+    if (E_GADGETS){
 
         if (use.parents == 1){
 
@@ -256,15 +263,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
                 # make sure we're not accidentally redoing this
                 out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
-
-                # # split genetic data by exposure status
-                # case.genetic.data <- data.frame(data.list$case.genetic.data)
-                # n.snps <- ncol(case.genetic.data)
-                # comp.genetic.data <- data.frame(data.list$complement.genetic.data)
-                # case.list <- split(case.genetic.data, exposure)
-                # case.list <- lapply(case.list, as.matrix)
-                # comp.list <- split(comp.genetic.data, exposure)
-                # comp.list <- lapply(comp.list, as.matrix)
 
                 #sample random chromosomes
                 n.snps <- ncol(case.genetic.data.n)
@@ -275,15 +273,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                 })
 
                 #get matrix of fitness score components
-                # ld.block.vec <- data.list$ld.block.vec
-                # storage.mode(ld.block.vec) <- "integer"
-                # exposure.levels <- data.list$exposure.levels
-                # storage.mode(exposure.levels) <- "integer"
-                # null.vec.mat <- GxE_fitness_vec_mat(case.list, comp.list, random.chroms,
-                #                                     ld.block.vec, weight.lookup, exposure.levels,
-                #                                     rep(0, 3), rep(1, 3), n.different.snps.weight,
-                #                                     n.both.one.weight, recessive.ref.prop,
-                #                                     recode.test.stat)
                 null.vec.mat <- GxE_mvlm_fitness_vec_mat(case.genetic.data.n, complement.genetic.data.n,
                                                          exposure.mat, random.chroms, weight.lookup.n,
                                                          rep(0, 2), rep(1, 2), n.different.snps.weight,
@@ -410,7 +399,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                                     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
                                     gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
                                     crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,
-                                    exposure.levels = data.list$exposure.levels, exposure = data.list$exposure, use.parents = use.parents, cont.GxE = cont.GxE,
+                                    exposure.levels = data.list$exposure.levels, exposure = data.list$exposure, use.parents = use.parents, E_GADGETS = E_GADGETS,
                                     mother.snps = data.list$mother.snps, child.snps = data.list$child.snps),
                     reg = registry)
 
