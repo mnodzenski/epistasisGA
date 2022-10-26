@@ -6,14 +6,17 @@
 \title{Exposures for the cases of case-parent triads with a simulated gene
 environment interaction.}
 \format{
-A data frame with 1000 rows and 100 variables
+A data frame with 1000 rows and 1 variables
 }
 \usage{
 data(exposure)
 }
 \description{
-A simulated vector containing the exposure status for each case
-of the case-parent triads data.
+A data.frame containing simulated exposure status for each case
+of the case-parent triads data. Rows correspond to different
+families. The single column represents a binary exposure, where
+in combination with the relevant risk-associated alleles (columns
+6, 12, and 18 in data set case.gxe), is associated with increased risk.
 .
 }
 \keyword{datasets}

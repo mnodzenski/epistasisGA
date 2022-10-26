@@ -15,7 +15,7 @@ output:
     fig_width: 5
 bibliography: library.bib
 vignette: >
-  %\VignetteIndexEntry{GADGETS Usage}
+  %\VignetteIndexEntry{GADGETS}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}  
 ---

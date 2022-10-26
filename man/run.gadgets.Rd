@@ -111,17 +111,14 @@ See the GADGETS paper for specific details.}
 compute the GxE fitness score.}
 
 \item{null.mean.vec}{A vector of estimated null means for each of the components of the
-GxE fitness score. This needs to be specified if running permutes under the no-GxE null, and should be set to
+E-GADGETS fitness score. This needs to be specified if running permutes under the no-GxE null, and should be set to
 the values in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory for the observed
-data. It also should be specified if analyst wants to replicate the results of a previous GADGETS
-GxE run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.}
+data. It also should be specified if analyst wants to replicate the results of a previous E-GADGETS
+run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.}
 
 \item{null.sd.vec}{A vector of estimated null standard errors for the components of the
-GxE fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
+E-GADGETS fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
 previously used vector can also be found in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.}
-
-\item{use.parents}{A logical indicating whether parent data should be used in computing the fitness score. Defaults to FALSE. This should only be set to true
-if the population is homogenous with no exposure related population structure.}
 }
 \value{
 For each island, a list of two elements will be written to \code{results.dir}:

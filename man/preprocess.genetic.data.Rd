@@ -14,11 +14,10 @@ preprocess.genetic.data(
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
   continuous.exposures = NULL,
-  categorical.exposures.sib = NULL,
-  continuous.exposures.sib = NULL,
-  use.parents = 1,
+  use.parents = FALSE,
   mother.snps = NULL,
-  child.snps = NULL
+  child.snps = NULL,
+  lower.order.gxe = FALSE
 )
 }
 \arguments{
@@ -67,22 +66,17 @@ should not be missing any data, families with missing exposure data should be re
 which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{continuous.exposures}
 should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
 
-\item{categorical.exposures.sib}{If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of integers
-corresponding to categorical exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the
-same exposure as the case. Defaults to NULL. \code{categorical.exposures.sib}
-should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
-
-\item{continuous.exposures.sib}{If analyzing a study with siblings or a mix of trios and siblings, a matrix or data.frame of numeric values
-corresponding to continuous exposures for the siblings and pseudo-siblings. Note that pseudo-siblings should be assigned the same exposure as
-the case. Defaults to NULL. code{continuous.exposures.sib} should not be missing any data, families with missing exposure data should be removed
-from the analysis prior to input.}
-
-\item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
-indicating family level informativeness will be used. Specify 0 to only use transmission data.}
+\item{use.parents}{A boolean indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+indicating family level informativeness will be used. Defaults to FALSE.}
 
 \item{mother.snps}{If searching for maternal-fetal interactions, the indices of the maternal SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.}
 
 \item{child.snps}{If searching for maternal-fetal interactions, the indices of the child SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.}
+
+\item{lower.order.gxe}{A boolean indicating whether, if multiple exposures of interest are input, E-GADGETS should search for only for genetic interactions with the
+joint combination of exposures (i.e., GxGxExE interactions), or if it should additionally search for lower-order interactions that involve subsets of the exposures
+that were input (i.e., GxGxE in addition to GxGxExE). The default, FALSE, restricts the search to GxGxExE interactions. Users should be cautious about including
+large numbers of input exposures, and, if they do, very cautious about setting this argument to TRUE.}
 }
 \value{
 A list containing the following:

@@ -38,8 +38,8 @@
 #' @param continuous.exposures A matrix or data.frame of numeric values corresponding to continuous exposures for the cases. Defaults to NULL,
 #' which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{continuous.exposures}
 #' should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.
-#' @param use.parents A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
-#' indicating family level informativeness will be used. Specify 0 to only use transmission data.
+#' @param use.parents A boolean indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
+#' indicating family level informativeness will be used. Defaults to FALSE.
 #' @param mother.snps If searching for maternal-fetal interactions, the indices of the maternal SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.
 #' @param child.snps If searching for maternal-fetal interactions, the indices of the child SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.
 #' @param lower.order.gxe A boolean indicating whether, if multiple exposures of interest are input, E-GADGETS should search for only for genetic interactions with the
@@ -76,7 +76,7 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, continuous.exposures = NULL, use.parents = 1, mother.snps = NULL, child.snps = NULL,
+    categorical.exposures = NULL, continuous.exposures = NULL, use.parents = FALSE, mother.snps = NULL, child.snps = NULL,
     lower.order.gxe = FALSE) {
 
     #make sure the ld.block.vec is correctly specified
@@ -366,55 +366,51 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
 
         } else {
 
-            if (use.parents != 2){
+            exposures <- rbind(exposure.df, exposure.df)
 
-                exposures <- rbind(exposure.df, exposure.df)
+            res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposures) {
 
-                res.list <- bplapply(seq_len(n.candidate.snps), function(snp, bm.list, exposures) {
+                case.snp <- bm.list$case[ , snp]
+                if (length(bm.list) == 3){
 
-                    case.snp <- bm.list$case[ , snp]
-                    if (length(bm.list) == 3){
+                    mom.snp <- bm.list$mother[ , snp]
+                    dad.snp <- bm.list$father[ , snp]
+                    comp.snp <- mom.snp + dad.snp - case.snp
 
-                        mom.snp <- bm.list$mother[ , snp]
-                        dad.snp <- bm.list$father[ , snp]
-                        comp.snp <- mom.snp + dad.snp - case.snp
+                } else {
 
-                    } else {
+                    comp.snp <- bm.list$complement[ , snp]
 
-                        comp.snp <- bm.list$complement[ , snp]
+                }
 
-                    }
+                # get p-value of snp-exposure association from conditional logistic regression
+                case.comp.geno <- c(case.snp, comp.snp)
+                geno.df <- data.frame(case.status = case.status, case.comp.geno = case.comp.geno, ids = ids)
+                df <- cbind(geno.df, exposures)
 
-                    # get p-value of snp-exposure association from conditional logistic regression
-                    case.comp.geno <- c(case.snp, comp.snp)
-                    geno.df <- data.frame(case.status = case.status, case.comp.geno = case.comp.geno, ids = ids)
-                    df <- cbind(geno.df, exposures)
+                #make model formula
+                exposure.vars <- colnames(exposures)
+                if (!lower.order.gxe){
 
-                    #make model formula
-                    exposure.vars <- colnames(exposures)
-                    if (!lower.order.gxe){
+                  exposure.part <- paste0("case.comp.geno:", paste(exposure.vars, collapse = ":"))
 
-                      exposure.part <- paste0("case.comp.geno:", paste(exposure.vars, collapse = ":"))
+                } else {
 
-                    } else {
+                  exposure.part <- paste0("case.comp.geno*", paste(exposure.vars, collapse = "*"))
 
-                      exposure.part <- paste0("case.comp.geno*", paste(exposure.vars, collapse = "*"))
+                }
 
-                    }
+                model.this <- as.formula(paste0("case.status ~ case.comp.geno + ", exposure.part, " + strata(ids)"))
+                full.model <- clogit(model.this, method = "approximate", data  = df)
+                full.model.ll <- full.model$loglik[2]
+                reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
+                reduced.model.ll <- reduced.model$loglik[2]
+                clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
 
-                    model.this <- as.formula(paste0("case.status ~ case.comp.geno + ", exposure.part, " + strata(ids)"))
-                    full.model <- clogit(model.this, method = "approximate", data  = df)
-                    full.model.ll <- full.model$loglik[2]
-                    reduced.model <- clogit(case.status ~ case.comp.geno + strata(ids), method = "approximate", data  = df)
-                    reduced.model.ll <- reduced.model$loglik[2]
-                    clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
+                return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
 
-                    return(list(case.snp = case.snp, comp.snp = comp.snp, chisq = clogit.chisq))
-
-                }, bm.list = bm.list, exposures = exposures, BPPARAM = bp.param)
-                chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
-
-            }
+            }, bm.list = bm.list, exposures = exposures, BPPARAM = bp.param)
+            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
 
         }
 

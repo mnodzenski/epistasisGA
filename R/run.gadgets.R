@@ -163,6 +163,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     ### note if we want to use parents only for GxE search
     use.parents <- data.list$use.parents
+    use.parents.int <- ifelse(use.parents, 1, 0)
 
     ### decide if running E-GADGETS
     #maintaining backward compatability with old version of software
@@ -172,7 +173,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     } else {
 
-      E_GADGETS <- E_GADGETS
+      E_GADGETS <- data.list$E_GADGETS
 
     }
 
@@ -252,12 +253,9 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
     ### if running GxE, compute the elements required for standardizing elements of the fitness score ###
     null.mean <- rep(0, 2)
     null.sd <- rep(1, 2)
-    #if (!is.null(exposure)){
-
-        #storage.mode(exposure) <- "integer"
     if (E_GADGETS){
 
-        if (use.parents == 1){
+        if (use.parents){
 
             if (is.null(null.mean.vec) & is.null(null.sd.vec)){
 
@@ -399,8 +397,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
                                     n.different.snps.weight = n.different.snps.weight, n.both.one.weight = n.both.one.weight, migration.interval = migration.generations,
                                     gen.same.fitness = gen.same.fitness, max.generations = generations, initial.sample.duplicates = initial.sample.duplicates,
                                     crossover.prop = crossover.prop, recessive.ref.prop = recessive.ref.prop, recode.test.stat = recode.test.stat,
-                                    exposure.levels = data.list$exposure.levels, exposure = data.list$exposure, use.parents = use.parents, E_GADGETS = E_GADGETS,
-                                    mother.snps = data.list$mother.snps, child.snps = data.list$child.snps),
+                                    use.parents = use.parents.int, E_GADGETS = E_GADGETS, mother.snps = data.list$mother.snps, child.snps = data.list$child.snps),
                     reg = registry)
 
     # chunk the jobs

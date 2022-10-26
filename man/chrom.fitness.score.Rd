@@ -17,8 +17,7 @@ chrom.fitness.score(
   n.both.one.weight = 1,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  epi.test = FALSE,
-  GxE = FALSE
+  epi.test = FALSE
 )
 }
 \arguments{
@@ -56,8 +55,6 @@ See the GADGETS paper for specific details.}
 
 \item{epi.test}{A logical indicating whether the function should return the information required to run function \code{epistasis.test}.
 for a given SNP. See the GADGETS paper for specific details on the implementation of this argument.}
-
-\item{GxE}{a logical indicating whether the function is being used to compute a GxE fitness score, defaulting to false.}
 }
 \value{
 A list:

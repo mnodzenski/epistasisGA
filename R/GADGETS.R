@@ -102,7 +102,7 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data, complement.g
                     chromosome.size, snp.chisq, weight.lookup, null.mean.vec, null.se.vec, mother.snps, child.snps,
                     island.cluster.size = 4, n.migrations = 20, n.different.snps.weight = 2, n.both.one.weight = 1, migration.interval = 50,
                     gen.same.fitness = 50, max.generations = 500, initial.sample.duplicates = FALSE, crossover.prop = 0.8, recessive.ref.prop = 0.75,
-                    recode.test.stat = 1.64, use.parents = 1, E_GADGETS = FALSE) {
+                    recode.test.stat = 1.64, use.parents = 0, E_GADGETS = FALSE) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec, n.chromosomes, chromosome.size,

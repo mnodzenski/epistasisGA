@@ -45,14 +45,15 @@
 #' environment interaction.
 #'
 #' A simulated dataset containing the counts of the alternate allele
-#' for 100 SNPs for the mothers in 1000 simulated case-parent
+#' for 24 SNPs for the mothers in 1000 simulated case-parent
 #' triads. Columns represent SNPs, rows are individuals. SNPs
-#' in columns 25, 50, and 75 represent a simulated risk pathway,
-#' where at least one copy of the alternate allele for each path SNP
-#' in addition to exposure 2 confers increased disease risk.
+#' in columns 6, 12, and 18 represent a simulated risk pathway,
+#' where, in the child, at least one copy of the alternate allele
+#' for each path SNP in addition to exposure 1 confers increased
+#' disease risk.
 #' .
 #'
-#' @format A data frame with 1000 rows and 100 variables
+#' @format A data frame with 1000 rows and 24 variables
 #' @usage data(mom.gxe)
 "mom.gxe"
 
@@ -60,14 +61,15 @@
 #' environment interaction.
 #'
 #' A simulated dataset containing the counts of the alternate allele
-#' for 100 SNPs for the fathers in 1000 simulated case-parent
+#' for 24 SNPs for the fathers in 1000 simulated case-parent
 #' triads. Columns represent SNPs, rows are individuals. SNPs
-#' in columns 25, 50, and 75 represent a simulated risk pathway,
-#' where at least one copy of the alternate allele for each path SNP
-#' in addition to exposure 2 confers increased disease risk.
+#' in columns 6, 12, and 18 represent a simulated risk pathway,
+#' where, in the child, at least one copy of the alternate allele
+#' for each path SNP in addition to exposure 1 confers increased
+#' disease risk.
 #' .
 #'
-#' @format A data frame with 1000 rows and 100 variables
+#' @format A data frame with 1000 rows and 24 variables
 #' @usage data(dad.gxe)
 "dad.gxe"
 
@@ -75,25 +77,29 @@
 #' environment interaction.
 #'
 #' A simulated dataset containing the counts of the alternate allele
-#' for 100 SNPs for the cases in 1000 simulated case-parent
+#' for 24 SNPs for the cases in 1000 simulated case-parent
 #' triads. Columns represent SNPs, rows are individuals. SNPs
-#' in columns 25, 50, and 75 represent a simulated risk pathway,
-#' where at least one copy of the alternate allele for each path SNP
-#' in addition to exposure 2 confers increased disease risk.
+#' in columns 6, 12, and 18 represent a simulated risk pathway,
+#' where, in the child, at least one copy of the alternate allele
+#' for each path SNP in addition to exposure 1 confers increased
+#' disease risk.
 #' .
 #'
-#' @format A data frame with 1000 rows and 100 variables
+#' @format A data frame with 1000 rows and 24 variables
 #' @usage data(case.gxe)
 "case.gxe"
 
 #' Exposures for the cases of case-parent triads with a simulated gene
 #' environment interaction.
 #'
-#' A simulated vector containing the exposure status for each case
-#' of the case-parent triads data.
+#' A data.frame containing simulated exposure status for each case
+#' of the case-parent triads data. Rows correspond to different
+#' families. The single column represents a binary exposure, where
+#' in combination with the relevant risk-associated alleles (columns
+#' 6, 12, and 18 in data set case.gxe), is associated with increased risk.
 #' .
 #'
-#' @format A data frame with 1000 rows and 100 variables
+#' @format A data frame with 1000 rows and 1 variables
 #' @usage data(exposure)
 "exposure"
 

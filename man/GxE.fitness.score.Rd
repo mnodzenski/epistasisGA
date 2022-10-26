@@ -75,19 +75,6 @@ A list:
  A positive value for a given SNP indicates the minor allele is positively associated with
  disease status, while a negative value implies the reference (‘wild type’) allele is
  positively associated with the disease.}
- \item{q}{The fraction of provisional risk alleles carried by cases with the full risk set
- over the total number of risk alleles carried by either a case or complement with the full risk set.}
- \item{pseudo.t2}{The pseudo T^2 value for the chromosome.}
- \item{risk.set.alleles}{A vector indicating the number risk alleles a case or complement must have
-  for each SNP in \code{target.snps} for the case or complement to be classified as having the
-  proposed risk set. '1+' indicates at least one copy of the risk allele is required, while '2'
-  indicates 2 copies are needed. The risk allele can be determined based on the signs of the elements
-  of \code{sum.dif.vecs}, where a negative value indicates the major allele for a given SNP is
-  the risk allele, while a positive value implicates the minor allele.}
-  \item{inf.families}{An integer vector of the informative family rows. Only returned if \code{epi.test} = TRUE.}
-  \item{xbar}{The weighted mean difference sign vector. Only returned if \code{GxE} is TRUE.}
-  \item{sigma.hat}{The pseudo covariance matrix of the weighted mean difference sign vector. Only returned if \code{GxE} is TRUE.}
-  \item{w}{The sum of the family weights. Only returned if \code{GxE} is TRUE.}
 }
 }
 \description{
@@ -99,7 +86,6 @@ data(case.gxe)
 data(dad.gxe)
 data(mom.gxe)
 data(exposure)
-exposure <- as.integer(exposure)
 comp.gxe <- mom.gxe + dad.gxe - case.gxe
 case.comp.diff <- case.gxe != comp.gxe
 case.minus.comp <- case.gxe - comp.gxe
@@ -110,29 +96,5 @@ comp2.mat <- comp.gxe == 2
 comp0.mat <- comp.gxe == 0
 ld.block.vec <- cumsum(rep(25, 4))
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
-case.list <- split(case.gxe, exposure)
-exposure.levels <- as.integer(names(case.list))
-case.list <- lapply(case.list, as.matrix)
-comp.list <- split(comp.gxe, exposure)
-comp.list <- lapply(comp.list, as.matrix)
-case.comp.diff.list <- split(case.comp.diff, exposure)
-case.comp.diff.list <- lapply(case.comp.diff.list, as.matrix)
-case.minus.comp.list <- split(case.minus.comp, exposure)
-case.minus.comp.list <- lapply(case.minus.comp.list, as.matrix)
-both.one.mat.list <- split(both.one.mat, exposure)
-both.one.mat.list <- lapply(both.one.mat.list, as.matrix)
-case2.mat.list <- split(case2.mat, exposure)
-case2.mat.list <- lapply(case2.mat.list, as.matrix)
-case0.mat.list <- split(case0.mat, exposure)
-case0.mat.list <- lapply(case0.mat.list, as.matrix)
-comp2.mat.list <- split(comp2.mat, exposure)
-comp2.mat.list <- lapply(comp2.mat.list, as.matrix)
-comp0.mat.list <- split(comp0.mat, exposure)
-comp0.mat.list <- lapply(comp0.mat.list, as.matrix)
-
-GxE.fitness.score(case, comp, case.comp.diff, c(1, 4, 7),
-                    case.minus.comp, both.one.mat,
-                    ld.block.vec, weight.lookup,
-                    case2.mat, case0.mat, exposure)
 
 }

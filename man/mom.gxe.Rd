@@ -6,18 +6,19 @@
 \title{Genotypes for the mothers of case-parent triads with a simulated gene
 environment interaction.}
 \format{
-A data frame with 1000 rows and 100 variables
+A data frame with 1000 rows and 24 variables
 }
 \usage{
 data(mom.gxe)
 }
 \description{
 A simulated dataset containing the counts of the alternate allele
-for 100 SNPs for the mothers in 1000 simulated case-parent
+for 24 SNPs for the mothers in 1000 simulated case-parent
 triads. Columns represent SNPs, rows are individuals. SNPs
-in columns 25, 50, and 75 represent a simulated risk pathway,
-where at least one copy of the alternate allele for each path SNP
-in addition to exposure 2 confers increased disease risk.
+in columns 6, 12, and 18 represent a simulated risk pathway,
+where, in the child, at least one copy of the alternate allele
+for each path SNP in addition to exposure 1 confers increased
+disease risk.
 .
 }
 \keyword{datasets}

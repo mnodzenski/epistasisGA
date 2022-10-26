@@ -125,6 +125,7 @@ The elements of the output are somewhat different than GADGETS. The most useful 
 
 ```{r, results="hide"}
 #remove all example directories 
+chrom.sizes <- 3:4
 perm.reg.dirs <- as.vector(outer(paste0("perm", 1:4), 
                                  paste0("_size", chrom.sizes, "_reg"), 
                                  paste0))

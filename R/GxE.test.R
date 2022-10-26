@@ -25,12 +25,11 @@
 #' data(dad.gxe)
 #' data(mom.gxe)
 #' data(exposure)
-#' exposure <- matrix(exposure - 1, ncol = 1)
-#' data(snp.annotations)
+#' data(snp.annotations.mci)
 #' pp.list <- preprocess.genetic.data(case.gxe, father.genetic.data = dad.gxe,
 #'                                mother.genetic.data = mom.gxe,
-#'                                ld.block.vec = rep(25, 4),
-#'                                continuous.exposures = exposure)
+#'                                ld.block.vec = rep(6, 4),
+#'                                categorical.exposures = exposure)
 #'  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
 #'              results.dir = "tmp_gxe", cluster.type = "interactive",
 #'              registryargs = list(file.dir = "tmp_reg_gxe", seed = 1300),
@@ -38,25 +37,31 @@
 #'              n.migrations = 1)
 #'
 #'
-#' combined.res <- combine.islands('tmp_gxe', snp.annotations, pp.list, 1)
-#' null.info <- readRDS("tmp_gxe/null.mean.sd.info.rds")
-#' null.mean <- null.info[["null.mean"]]
-#' null.sd <- null.info[["null.se"]]
-#'
+#' combined.res <- combine.islands('tmp_gxe', snp.annotations.mci, pp.list, 1)
 #' top.snps <- as.vector(t(combined.res[1, 1:3]))
 #' set.seed(10)
-#' GxE.test.res <- GxE.test(top.snps, pp.list, null.mean, null.sd)
+#' GxE.test.res <- GxE.test(top.snps, pp.list)
 #'
 #' unlink('tmp_gxe', recursive = TRUE)
 #' unlink('tmp_reg_gxe', recursive = TRUE)
 #'
 #' @export
 
-GxE.test <- function(snp.cols, preprocessed.list, null.mean.vec, null.sd.vec,
+GxE.test <- function(snp.cols, preprocessed.list, null.mean.vec = NULL, null.sd.vec = NULL,
                      n.permutes = 10000, n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2) {
 
     # run the test via cpp
+    if (is.null(null.mean.vec)){
+
+      null.mean.vec <- rep(0, 2)
+
+    }
+    if (is.null(null.sd.vec)){
+
+      null.sd.vec <- rep(1, 2)
+
+    }
     GxE_test(snp.cols, preprocessed.list, null.mean.vec, null.sd.vec, n.permutes,
              n.different.snps.weight, n.both.one.weight, weight.function.int)
 

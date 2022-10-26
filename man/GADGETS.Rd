@@ -33,10 +33,8 @@ GADGETS(
   crossover.prop = 0.8,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  exposure.levels = NULL,
-  exposure = NULL,
-  use.parents = 1,
-  cont.GxE = FALSE
+  use.parents = 0,
+  E_GADGETS = FALSE
 )
 }
 \arguments{
@@ -106,11 +104,6 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
 
-\item{exposure.levels}{An integer vector corresponding to the unique environmental exposure categories
-from \code{exposure}.}
-
-\item{exposure}{An integer vector corresponding to environmental exposures of the cases.}
-
 \item{use.parents}{A integer indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
 indicating family level informativeness will be used. Specify 0 to only use transmission data.
 \describe{
@@ -119,6 +112,8 @@ and the number of risk alleles required for each chromosome SNP for a case or co
 See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
  \item{n.generations}{The total number of generations run.}
 }}
+
+\item{exposure}{An integer vector corresponding to environmental exposures of the cases.}
 }
 \value{
 For each island in the cluster, an rds object containing a list with the following elements will be written to \code{results.dir}.

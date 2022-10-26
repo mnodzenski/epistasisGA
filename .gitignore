@@ -10,3 +10,5 @@ src/epistasisGAGE.so
 doc
 Meta
 src/RcppExports.o
+/doc/
+/Meta/
