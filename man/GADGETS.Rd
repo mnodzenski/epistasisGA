@@ -33,7 +33,7 @@ GADGETS(
   crossover.prop = 0.8,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  use.parents = 0,
+  use.parents = 1,
   E_GADGETS = FALSE
 )
 }

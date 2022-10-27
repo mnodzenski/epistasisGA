@@ -163,7 +163,19 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     ### note if we want to use parents only for GxE search
     use.parents <- data.list$use.parents
-    use.parents.int <- ifelse(use.parents, 1, 0)
+
+    #make back-compatiable with older software versions
+    # (use.parents should always be logical going forward)
+    if (inherits(use.parents, "logical")){
+
+      use.parents.int <- ifelse(use.parents, 1, 0)
+
+    } else {
+
+      use.parents.int <- use.parents
+      use.parents <- as.logical(use.parents)
+
+    }
 
     ### decide if running E-GADGETS
     #maintaining backward compatability with old version of software

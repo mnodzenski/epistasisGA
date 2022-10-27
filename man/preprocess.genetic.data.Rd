@@ -14,7 +14,7 @@ preprocess.genetic.data(
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
   continuous.exposures = NULL,
-  use.parents = FALSE,
+  use.parents = TRUE,
   mother.snps = NULL,
   child.snps = NULL,
   lower.order.gxe = FALSE

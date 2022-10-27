@@ -1270,7 +1270,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix comp
                                   NumericMatrix exposure_mat_, arma::uvec target_snps, arma::vec weight_lookup,
                                   arma::vec null_means, arma::vec null_se,
                                   int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                  int use_parents = 0){
+                                  int use_parents = 1){
 
   // get target data and take differences
   arma::mat case_genetic_data(case_genetic_data_.begin(), case_genetic_data_.nrow(),
@@ -1502,7 +1502,7 @@ List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_, NumericMatrix
                        arma::vec weight_lookup,
                        arma::vec null_means, arma::vec null_se,
                        int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                       int use_parents = 0){
+                       int use_parents = 1){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
@@ -1563,7 +1563,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                 bool maternal_fetal_int = false,
                                 int n_different_snps_weight = 2,
                                 int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                int use_parents = 0, bool E_GADGETS = false){
+                                int use_parents = 1, bool E_GADGETS = false){
 
   // initiate storage object for fitness scores
   List chrom_fitness_score_list;
@@ -1722,7 +1722,7 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
-                         int use_parents = 0, bool E_GADGETS= false){
+                         int use_parents = 1, bool E_GADGETS= false){
 
   int n_possible_unique_combn = n_chromosomes * chromosome_size;
   if ((n_candidate_snps < n_possible_unique_combn) & !initial_sample_duplicates) {
@@ -1801,7 +1801,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    int max_generations = 500,
                    bool initial_sample_duplicates = false,
                    double crossover_prop = 0.8, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                   int use_parents = 0, bool E_GADGETS = false){
+                   int use_parents = 1, bool E_GADGETS = false){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -2283,7 +2283,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
-                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, int use_parents = 0,
+                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, int use_parents = 1,
                  bool E_GADGETS = false){
 
   // instantiate input objects

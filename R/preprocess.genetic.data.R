@@ -76,7 +76,7 @@
 
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
-    categorical.exposures = NULL, continuous.exposures = NULL, use.parents = FALSE, mother.snps = NULL, child.snps = NULL,
+    categorical.exposures = NULL, continuous.exposures = NULL, use.parents = TRUE, mother.snps = NULL, child.snps = NULL,
     lower.order.gxe = FALSE) {
 
     #make sure the ld.block.vec is correctly specified

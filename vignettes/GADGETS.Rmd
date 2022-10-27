@@ -173,7 +173,7 @@ kable(head(size4.combined.res)) %>%
 
 ```
 
-In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985535, and rs1487251 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. 
+In this case, we see that the SNPs corresponding to rs1731422, rs4237892, rs7985535, and rs1487251 are the top collection, or, more simply, the group of 4 SNPs identified as most likely to exhibit a joint association with disease status. Note that these are the actual SNPs simulated to exhibit a joint effect, so we have identified the true risk pathway. In real applications, we anticipate GADGETS will nominate multiple distinct SNP-sets for further follow-up study.  
 
 Perhaps the most important elements of the output are the `n.cases.risk.geno`and `n.comps.risk.geno`columns. These report the number of cases and complements/unaffected siblings with the provisional risk genotypes, as determined by GADGETS, at each locus, among families where only one of the case and complement carries the risk genotype. For true epistatic SNP-sets, many more cases should carry the risk genotypes at each locus than the complements. 
 
