@@ -17,7 +17,8 @@ preprocess.genetic.data(
   use.parents = TRUE,
   mother.snps = NULL,
   child.snps = NULL,
-  lower.order.gxe = FALSE
+  lower.order.gxe = FALSE,
+  maternal.fetal.adj = TRUE
 )
 }
 \arguments{
@@ -77,6 +78,9 @@ indicating family level informativeness will be used. Defaults to FALSE.}
 joint combination of exposures (i.e., GxGxExE interactions), or if it should additionally search for lower-order interactions that involve subsets of the exposures
 that were input (i.e., GxGxE in addition to GxGxExE). The default, FALSE, restricts the search to GxGxExE interactions. Users should be cautious about including
 large numbers of input exposures, and, if they do, very cautious about setting this argument to TRUE.}
+
+\item{maternal.fetal.adj}{A boolean indicating whether, if searching for maternal-fetal interactions, GADGETS should adjust the fitness score for chromosomes
+composed of both maternal and fetal SNPs to prioritize the detection of maternal-fetal interactions. Defaults to TRUE.}
 }
 \value{
 A list containing the following:

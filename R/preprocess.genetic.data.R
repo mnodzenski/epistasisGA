@@ -46,6 +46,8 @@
 #' joint combination of exposures (i.e., GxGxExE interactions), or if it should additionally search for lower-order interactions that involve subsets of the exposures
 #' that were input (i.e., GxGxE in addition to GxGxExE). The default, FALSE, restricts the search to GxGxExE interactions. Users should be cautious about including
 #' large numbers of input exposures, and, if they do, very cautious about setting this argument to TRUE.
+#' @param maternal.fetal.adj A boolean indicating whether, if searching for maternal-fetal interactions, GADGETS should adjust the fitness score for chromosomes
+#' composed of both maternal and fetal SNPs to prioritize the detection of maternal-fetal interactions. Defaults to TRUE.
 #' @return A list containing the following:
 #' \describe{
 #'  \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
@@ -77,7 +79,7 @@
 preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data = NULL, father.genetic.data = NULL,
     mother.genetic.data = NULL, ld.block.vec = NULL, bp.param = bpparam(), snp.sampling.probs = NULL,
     categorical.exposures = NULL, continuous.exposures = NULL, use.parents = TRUE, mother.snps = NULL, child.snps = NULL,
-    lower.order.gxe = FALSE) {
+    lower.order.gxe = FALSE, maternal.fetal.adj = TRUE) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -479,6 +481,7 @@ preprocess.genetic.data <- function(case.genetic.data, complement.genetic.data =
     }
 
     return(list(case.genetic.data = case.data, complement.genetic.data = comp.data, chisq.stats = chisq.stats, ld.block.vec = out.ld.vec,
-                use.parents = use.parents, exposure.mat = exposure.mat, E_GADGETS = E_GADGETS, mother.snps = mother.snps, child.snps = child.snps))
+                use.parents = use.parents, exposure.mat = exposure.mat, E_GADGETS = E_GADGETS, mother.snps = mother.snps, child.snps = child.snps,
+                maternal.fetal.adj = maternal.fetal.adj))
 
 }

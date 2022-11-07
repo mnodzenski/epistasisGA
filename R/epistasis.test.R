@@ -18,6 +18,7 @@
 #' to determine whether to recode the SNP as recessive. Defaults to 0.75.
 #' @param recode.test.stat For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 #' See the GADGETS paper for specific details.
+#' @param maternal.fetal.test A boolean indicating whether the test specifically for a maternal-fetal interaction should be run. Defaults to FALSE.
 #' @return A list of thee elements:
 #' \describe{
 #'  \item{pval}{The p-value of the test.}
@@ -55,11 +56,11 @@
 epistasis.test <- function(snp.cols, preprocessed.list, n.permutes = 10000,
                      n.different.snps.weight = 2, n.both.one.weight = 1,
                      weight.function.int = 2, recessive.ref.prop = 0.75,
-                     recode.test.stat = 1.64) {
+                     recode.test.stat = 1.64, maternal.fetal.test = FALSE) {
 
     # run the epistasis test via cpp
     epistasis_test(snp.cols, preprocessed.list, n.permutes,
                    n.different.snps.weight, n.both.one.weight, weight.function.int,
-                   recessive.ref.prop, recode.test.stat, TRUE)
+                   recessive.ref.prop, recode.test.stat, TRUE, maternal.fetal.test)
 
 }

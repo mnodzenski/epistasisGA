@@ -2565,7 +2565,8 @@ NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arm
 // [[Rcpp::export]]
 List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permutes = 10000,
                     int n_different_snps_weight = 2, int n_both_one_weight = 1, int weight_function_int = 2,
-                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool warn = true){
+                    double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool warn = true,
+                    bool maternal_fetal = false){
 
   // pick out target columns in the preprocessed data
   IntegerVector target_snps = snp_cols;
@@ -2574,6 +2575,52 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   IntegerVector ld_block_vec = preprocessed_list["ld.block.vec"];
   IntegerVector target_snps_ld_blocks = get_target_snps_ld_blocks(snp_cols, ld_block_vec);
   IntegerVector uni_ld_blocks = unique(target_snps_ld_blocks);
+
+  // if maternal-fetal test, need all the maternal SNPs to be on separate
+  // ld blocks than all fetal SNPs
+  LogicalVector mom_snps_l;
+  LogicalVector child_snps_l;
+  if (maternal_fetal){
+
+    IntegerVector mom_snps = preprocessed_list["mother.snps"];
+    IntegerVector child_snps = preprocessed_list["child.snps"];
+    mom_snps_l = in(target_snps, mom_snps);
+    child_snps_l = in(target_snps, child_snps);
+
+    if ((is_true(any(mom_snps_l))) & (is_true(any(child_snps_l)))){
+
+      IntegerVector mom_snps_ld_blocks = target_snps_ld_blocks[mom_snps_l];
+      IntegerVector child_snps_ld_blocks = target_snps_ld_blocks[child_snps_l];
+
+      // make sure no overlap between mom and child SNP ld blocks
+      LogicalVector mom_child_overlap = in(mom_snps_ld_blocks, child_snps_ld_blocks);
+      if (is_true(any(mom_child_overlap))){
+
+        Rcout << "Some of the maternal and fetal SNPs are in linkage, returning NA for p-value \n";
+        List res = List::create(Named("pval") = NA_REAL,
+                                Named("obs_fitness_score") = NA_REAL,
+                                Named("perm_fitness_scores") = NumericVector::get_na());
+        return(res);
+
+      } else {
+
+        target_snps_ld_blocks[mom_snps_l] = 1;
+        target_snps_ld_blocks[child_snps_l] = 2;
+
+      }
+
+    } else {
+
+      Rcout << "Chromosome does not contain maternal and fetal SNPs, returning NA for p-value \n";
+      List res = List::create(Named("pval") = NA_REAL,
+                              Named("obs_fitness_score") = NA_REAL,
+                              Named("perm_fitness_scores") = NumericVector::get_na());
+      return(res);
+
+    }
+
+  }
+;
 
   // require more than 1 ld block
   int n_ld_blocks = uni_ld_blocks.length();

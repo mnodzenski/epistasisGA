@@ -13,7 +13,8 @@ epistasis.test(
   n.both.one.weight = 1,
   weight.function.int = 2,
   recessive.ref.prop = 0.75,
-  recode.test.stat = 1.64
+  recode.test.stat = 1.64,
+  maternal.fetal.test = FALSE
 )
 }
 \arguments{
@@ -38,6 +39,8 @@ to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
 \item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
 See the GADGETS paper for specific details.}
+
+\item{maternal.fetal.test}{A boolean indicating whether the test specifically for a maternal-fetal interaction should be run. Defaults to FALSE.}
 }
 \value{
 A list of thee elements:

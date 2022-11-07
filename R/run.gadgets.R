@@ -189,6 +189,18 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir, 
 
     }
 
+    ### decide if adjusting fitness score for maternal-fetal interactions ###
+    if ("maternal.fetal.adj" %in% names(data.list)){
+
+      if (!data.list$maternal.fetal.adj){
+
+        data.list$child.snps <- NULL
+        data.list$mother.snps <- NULL
+
+      }
+
+    }
+
     ### compute the weight lookup table ###
     max.sum <- max(n.different.snps.weight, n.both.one.weight)*chromosome.size
     if (!is.null(weight.function.int)){
