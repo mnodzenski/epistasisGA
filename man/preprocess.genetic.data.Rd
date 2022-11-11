@@ -18,7 +18,7 @@ preprocess.genetic.data(
   mother.snps = NULL,
   child.snps = NULL,
   lower.order.gxe = FALSE,
-  maternal.fetal.adj = TRUE
+  maternal.fetal.adj = FALSE
 )
 }
 \arguments{

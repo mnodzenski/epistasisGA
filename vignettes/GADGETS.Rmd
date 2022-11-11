@@ -1,5 +1,5 @@
 ---
-title: "Use of the epistasisGA package to identify multi-SNP effects in nuclear families"
+title: "Use of the GADGETS method to identify multi-SNP effects in nuclear families"
 author: 
 - name: Michael Nodzenski
   affiliation: 
@@ -361,7 +361,7 @@ epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. We make use of these 'p-values' primarily in constructing network plots of potentially interesting SNP-sets. 
+The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. If the test were applied to data indepdent of that used by GADGETS, the p-values could be used for valid hypothesis tests. Otherwise, @GADGET2020 referred to these 'p-values' instead as 'h-values' to emphasize the limitation. We make use of these 'h-values' primarily in constructing network plots of potentially interesting SNP-sets. 
 
 Users may also receive a warning when executing `epistasis.test` that says "All chromosome SNPs in linkage, returning NA for p-value". This is generated because the procedure can only run if at least two SNPs are not in linkage, as specified in `ld.block.vec`, otherwise other methods (not provided in this package) are required. 
 
@@ -374,7 +374,7 @@ Briefly, we use our epistasis test 'p-values' to assign graphical scores to pair
 We start by computing the SNP-pair scores using `compute.graphical.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from function `preprocess.genetic.data`. For analysts who have run the permutation-based global test, we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores exceeding the corresponding null threshold for each chromosome size: 
 
 ```{r}
-# vector of 95th percentile of null fitness scores 
+# vector of 95th percentile of null fitness scores max
 chrom.size.thresholds <- global.test.res$max.perm.95th.pctl
 
 # chromosome size 3 threshold

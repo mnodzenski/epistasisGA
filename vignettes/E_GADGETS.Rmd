@@ -1,5 +1,5 @@
 ---
-title: "Use of the E-GADGETS method to identify GxGxE interactions"
+title: "Detecting GxGxE interactions with case-parent triads using E-GADGETS"
 author: 
 - name: Michael Nodzenski
   affiliation: 
@@ -69,13 +69,13 @@ pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    categorical.exposures = exposure)
 ```
 
-Note that, above, the exposure data were input for the argument 'categorical.exposures'. In doing so, the software will treat each input column as a factor variable and, ultimately, create dummy variables for each level. On the other hand, if the exposure of interest were continuous, users would need to specify the argument 'continuous.exposures', which will not dummy code the input. Strictly speaking, since the example exposure is binary, dummy coding would not change the coding, so we could have specified either argument.
+Note that, above, the exposure data were input for the argument `categorical.exposures`. In doing so, the software will treat each input column as a factor variable and, ultimately, create dummy variables for each level. On the other hand, if the exposure of interest were continuous, users would need to specify the argument `continuous.exposures`, which will not dummy code the input. Strictly speaking, since the example exposure is binary, dummy coding would not change the coding, so we could have specified either argument.
 
-If users are interested in simultaneous effects of both continuous and categorical exposures, the continuous data should be included for 'continuous.exposures' and the categorical data should be specified for 'categorical.exposures'. If multiple exposures of any kind (continuous only, categorical only, or a mix) are specified, users need to pay attention to the 'lower.order.gxe' argument. That argument defaults to FALSE, indicating that E-GADGETS will search for genetic interactions that jointly involve *all* of the input exposures (*i.e.*, GxGxExE interactions). Setting that argument to TRUE will search for either (or both) GxGxE and GxGxExE interactions (*i.e.*, interactions with any combinations of the exposure variables). Note that E-GADGETS is not designed to be used with a large number of input exposures. Users are advised to do so with caution, even more so when specifying 'lower.order.gxe = TRUE'.
+If users are interested in simultaneous effects of both continuous and categorical exposures, the continuous data should be included for `continuous.exposures` and the categorical data should be specified for `categorical.exposures`. If multiple exposures of any kind (continuous only, categorical only, or a mix) are specified, users need to pay attention to the `lower.order.gxe` argument. That argument defaults to FALSE, indicating that E-GADGETS will search for genetic interactions that jointly involve *all* of the input exposures (*i.e.*, GxGxExE interactions). Setting that argument to TRUE will search simultaneously for GxGxE and GxGxExE interactions (*i.e.*, interactions with any combinations of the exposure variables), enlarging the implicit search space. Also note that E-GADGETS is not designed to be used with a large number of input exposures. Users are advised to do so with caution, even more so when specifying `lower.order.gxe = TRUE`.
 
 ## Run E-GADGETS 
 
-We now run E-GADGETS to nominate SNP-sets whose joint effects appear to depend on the exposure using the `run.gadgets` function. A more detailed discussion of `run.gadgets` function and its arguments is available in the "GADGETS Usage" vignette. Like GADGETS, E-GADGETS requires the user to pre-specify the number of SNPs that may jointly interact with the exposure, controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, but for this small example, we will only consider 3-4. 
+We now run E-GADGETS to nominate SNP-sets whose joint effects appear to depend on the exposure using the `run.gadgets` function. A more detailed discussion of `run.gadgets` function and its arguments is available in the "GADGETS" vignette. Like GADGETS, E-GADGETS requires the user to pre-specify the number of SNPs that may jointly interact with the exposure, controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, but for this small example, we will only consider 3-4. 
 
 ```{r, message = FALSE}
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, 
@@ -103,6 +103,8 @@ size4.combined.res <- combine.islands("size4_res", snp.annotations.mci,
 
 ```
 
+The E-GADGETS fitness score involves a standardization step, where the standardization is based on 10,000 random sets initiated at algorithm outset. The relevant means and standard deviations are stored in the `results.dir` directory, in the `null.mean.sd.info.rds` file. That information will be required to carry out permutation-based inferential procedures later. 
+
 We now examine the results:
 
 ```{r}
@@ -119,10 +121,9 @@ We see that we have identified the SNPs with the simulated GxGxE effect. In this
 
 The elements of the output are somewhat different than GADGETS. The most useful part is simply the identity of the nominated set(s). Unlike GADGETS, E-GADGETS does not nominate apparent risk-associated genotypes, and, therefore, does not count cases and controls that carry a risk-associated genotype for each SNP in the set. In that sense, E-GADGETS is a lower-resolution method than GADGETS. Although E-GADGETS nominates sets in which the joint genetic effect appears to depend on exposure, it does not describe the nature of the dependency. Follow-up investigation with other methods would be required to more fully characterize any GxGxE effects in the nominated sets. The `fitness.score` column does not have a straightforward interpretation, except that SNP-sets with higher fitness presumably are more likely to have GxGxE effects. The `diff.vec` columns give a rough indication as to which SNPs contributed the most to the fitness score, with larger magnitude `diff.vec` values suggesting a larger contribution. 
 
-## Run the Global Test 
+## Run Permutation-based Tests 
 
 Like GADGETS, E-GADGETS has an associated global test of association. The test assesses the null hypothesis that, among top-scoring SNP-sets returned by E-GADGETS, none contain any GxE or GxGxE effects. The test is similar to that for GADGETS, except here, we shuffle the exposure, rather than randomizing case/control labels, and then re-run E-GADGETS to generate a null distribution of fitness scores. Note that this test assumes the input SNPs are independent of the candidate exposure under the null. 
-
 We begin by creating 4 data sets with the observed exposure randomly re-assigned:
 
 ```{r}
@@ -132,6 +133,154 @@ permute.dataset(pp.list,
                 n.permutations = 4)
 
 ```
+
+Now we re-run E-GADGETS on each permuted data set. Note that we pass the same standardization information to `run.gadgets` as we used for the observed data. 
+
+```{r}
+#pre-process permuted data 
+preprocessed.lists <- lapply(seq_len(4), function(permutation){
+  
+  exp.perm.file <- file.path("perm_data", 
+                             paste0("exposure.permute", permutation, ".rds"))
+  exp.perm <- readRDS(exp.perm.file)
+  preprocess.genetic.data(case, father.genetic.data = dad,
+                          mother.genetic.data = mom,
+                          ld.block.vec = ld.block.vec, 
+                          categorical.exposures = exp.perm)
+})
+
+
+#specify chromosome sizes
+chrom.sizes <- 3:4
+
+#specify a different seed for each permutation
+seeds <- 4:7
+
+#run GADGETS for each permutation and size 
+perm.res <- lapply(chrom.sizes, function(chrom.size){
+  
+  # grab standardization info 
+  orig.res.dir <- paste0("size", chrom.size, "_res")
+  st.info <- readRDS(file.path(orig.res.dir, "null.mean.sd.info.rds"))
+  st.means <- st.info$null.mean
+  st.sd <- st.info$null.se
+  
+  lapply(seq_len(4), function(permutation){
+  
+    perm.data.list <- preprocessed.lists[[permutation]]
+    seed.val <- chrom.size*seeds[permutation]
+    res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
+    reg.dir <- paste0("perm", permutation, "_size", chrom.size, "_reg")
+    run.gadgets(perm.data.list, n.chromosomes = 5, 
+           chromosome.size = chrom.size,
+           results.dir = res.dir, cluster.type = "interactive", 
+           registryargs = list(file.dir = reg.dir, seed = seed.val),
+           n.islands = 8, island.cluster.size = 4,
+           n.migrations = 2, null.mean.vec = st.means, 
+           null.sd.vec = st.sd)
+    
+  })
+  
+})
+
+#condense the results 
+perm.res.list <- lapply(chrom.sizes, function(chrom.size){
+  
+  lapply(seq_len(4), function(permutation){
+  
+    perm.data.list <- preprocessed.lists[[permutation]]
+    res.dir <- paste0("perm", permutation, "_size", chrom.size, "_res")
+    combine.islands(res.dir, snp.annotations.mci, perm.data.list)
+    
+  })
+  
+})
+
+```
+
+After the null distribution of fitness scores has been generated, the global test of association can be run with exactly the same commands as for GADGETS. The only difference is that, for E-GADGETS, the null hypothesis being tested is that none of the input SNPs interact with the exposure (either via GxE or GxGxE interactions). Note here that we base the test on the top chromosome of each size (`n.top.scores = 1`), but we recommend the default (`n.top.scores = 10`) for real applications.
+
+```{r}
+# chromosome size 3 results
+
+# function requires a list of vectors of
+# permutation based fitness scores
+chrom3.perm.fs <- lapply(perm.res.list[[1]], 
+                         function(x) x$fitness.score)
+chrom3.list <- list(observed.data = size3.combined.res$fitness.score,
+                     permutation.list = chrom3.perm.fs)
+
+# chromosome size 4 results
+chrom4.perm.fs <- lapply(perm.res.list[[2]], 
+                         function(x) x$fitness.score)
+chrom4.list <- list(observed.data = size4.combined.res$fitness.score,
+                     permutation.list = chrom4.perm.fs)
+
+# list of results across chromosome sizes, with each list 
+# element corresponding to a chromosome size
+final.results <- list(chrom3.list, chrom4.list)
+
+# run global test
+global.test.res <- global.test(final.results, n.top.scores = 1)
+global.test.res$pval
+
+```
+
+Aside from the global test, for a candidate SNP-set, we can also compute a p-value corresponding to the null hypothesis that none of the component SNPs interact with the exposure (via either GxE or GxGxE interactions). In this example, we are choosing the set to be tested as the highest ranking E-GADGETS chromosome and thereafter running the test on the same data. Therefore, the 'p-value' generated by the software will not have uniform distribution under the null, and should not be used for hypothesis tests. We instead refer to it as an 'h-value'. If the test were instead run on data independent from that used by E-GADGETS, the p-value could allow for valid inference. Regardless, smaller values indicate less consistency with the null. 
+
+We carry out the test as follows:
+
+```{r}
+top.snps <- as.vector(t(size3.combined.res[1, 1:3]))
+d3.st.info <- readRDS(file.path("size3_res/null.mean.sd.info.rds"))
+d3.st.means <- d3.st.info$null.mean
+d3.st.sd <- d3.st.info$null.se
+set.seed(10)
+GxE.test.res <- GxE.test(top.snps, pp.list, 
+                         null.mean.vec = d3.st.means, 
+                         null.sd.vec = d3.st.sd)
+GxE.test.res$pval
+```
+
+The test indicates the SNP-set's fitness score is inconsistent with what would be expected under the null. 
+
+## Visualize Results
+
+We visualize results from E-GADGETS using the same network-plotting approach as GADGETS, except larger SNP and SNP-pair scores now indicate evidence for involvement in GxE or GxGxE interactions for the implicated SNPs or pairs, rather than epistasis.
+
+```{r, fig.width = 14, fig.height = 12}
+# vector of 95th percentile of null fitness scores max
+chrom.size.thresholds <- global.test.res$max.perm.95th.pctl
+
+# chromosome size 3 threshold
+d3.t <- chrom.size.thresholds[1]
+
+# chromosome size 4 threshold
+d4.t <- chrom.size.thresholds[2]
+
+# create results list 
+obs.res.list <- list(size3.combined.res[size3.combined.res$fitness.score >= 
+                                          d3.t, ], 
+                     size4.combined.res[size4.combined.res$fitness.score >= 
+                                          d4.t, ])
+
+# list of standardization information for each chromosome size
+d4.st.info <- readRDS(file.path("size4_res/null.mean.sd.info.rds"))
+d4.st.means <- d4.st.info$null.mean
+d4.st.sd <- d4.st.info$null.se
+null.means.list <- list(d3.st.means, d4.st.means)
+null.sds.list <- list(d3.st.sd, d4.st.sd)
+
+set.seed(10)
+graphical.scores <- compute.graphical.scores(obs.res.list, pp.list, 
+                                             null.mean.vec.list = null.means.list,
+                                             null.sd.vec.list = null.sds.list)
+network.plot(graphical.scores, pp.list, graph.area = 200,
+             node.size = 40, vertex.label.cex = 2)
+
+```
+
+
 
 # Cleanup and sessionInfo() {.unnumbered}
 

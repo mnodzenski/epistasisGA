@@ -121,6 +121,14 @@ GxE_fitness_score_mvlm <- function(case_genetic_data_, complement_genetic_data_,
     .Call('_epistasisGAGE_GxE_fitness_score_mvlm', PACKAGE = 'epistasisGAGE', case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, n_different_snps_weight, n_both_one_weight, use_parents)
 }
 
+GxE_fitness_score_mvlm_new <- function(case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, mom_genetic_data_, dad_genetic_data_, n_different_snps_weight = 2L, n_both_one_weight = 1L, use_parents = 1L) {
+    .Call('_epistasisGAGE_GxE_fitness_score_mvlm_new', PACKAGE = 'epistasisGAGE', case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, mom_genetic_data_, dad_genetic_data_, n_different_snps_weight, n_both_one_weight, use_parents)
+}
+
+GxE_fitness_score_mvlm_new2 <- function(case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, mom_genetic_data_, dad_genetic_data_, n_different_snps_weight = 2L, n_both_one_weight = 1L, use_parents = 1L) {
+    .Call('_epistasisGAGE_GxE_fitness_score_mvlm_new2', PACKAGE = 'epistasisGAGE', case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, mom_genetic_data_, dad_genetic_data_, n_different_snps_weight, n_both_one_weight, use_parents)
+}
+
 chrom_fitness_list <- function(case_genetic_data, complement_genetic_data, chromosome_list, ld_block_vec, weight_lookup, mom_snps_in, child_snps_in, maternal_fetal_int = FALSE, n_different_snps_weight = 2L, n_both_one_weight = 1L, recessive_ref_prop = 0.75, recode_test_stat = 1.64, epi_test = FALSE) {
     .Call('_epistasisGAGE_chrom_fitness_list', PACKAGE = 'epistasisGAGE', case_genetic_data, complement_genetic_data, chromosome_list, ld_block_vec, weight_lookup, mom_snps_in, child_snps_in, maternal_fetal_int, n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat, epi_test)
 }

@@ -421,6 +421,50 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// GxE_fitness_score_mvlm_new
+List GxE_fitness_score_mvlm_new(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_, NumericMatrix exposure_mat_, arma::uvec target_snps, arma::vec weight_lookup, arma::vec null_means, arma::vec null_se, NumericMatrix mom_genetic_data_, NumericMatrix dad_genetic_data_, int n_different_snps_weight, int n_both_one_weight, int use_parents);
+RcppExport SEXP _epistasisGAGE_GxE_fitness_score_mvlm_new(SEXP case_genetic_data_SEXP, SEXP complement_genetic_data_SEXP, SEXP exposure_mat_SEXP, SEXP target_snpsSEXP, SEXP weight_lookupSEXP, SEXP null_meansSEXP, SEXP null_seSEXP, SEXP mom_genetic_data_SEXP, SEXP dad_genetic_data_SEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP use_parentsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type case_genetic_data_(case_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type complement_genetic_data_(complement_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type exposure_mat_(exposure_mat_SEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type target_snps(target_snpsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weight_lookup(weight_lookupSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type null_means(null_meansSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type null_se(null_seSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type mom_genetic_data_(mom_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dad_genetic_data_(dad_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type use_parents(use_parentsSEXP);
+    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score_mvlm_new(case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, mom_genetic_data_, dad_genetic_data_, n_different_snps_weight, n_both_one_weight, use_parents));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GxE_fitness_score_mvlm_new2
+List GxE_fitness_score_mvlm_new2(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_, NumericMatrix exposure_mat_, arma::uvec target_snps, arma::vec weight_lookup, arma::vec null_means, arma::vec null_se, NumericMatrix mom_genetic_data_, NumericMatrix dad_genetic_data_, int n_different_snps_weight, int n_both_one_weight, int use_parents);
+RcppExport SEXP _epistasisGAGE_GxE_fitness_score_mvlm_new2(SEXP case_genetic_data_SEXP, SEXP complement_genetic_data_SEXP, SEXP exposure_mat_SEXP, SEXP target_snpsSEXP, SEXP weight_lookupSEXP, SEXP null_meansSEXP, SEXP null_seSEXP, SEXP mom_genetic_data_SEXP, SEXP dad_genetic_data_SEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP use_parentsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type case_genetic_data_(case_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type complement_genetic_data_(complement_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type exposure_mat_(exposure_mat_SEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type target_snps(target_snpsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weight_lookup(weight_lookupSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type null_means(null_meansSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type null_se(null_seSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type mom_genetic_data_(mom_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dad_genetic_data_(dad_genetic_data_SEXP);
+    Rcpp::traits::input_parameter< int >::type n_different_snps_weight(n_different_snps_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type n_both_one_weight(n_both_one_weightSEXP);
+    Rcpp::traits::input_parameter< int >::type use_parents(use_parentsSEXP);
+    rcpp_result_gen = Rcpp::wrap(GxE_fitness_score_mvlm_new2(case_genetic_data_, complement_genetic_data_, exposure_mat_, target_snps, weight_lookup, null_means, null_se, mom_genetic_data_, dad_genetic_data_, n_different_snps_weight, n_both_one_weight, use_parents));
+    return rcpp_result_gen;
+END_RCPP
+}
 // chrom_fitness_list
 List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, List chromosome_list, IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector mom_snps_in, IntegerVector child_snps_in, bool maternal_fetal_int, int n_different_snps_weight, int n_both_one_weight, double recessive_ref_prop, double recode_test_stat, bool epi_test);
 RcppExport SEXP _epistasisGAGE_chrom_fitness_list(SEXP case_genetic_dataSEXP, SEXP complement_genetic_dataSEXP, SEXP chromosome_listSEXP, SEXP ld_block_vecSEXP, SEXP weight_lookupSEXP, SEXP mom_snps_inSEXP, SEXP child_snps_inSEXP, SEXP maternal_fetal_intSEXP, SEXP n_different_snps_weightSEXP, SEXP n_both_one_weightSEXP, SEXP recessive_ref_propSEXP, SEXP recode_test_statSEXP, SEXP epi_testSEXP) {
@@ -753,6 +797,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epistasisGAGE_compute_dif_vecs", (DL_FUNC) &_epistasisGAGE_compute_dif_vecs, 9},
     {"_epistasisGAGE_chrom_fitness_score", (DL_FUNC) &_epistasisGAGE_chrom_fitness_score, 13},
     {"_epistasisGAGE_GxE_fitness_score_mvlm", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score_mvlm, 10},
+    {"_epistasisGAGE_GxE_fitness_score_mvlm_new", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score_mvlm_new, 12},
+    {"_epistasisGAGE_GxE_fitness_score_mvlm_new2", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score_mvlm_new2, 12},
     {"_epistasisGAGE_chrom_fitness_list", (DL_FUNC) &_epistasisGAGE_chrom_fitness_list, 13},
     {"_epistasisGAGE_GxE_fitness_score_mvlm_list", (DL_FUNC) &_epistasisGAGE_GxE_fitness_score_mvlm_list, 10},
     {"_epistasisGAGE_GxE_mvlm_fitness_vec_mat", (DL_FUNC) &_epistasisGAGE_GxE_mvlm_fitness_vec_mat, 9},
