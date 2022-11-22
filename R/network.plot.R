@@ -62,7 +62,7 @@
 #' decrease font size.
 #' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
-#'@examples
+#' @examples
 #'
 #' data(case)
 #' data(dad)
@@ -73,7 +73,7 @@
 #' data(snp.annotations)
 #' set.seed(1400)
 #'
-#' #preprocess data
+#' # preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' pp.list <- preprocess.genetic.data(case[, target.snps],
 #'                                    father.genetic.data = dad[ , target.snps],
@@ -103,8 +103,8 @@
 #'                                    pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
-#'  ## create list of results
-#'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
+#' ## create list of results
+#' final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
 #'  set.seed(20)
@@ -115,7 +115,7 @@
 #' set.seed(10)
 #' network.plot(graphical.list, pp.list)
 #'
-#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+#' lapply(c("tmp_2", "tmp_3"), unlink, recursive = TRUE)
 #'
 #' @import igraph
 #' @importFrom qgraph qgraph.layout.fruchtermanreingold
@@ -141,15 +141,13 @@ network.plot <- function(graphical.score.list, preprocessed.list,
     edge.dt <- graphical.score.list[["pair.scores"]]
     node.dt <- graphical.score.list[["snp.scores"]]
 
-    # if plotting a subset pairs, subset input data
-    if (!is.null(n.top.scoring.pairs)){
-
+    # if plotting a subset of pairs, subset input data
+    if (!is.null(n.top.scoring.pairs)) {
         edge.dt <- edge.dt[seq_len(n.top.scoring.pairs), ]
         snp1 <- edge.dt$SNP1
         snp2 <- edge.dt$SNP2
         snps <- c(snp1, snp2)
         node.dt <- node.dt[node.dt$SNP %in% snps, ]
-
     }
 
     #compute r2 vals for snps in the same ld block, assign 0 otherwise
@@ -208,33 +206,32 @@ network.plot <- function(graphical.score.list, preprocessed.list,
           }
 
         }
-
     }, 1.0)
 
-    #subset to target cols
-    edge.dt <- edge.dt[ , c(1, 2, 5)]
+    # subset to target cols
+    edge.dt <- edge.dt[, c(1, 2, 5)]
 
-    #get node labels
+    # get node labels
     node.labels <- as.character(node.dt$rsid)
     names(node.labels) <- as.character(node.dt$SNP)
 
     # convert to data.frames and scale the edge and node scores
     edge.df <- as.data.frame(edge.dt)
     max.edge.widths <- max(edge.df$pair.score)
-    edge.widths <- edge.df$pair.score/max(edge.df$pair.score)
+    edge.widths <- edge.df$pair.score / max(edge.df$pair.score)
     raw.edge.widths <- edge.df$pair.score
-    node.df <- as.data.frame(node.dt[ , c(1, 3)])
+    node.df <- as.data.frame(node.dt[, c(1, 3)])
     colnames(node.df) <- c("name", "size")
     max.node.size <- max(node.df$size)
     node.size.raw <- node.df$size
-    node.df$size <- node.size*(node.df$size/max(node.df$size))
+    node.df$size <- node.size * (node.df$size / max(node.df$size))
 
     # prepare for plotting
     colnames(edge.df)[seq_len(2)] <- c("from", "to")
     network <- graph.data.frame(edge.df[, seq_len(2)], directed = FALSE,
                                 vertices = node.df)
     E(network)$weight <- edge.df$pair.score
-    E(network)$width <- edge.width.cex*edge.widths
+    E(network)$width <- edge.width.cex * edge.widths
     color_fun_e <- colorRampPalette(edge.color.ramp)
     edge.required.colors <- as.integer(as.factor(E(network)$weight))
     raw.edge.colors <- color_fun_e(length(unique(edge.required.colors)))
@@ -273,7 +270,6 @@ network.plot <- function(graphical.score.list, preprocessed.list,
 
     # if desired, plot
     if (plot) {
-
         net.edges <- get.edgelist(network, names = FALSE)
         coords <- qgraph.layout.fruchtermanreingold(net.edges,
                                                     vcount = vcount(network),
@@ -309,17 +305,13 @@ network.plot <- function(graphical.score.list, preprocessed.list,
             axis(side = 4, at = seq(0, 1, length.out = 5),
                  labels = e.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
+
         } else {
-
             plot(network, layout = coords, asp = 0, ...)
-
         }
 
-    # otherwise, return igraph object
+        # otherwise, return igraph object
     } else {
-
         return(network)
-
     }
-
 }

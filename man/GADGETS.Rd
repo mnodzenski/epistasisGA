@@ -219,7 +219,8 @@ the following elements will be written to \code{results.dir}.
 }
 }
 \description{
-This function runs the GADGETS method on a given cluster of islands. It is a wrapper for
+This function runs the GADGETS method on a given cluster of islands.
+It is a wrapper for
 the underlying Rcpp function run_GADGETS.
 }
 \examples{

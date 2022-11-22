@@ -1,6 +1,7 @@
 #' \code{epistasisGA} package
 #'
-#' A package implementing the GADGETS method to detect multi-SNP effects in case-parent triad or affected/unaffected sibling studies.
+#' A package implementing the GADGETS method to detect multi-SNP effects in
+#' case-parent triad or affected/unaffected sibling studies.
 #'
 #' @docType package
 #' @name epistasisGAGE

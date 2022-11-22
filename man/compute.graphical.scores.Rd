@@ -105,7 +105,8 @@ is the graphical SNP-pair score.}
 }
 }
 \description{
-This function returns a data.table of graphical SNP-pair scores for use in network plots of GADGETS results.
+This function returns a data.table of graphical SNP-pair scores for use in
+ network plots of GADGETS results.
 }
 \examples{
 
@@ -115,7 +116,7 @@ data(mom)
 data(snp.annotations)
 set.seed(1400)
 
-#preprocess data
+# preprocess data
 target.snps <- c(1:3, 30:32, 60:62, 85)
 preprocessed.list <- preprocess.genetic.data(as.matrix(case[, target.snps]),
                         father.genetic.data = as.matrix(dad[ , target.snps]),
@@ -145,15 +146,15 @@ run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 2,
                                   preprocessed.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
- ## create list of results
+## create list of results
 
- final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
+final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
  edge.dt <- compute.graphical.scores(final.results,
                                      preprocessed.list,
                                      pval.thresh = 0.5)
 
- lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+lapply(c("tmp_2", "tmp_3"), unlink, recursive = TRUE)
 
 }

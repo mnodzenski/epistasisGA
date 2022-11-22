@@ -120,7 +120,7 @@ mom <- as.matrix(mom)
 data(snp.annotations)
 set.seed(1400)
 
-#preprocess data
+# preprocess data
 target.snps <- c(1:3, 30:32, 60:62, 85)
 pp.list <- preprocess.genetic.data(case[, target.snps],
                                    father.genetic.data = dad[ , target.snps],
@@ -150,8 +150,8 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2,
                                    pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
- ## create list of results
- final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
+## create list of results
+final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 
  ## compute edge scores
  set.seed(20)
@@ -162,6 +162,6 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2,
 set.seed(10)
 network.plot(graphical.list, pp.list)
 
- lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+lapply(c("tmp_2", "tmp_3"), unlink, recursive = TRUE)
 
 }

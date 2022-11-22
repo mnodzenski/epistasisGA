@@ -2,7 +2,8 @@
 % Please edit documentation in R/permute.dataset.R
 \name{permute.dataset}
 \alias{permute.dataset}
-\title{A function to create permuted datasets for permutation based hypothesis testing.}
+\title{A function to create permuted datasets for permutation based hypothesis
+testing.}
 \usage{
 permute.dataset(
   preprocessed.list,
@@ -34,7 +35,8 @@ total of \code{n.permutations} exposure matrices, where the observed
 exposures have been randomly re-assigned across the permuted 'families'.
 }
 \description{
-This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
+This function creates permuted datasets for permutation based hypothesis
+testing of GADGETS fitness scores.
 }
 \examples{
 

@@ -1,5 +1,5 @@
 .Rproj.user
-.Rhistory
+.Rproj.user*
 .RData
 .Ruserdata
 scratch.work.R
@@ -13,3 +13,18 @@ src/RcppExports.o
 /doc/
 /Meta/
 epistasisGA.Rproj
+epistasisGA.Rproj
+.DS_Store
+.Rhistory
+.rapp.history
+src/epistasisGA.o
+src/RcppExports.o
+src/epistasisGA.so
+data/.DS_Store
+R/.DS_Store
+src/.DS_Store
+doc
+Meta
+/doc/
+/Meta/
+epistasisGA_GxE.Rproj

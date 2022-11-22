@@ -1,6 +1,8 @@
-#' A function to create permuted datasets for permutation based hypothesis testing.
+#' A function to create permuted datasets for permutation based hypothesis
+#' testing.
 #'
-#' This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
+#' This function creates permuted datasets for permutation based hypothesis
+#' testing of GADGETS fitness scores.
 #'
 #' @param preprocessed.list The output list from \code{preprocess.genetic.data}
 #' for the original genetic data.
@@ -36,6 +38,7 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @importFrom stats rbinom
 #' @export
+
 permute.dataset <- function(preprocessed.list, permutation.data.file.path,
                             n.permutations = 100,
                             bp.param = bpparam()) {

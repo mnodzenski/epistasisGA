@@ -1,6 +1,7 @@
 #' A function to run the GADGETS method
 #'
-#' This function runs the GADGETS method on a given cluster of islands. It is a wrapper for
+#' This function runs the GADGETS method on a given cluster of islands.
+#' It is a wrapper for
 #' the underlying Rcpp function run_GADGETS.
 #'
 #' @param cluster.number An integer indicating the cluster number
@@ -224,7 +225,7 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                             use.parents, E_GADGETS)
 
     ### clean up and output results
-    lapply(seq_along(rcpp.res), function(island.number){
+    lapply(seq_along(rcpp.res), function(island.number) {
 
         #pick out the pieces from rcpp output
         rcpp.res.length <- length(rcpp.res[[island.number]])
@@ -271,10 +272,7 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                                                   cluster.number,
                                                   ".island",
                                                   island.number,".rds"))
+
         saveRDS(final.list, out.file)
-
     })
-
 }
-
-

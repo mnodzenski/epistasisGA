@@ -2,7 +2,8 @@
 % Please edit documentation in R/combine.islands.R
 \name{combine.islands}
 \alias{combine.islands}
-\title{A function to combine GADGETS results for individual islands into a single dataset.}
+\title{A function to combine GADGETS results for individual islands into a single
+dataset.}
 \usage{
 combine.islands(
   results.dir,
@@ -36,7 +37,8 @@ this will concatenate all individual island results files and store them
 in a single file, called "all.island.results.concatenated.rds".
 }
 \description{
-This function combines GADGETS results for individual islands into a single dataset.
+This function combines GADGETS results for individual islands into a single
+dataset.
 }
 \examples{
 
@@ -59,7 +61,7 @@ run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3,
 
 combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 
-unlink('tmp', recursive = TRUE)
-unlink('tmp_reg', recursive = TRUE)
+unlink("tmp", recursive = TRUE)
+unlink("tmp_reg", recursive = TRUE)
 
 }

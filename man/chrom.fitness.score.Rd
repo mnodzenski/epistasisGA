@@ -125,7 +125,8 @@ A list:
 }
 }
 \description{
-This function assigns a fitness score to a chromosome. It is a wrapper for the Rcpp function chrom_fitness_score.
+This function assigns a fitness score to a chromosome. It is a wrapper for
+the Rcpp function chrom_fitness_score.
 }
 \examples{
 

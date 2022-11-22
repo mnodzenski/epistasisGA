@@ -1,6 +1,7 @@
 #' A function to assign a fitness score to a chromosome
 #'
-#' This function assigns a fitness score to a chromosome. It is a wrapper for the Rcpp function chrom_fitness_score.
+#' This function assigns a fitness score to a chromosome. It is a wrapper for
+#' the Rcpp function chrom_fitness_score.
 #'
 #' @param case.genetic.data The genetic data of the disease affected children
 #' from case-parent trios or disease-discordant sibling pairs. If searching for
@@ -127,4 +128,3 @@ chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
                       epi.test)
 
 }
-

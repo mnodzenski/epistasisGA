@@ -1,6 +1,7 @@
 #' A function to pre-process case-parent triad or disease-discordant sibling data.
 #'
-#' This function performs several pre-processing steps, intended for use before function run.gadgets.
+#' This function performs several pre-processing steps, intended for use before
+#' function run.gadgets.
 #'
 #' @param case.genetic.data The genetic data of the disease affected children
 #' from case-parent trios or disease-discordant sibling pairs. If searching for
@@ -202,7 +203,6 @@ preprocess.genetic.data <- function(case.genetic.data,
         #name the categorical exposure vars
         names(cat.exposure.df) <- paste0("cat.exp",
                                          seq_len(ncol(cat.exposure.df)))
-
     }
 
     if (!is.null(continuous.exposures)){

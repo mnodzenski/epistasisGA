@@ -414,7 +414,7 @@ IntegerVector n_pos_high_risk(IntegerMatrix in_mat, IntegerVector target_rows, I
 
       int this_col = target_cols[j] - 1;
       int obs_val = in_mat(this_row, this_col);
-      if (obs_val > 0){
+      if (obs_val > 0 && obs_val <= 2){
 
         out_vec[i] += 1;
 
@@ -438,7 +438,7 @@ IntegerVector n_neg_high_risk(IntegerMatrix in_mat, IntegerVector target_rows, I
 
       int this_col = target_cols[j] - 1;
       int obs_val = in_mat(this_row, this_col);
-      if (obs_val < 2){
+      if (obs_val < 2 && obs_val >= 0){
 
         out_vec[i] += 1;
 

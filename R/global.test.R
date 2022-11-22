@@ -1,7 +1,9 @@
-#' A function to run a global test of the null hypothesis that there are no joint SNP-disease associations
+#' A function to run a global test of the null hypothesis that there are no
+#' SNP-disease associations
 #' across a range of chromosome sizes
 #'
-#' This function runs a global test of the null hypothesis that there are no joint SNP-disease associations
+#' This function runs a global test of the null hypothesis that there are no
+#' SNP-disease associations
 #' across a range of chromosome sizes
 #'
 #' @param results.list A list of length d, where d is the number of chromosome
@@ -84,7 +86,7 @@
 #'                                   pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
-#' #create three permuted datasets
+#' # create three permuted datasets
 #' set.seed(1400)
 #' perm.data.list <- permute.dataset(pp.list, "perm_data",
 #'                                   n.permutations = 3)
@@ -107,8 +109,7 @@
 #' p3.list <- preprocess.genetic.data(case.p3,
 #'                                    complement.genetic.data = comp.p3,
 #'                                    ld.block.vec = c(10))
-#'
-#' ##run GA for permuted data
+#
 #'
 #' #permutation 1, chromosome size 2
 #' run.gadgets(p1.list, n.chromosomes = 5, chromosome.size = 2,
@@ -176,24 +177,29 @@
 #'                                      p3.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
-#'  ## create list of results
+#' ## create list of results
 #'
-#'  #chromosome size 2 results
-#'  chrom2.list <- list(observed.data = combined.res2$fitness.score,
-#'                     permutation.list = list(p1.combined.res2$fitness.score,
-#'                                             p2.combined.res2$fitness.score,
-#'                                             p3.combined.res2$fitness.score))
+#' # chromosome size 2 results
+#' chrom2.list <- list(
+#'     observed.data = combined.res2$fitness.score,
+#'     permutation.list = list(
+#'         p1.combined.res2$fitness.score,
+#'         p2.combined.res2$fitness.score,
+#'         p3.combined.res2$fitness.score
+#'     )
+#' )
 #'
-#'  #chromosome size 3 results
-#'  chrom3.list <- list(observed.data = combined.res3$fitness.score,
-#'                     permutation.list = list(p1.combined.res3$fitness.score,
-#'                                             p2.combined.res3$fitness.score,
-#'                                             p3.combined.res3$fitness.score))
+#' # chromosome size 3 results
+#' chrom3.list <- list(
+#'     observed.data = combined.res3$fitness.score,
+#'     permutation.list = list(
+#'         p1.combined.res3$fitness.score,
+#'         p2.combined.res3$fitness.score,
+#'         p3.combined.res3$fitness.score
+#'     )
+#' )
 #'
-#'  final.results <- list(chrom2.list, chrom3.list)
-#'
-#'  ## run global test
-#'  global.test.res <- global.test(final.results, 1)
+#' final.results <- list(chrom2.list, chrom3.list)
 #'
 #'  lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
 #'           'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3', 'perm_data'), unlink,
@@ -210,27 +216,30 @@ global.test <- function(results.list, n.top.scores = 10) {
 
     # decide on the n.top.scores per chromosome size
     chrom.size.n.top.scores <- rep(n.top.scores, length(results.list))
+
     for (i in seq_along(chrom.size.n.top.scores)){
 
         chrom.size.res <- results.list[[i]]
         # error checking
         if (!"observed.data" %in% names(chrom.size.res)) {
-
-            stop("Each element of results.list must be a list containing an element titled observed.data.")
+            w1 <- "Each element of results.list must be a list"
+            w2 <- "containing an element titled observed.data."
+            stop(paste(w1, w2))
         }
 
         if (!"permutation.list" %in% names(chrom.size.res)) {
-
-            stop("Each element of results.list must be a list containing an element titled permutation.list.")
+            w1 <- "Each element of results.list must be a list containing"
+            w2 <- "an element titled permutation.list."
+            stop(paste(w1, w2))
         }
 
         # re-set n.top.chroms if needed
         n.obs.scores <- length(chrom.size.res$observed.data)
         n.perm.scores <- vapply(chrom.size.res$permutation.list, length, 1)
         min.n.scores <- min(c(n.obs.scores, n.perm.scores))
-        if (min.n.scores < n.top.scores){
-
+        if (min.n.scores < n.top.scores) {
             chrom.size.n.top.scores[i] <- min.n.scores
+
             if (n.obs.scores == min.n.scores){
 
                 message(paste("only", min.n.scores, "observed.data fitness scores for element",
@@ -244,9 +253,7 @@ global.test <- function(results.list, n.top.scores = 10) {
                               min.n.scores))
 
             }
-
         }
-
     }
 
     # loop over chromosome sizes
@@ -282,7 +289,7 @@ global.test <- function(results.list, n.top.scores = 10) {
     colnames(chrom.size.ranks) <- NULL
     rownames(chrom.size.ranks) <- NULL
 
-    #sum scores across chromosome sizes
+    # sum scores across chromosome sizes
     global.scores <- rowSums(chrom.size.ranks)
 
     # pval
@@ -293,8 +300,7 @@ global.test <- function(results.list, n.top.scores = 10) {
     global.pval <- (B + 1)/N
 
     # also look at element-wise results
-    marginal.pvals <- vapply(seq_len(ncol(chrom.size.ranks)), function(x){
-
+    marginal.pvals <- vapply(seq_len(ncol(chrom.size.ranks)), function(x) {
         chrom.size.res <- chrom.size.ranks[, x]
         obs.test.stat <- chrom.size.res[1]
         perm.test.stats <- chrom.size.res[-1]
@@ -302,44 +308,35 @@ global.test <- function(results.list, n.top.scores = 10) {
         N <- length(perm.test.stats) + 1
         pval <- (B + 1)/N
         pval
-
     }, 1.0)
 
     # maximum permutation based fitness scores
     max.perm.fitness <- vapply(results.list, function(chrom.size.res) {
-
         perm.list <- chrom.size.res$permutation.list
         vapply(perm.list, max, 1.0)
-
     }, rep(1.0, length(results.list[[1]]$permutation.list)))
 
 
     # maximum observed fitness scores
     max.obs.fitness <- vapply(results.list, function(chrom.size.res) {
-
         obs.fitness.scores <- chrom.size.res$observed.data
         max(obs.fitness.scores)
-
     }, 1.0)
 
     # also return 95th percentile of the null maxima
-    max.perm.95th.pctl <- apply(max.perm.fitness, 2, function(x){
-
+    max.perm.95th.pctl <- apply(max.perm.fitness, 2, function(x) {
         quantile(x, 0.95)
-
     })
     names(max.perm.95th.pctl) <- NULL
 
     # pvals for max order statistics
     max.order.pvals <- vapply(seq_along(max.obs.fitness), function(chrom.size) {
-
         max.obs <- max.obs.fitness[chrom.size]
         max.perms <- max.perm.fitness[ , chrom.size]
         B <- sum(max.perms >= max.obs)
         N <- length(max.perms) + 1
         pval <- (B + 1)/N
         pval
-
     }, 1.0)
 
     # plots of the observed vs permute distributions
@@ -365,11 +362,11 @@ global.test <- function(results.list, n.top.scores = 10) {
         # put together data.table for plotting
         plot.dt <- rbind(obs.dt, perm.dt)
         return(plot.dt)
-
     }))
 
     boxplot.plot <- ggplot(plot.data, aes(x = data.type, y = fitness.score)) +
-        geom_boxplot() + facet_wrap(chrom.res.element ~ ., scales = "free")
+        geom_boxplot() +
+        facet_wrap(chrom.res.element ~ ., scales = "free")
 
     # don't need copies of the global environment vars
     boxplot.plot$plot_env <- new.env()
@@ -390,5 +387,4 @@ global.test <- function(results.list, n.top.scores = 10) {
                      chrom.size.k = chrom.size.n.top.scores,
                      max.perm.95th.pctl = max.perm.95th.pctl)
     return(res.list)
-
 }

@@ -1,6 +1,7 @@
 #' A function to compute SNP-pair scores for network plots of results.
 #'
-#' This function returns a data.table of graphical SNP-pair scores for use in network plots of GADGETS results.
+#' This function returns a data.table of graphical SNP-pair scores for use in
+#'  network plots of GADGETS results.
 #'
 #' @param results.list A list of length d, where d is the number of
 #' chromosome sizes to be included in the network plot. Each element of the list
@@ -78,7 +79,7 @@
 #' data(snp.annotations)
 #' set.seed(1400)
 #'
-#' #preprocess data
+#' # preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
 #' preprocessed.list <- preprocess.genetic.data(as.matrix(case[, target.snps]),
 #'                         father.genetic.data = as.matrix(dad[ , target.snps]),
@@ -108,16 +109,16 @@
 #'                                   preprocessed.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
-#'  ## create list of results
+#' ## create list of results
 #'
-#'  final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
+#' final.results <- list(combined.res2[1:3, ], combined.res3[1:3, ])
 #'
 #'  ## compute edge scores
 #'  edge.dt <- compute.graphical.scores(final.results,
 #'                                      preprocessed.list,
 #'                                      pval.thresh = 0.5)
 #'
-#'  lapply(c('tmp_2', 'tmp_3'), unlink, recursive = TRUE)
+#' lapply(c("tmp_2", "tmp_3"), unlink, recursive = TRUE)
 #'
 #' @importFrom data.table data.table rbindlist setorder
 #' @importFrom matrixStats colSds
@@ -141,7 +142,6 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
     if (pval.thresh > 0.6){
 
         stop("pval.thresh must be <= 0.6")
-
     }
 
     #need to specify both or neither of null mean and sd vec
@@ -179,10 +179,9 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
 
         }
         these.cols <- seq_len(chrom.size)
-        chrom.mat <- as.matrix(chrom.size.data[ , ..these.cols])
+        chrom.mat <- as.matrix(chrom.size.data[, ..these.cols])
         chrom.list <- split(chrom.mat, seq_len(nrow(chrom.mat)))
         return(chrom.list)
-
     })
 
     ## compute graphical scores based on epistasis/GxE test
@@ -233,13 +232,13 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
 
    }
 
-    #make sure we have some edges
+    # make sure we have some edges
     n.edges <- vapply(results.list, nrow, 1)
-    if (sum(n.edges) == 0){
+    if (sum(n.edges) == 0) {
         stop("No SNP pairs meet p-value threshold")
     }
 
-    #get rid of d where we have no edges
+    # get rid of d where we have no edges
     results.list <- results.list[n.edges > 0]
 
     # edge weights
@@ -313,25 +312,30 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
         snp.dt <- chrom.size.res[ , ..these.cols]
         snp.dt$raw.score <- scores
 
-        # rsid data.table
-        rsid.cols <- seq(chrom.size + 1, 2*chrom.size)
-        rsid.dt <- chrom.size.res[ , ..rsid.cols]
-        rsid.dt$raw.score <- scores
+            # snp number data.table
+            snp.dt <- chrom.size.res[, ..these.cols]
+            snp.dt$raw.score <- scores
 
-        # melt
-        snp.cols <- seq_len(chrom.size)
-        snp.dt.long <- melt(snp.dt, 'raw.score', snp.cols)
-        snp.dt.long$variable <- NULL
-        colnames(snp.dt.long) <- c("raw.score", "SNP")
-        rsid.dt.long <- melt(rsid.dt, 'raw.score', snp.cols)
+            # rsid data.table
+            rsid.cols <- seq(chrom.size + 1, 2 * chrom.size)
+            rsid.dt <- chrom.size.res[, ..rsid.cols]
+            rsid.dt$raw.score <- scores
 
-        # combine into data.table of SNPs and graphical score
-        snp.dt.long$rsid <- rsid.dt.long$value
+            # melt
+            snp.cols <- seq_len(chrom.size)
+            snp.dt.long <- melt(snp.dt, "raw.score", snp.cols)
+            snp.dt.long$variable <- NULL
+            colnames(snp.dt.long) <- c("raw.score", "SNP")
+            rsid.dt.long <- melt(rsid.dt, "raw.score", snp.cols)
 
-        # return result
-        return(snp.dt.long)
+            # combine into data.table of SNPs and graphical score
+            snp.dt.long$rsid <- rsid.dt.long$value
 
-    }, results.list = results.list, BPPARAM = bp.param))
+            # return result
+            return(snp.dt.long)
+        },
+        results.list = results.list, BPPARAM = bp.param
+    ))
 
     # remove the NA's
     edge.weights <- edge.weights[!is.na(edge.weights$raw.score), ]
@@ -367,11 +371,7 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
                                     list(SNP, rsid)]
         setorder(snp.pair.scores, -pair.score)
         setorder(snp.scores, -snp.score)
-
     }
 
     return(list(pair.scores = snp.pair.scores, snp.scores = snp.scores))
-
 }
-
-

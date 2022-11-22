@@ -195,4 +195,3 @@
 #' @format A data frame with 1000 rows and 1 variables
 #' @usage data(exposure)
 "exposure"
-

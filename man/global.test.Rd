@@ -2,7 +2,8 @@
 % Please edit documentation in R/global.test.R
 \name{global.test}
 \alias{global.test}
-\title{A function to run a global test of the null hypothesis that there are no joint SNP-disease associations
+\title{A function to run a global test of the null hypothesis that there are no
+SNP-disease associations
 across a range of chromosome sizes}
 \usage{
 global.test(results.list, n.top.scores = 10)
@@ -53,7 +54,8 @@ A list containing the following:
 }
 }
 \description{
-This function runs a global test of the null hypothesis that there are no joint SNP-disease associations
+This function runs a global test of the null hypothesis that there are no
+SNP-disease associations
 across a range of chromosome sizes
 }
 \examples{
@@ -95,7 +97,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2,
                                   pp.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
-#create three permuted datasets
+# create three permuted datasets
 set.seed(1400)
 perm.data.list <- permute.dataset(pp.list, "perm_data",
                                   n.permutations = 3)
@@ -118,8 +120,6 @@ comp.p3 <- readRDS("perm_data/complement.permute3.rds")
 p3.list <- preprocess.genetic.data(case.p3,
                                    complement.genetic.data = comp.p3,
                                    ld.block.vec = c(10))
-
-##run GA for permuted data
 
 #permutation 1, chromosome size 2
 run.gadgets(p1.list, n.chromosomes = 5, chromosome.size = 2,
@@ -187,24 +187,29 @@ run.gadgets(p3.list, n.chromosomes = 5, chromosome.size = 3,
                                      p3.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
- ## create list of results
+## create list of results
 
- #chromosome size 2 results
- chrom2.list <- list(observed.data = combined.res2$fitness.score,
-                    permutation.list = list(p1.combined.res2$fitness.score,
-                                            p2.combined.res2$fitness.score,
-                                            p3.combined.res2$fitness.score))
+# chromosome size 2 results
+chrom2.list <- list(
+    observed.data = combined.res2$fitness.score,
+    permutation.list = list(
+        p1.combined.res2$fitness.score,
+        p2.combined.res2$fitness.score,
+        p3.combined.res2$fitness.score
+    )
+)
 
- #chromosome size 3 results
- chrom3.list <- list(observed.data = combined.res3$fitness.score,
-                    permutation.list = list(p1.combined.res3$fitness.score,
-                                            p2.combined.res3$fitness.score,
-                                            p3.combined.res3$fitness.score))
+# chromosome size 3 results
+chrom3.list <- list(
+    observed.data = combined.res3$fitness.score,
+    permutation.list = list(
+        p1.combined.res3$fitness.score,
+        p2.combined.res3$fitness.score,
+        p3.combined.res3$fitness.score
+    )
+)
 
- final.results <- list(chrom2.list, chrom3.list)
-
- ## run global test
- global.test.res <- global.test(final.results, 1)
+final.results <- list(chrom2.list, chrom3.list)
 
  lapply(c('tmp_2', 'tmp_3', 'p1_tmp_2', 'p2_tmp_2', 'p3_tmp_2',
           'p1_tmp_3', 'p2_tmp_3', 'p3_tmp_3', 'perm_data'), unlink,

@@ -163,7 +163,8 @@ A list containing the following:
 }
 }
 \description{
-This function performs several pre-processing steps, intended for use before function run.gadgets.
+This function performs several pre-processing steps, intended for use before
+function run.gadgets.
 }
 \examples{
 

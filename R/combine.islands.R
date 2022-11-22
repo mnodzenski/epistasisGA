@@ -1,6 +1,8 @@
-#' A function to combine GADGETS results for individual islands into a single dataset.
+#' A function to combine GADGETS results for individual islands into a single
+#' dataset.
 #'
-#' This function combines GADGETS results for individual islands into a single dataset.
+#' This function combines GADGETS results for individual islands into a single
+#' dataset.
 #'
 #' @param results.dir The directory in which individual island results from
 #' \code{run.gadgets} are saved.
@@ -40,8 +42,8 @@
 #'
 #' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 #'
-#' unlink('tmp', recursive = TRUE)
-#' unlink('tmp_reg', recursive = TRUE)
+#' unlink("tmp", recursive = TRUE)
+#' unlink("tmp_reg", recursive = TRUE)
 #'
 #' @importFrom data.table rbindlist setkey setorder `:=` setDT
 #' @export
@@ -56,15 +58,12 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list,
     # note if we've already run this function
     out.file.name <- "combined.island.unique.chromosome.results.rds"
     out.file <- file.path(dirname(island.names[1]), out.file.name)
-    if (file.exists(out.file)){
-
+    if (file.exists(out.file)) {
         message("combine.islands has already been run for this directory")
-
     }
 
     # stop if the annotation data is not formatted correctly
-    if (any(! c("RSID", "REF", "ALT") %in% colnames(annotation.data))){
-
+    if (any(!c("RSID", "REF", "ALT") %in% colnames(annotation.data))) {
         stop("annotation.data must contain columns RSID, REF, and ALT.")
     }
 
@@ -76,14 +75,12 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list,
 
     # then combine into a single data frame
     island.list <- lapply(island.names, function(island.file) {
-
         island <- gsub(".rds", "", basename(island.file))
         island.data <- readRDS(island.file)
         n.generations <- island.data$n.generations
-        if (nrow(island.data$top.chromosome.results) < n.top.chroms.per.island ){
-
-            stop("n.top.chroms.per.island must be <= the total number of chromosomes")
-
+        if (nrow(island.data$top.chromosome.results) < n.top.chroms.per.island)
+            {
+            stop("n.top.chroms.per.island must be <= the total chromosomes")
         }
         chrom.results <- island.data$top.chromosome.results
 
@@ -100,7 +97,7 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list,
         all.results$n.generations <- n.generations
         chrom.results <- chrom.results[!duplicated(chrom.results), ]
 
-        #take top scorers
+        # take top scorers
         chrom.results <- chrom.results[seq_len(n.top.chroms.per.island), ]
         return(list(chrom.results, all.results))
 
@@ -138,11 +135,13 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list,
 
     # starting with the rsids
     choose.these <- seq_len(chromosome.size)
-    snp.cols <- unique.result[ , ..choose.these]
+    snp.cols <- unique.result[, ..choose.these]
     snp.numbers <- unlist(snp.cols)
     rsids <- annotation.data$RSID
-    rsid.dt <- data.table(matrix(rsids[snp.numbers], ncol = chromosome.size,
-                                 byrow = FALSE))
+    rsid.dt <- data.table(matrix(rsids[snp.numbers],
+        ncol = chromosome.size,
+        byrow = FALSE
+    ))
     colnames(rsid.dt) <- paste(colnames(snp.cols), "rsid", sep = ".")
 
     #now the risk allele
@@ -240,6 +239,5 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list,
     # save
     saveRDS(final.result, file = out.file)
     return(final.result)
-
 }
 

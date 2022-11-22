@@ -1,6 +1,8 @@
-#' A function to run the GADGETS algorithm to detect multi-SNP effects in case-parent triad studies.
+#' A function to run the GADGETS algorithm to detect multi-SNP effects in
+#' case-parent triad studies.
 #'
-#' This function runs the GADGETS algorithm to detect multi-SNP effects in case-parent triad studies.
+#' This function runs the GADGETS algorithm to detect multi-SNP effects in
+#' case-parent triad studies.
 #'
 #' @param data.list The output list from \code{preprocess.genetic.data}.
 #' @param n.chromosomes An integer specifying the number of chromosomes to use
@@ -170,40 +172,33 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
 
     }
     if (n.migrations == 0 & island.cluster.size != 1) {
-
-        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
-
+        w1 <- "Specify island.cluster.size = 1 and n.migrations = 0 if no"
+        w2 <- "migrations are desired."
+        stop(paste(w1, w2))
     }
 
     if (n.migrations != 0 & island.cluster.size == 1) {
-
-        stop("Specify island.cluster.size = 1 and n.migrations = 0 if no migrations are desired.")
-
+        w1 <- "Specify island.cluster.size = 1 and n.migrations = 0 if no"
+        w2 <- "migrations are desired."
+        stop(paste(w1, w2))
     }
 
     if (migration.generations == 1) {
-
         stop("migration.generations must be greater than 1")
-
     }
-    if (island.cluster.size > 1 & generations%%migration.generations != 0) {
-
+    if (island.cluster.size > 1 & generations %% migration.generations != 0) {
         stop("generations must be an integer multiple of migration.generations.")
-
     }
 
     ### make sure the island cluster size divides the number of islands evenly
     if (island.cluster.size > 1 & n.islands%%island.cluster.size != 0) {
 
         stop("n.islands must be an integer multiple of island.cluster.size")
-
     }
 
     ### make sure number of migrations is specified properly ###
     if (island.cluster.size > 1 & n.migrations >= n.chromosomes) {
-
         stop("n.migrations must be less than n.chromosomes")
-
     }
 
     ### make sure the weight function integer is actually an integer ###
@@ -307,9 +302,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     cluster.ids <- seq_len(n.clusters)
     clusters.to.run <- cluster.ids
     if (!dir.exists(results.dir)) {
-
         dir.create(results.dir, recursive = TRUE)
-
     } else {
 
         concat.results.file <- file.path(results.dir,
@@ -330,15 +323,13 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                                     "", prev.islands)))
 
         }
+
         clusters.to.run <- setdiff(clusters.to.run, prev.clusters)
         n.clusters.to.run <- length(clusters.to.run)
 
         if (n.clusters.to.run == 0) {
-
             stop("All islands have already been evolved")
-
         }
-
     }
 
     ### if running GxE, compute the elements required for
@@ -450,8 +441,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     # make registry for submitting batch jobs
     reg.dir <- file.path(registryargs$file.dir, "registry")
     reg.dir <- gsub("//", "/", reg.dir, fixed = TRUE)
-    if (!dir.exists(reg.dir)){
-
+    if (!dir.exists(reg.dir)) {
         registry <- do.call(makeRegistry, registryargs)
         registry$cluster.functions <- switch(cluster.type,
                                              interactive = batchtools::makeClusterFunctionsInteractive(),
@@ -464,26 +454,18 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                              torque = batchtools::makeClusterFunctionsTORQUE(template = cluster.template),
                                              default = stop("unsupported cluster type '", cluster, "'"))
     } else {
-
         warning(paste("Registry already exists, loading from", reg.dir))
         registry <- loadRegistry(reg.dir, writeable = TRUE)
         clearRegistry(reg = registry)
-
     }
 
     # specify number of chunks
     if (is.null(n.chunks)) {
-
         if (!cluster.type %in% c("socket", "multicore")) {
-
             n.chunks <- 1
-
         } else {
-
             n.chunks <- n.workers
-
         }
-
     }
 
     # write jobs to registry
@@ -531,5 +513,3 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     submitJobs(ids = ids[clusters.to.run, ], reg = registry,
                resources = resources)
 }
-
-

@@ -3,3 +3,6 @@
 ^doc$
 ^Meta$
 ^README\.Rmd$
+src/epistasisGA.o
+src/RcppExports.o
+src/epistasisGA.so

@@ -2,7 +2,8 @@
 % Please edit documentation in R/run.gadgets.R
 \name{run.gadgets}
 \alias{run.gadgets}
-\title{A function to run the GADGETS algorithm to detect multi-SNP effects in case-parent triad studies.}
+\title{A function to run the GADGETS algorithm to detect multi-SNP effects in
+case-parent triad studies.}
 \usage{
 run.gadgets(
   data.list,
@@ -180,7 +181,8 @@ For each island, a list of two elements will be written to
 }
 }
 \description{
-This function runs the GADGETS algorithm to detect multi-SNP effects in case-parent triad studies.
+This function runs the GADGETS algorithm to detect multi-SNP effects in
+case-parent triad studies.
 }
 \examples{
 
