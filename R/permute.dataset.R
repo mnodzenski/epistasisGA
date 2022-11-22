@@ -2,16 +2,21 @@
 #'
 #' This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
 #'
-#' @param preprocessed.list The output list from \code{preprocess.genetic.data} for the original genetic data.
-#' @param permutation.data.file.path  If running GADGETS for GxG interactions, this argument specifies a directory
-#'  where each permuted dataset will be saved on disk. If searching
-#'  for GxE interactions, permuted versions of the exposure vector will be saved to this directory.
+#' @param preprocessed.list The output list from \code{preprocess.genetic.data}
+#' for the original genetic data.
+#' @param permutation.data.file.path  If running GADGETS for GxG interactions,
+#' this argument specifies a directory where each permuted dataset will be saved
+#' on disk. If searching  for GxE interactions, permuted versions of the
+#' exposure matrix will be saved to this directory.
 #' @param n.permutations The number of permuted datasets to create.
-#' @param bp.param The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
-#'  If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details
-#' @return If genetic data are specified, a list of \code{n.permutations} pairs of case and complement data,
-#' where the observed case/complement status has been randomly flipped or not flipped. If exposure data are
-#' specified a list of \code{n.permutations} vectors where the exposures have been randomly shuffled.
+#' @param bp.param The BPPARAM argument to be passed to bplapply.
+#' See \code{BiocParallel::bplapply} for more details.
+#' @return If genetic data are specified, a total of \code{n.permutations}
+#' datasets containing pairs of case and complement data, where the observed
+#' case/complement status has been randomly flipped or not flipped, will be
+#' saved to \code{permutation.data.file.path}. If exposure data are specified, a
+#' total of \code{n.permutations} exposure matrices, where the observed
+#' exposures have been randomly re-assigned across the permuted 'families'.
 #' @examples
 #'
 #' data(case)
@@ -20,7 +25,8 @@
 #' dad <- as.matrix(dad)
 #' data(mom)
 #' mom <- as.matrix(mom)
-#' pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+#' pp.list <- preprocess.genetic.data(case[, 1:10],
+#'                                father.genetic.data = dad[ , 1:10],
 #'                                mother.genetic.data = mom[ , 1:10],
 #'                                ld.block.vec = c(10))
 #' set.seed(15)
@@ -30,7 +36,8 @@
 #' @importFrom BiocParallel bplapply bpparam
 #' @importFrom stats rbinom
 #' @export
-permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.permutations = 100,
+permute.dataset <- function(preprocessed.list, permutation.data.file.path,
+                            n.permutations = 100,
                             bp.param = bpparam()) {
 
     if (!dir.exists(permutation.data.file.path)){
@@ -48,17 +55,23 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
     n.families <- nrow(case.genetic.data)
     if (nrow(preprocessed.list$exposure.mat) == 1){
 
-        permuted.data.list <- bplapply(seq_len(n.permutations), function(permute, n.families, case.genetic.data,
-                                                                         complement.genetic.data) {
+        permuted.data.list <- bplapply(seq_len(n.permutations),
+                                       function(permute, n.families,
+                                                case.genetic.data,
+                                                complement.genetic.data) {
 
             # flip the case/complement status for these families
-            flip.these <- seq_len(n.families)[as.logical(rbinom(n.families, 1, 0.5))]
+            flip.these <- seq_len(n.families)[as.logical(
+                rbinom(n.families, 1, 0.5))]
             case.perm <- case.genetic.data
             comp.perm <- complement.genetic.data
             case.perm[flip.these, ] <- complement.genetic.data[flip.these, ]
             comp.perm[flip.these, ] <- case.genetic.data[flip.these, ]
-            case.out.file <- file.path(permutation.data.file.path, paste0("case.permute", permute, ".rds"))
-            comp.out.file <- file.path(permutation.data.file.path, paste0("complement.permute", permute, ".rds"))
+            case.out.file <- file.path(permutation.data.file.path,
+                                       paste0("case.permute", permute, ".rds"))
+            comp.out.file <- file.path(permutation.data.file.path,
+                                       paste0("complement.permute",
+                                              permute, ".rds"))
 
             #account for missing vals
             case.perm[case.perm == -9] <- NA
@@ -66,7 +79,8 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
             saveRDS(case.perm, case.out.file)
             saveRDS(comp.perm, comp.out.file)
 
-        }, n.families = n.families, case.genetic.data = case.genetic.data, complement.genetic.data = complement.genetic.data,
+        }, n.families = n.families, case.genetic.data = case.genetic.data,
+        complement.genetic.data = complement.genetic.data,
         BPPARAM = bp.param)
 
     } else {
@@ -77,7 +91,8 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path, n.per
 
             shuffled.order <- sample(seq_len(n.fams), n.fams)
             exposure.perm <- exposure[shuffled.order, , drop = FALSE]
-            out.file <- file.path(permutation.data.file.path, paste0("exposure.permute", permute, ".rds"))
+            out.file <- file.path(permutation.data.file.path,
+                                  paste0("exposure.permute", permute, ".rds"))
             saveRDS(exposure.perm, out.file)
 
         })

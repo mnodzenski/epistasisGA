@@ -1,45 +1,70 @@
-#' A function to assign a fitness score to a chromosome
+#' A function to assign an E-GADGETS (GxGxE) fitness score to a chromosome
 #'
-#' This function assigns a fitness score to a chromosome.
+#' This function assigns the (currently experimental) E-GADGETS fitness score to a chromosome.
 #'
-#' @param case.genetic.data The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
-#'  Columns are SNP allele counts, and rows are individuals.
-#' The ordering of the columns must be consistent with the LD structure specified in \code{ld.block.vec}.
-#' @param complement.genetic.data A genetic dataset from the complements of the cases, where
-#' \code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts.
-#' Columns are SNP allele counts, rows are families. If using affected/unaffected sibling pairs, this should contain
-#' the unaffected sibling genotypes.
-#' @param case.comp.differences A data frame or matrix indicating \code{case.genetic.data} != \code{complement.genetic.data},
-#' where rows correspond to individuals and columns correspond to snps.
-#' @param target.snps A numeric vector of the columns corresponding to the collection of SNPs, or chromosome, for which the fitness score will be computed.
-#' @param cases.minus.complements A matrix equal to \code{case.genetic.data} - \code{complement genetic data}.
-#' @param both.one.mat A matrix whose elements indicate whether both the case and complement have one copy of the minor allele,
-#' equal to \code{case.genetic.data == 1 & complement.genetic.data == 1}.
-#' @param ld.block.vec An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
-#' we specify \code{ld.block.vec <- c(25, 75, 100)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
-#' SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
-#' in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
-#' a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome. If not specified, this defaults
-#' to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.
-#' @param weight.lookup A vector that maps a family weight to the weighted sum of the number of different SNPs and SNPs both equal to one.
-#' @param case2.mat A logical matrix indicating whether, for each SNP, the case carries 2 copies of the minor allele.
-#' @param case0.mat A logical matrix indicating whether, for each SNP, the case carries 0 copies of the minor allele.
-#' @param n.different.snps.weight The number by which the number of different SNPs between a case and complement/unaffected sibling
-#'  is multiplied in computing the family weights. Defaults to 2.
-#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
-#'  is multiplied in computing the family weights. Defaults to 1.
-#' @param recode.threshold For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 3.
-#' See the GADGETS paper for specific details.
-#' @param exposure A categorical factor vector corresponding to environmental exposures of the cases.
+#' @param case.genetic.data The genetic data of the disease affected children
+#' from case-parent trios or disease-discordant sibling pairs. If searching for
+#' maternal SNPs that are related to risk of disease in the child, some of the
+#' columns in \code{case.genetic.data} may contain maternal SNP genotypes
+#' (See argument \code{mother.snps} for how to indicate which SNPs columns
+#' correspond to maternal genotypes). Columns are SNP allele counts, and rows
+#' are individuals. This object may either be of class matrix' OR of class
+#' 'big.matrix'. If of class 'big.matrix' it must be file backed as type
+#' 'integer' (see the \code{bigmemory} package for more information). The
+#' ordering of the columns must be consistent with the LD structure specified
+#' in \code{ld.block.vec}. The genotypes cannot be  dosages imputed with
+#' uncertainty.
+#' @param complement.genetic.data A genetic dataset for the controls
+#' corresponding to the genotypes in \code{case.genetic.data}.For SNPs that
+#' correspond to the affected child in \code{case.genetic.data}, the
+#' corresponding column in \code{complement.genetic.data} should be set equal to
+#' mother allele count + father allele count - case allele count. If using
+#' disease-discordant siblings this argument should be the genotypes for the
+#' unaffected siblings. For SNPs in \code{case.genetic.data} that represent
+#' maternal genotypes (if any) the corresponding column in
+#' \code{complement.genetic.data} should be the paternal genotypes for that SNP.
+#' Regardless, \code{complement.genetic.data} may be an object of either class
+#' matrix' OR of class 'big.matrix'. If of class 'big.matrix' it must be file
+#' backed as type 'integer' (see the bigmemory package for more information).
+#' Columns are SNP allele counts, rows are families. If not specified,
+#' \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
+#' The genotypes cannot be dosages imputed with uncertainty.
+#' @param exposure.mat A matrix of the input categorical
+#' and continuous exposures to be used in the experimental
+#' E-GADGETS fitness score. If there are categorical exposure variables with
+#' more than 2 levels, those should be dummy coded.
+#' @param target.snps An integer vector of the columns corresponding to the
+#' collection of SNPs, or chromosome, for which the fitness score will be
+#' computed.
+#' @param weight.lookup A vector that maps a family weight to the weighted sum
+#' of the number of different SNPs and SNPs both equal to one.
+#' @param null.mean.vec A vector of estimated null means for each
+#' of the components of the E-GADGETS fitness score.
+#' It should be set to the values of the "null.mean" element of the file
+#' "null.mean.sd.info.rds" for the observed data, that is saved by the
+#' \code{run.gadgets} function.
+#' @param null.sd.vec A vector of estimated null means for each
+#' of the components of the E-GADGETS fitness score.
+#' It should be set to the values of the "null.se" element of the file
+#' "null.mean.sd.info.rds" for the observed data, that is saved by the
+#' \code{run.gadgets} function.
+#' @param n.different.snps.weight The number by which the number of different
+#' SNPs between a case and complement/unaffected sibling
+#' is multiplied in computing the family weights. Defaults to 2.
+#' @param n.both.one.weight The number by which the number of SNPs equal to 1 in
+#' both the case and complement/unaffected sibling is multiplied in computing
+#' the family weights. Defaults to 1.
 #' @return A list:
 #' \describe{
 #'  \item{fitness.score}{The chromosome fitness score.}
-#'  \item{sum.dif.vecs}{The weighted mean difference vector corresponding to the chromosome,
-#'  with each element divided by it's pseudo-standard error.
-#'  The magnitudes of these values are not particularly important, but the sign is useful.
-#'  A positive value for a given SNP indicates the minor allele is positively associated with
-#'  disease status, while a negative value implies the reference (‘wild type’) allele is
-#'  positively associated with the disease.}
+#'  \item{sum.dif.vecs}{The element of the Hotelling-Lawley
+#'  trace matrix corresponding to each SNP. Larger magnitudes
+#'  indicate larger contributions to the score, but are otherwise
+#'  difficult to interpret.}
+#'  \item{ht_trace}{The Hotelling-Lawley trace statistic from the
+#'  transmission-based fitness score component.}
+#'  \item{wald_stat}{The Wald statistic from the family-based component
+#'  of the fitness score.}
 #' }
 #'
 #' @examples
@@ -49,25 +74,25 @@
 #' data(mom.gxe)
 #' data(exposure)
 #' comp.gxe <- mom.gxe + dad.gxe - case.gxe
-#' case.comp.diff <- case.gxe != comp.gxe
-#' case.minus.comp <- case.gxe - comp.gxe
-#' both.one.mat <- case.gxe == 1 & comp.gxe == 1
-#' case2.mat <- case.gxe == 2
-#' case0.mat <- case.gxe == 0
-#' comp2.mat <- comp.gxe == 2
-#' comp0.mat <- comp.gxe == 0
-#' ld.block.vec <- cumsum(rep(25, 4))
-#' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
+#' case.gxe <- case.gxe + 0.0
+#' comp.gxe <- comp.gxe + 0.0
+#' exposure <- as.matrix(exposure + 0.0)
+#' weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1.0)
+#' res <- GxE.fitness.score(case.gxe, comp.gxe, exposure, c(1, 4, 7),
+#'                           weight.lookup)
 #'
 #' @export
 
-GxE.fitness.score <- function(case.genetic.data, complement.genetic.data, case.comp.differences,
-                                target.snps, cases.minus.complements, both.one.mat,
-                                ld.block.vec, weight.lookup, case2.mat, case0.mat, exposure,
-                                n.different.snps.weight = 2, n.both.one.weight = 1,
-                                recode.threshold = 3) {
+GxE.fitness.score <- function(case.genetic.data, complement.genetic.data,
+                                exposure.mat, target.snps, weight.lookup,
+                                null.mean.vec = c(0, 0), null.sd.vec = c(1, 1),
+                                n.different.snps.weight = 2,
+                                n.both.one.weight = 1) {
 
-
+    GxE_fitness_score_mvlm(case.genetic.data, complement.genetic.data,
+                           exposure.mat, target.snps, weight.lookup,
+                           null.mean.vec, null.sd.vec, n.different.snps.weight,
+                           n.both.one.weight, 1)
 
 }
 

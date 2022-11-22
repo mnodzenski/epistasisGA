@@ -2,13 +2,13 @@
 % Please edit documentation in R/GxE.test.R
 \name{GxE.test}
 \alias{GxE.test}
-\title{A function to run a test of interaction between a collection of SNPs and a categorical exposure.}
+\title{A function to run a test of interaction between a collection of SNPs and exposures (experimental).}
 \usage{
 GxE.test(
   snp.cols,
   preprocessed.list,
-  null.mean.vec = NULL,
-  null.sd.vec = NULL,
+  null.mean.vec = c(0, 0),
+  null.sd.vec = c(1, 1),
   n.permutes = 10000,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
@@ -16,33 +16,53 @@ GxE.test(
 )
 }
 \arguments{
-\item{snp.cols}{An integer vector specifying the columns in the input data containing the SNPs to be tested.}
+\item{snp.cols}{An integer vector specifying the columns in the input data
+containing the SNPs to be tested.}
 
-\item{preprocessed.list}{The initial list produced by function \code{preprocess.genetic.data}.}
+\item{preprocessed.list}{The initial list produced by function
+\code{preprocess.genetic.data}.}
 
-\item{n.permutes}{The number of permutations on which to base the test. Defaults to 1000.}
+\item{null.mean.vec}{A vector of estimated null means for each
+of the components of the E-GADGETS fitness score.
+It should be set to the values of the "null.mean" element of the file
+"null.mean.sd.info.rds" for the observed data, that is saved by the
+\code{run.gadgets} function.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
-is multiplied in computing the family weights. Defaults to 2.}
+\item{null.sd.vec}{A vector of estimated null means for each
+of the components of the E-GADGETS fitness score.
+It should be set to the values of the "null.se" element of the file
+"null.mean.sd.info.rds" for the observed data, that is saved by the
+\code{run.gadgets} function.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
-is multiplied in computing the family weights. Defaults to 1.}
+\item{n.permutes}{The number of permutations on which to base the test.
+Defaults to 10000.}
 
-\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
-of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
-returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
+\item{n.different.snps.weight}{The number by which the number of different
+SNPs between a case and complement/unaffected sibling is multiplied in
+computing the family weights. Defaults to 2.}
+
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1
+in both the case and complement/unaffected sibling is multiplied in computing
+the family weights. Defaults to 1.}
+
+\item{weight.function.int}{An integer used to assign family weights.
+Specifically, we use \code{weight.function.int} in a function that takes the
+weighted sum of the number of different SNPs and SNPs both equal to one as an
+argument, denoted as x, and returns a family weight equal to
+\code{weight.function.int}^x. Defaults to 2.}
 }
 \value{
 A list of three elements:
 \describe{
  \item{pval}{The p-value of the test.}
  \item{obs.fitness.score}{The fitness score from the observed data}
- \item{perm.fitness.scores}{A vector of fitness scores for the permuted datasets.}
+ \item{perm.fitness.scores}{A vector of fitness scores for the
+  permuted datasets.}
 }
 }
 \description{
 This function runs a permutation based test run a test of
-interaction between a collection of SNPs and a categorical exposure.
+interaction between a collection of SNPs and exposure variables.
 }
 \examples{
 

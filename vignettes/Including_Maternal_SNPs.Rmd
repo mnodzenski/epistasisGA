@@ -21,10 +21,8 @@ vignette: >
 ---
 
 ```{r setup, echo=FALSE, results="hide"}
-knitr::opts_chunk$set(tidy = FALSE,
-                      cache = FALSE,
-                      dev = "png",
-                      message = FALSE, error = FALSE, warning = FALSE)
+knitr::opts_chunk$set(tidy = FALSE, cache = FALSE, dev = "png", message = FALSE,
+                      error = FALSE, warning = FALSE)
 ```	
 
 # Introduction 

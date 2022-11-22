@@ -21,57 +21,87 @@ compute.graphical.scores(
 )
 }
 \arguments{
-\item{results.list}{A list of length d, where d is the number of chromosome sizes to be included in the network plot.
-Each element of the list must be a data.table from \code{combine.islands} for a given chromosome size.
-Each data.table in the list should be subset to the top \code{n.top.scores} scores,
-otherwise an error will be returned.}
+\item{results.list}{A list of length d, where d is the number of
+chromosome sizes to be included in the network plot. Each element of the list
+should be a data.table from \code{combine.islands} for a given chromosome
+size. Each data.table in the list should be subset to only include those
+chromosomes whose fitness scores are high enough to contribute to the network
+plot. The selection of the chromosomes that contribute to these plots
+is at the analyst's discretion. We have found success in just using the
+top 10 scoring chromosomes, and also by restricting attention to those
+chromosomes that exceed the 95th percentile of the maxima observed after
+running GADGETS on data-sets permuted under a global, no-association null.
+For the latter, see also function \code{global.test}.}
 
-\item{preprocessed.list}{The list output by \code{preprocess.genetic.data} run on the observed data.}
+\item{preprocessed.list}{The list output by \code{preprocess.genetic.data}
+run on the observed data.}
 
-\item{score.type}{A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
-'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
-graphical scores of chromosomes containing that pair across chromosome sizes. The choice of 'logsum' rather than 'sum'
-may be useful in cases where there are multiple risk-sets, and one is found much more frequently. However, it may be of interest to examine
-plots using both \code{score.type} approaches. Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or
-edges having negative weights.}
+\item{score.type}{A character string specifying the method for aggregating
+SNP-pair scores across chromosome sizes. Options are 'max', 'sum', or
+'logsum', defaulting to 'logsum'. For a given SNP-pair, it's graphical score
+will be the \code{score.type} of all graphical scores of chromosomes
+containing that pair across chromosome sizes. The choice of 'logsum' rather
+than 'sum' may be useful in cases where there are multiple risk-sets, and one
+is found much more frequently. However, it may be of interest to examine
+plots using both \code{score.type} approaches.}
 
-\item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis test p-value threshold for a
-chromosome to contribute to the network. Any chromosomes with epistasis p-value greater than \code{pval.thresh}
-will not contribute to network plots. The argument defaults to 0.05. It must be <= 0.6 (to ensure positive scores).}
+\item{pval.thresh}{A numeric value between 0 and 1 specifying the epistasis
+test p-value threshold for a chromosome to contribute to the network. Any
+chromosomes with epistasis p-value greater than \code{pval.thresh}
+will not contribute to network plots. The argument defaults to 0.05.
+It must be <= 0.6.}
 
-\item{n.permutes}{The number of permutations on which to base the epistasis tests. Defaults to 10000.}
+\item{n.permutes}{The number of permutations on which to base the epistasis
+tests. Defaults to 10000.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement/unaffected sibling
+\item{n.different.snps.weight}{The number by which the number of different
+SNPs between a case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement/unaffected sibling
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1
+in both the case and complement/unaffected sibling
 is multiplied in computing the family weights. Defaults to 1.}
 
-\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a function that takes the weighted sum
-of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and
+\item{weight.function.int}{An integer used to assign family weights.
+Specifically, we use \code{weight.function.int} in a function that takes
+the weighted sum of the number of different SNPs and SNPs both equal to one
+as an argument, denoted as x, and
 returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.}
 
-\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+\item{recessive.ref.prop}{The proportion to which the observed proportion of
+informative cases with the provisional risk genotype(s) will be compared
 to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
-\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
-See the GADGETS paper for specific details.}
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required
+to recode and recompute the fitness score using recessive coding.
+Defaults to 1.64.}
 
-\item{bp.param}{The BPPARAM argument to be passed to bplapply. See \code{BiocParallel::bplapply} for more details.}
+\item{bp.param}{The BPPARAM argument to be passed to bplapply.
+See \code{BiocParallel::bplapply} for more details.}
 
-\item{null.mean.vec.list}{A vector of null means used for comparison in the Mahalanobis distance based version of the
-GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
+\item{null.mean.vec.list}{(experimental) A list, equal in length to
+\code{results.list}, where the i^th element of the list is the vector of null
+means (stored in the 'null.mean.sd.info.rds') corresponding to the d
+(chromosome size) used to generate the results stored in the i^th
+element of \code{results.list}. This only needs to be specified if based on
+the experimental E-GADGETS method, and otherwise can be left at its default.}
 
-\item{null.sd.vec.list}{A vector or estimated null standard deviations for the components of the
-GxE fitness score. Does not need to be specified otherwise, and can be left at its default.}
+\item{null.sd.vec.list}{(experimental) A list, equal in length to
+\code{results.list}, where the i^th element of the list is the vector of null
+standard deviations (stored in the 'null.mean.sd.info.rds') corresponding to
+the d (chromosome size) used to generate the results stored in the i^th
+element of \code{results.list}. This only needs to be specified if based on
+the experimental E-GADGETS method, and otherwise can be left at its default.}
 }
 \value{
 A list of two elements:
 \describe{
- \item{pair.scores}{A data.table containing SNP-pair graphical scores, where the first four columns represent SNPs and the fifth column (pair.score)
+ \item{pair.scores}{A data.table containing SNP-pair graphical scores,
+ where the first four columns represent SNPs and the fifth column (pair.score)
 is the graphical SNP-pair score.}
- \item{snp.scores}{A data.table containing individual SNP graphical scores, where the first two columns represent SNPs and the third column (snp.score)
-is the graphical SNP score.}
+ \item{snp.scores}{A data.table containing individual SNP graphical scores,
+ where the first two columns represent SNPs and the third column (snp.score)
+ is the graphical SNP score.}
 }
 }
 \description{
@@ -88,25 +118,31 @@ set.seed(1400)
 #preprocess data
 target.snps <- c(1:3, 30:32, 60:62, 85)
 preprocessed.list <- preprocess.genetic.data(as.matrix(case[, target.snps]),
-                               father.genetic.data = as.matrix(dad[ , target.snps]),
-                               mother.genetic.data = as.matrix(mom[ , target.snps]),
-                               ld.block.vec = c(3, 3, 3, 1))
+                        father.genetic.data = as.matrix(dad[ , target.snps]),
+                        mother.genetic.data = as.matrix(mom[ , target.snps]),
+                     ld.block.vec = c(3, 3, 3, 1))
 ## run GA for observed data
 
 #observed data chromosome size 2
-run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
-       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 2,
+       results.dir = 'tmp_2',
+       cluster.type = 'interactive',
+       registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1,
        n.migrations = 0)
- combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], preprocessed.list, 2)
+ combined.res2 <- combine.islands('tmp_2',
+                     snp.annotations[ target.snps, ], preprocessed.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
  #observed data chromosome size 3
- run.gadgets(preprocessed.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
-       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+ run.gadgets(preprocessed.list, n.chromosomes = 5,
+       chromosome.size = 3, results.dir = 'tmp_3',
+       cluster.type = 'interactive',
+       registryargs = list(file.dir = 'tmp_reg', seed = 1500),
        generations = 2, n.islands = 2, island.cluster.size = 1,
        n.migrations = 0)
- combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], preprocessed.list, 2)
+ combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ],
+                                  preprocessed.list, 2)
  unlink('tmp_reg', recursive = TRUE)
 
  ## create list of results

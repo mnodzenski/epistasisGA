@@ -2,42 +2,64 @@
 #'
 #' This function plots a network of SNPs with potential multi-SNP effects.
 #'
-#' @param graphical.score.list The list returned by function \code{compute.graphical.scores}, or a subset of it. By default, the SNPs
-#' will be labeled with their RSIDs, listed in columns 3 and 4. Users can create custom labels by changing the values in these
+#' @param graphical.score.list The list returned by function
+#' \code{compute.graphical.scores}, or a subset of it, if there are too many
+#' returned SNP-pairs to plot without the figure becoming too crowded.
+#' By default, the SNPs will be labeled with their RSIDs, listed in columns 3
+#' and 4. Users can create custom labels by changing the values in these
 #' two columns.
-#' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
-#' @param score.type A character string specifying the method for aggregating SNP-pair scores across chromosome sizes. Options are
-#' 'max', 'sum', or 'logsum', defaulting to "logsum". For a given SNP-pair, it's graphical score will be the \code{score.type} of all
-#' graphical scores of chromosomes containing that pair across chromosome sizes. Pair scores will be proportional to the sum of graphical scores
-#' for either 'logsum' or 'sum', but 'logsum' may be useful in cases where there are multiple risk-sets, and one is found much more frequently.
-#' Note that "logsum" is actually the log of one plus the sum of the SNP-pair scores to avoid nodes or edges having negative weights.
-#' @param n.top.scoring.pairs An integer indicating the number of top scoring pairs to plot. Defaults to, NULL, which plots all pairs.
-#' For large networks, plotting a subset of the top scoring pairs can improve the appearance of the graph.
-#' @param node.shape The desired node shape. See \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to circle.
-#' If both maternal and child SNPs are to be plotted, this argument should be a vector of length 2, whose first
-#' element is the desired child SNP shape, and second SNP is the desired mother SNP shape.
-#' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce overlapping nodes,
-#'  increase to move nodes closer together.
-#' @param node.size A scalar affecting the size of the graph nodes. Increase to increase size.
-#' @param graph.area A scalar affecting the size of the graph area. Increase to increase graph area.
-#' @param vertex.label.cex A scalar controlling the size of the vertex label. Increase to increase size.
-#' @param edge.width.cex A scalar controlling the width of the graph edges. Increase to make edges wider.
-#' @param plot A logical indicating whether the network should be plotted. If set to false, this function will return an igraph object to be used for manual plotting.
-#' @param edge.color.ramp A character vector of colors. The coloring of the network edges will be shown on a gradient, with the lower scoring edge weights
-#' closer to the first color specified in \code{edge.color.ramp}, and higher scoring weights closer to the last color specified. By default, the
+#' @param preprocessed.list The initial list produced by function
+#' \code{preprocess.genetic.data}.
+#' @param n.top.scoring.pairs An integer indicating the number of top scoring
+#' SNP-pairs to plot. Defaults to, NULL, which plots all pairs.
+#' For large networks, plotting a subset of the top scoring pairs can improve
+#' the appearance of the graph.
+#' @param node.shape The desired node shape. See
+#' \code{names(igraph:::.igraph.shapes)} for available shapes. Defaults to
+#' circle. If both maternal and child SNPs are to be plotted, this argument
+#' should be a vector of length 2, whose first element is the desired child SNP
+#' shape, and second SNP is the desired mother SNP shape.
+#' @param repulse.rad A scalar affecting the graph shape. Decrease to reduce
+#' overlapping nodes, increase to move nodes closer together.
+#' @param node.size A scalar affecting the size of the graph nodes.
+#' Increase to increase size.
+#' @param graph.area A scalar affecting the size of the graph area.
+#' Increase to increase graph area.
+#' @param vertex.label.cex A scalar controlling the size of the vertex label.
+#' Increase to increase size.
+#' @param edge.width.cex A scalar controlling the width of the graph edges.
+#' Increase to make edges wider.
+#' @param plot A logical indicating whether the network should be plotted.
+#' If set to false, this function will return an igraph object to be used for
+#' manual plotting.
+#' @param edge.color.ramp A character vector of colors. The coloring of the
+#' network edges will be shown on a gradient, with the lower scoring edge
+#' weights closer to the first color specified in \code{edge.color.ramp}, and
+#' higher scoring weights closer to the last color specified. By default, the
 #' low scoring edges are light blue, and high scoring edges are dark blue.
-#' @param node.color.ramp A character vector of colors. The coloring of the network nodes will be shown on a gradient, with the lower scoring nodes
-#' closer to the first color specified in \code{node.color.ramp}, and higher scoring nodes closer to the last color specified. By default, the low
+#' @param node.color.ramp A character vector of colors. The coloring of the
+#' network nodes will be shown on a gradient, with the lower scoring nodes
+#' closer to the first color specified in \code{node.color.ramp}, and higher
+#' scoring nodes closer to the last color specified. By default, the low
 #' scoring nodes are whiter, and high scoring edges are redder.
-#' @param plot.legend A boolean indicating whether a legend should be plotted. Defaults to TRUE.
-#' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2 threshold in complements (or unaffected siblings)
-#' above which a pair of SNPs in the same LD block (as specified in \code{preprocessed.list}) should be considered in high LD. Connections
-#' between these high LD SNPs will be dashed instead of solid lines. Defaults to 0.1.
-#' @param plot.margins A vector of length 4 passed to \code{par(mar = )}. Defaults to c(2, 1, 2, 1).
-#' @param legend.title.cex A numeric value controlling the size of the legend titles. Defaults to 1.75. Increase
-#' to increase font size, decrease to decrease font size.
-#' @param legend.axis.cex A numeric value controlling the size of the legend axis labels. Defaults to 1.75. Increase
-#' to increase font size, decrease to decrease font size.
+#' @param plot.legend A boolean indicating whether a legend should be plotted.
+#' Defaults to TRUE.
+#' @param high.ld.threshold A numeric value between 0 and 1, indicating the r^2
+#'  threshold in complements (or unaffected siblings)
+#' above which a pair of SNPs in the same LD block
+#' (as specified in \code{preprocessed.list}) should be considered in high LD.
+#' Connections between these high LD SNPs will be dashed instead of solid lines.
+#' Defaults to 0.1. If both maternal and child SNPs are among the input variants
+#' in \code{preprocessed.list}, dashed lines can only appear between SNPs of the
+#' same type, i.e., between two maternal SNPs, or between two child SNPs.
+#' @param plot.margins A vector of length 4 passed to \code{par(mar = )}.
+#' Defaults to c(2, 1, 2, 1).
+#' @param legend.title.cex A numeric value controlling the size of the legend
+#' titles. Defaults to 1.75. Increase to increase font size, decrease to decrease
+#' font size.
+#' @param legend.axis.cex A numeric value controlling the size of the legend
+#' axis labels. Defaults to 1.75. Increase to increase font size, decrease to
+#' decrease font size.
 #' @param ... Additional arguments to be passed to \code{plot.igraph}.
 #' @return An igraph object, if \code{plot} is set to FALSE.
 #'@examples
@@ -53,25 +75,32 @@
 #'
 #' #preprocess data
 #' target.snps <- c(1:3, 30:32, 60:62, 85)
-#' pp.list <- preprocess.genetic.data(case[, target.snps], father.genetic.data = dad[ , target.snps],
-#'                                mother.genetic.data = mom[ , target.snps],
-#'                                ld.block.vec = c(3, 3, 3, 1))
+#' pp.list <- preprocess.genetic.data(case[, target.snps],
+#'                                    father.genetic.data = dad[ , target.snps],
+#'                                    mother.genetic.data = mom[ , target.snps],
+#'                                    ld.block.vec = c(3, 3, 3, 1))
 #' ## run GA for observed data
 #'
 #' #observed data chromosome size 2
-#' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2, results.dir = 'tmp_2',
-#'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+#' run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 2,
+#'        results.dir = 'tmp_2',
+#'        cluster.type = 'interactive',
+#'        registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
-#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ], pp.list, 2)
+#'  combined.res2 <- combine.islands('tmp_2', snp.annotations[ target.snps, ],
+#'                                    pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  #observed data chromosome size 3
-#'  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, results.dir = 'tmp_3',
-#'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+#'  run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3,
+#'        results.dir = 'tmp_3',
+#'        cluster.type = 'interactive',
+#'        registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
-#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ], pp.list, 2)
+#'  combined.res3 <- combine.islands('tmp_3', snp.annotations[ target.snps, ],
+#'                                    pp.list, 2)
 #'  unlink('tmp_reg', recursive = TRUE)
 #'
 #'  ## create list of results
@@ -79,7 +108,8 @@
 #'
 #'  ## compute edge scores
 #'  set.seed(20)
-#'  graphical.list <- compute.graphical.scores(final.results, pp.list, pval.thresh = 0.5)
+#'  graphical.list <- compute.graphical.scores(final.results, pp.list,
+#'                                             pval.thresh = 0.5)
 #'
 #' ## plot
 #' set.seed(10)
@@ -95,12 +125,16 @@
 #' @importFrom graphics rasterImage axis layout par
 #' @export
 
-network.plot <- function(graphical.score.list, preprocessed.list, score.type = "logsum",
+network.plot <- function(graphical.score.list, preprocessed.list,
                          n.top.scoring.pairs = NULL, node.shape = "circle",
-                         repulse.rad = 1000, node.size = 25, graph.area = 100, vertex.label.cex = 0.5,
-                         edge.width.cex = 12, plot = TRUE, edge.color.ramp = c("lightblue", "blue"),
-                         node.color.ramp = c("white", "red"), plot.legend = TRUE,
-                         high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1), legend.title.cex = 1.75,
+                         repulse.rad = 1000, node.size = 25, graph.area = 100,
+                         vertex.label.cex = 0.5,
+                         edge.width.cex = 12, plot = TRUE,
+                         edge.color.ramp = c("lightblue", "blue"),
+                         node.color.ramp = c("white", "red"),
+                         plot.legend = TRUE,
+                         high.ld.threshold = 0.1, plot.margins = c(2, 1, 2, 1),
+                         legend.title.cex = 1.75,
                          legend.axis.cex = 1.75, ...) {
 
     # pick out the pieces of the graphical.score.list
@@ -124,7 +158,7 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
         # pick out the snp pair in the preprocessed list
         target.snps <- as.vector(t(edge.dt[x, c(1, 2)]))
 
-        # check to see if they are of the same type (i.e., both child or both mom)
+        # check to see if they are of the same type (both child or both mom)
         s1 <- target.snps[1]
         s2 <- target.snps[2]
         s1.type <- ifelse(s1 %in% preprocessed.list$mother.snps, 1, 0)
@@ -196,16 +230,19 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
     node.df$size <- node.size*(node.df$size/max(node.df$size))
 
     # prepare for plotting
-    colnames(edge.df)[1:2] <- c("from", "to")
-    network <- graph.data.frame(edge.df[, 1:2], directed = FALSE, vertices = node.df)
+    colnames(edge.df)[seq_len(2)] <- c("from", "to")
+    network <- graph.data.frame(edge.df[, seq_len(2)], directed = FALSE,
+                                vertices = node.df)
     E(network)$weight <- edge.df$pair.score
     E(network)$width <- edge.width.cex*edge.widths
     color_fun_e <- colorRampPalette(edge.color.ramp)
     edge.required.colors <- as.integer(as.factor(E(network)$weight))
     raw.edge.colors <- color_fun_e(length(unique(edge.required.colors)))
-    edge.colors <- sapply(seq_len(length(edge.widths)),
-                          function(x) adjustcolor(raw.edge.colors[edge.required.colors][x],
-                                                  alpha.f = edge.widths[x]))
+    edge.colors <- vapply(seq_len(length(edge.widths)),
+                          function(x) adjustcolor(raw.edge.colors[
+                              edge.required.colors][x],
+                                                  alpha.f = edge.widths[x]),
+                          "#0")
     E(network)$color <- edge.colors
 
     color_fun_n <- colorRampPalette(node.color.ramp)
@@ -238,28 +275,39 @@ network.plot <- function(graphical.score.list, preprocessed.list, score.type = "
     if (plot) {
 
         net.edges <- get.edgelist(network, names = FALSE)
-        coords <- qgraph.layout.fruchtermanreingold(net.edges, vcount = vcount(network), repulse.rad = repulse.rad *
+        coords <- qgraph.layout.fruchtermanreingold(net.edges,
+                                                    vcount = vcount(network),
+                                                    repulse.rad = repulse.rad *
             vcount(network), area = graph.area * (vcount(network)^2))
 
         if (length(unique(edge.colors)) > 1 & plot.legend){
 
             par(mar = plot.margins)
-            layout(matrix(c(1, 1, 2, 3), ncol = 2, byrow = F), widths = c(3.5,0.5), heights = c(1,1))
+            layout(matrix(c(1, 1, 2, 3), ncol = 2, byrow = FALSE), widths =
+                       c(3.5,0.5), heights = c(1,1))
             plot(network, layout = coords, asp = 0, ...)
 
             node_legend <- as.raster(matrix(rev(node.colors), ncol = 1))
-            plot(c(0,2),c(0,1),type = 'n', axes = F, xlab = '', ylab = '', main = 'SNP-Score',
+            plot(c(0,2),c(0,1),type = 'n', axes = FALSE, xlab = '', ylab = '',
+                 main = 'SNP-Score',
                  cex.main = legend.title.cex)
             rasterImage(node_legend, 0.75, 0, 1, 1)
-            n.legend.labels <- round(seq(min(node.size.raw), max(node.size.raw), length.out = 5), digits = 1)
-            axis(side = 4, at = seq(0, 1, length.out = 5), labels = n.legend.labels, pos = 1, cex.axis = legend.axis.cex)
+            n.legend.labels <- round(seq(min(node.size.raw),
+                                         max(node.size.raw), length.out = 5),
+                                     digits = 1)
+            axis(side = 4, at = seq(0, 1, length.out = 5),
+                 labels = n.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
             edge_legend <- as.raster(matrix(rev(raw.edge.colors), ncol=1))
-            plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Pair-Score',
+            plot(c(0,2),c(0,1),type = 'n', axes = FALSE,xlab = '', ylab = '',
+                 main = 'Pair-Score',
                  cex.main = legend.title.cex)
             rasterImage(edge_legend, 0.75, 0, 1, 1)
-            e.legend.labels <- round(seq(min(raw.edge.widths), max(raw.edge.widths), length.out = 5), digits = 1)
-            axis(side = 4, at = seq(0, 1, length.out = 5), labels = e.legend.labels, pos = 1, cex.axis = legend.axis.cex)
+            e.legend.labels <- round(seq(min(raw.edge.widths),
+                                         max(raw.edge.widths), length.out = 5),
+                                     digits = 1)
+            axis(side = 4, at = seq(0, 1, length.out = 5),
+                 labels = e.legend.labels, pos = 1, cex.axis = legend.axis.cex)
 
         } else {
 

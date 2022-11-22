@@ -12,21 +12,26 @@ permute.dataset(
 )
 }
 \arguments{
-\item{preprocessed.list}{The output list from \code{preprocess.genetic.data} for the original genetic data.}
+\item{preprocessed.list}{The output list from \code{preprocess.genetic.data}
+for the original genetic data.}
 
-\item{permutation.data.file.path}{If running GADGETS for GxG interactions, this argument specifies a directory
-where each permuted dataset will be saved on disk. If searching
-for GxE interactions, permuted versions of the exposure vector will be saved to this directory.}
+\item{permutation.data.file.path}{If running GADGETS for GxG interactions,
+this argument specifies a directory where each permuted dataset will be saved
+on disk. If searching  for GxE interactions, permuted versions of the
+exposure matrix will be saved to this directory.}
 
 \item{n.permutations}{The number of permuted datasets to create.}
 
-\item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
-If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
+\item{bp.param}{The BPPARAM argument to be passed to bplapply.
+See \code{BiocParallel::bplapply} for more details.}
 }
 \value{
-If genetic data are specified, a list of \code{n.permutations} pairs of case and complement data,
-where the observed case/complement status has been randomly flipped or not flipped. If exposure data are
-specified a list of \code{n.permutations} vectors where the exposures have been randomly shuffled.
+If genetic data are specified, a total of \code{n.permutations}
+datasets containing pairs of case and complement data, where the observed
+case/complement status has been randomly flipped or not flipped, will be
+saved to \code{permutation.data.file.path}. If exposure data are specified, a
+total of \code{n.permutations} exposure matrices, where the observed
+exposures have been randomly re-assigned across the permuted 'families'.
 }
 \description{
 This function creates permuted datasets for permutation based hypothesis testing of GADGETS fitness scores.
@@ -39,7 +44,8 @@ data(dad)
 dad <- as.matrix(dad)
 data(mom)
 mom <- as.matrix(mom)
-pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+pp.list <- preprocess.genetic.data(case[, 1:10],
+                               father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
                                ld.block.vec = c(10))
 set.seed(15)

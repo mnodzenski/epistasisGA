@@ -2,16 +2,22 @@
 #'
 #' This function combines GADGETS results for individual islands into a single dataset.
 #'
-#' @param results.dir The directory in which individual island results from \code{run.gadgets} are saved.
-#' @param annotation.data A data frame containing columns 'RSID', 'REF' and 'ALT'. Column 'RSID' gives the
-#' RSIDs for the input SNPs, with the rows ordered such that the first RSID entry corresponds to the first SNP
-#' column in the data passed to function \code{preprocess.genetic.data}, the second RSID corresponds to the second SNP column, etc.
-#' @param preprocessed.list The initial list produced by function \code{preprocess.genetic.data}.
-#' @param n.top.chroms.per.island The number of top chromosomes per island to save in the final combined list. Defaults to the
-#' top 10.
-#' @return A data.table containing the results aggregated across islands. Note these results be written to \code{results.dir}
-#' as 'combined.island.unique.chromosome.results.rds'. See the package vignette for more detailed descriptions of the content
-#' of each output column. Secondarilly, this will concatenate all individual island results files and store them
+#' @param results.dir The directory in which individual island results from
+#' \code{run.gadgets} are saved.
+#' @param annotation.data A data frame containing columns 'RSID', 'REF' and
+#' 'ALT'. Column 'RSID' gives the RSIDs for the input SNPs, with the rows
+#' ordered such that the first RSID entry corresponds to the first SNP
+#' column in the data passed to function \code{preprocess.genetic.data}, the
+#' second RSID corresponds to the second SNP column, etc.
+#' @param preprocessed.list The initial list produced by function
+#' \code{preprocess.genetic.data}.
+#' @param n.top.chroms.per.island The number of top chromosomes per island to
+#' save in the final combined list. Defaults to the single top chromosome.
+#' @return A data.table containing the results aggregated across islands. Note
+#' these results be written to \code{results.dir} as
+#' combined.island.unique.chromosome.results.rds'. See the package vignette for
+#' more detailed descriptions of the content of each output column. Secondarily,
+#' this will concatenate all individual island results files and store them
 #' in a single file, called "all.island.results.concatenated.rds".
 #' @examples
 #'
@@ -25,12 +31,14 @@
 #'                                mother.genetic.data = as.matrix(mom[ , 1:10]),
 #'                                ld.block.vec = c(10))
 #'
-#' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
-#'        cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+#' run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3,
+#'        results.dir = 'tmp',
+#'        cluster.type = 'interactive',
+#'        registryargs = list(file.dir = 'tmp_reg', seed = 1500),
 #'        generations = 2, n.islands = 2, island.cluster.size = 1,
 #'        n.migrations = 0)
 #'
-#' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list, 1)
+#' combined.res <- combine.islands('tmp', snp.annotations[ 1:10, ], pp.list)
 #'
 #' unlink('tmp', recursive = TRUE)
 #' unlink('tmp_reg', recursive = TRUE)
@@ -38,10 +46,12 @@
 #' @importFrom data.table rbindlist setkey setorder `:=` setDT
 #' @export
 
-combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.top.chroms.per.island = 1) {
+combine.islands <- function(results.dir, annotation.data, preprocessed.list,
+                            n.top.chroms.per.island = 1) {
 
     # list all islands in the results data
-    island.names <- list.files(results.dir, pattern = "cluster", full.names = TRUE)
+    island.names <- list.files(results.dir, pattern = "cluster",
+                               full.names = TRUE)
 
     # note if we've already run this function
     out.file.name <- "combined.island.unique.chromosome.results.rds"
@@ -80,7 +90,8 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         # subset to unique results
         GxE <- "exposure" %in% colnames(chrom.results)
         chromosome.size <- sum(grepl("snp[0-9]$", colnames(chrom.results)))
-        chrom.results[, `:=`(chromosome, paste(.SD, collapse = ".")), by = seq_len(nrow(chrom.results)),
+        chrom.results[, `:=`(chromosome, paste(.SD, collapse = ".")),
+                      by = seq_len(nrow(chrom.results)),
                         .SDcols = seq_len(chromosome.size)]
 
         # also saving the full results for combined file
@@ -108,13 +119,16 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     saveRDS(all.island.res, all.islands.out.file)
 
     GxE <- any(grepl("exposure", colnames(combined.result)))
-    parents.only.GxE <- !any(grepl("n.cases.risk.geno", colnames(combined.result))) & !GxE
+    parents.only.GxE <- !any(grepl("n.cases.risk.geno",
+                                   colnames(combined.result))) & !GxE
     GxG <- !parents.only.GxE & !GxE
     chromosome.size <- sum(grepl("snp[0-9]$", colnames(combined.result)))
 
     # subset to unique results
     unique.result <- combined.result[!duplicated(combined.result$chromosome), ]
-    n.islands.found <- combined.result[, list(n.islands.found = length(fitness.score)), by = chromosome]
+    n.islands.found <- combined.result[, list(n.islands.found =
+                                                  length(fitness.score)),
+                                       by = chromosome]
     setkey(unique.result, chromosome)
     setkey(n.islands.found, chromosome)
     unique.result <- unique.result[n.islands.found]
@@ -138,14 +152,17 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
     if (GxE){
 
         dif.vec.cols <- grep("^exposure.*diff.vec$", colnames(unique.result))
-        allele.copy.cols <- grep("^exposure.*allele.copies$", colnames(unique.result))
+        allele.copy.cols <- grep("^exposure.*allele.copies$",
+                                 colnames(unique.result))
 
         # loop over exposures and put together exposure specific results
-        exposure.end.cols <- seq(chromosome.size, length(dif.vec.cols), chromosome.size)
+        exposure.end.cols <- seq(chromosome.size, length(dif.vec.cols),
+                                 chromosome.size)
         risk.allele.dt.list <- lapply(exposure.end.cols, function(end.col.idx){
 
             start.col.idx <- end.col.idx - chromosome.size + 1
-            target.cols <- seq(dif.vec.cols[start.col.idx], dif.vec.cols[end.col.idx], 1)
+            target.cols <- seq(dif.vec.cols[start.col.idx],
+                               dif.vec.cols[end.col.idx], 1)
             diff.cols <- unique.result[ , ..target.cols]
             diff.colnames <- colnames(diff.cols)
             diff.vecs <- unlist(diff.cols)
@@ -154,20 +171,29 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
             risk.alleles[dv.gte0] <- alt.alleles[snp.numbers[dv.gte0]]
             dv.lt0 <- !is.na(diff.vecs) & diff.vecs < 0
             risk.alleles[dv.lt0] <- ref.alleles[snp.numbers[dv.lt0]]
-            risk.allele.dt <- data.table(matrix(risk.alleles, ncol = chromosome.size,
+            risk.allele.dt <- data.table(matrix(risk.alleles,
+                                                ncol = chromosome.size,
                                                 byrow = FALSE))
-            exposure.risk.allele.cols <- gsub("diff.vec", "risk.allele", diff.colnames)
+            exposure.risk.allele.cols <- gsub("diff.vec", "risk.allele",
+                                              diff.colnames)
             colnames(risk.allele.dt) <- exposure.risk.allele.cols
             exposure <- gsub(".snp1.diff.vec", "", diff.colnames[1])
-            exposure.risk.n.risk.allele.cols <- gsub("diff.vec", "allele.copies", diff.colnames)
-            exposure.n.cases.risk.geno.col <- paste0(exposure, ".n.cases.risk.geno")
-            exposure.n.comps.risk.geno.col <- paste0(exposure, ".n.comps.risk.geno")
-            orig.target.cols <- c(diff.colnames, exposure.risk.n.risk.allele.cols,
-                                  exposure.n.cases.risk.geno.col, exposure.n.comps.risk.geno.col)
+            exposure.risk.n.risk.allele.cols <- gsub("diff.vec",
+                                                     "allele.copies",
+                                                     diff.colnames)
+            exposure.n.cases.risk.geno.col <- paste0(exposure,
+                                                     ".n.cases.risk.geno")
+            exposure.n.comps.risk.geno.col <- paste0(exposure,
+                                                     ".n.comps.risk.geno")
+            orig.target.cols <- c(diff.colnames,
+                                  exposure.risk.n.risk.allele.cols,
+                                  exposure.n.cases.risk.geno.col,
+                                  exposure.n.comps.risk.geno.col)
             exposure.original.dt <- unique.result[ , ..orig.target.cols]
             combined.dt <- cbind(exposure.original.dt, risk.allele.dt)
             new.target.cols <- c(diff.colnames, exposure.risk.allele.cols,
-                                 exposure.risk.n.risk.allele.cols, exposure.n.cases.risk.geno.col,
+                                 exposure.risk.n.risk.allele.cols,
+                                 exposure.n.cases.risk.geno.col,
                                  exposure.n.comps.risk.geno.col)
             combined.dt <- combined.dt[ , ..new.target.cols]
             return(combined.dt)
@@ -175,9 +201,11 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         })
 
         # final results table
-        overall.dif.vecs.and.fitness.cols <- c(paste0("snp", seq_len(chromosome.size), ".diff.vec"),
+        o.dv.and.fit.cols <- c(paste0("snp",
+                                                      seq_len(chromosome.size),
+                                                      ".diff.vec"),
                                                "fitness.score")
-        overall.dif.vecs.and.fitness <- unique.result[ , ..overall.dif.vecs.and.fitness.cols]
+        overall.dif.vecs.and.fitness <- unique.result[ , ..o.dv.and.fit.cols]
         exposure.specific.dt <- do.call(cbind, risk.allele.dt.list)
         n.islands <- unique.result[ , "n.islands.found"]
         final.result <- cbind(snp.cols, rsid.dt, overall.dif.vecs.and.fitness,
@@ -189,16 +217,23 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list, n.t
         diff.cols <- unique.result[ , ..risk.sign.cols]
         diff.vecs <- unlist(diff.cols)
         risk.alleles <- rep(NA, length(diff.vecs))
-        risk.alleles[diff.vecs >= 0 ] <- alt.alleles[snp.numbers[diff.vecs >= 0]]
+        risk.alleles[diff.vecs >= 0 ] <- alt.alleles[
+            snp.numbers[diff.vecs >= 0]]
         risk.alleles[diff.vecs < 0 ] <- ref.alleles[snp.numbers[diff.vecs < 0]]
-        risk.allele.dt <- data.table(matrix(risk.alleles, ncol = chromosome.size,
+        risk.allele.dt <- data.table(matrix(risk.alleles,
+                                            ncol = chromosome.size,
                                             byrow = FALSE))
-        colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele", colnames(diff.cols))
-        final.result <- cbind(snp.cols, rsid.dt, risk.allele.dt, unique.result[ , -(1:chromosome.size)])
+        colnames(risk.allele.dt) <- gsub("diff.vec", "risk.allele",
+                                         colnames(diff.cols))
+        not.these <- -seq_len(chromosome.size)
+        final.result <- cbind(snp.cols, rsid.dt, risk.allele.dt,
+                              unique.result[ , ..not.these])
 
     } else {
 
-        final.result <- cbind(snp.cols, rsid.dt, unique.result[ , -(1:chromosome.size)])
+        not.these <- -seq_len(chromosome.size)
+        final.result <- cbind(snp.cols, rsid.dt, unique.result[ ,
+                                                        ..not.these])
 
     }
 

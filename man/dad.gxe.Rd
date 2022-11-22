@@ -7,11 +7,24 @@
 environment interaction.}
 \format{
 A data frame with 1000 rows and 24 variables
+
+A data frame with 1000 rows and 24 variables
 }
 \usage{
 data(dad.gxe)
+
+data(dad.gxe)
 }
 \description{
+A simulated dataset containing the counts of the alternate allele
+for 24 SNPs for the fathers in 1000 simulated case-parent
+triads. Columns represent SNPs, rows are individuals. SNPs
+in columns 6, 12, and 18 represent a simulated risk pathway,
+where, in the child, at least one copy of the alternate allele
+for each path SNP in addition to exposure 1 confers increased
+disease risk.
+.
+
 A simulated dataset containing the counts of the alternate allele
 for 24 SNPs for the fathers in 1000 simulated case-parent
 triads. Columns represent SNPs, rows are individuals. SNPs

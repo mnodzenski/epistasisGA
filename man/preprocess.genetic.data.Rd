@@ -2,7 +2,7 @@
 % Please edit documentation in R/preprocess.genetic.data.R
 \name{preprocess.genetic.data}
 \alias{preprocess.genetic.data}
-\title{A function to pre-process case-parent triad of affected/unaffected sibling data.}
+\title{A function to pre-process case-parent triad or disease-discordant sibling data.}
 \usage{
 preprocess.genetic.data(
   case.genetic.data,
@@ -22,75 +22,144 @@ preprocess.genetic.data(
 )
 }
 \arguments{
-\item{case.genetic.data}{The genetic data of the disease affected children from case-parent trios or affected/unaffected sibling pairs.
-Columns are SNP allele counts, and rows are individuals. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The ordering of the columns must be consistent
-with the LD structure specified in \code{ld.block.vec}. The genotypes cannot be dosages imputed with uncertainty.}
+\item{case.genetic.data}{The genetic data of the disease affected children
+from case-parent trios or disease-discordant sibling pairs. If searching for
+maternal SNPs that are related to risk of disease in the child, some of the
+columns in \code{case.genetic.data} may contain maternal SNP genotypes
+(See argument \code{mother.snps} for how to indicate which SNPs columns
+correspond to maternal genotypes). Columns are SNP allele counts, and rows
+are individuals. This object may either be of class matrix' OR of class
+'big.matrix'. If of class 'big.matrix' it must be file backed as type
+'integer' (see the \code{bigmemory} package for more information). The
+ordering of the columns must be consistent with the LD structure specified
+in \code{ld.block.vec}. The genotypes cannot be  dosages imputed with
+uncertainty.}
 
-\item{complement.genetic.data}{A genetic dataset from the complements of the cases, where
-\code{complement.genetic.data} = mother SNP counts + father SNP counts - case SNP counts. If using affected/unaffected siblings
-this argument should be the genotypes for the unaffected siblings. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). Columns are SNP allele counts, rows are
-families. If not specified, \code{father.genetic.data} and \code{mother.genetic.data} must be specified.
+\item{complement.genetic.data}{A genetic dataset for the controls
+corresponding to the genotypes in \code{case.genetic.data}.For SNPs that
+correspond to the affected child in \code{case.genetic.data}, the
+corresponding column in \code{complement.genetic.data} should be set equal to
+mother allele count + father allele count - case allele count. If using
+disease-discordant siblings this argument should be the genotypes for the
+unaffected siblings. For SNPs in \code{case.genetic.data} that represent
+maternal genotypes (if any) the corresponding column in
+\code{complement.genetic.data} should be the paternal genotypes for that SNP.
+Regardless, \code{complement.genetic.data} may be an object of either class
+matrix' OR of class 'big.matrix'. If of class 'big.matrix' it must be file
+backed as type 'integer' (see the bigmemory package for more information).
+Columns are SNP allele counts, rows are families. If not specified,
+\code{father.genetic.data} and \code{mother.genetic.data} must be specified.
 The genotypes cannot be dosages imputed with uncertainty.}
 
-\item{father.genetic.data}{The genetic data for the fathers of the cases. Columns are SNP allele counts, rows are individuals.
-Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
-uncertainty.}
+\item{father.genetic.data}{The genetic data for the fathers of the cases in
+\code{case.genetic.data}. This should only be specified when searching for
+epistasis or GxGxE effects based only on case-parent triads, and not when
+searching for maternal SNPs that are related to the child's risk of disease.
+Columns are SNP allele counts, rows are individuals. This object may either
+be of class 'matrix' OR of class 'big.matrix'. If of class big.matrix' it
+must be file backed as type 'integer' (see the bigmemory package for more
+information). The genotypes cannot be dosages imputed with uncertainty.}
 
-\item{mother.genetic.data}{The genetic data for the mothers of the cases. Columns are SNP allele counts, rows are individuals.
-Does not need to be specified if \code{complement.genetic.data} is specified. This object may either be of class 'matrix' OR of class 'big.matrix'. If of class
-'big.matrix' it must be file backed as type 'integer' (see the bigmemory package for more information). The genotypes cannot be dosages imputed with
-uncertainty.}
+\item{mother.genetic.data}{The genetic data for the mothers of the cases in
+\code{case.genetic.data}. This should only be specified when searching for
+epistasis or GxGxE effects based only on case-parent triads, and not when
+searching for maternal SNPs that are related to the child's risk of disease.
+Columns are SNP allele counts, rows are individuals. This object may either
+be of class 'matrix' OR of class 'big.matrix'. If of class big.matrix' it
+must be file backed as type 'integer' (see the bigmemory package for more
+information). The genotypes cannot be dosages imputed with uncertainty.}
 
-\item{ld.block.vec}{An integer vector specifying the linkage blocks of the input SNPs. As an example, for 100 candidate SNPs, suppose
-we specify \code{ld.block.vec <- c(25, 50, 25)}. This vector indicates that the input genetic data has 3 distinct linkage blocks, with
-SNPs 1-25 in the first linkage block, 26-75 in the second block, and 76-100 in the third block. Note that this means the ordering of the columns (SNPs)
-in \code{case.genetic.data} must be consistent with the LD blocks specified in \code{ld.block.vec}. In the absence of outside information,
-a reasonable default is to consider SNPs to be in LD if they are located on the same biological chromosome. If not specified, this defaults
-to assuming all input SNPs are in linkage, which may be overly conservative and could adversely affect performance.}
+\item{ld.block.vec}{An integer vector specifying the linkage blocks of the
+input SNPs. As an example, for 100 candidate SNPs, suppose we specify
+\code{ld.block.vec <- c(25, 50, 25)}. This vector indicates that the input
+genetic data has 3 distinct linkage blocks, with SNPs 1-25 in the first
+linkage block, 26-75 in the second block, and 76-100 in the third block.
+Note that this means the ordering of the columns (SNPs) in
+\code{case.genetic.data} must be consistent with the LD blocks specified in
+\code{ld.block.vec}. In the absence of outside information, a reasonable
+default is to consider SNPs to be in LD if they are located on the same
+biological chromosome. If \code{case.genetic.data} includes both maternal
+and child SNP genotypes, we recommend considering any maternal SNP and any
+child SNP located on the same nominal biological chromosome as 'in linkage'.
+E.g., we recommend considering any maternal SNPs located on chromosome 1
+as being 'linked' to any child SNPs located on chromosome 1, even though,
+strictly speaking, the maternal and child SNPs are located on separate pieces
+of DNA. If not specified, \code{ld.block.vec} defaults to assuming all input
+SNPs are in linkage, which may be overly conservative and could
+adversely affect performance.}
 
-\item{bp.param}{The BPPARAM argument to be passed to bplapply when estimating marginal disease associations for each SNP.
-If using a cluster computer, this parameter needs to be set with care. See \code{BiocParallel::bplapply} for more details}
+\item{bp.param}{The BPPARAM argument to be passed to bplapply when
+estimating marginal disease associations for each SNP. If using a cluster
+computer, this parameter needs to be set with care. See
+\code{BiocParallel::bplapply} for more details.}
 
-\item{snp.sampling.probs}{A vector indicating the sampling probabilities of the SNPs in \code{case.genetic.data}. SNPs will be sampled in the
-genetic algorithm proportional to the values specified. If not specified, by default, chi-square statistics of association will be computed for
-each SNP, and sampling will be proportional to the root of these statistics. If user specified, the  vector values need not sum to 1, they just need to be positive
-real numbers. See argument \code{prob} from function \code{sample} for more details.}
+\item{snp.sampling.probs}{A vector indicating the sampling probabilities of
+the SNPs in \code{case.genetic.data}. SNPs will be sampled in the
+genetic algorithm proportional to the values specified. If not specified, by
+default, chi-square statistics of association will be computed for
+each SNP, and sampling will be proportional to the square root of those
+statistics. If user specified, the values of \code{snp.sampling.probs} need
+not sum to 1, they just need to be positive real numbers. See argument
+\code{prob} from function \code{sample} for more details.}
 
-\item{categorical.exposures}{A matrix or data.frame of integers corresponding to categorical exposures for the cases. Defaults to NULL,
-which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{categorical.exposures}
-should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
+\item{categorical.exposures}{(experimental) A matrix or data.frame of
+integers corresponding to categorical exposures corresponding to the cases in
+\code{case.genetic.data}. Defaults to NULL, which will result in GADGETS
+looking for epistatic interactions, rather than SNP by exposure interactions.
+\code{categorical.exposures} should not be missing any data; families with
+missing exposure data should be removed from the analysis prior to input.}
 
-\item{continuous.exposures}{A matrix or data.frame of numeric values corresponding to continuous exposures for the cases. Defaults to NULL,
-which will result in GADGETS looking for epistatic interactions, rather than SNP by exposure interactions. \code{continuous.exposures}
-should not be missing any data, families with missing exposure data should be removed from the analysis prior to input.}
+\item{continuous.exposures}{(experimental) A matrix or data.frame of numeric
+values representing continuous exposures corresponding to the families in
+\code{case.genetic.data}. Defaults to NULL, which will result in GADGETS
+searching for epistatic interactions, rather than SNP by exposure
+interactions.
+\code{continuous.exposures} should not be missing any data; families with
+missing exposure data should be removed from the analysis prior to input.}
 
-\item{use.parents}{A boolean indicating whether family level informativeness should be used alongside transmissions in computing GxE fitness scores. Defaults to 1,
-indicating family level informativeness will be used. Defaults to FALSE.}
+\item{use.parents}{This argument is deprecated and should also remain at the
+default (TRUE).}
 
-\item{mother.snps}{If searching for maternal-fetal interactions, the indices of the maternal SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.}
+\item{mother.snps}{If searching for maternal SNPs that are associated
+with disease in the child, the indices of the maternal SNP columns in object
+\code{case.genetic.data}. Otherwise does not need to be specified.}
 
-\item{child.snps}{If searching for maternal-fetal interactions, the indices of the child SNPs in object 'case.genetic.data'. Otherwise does not need to be specified.}
+\item{child.snps}{If searching for maternal SNPs that are associated
+with disease in the child, the indices of the child SNP columns in object
+\code{case.genetic.data}. Otherwise does not need to be specified.}
 
-\item{lower.order.gxe}{A boolean indicating whether, if multiple exposures of interest are input, E-GADGETS should search for only for genetic interactions with the
-joint combination of exposures (i.e., GxGxExE interactions), or if it should additionally search for lower-order interactions that involve subsets of the exposures
-that were input (i.e., GxGxE in addition to GxGxExE). The default, FALSE, restricts the search to GxGxExE interactions. Users should be cautious about including
-large numbers of input exposures, and, if they do, very cautious about setting this argument to TRUE.}
+\item{lower.order.gxe}{(experimental) A boolean indicating whether, if
+multiple exposures of interest are input, E-GADGETS should search for only
+for genetic interactions with the joint combination of exposures
+(i.e., GxGxExE interactions), or if it should additionally search for
+lower-order interactions that involve subsets of the exposures that were
+input (i.e., GxGxE in addition to GxGxExE).
+The default, FALSE, restricts the search to GxGxExE interactions. Users
+should be cautious about including large numbers of input exposures, and, if
+they do, very cautious about setting this argument to TRUE.}
 
-\item{maternal.fetal.adj}{A boolean indicating whether, if searching for maternal-fetal interactions, GADGETS should adjust the fitness score for chromosomes
-composed of both maternal and fetal SNPs to prioritize the detection of maternal-fetal interactions. Defaults to TRUE.}
+\item{maternal.fetal.adj}{This argument is deprecated and should be left as
+the default (FALSE).}
 }
 \value{
 A list containing the following:
 \describe{
- \item{genetic.data.list}{A list of big.matrix.descriptor objects describing the locations of the input big.matrix objects
- containing the genetic data to be analyzed.}
- \item{chisq.stats}{A vector of chi-square statistics corresponding to marginal SNP-disease associations, if \code{snp.sampling.probs}
- is not specified, and \code{snp.sampling.probs} if specified.}
+ \item{case.genetic.data}{A matrix of case/maternal genotypes.}
+ \item{complement.genetic.data}{A matrix of complement/sibling/paternal
+ genotypes.}
+ \item{chisq.stats}{A vector of chi-square statistics corresponding to
+ marginal SNP-disease associations, if \code{snp.sampling.probs}
+ is not specified, and \code{snp.sampling.probs} otherwise.}
  \item{ld.block.vec}{A vector eaul to \code{cumsum(ld.block.vec)}.}
- \item{exposure}{A vector of categorical exposures, if specified, otherwise NULL.}
+ \item{use.parents}{A boolean always set to TRUE.}
+ \item{exposure.mat}{A design matrix of the input categorical and continuous
+ exposures, if specified. Otherwise NULL.}
+ \item{E_GADGETS}{A boolean indicating whether a GxGxE search is desired.}
+ \item{mother.snps}{A vector of the column indices of maternal SNPs in
+ \code{case.genetic.data}, set to NULL if not applicable.}
+ \item{child.snps}{A vector of the column indices of child SNPs in
+ \code{case.genetic.data}, set to NULL if not applicable.}
+ \item{maternal.fetal.adj}{A boolean always set to FALSE}
 }
 }
 \description{
@@ -104,7 +173,8 @@ data(mom)
 case <- as.matrix(case)
 dad <- as.matrix(dad)
 mom <- as.matrix(mom)
-res <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
+res <- preprocess.genetic.data(case[, 1:10],
+                               father.genetic.data = dad[ , 1:10],
                                mother.genetic.data = mom[ , 1:10],
                                ld.block.vec = c(10))
 

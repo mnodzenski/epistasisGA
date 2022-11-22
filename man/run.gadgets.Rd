@@ -37,95 +37,145 @@ run.gadgets(
 \arguments{
 \item{data.list}{The output list from \code{preprocess.genetic.data}.}
 
-\item{n.chromosomes}{An integer specifying the number of chromosomes to use for each island in GADGETS.}
+\item{n.chromosomes}{An integer specifying the number of chromosomes to use
+for each island in GADGETS.}
 
-\item{chromosome.size}{An integer specifying the number of SNPs in each chromosome.}
+\item{chromosome.size}{An integer specifying the number of SNPs in each
+chromosome.}
 
 \item{results.dir}{The directory to which island results will be saved.}
 
-\item{cluster.type}{A character string indicating the type of cluster on which to evolve solutions in parallel.
-Supported options are interactive, socket, multicore, sge, slurm, lsf, openlava, or torque. See the documentation for package batchtools for more information.}
+\item{cluster.type}{A character string indicating the type of cluster on
+which to evolve solutions in parallel. Supported options are interactive,
+socket, multicore, sge, slurm, lsf, openlava, or torque. See the \
+documentation for package batchtools for more information.}
 
-\item{registryargs}{A list of the arguments to be provided to \code{batchtools::makeRegistry}.}
+\item{registryargs}{A list of the arguments to be provided to
+\code{batchtools::makeRegistry}.}
 
-\item{resources}{A named list of key-value pairs to be substituted into the template file. Options available are specified in \code{batchtools::submitJobs}.}
+\item{resources}{A named list of key-value pairs to be substituted into the
+template file. Options available are specified in
+\code{batchtools::submitJobs}.}
 
-\item{cluster.template}{A character string of the path to the template file required for the cluster specified in \code{cluster.type}.
-Defaults to NULL. Required for options sge, slurm, lsf, openlava and torque of argument \code{cluster.type}.}
+\item{cluster.template}{A character string of the path to the template file
+required for the cluster specified in \code{cluster.type}. Defaults to NULL.
+Required for options sge, slurm, lsf, openlava and torque of argument
+\code{cluster.type}.}
 
-\item{n.workers}{An integer indicating the number of workers for the cluster specified in \code{cluster.type}, if socket or multicore.
-Defaults to \code{parallel::detectCores - 2}.}
+\item{n.workers}{An integer indicating the number of workers for the cluster
+specified in \code{cluster.type}, if socket or multicore. Defaults to
+\code{parallel::detectCores - 2}.}
 
-\item{n.chunks}{An integer specifying the number of chunks jobs running island clusters should be split into when dispatching jobs using \code{batchtools}.
-For multicore or socket \code{cluster.type}, this defaults to \code{n.workers}, resulting in the total number of island cluster jobs
-(equal to \code{n.islands}\\\code{island.cluster.size}) being split into \code{n.chunks} chunks.
-All chunks then run in parallel, with jobs within a chunk running sequentially. For other cluster types, this defaults to 1 chunk, with the recommendation
-that users of HPC clusters which support array jobs specify \code{chunks.as.arrayjobs = TRUE} in argument \code{resources}. For those users, the setup will
-submit an array of \code{n.islands}\\\code{island.cluster.size} jobs to the cluster. For HPC clusters that do not support array jobs, the default setting
-should not be used. See \code{batchtools::submitJobs} for more information on job chunking.}
+\item{n.chunks}{An integer specifying the number of chunks jobs running
+island clusters should be split into when dispatching jobs using
+\code{batchtools}. For multicore or socket \code{cluster.type}, this defaults
+to \code{n.workers}, resulting in the total number of island cluster jobs
+(equal to \code{n.islands}\\\code{island.cluster.size}) being split into
+\code{n.chunks} chunks. All chunks then run in parallel, with jobs within a
+chunk running sequentially. For other cluster types, this defaults to 1
+chunk, with the recommendation that users of HPC clusters which support array
+jobs specify \code{chunks.as.arrayjobs = TRUE} in argument \code{resources}.
+For those users, the setup will submit an array of
+\code{n.islands}\\\code{island.cluster.size} jobs to the cluster. For HPC
+clusters that do not support array jobs, the default setting should not be
+used. See \code{batchtools::submitJobs} for more information on job chunking.}
 
-\item{n.different.snps.weight}{The number by which the number of different SNPs between a case and complement or unaffected sibling
-is multiplied in computing the family weights. Defaults to 2.}
+\item{n.different.snps.weight}{The number by which the number of different
+SNPs between a case and complement or unaffected sibling is multiplied in
+computing the family weights. Defaults to 2.}
 
-\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in both the case and complement or unaffected sibling
-is multiplied in computing the family weights. Defaults to 1.}
+\item{n.both.one.weight}{The number by which the number of SNPs equal to 1 in
+both the case and complement or unaffected sibling is multiplied in computing
+the family weights. Defaults to 1.}
 
-\item{weight.function.int}{An integer used to assign family weights. Specifically, we use \code{weight.function.int} in a  function that takes the weighted sum
-of the number of different SNPs and SNPs both equal to one as an argument, denoted as x, and returns a family weight equal to \code{weight.function.int}^x. Defaults to 2.
-If set to null, then the family weight will not be exponentiated and instead set to just x.}
+\item{weight.function.int}{An integer used to assign family weights.
+Specifically, we use \code{weight.function.int} in a  function that takes the
+weighted sum of the number of different SNPs and SNPs both equal to one as an
+argument, denoted as x, and returns a family weight equal to
+\code{weight.function.int}^x. Defaults to 2. If set to null, then the family
+weight will not be exponentiated and instead set to just x.}
 
-\item{generations}{The maximum number of generations for which GADGETS will run. Defaults to 500.}
+\item{generations}{The maximum number of generations for which GADGETS will
+run. Defaults to 500.}
 
-\item{gen.same.fitness}{The number of consecutive generations with the same fitness score required for algorithm termination. Defaults to 50.}
+\item{gen.same.fitness}{The number of consecutive generations with the same
+fitness score required for algorithm termination. Defaults to 50.}
 
-\item{initial.sample.duplicates}{A logical indicating whether the same SNP can appear in more than one chromosome in the initial sample of chromosomes
-(the same SNP may appear in more than one chromosome thereafter, regardless). Default to FALSE.}
+\item{initial.sample.duplicates}{A logical indicating whether the same SNP
+can appear in more than one chromosome in the initial sample of chromosomes
+(the same SNP may appear in more than one chromosome thereafter, regardless).
+Default to FALSE.}
 
-\item{snp.sampling.type}{A string indicating how SNPs are to be sampled for mutations. Options are 'chisq', 'random', or 'manual'. The 'chisq' option takes
-into account the marginal association between a SNP and disease status, with larger marginal associations corresponding to higher sampling probabilities.
-The 'random'  option gives each SNP the same sampling probability regardless of marginal association. The 'manual' option should be used when
-\code{snp.sampling.probs} are manually input into function \code{preprocess.genetic.data}. Defaults to 'chisq'.}
+\item{snp.sampling.type}{A string indicating how SNPs are to be sampled for
+mutations. Options are 'chisq', 'random', or 'manual'. The 'chisq' option
+takes into account the marginal association between a SNP and disease status,
+with larger marginal associations corresponding to higher sampling
+probabilities. The 'random'  option gives each SNP the same sampling
+probability regardless of marginal association. The 'manual' option should be
+used when \code{snp.sampling.probs} are manually input into function
+\code{preprocess.genetic.data}. Defaults to 'chisq'.}
 
-\item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of chromosomes to be subjected to cross over.
-The remaining proportion will be mutated. Defaults to 0.8.}
+\item{crossover.prop}{A numeric between 0 and 1 indicating the proportion of
+chromosomes to be subjected to cross over.The remaining proportion will be
+mutated. Defaults to 0.8.}
 
-\item{n.islands}{An integer indicating the number of islands to be used. Defaults to 1000.}
+\item{n.islands}{An integer indicating the number of islands to be used.
+Defaults to 1000.}
 
-\item{island.cluster.size}{An integer specifying the number of islands in a given cluster. Must evenly divide \code{n.islands} and defaults to 4.
-More specifically, under the default settings, the 1000 \code{n.islands} are split into 250 distinct clusters each containing 4 islands (\code{island.cluster.size}).
-Within a cluster, migrations of top chromosomes from one cluster island to another are periodically permitted (controlled by \code{migration.generations}), and distinct
+\item{island.cluster.size}{An integer specifying the number of islands in a
+given cluster. Must evenly divide \code{n.islands} and defaults to 4. More
+specifically, under the default settings, the 1000 \code{n.islands} are split
+into 250 distinct clusters each containing 4 islands
+(\code{island.cluster.size}). Within a cluster, migrations of top chromosomes
+from one cluster island to another are periodically permitted
+(controlled by \code{migration.generations}), and distinct
 clusters evolve completely independently.}
 
-\item{migration.generations}{An integer equal to the number of generations between migrations among islands of a distinct cluster.
-Argument \code{generations} must be an integer multiple of this value. Defaults to 50.}
+\item{migration.generations}{An integer equal to the number of generations
+between migrations among islands of a distinct cluster.
+Argument \code{generations} must be an integer multiple of this value.
+Defaults to 50.}
 
-\item{n.migrations}{The number of chromosomes that migrate among islands. This value must be less than \code{n.chromosomes} and greater than 0, defaulting to 20.}
+\item{n.migrations}{The number of chromosomes that migrate among islands.
+This value must be less than \code{n.chromosomes} and greater than 0,
+defaulting to 20.}
 
-\item{recessive.ref.prop}{The proportion to which the observed proportion of informative cases with the provisional risk genotype(s) will be compared
+\item{recessive.ref.prop}{The proportion to which the observed proportion of
+informative cases with the provisional risk genotype(s) will be compared
 to determine whether to recode the SNP as recessive. Defaults to 0.75.}
 
-\item{recode.test.stat}{For a given SNP, the minimum test statistic required to recode and recompute the fitness score using recessive coding. Defaults to 1.64.
-See the GADGETS paper for specific details.}
+\item{recode.test.stat}{For a given SNP, the minimum test statistic required
+to recode and recompute the fitness score using recessive coding. Defaults to
+ 1.64. See the GADGETS paper for specific details.}
 
-\item{n.random.chroms}{The number of random chromosomes used to construct a reference null mean and standard error vectors to
-compute the GxE fitness score.}
+\item{n.random.chroms}{(experimental) The number of random chromosomes used
+to construct a reference null mean and standard deviations vectors to compute
+the E-GADGETS (GxGxE) fitness score.}
 
-\item{null.mean.vec}{A vector of estimated null means for each of the components of the
-E-GADGETS fitness score. This needs to be specified if running permutes under the no-GxE null, and should be set to
-the values in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory for the observed
-data. It also should be specified if analyst wants to replicate the results of a previous E-GADGETS
-run, or if some of the islands of a run failed to complete, and the analyst forgot to set the seed prior to running this command.}
+\item{null.mean.vec}{(experimental) A vector of estimated null means for each
+of the components of the E-GADGETS fitness score. This needs to be specified
+if running permutes under the no-GxE null, and should be set to the values in
+the "null.mean" element of the "null.mean.sd.info.rds" file stored in the
+\code{results.dir} directory for the observed data. It also should be
+specified if analyst wants to replicate the results of a previous E-GADGETS
+run, or if some of the islands of a run failed to complete, and the analyst
+forgot to set the seed prior to running \code{run.gadgets}.}
 
-\item{null.sd.vec}{A vector of estimated null standard errors for the components of the
-E-GADGETS fitness score. See argument \code{null.mean.vec} for reasons this argument might be specified. For a given run, the
-previously used vector can also be found in the file "null.mean.sd.info.rds" stored in the \code{results.dir} directory.}
+\item{null.sd.vec}{A vector of estimated null standard deviations for the
+components of the E-GADGETS fitness score. See argument \code{null.mean.vec}
+for reasons this argument might be specified. For a given run, the
+previously used vector can also be found in the "null.se" element of the file
+"null.mean.sd.info.rds" stored in the \code{results.dir} directory.}
 }
 \value{
-For each island, a list of two elements will be written to \code{results.dir}:
+For each island, a list of two elements will be written to
+\code{results.dir}:
 \describe{
- \item{top.chromosome.results}{A data.table of the final generation chromosomes, their fitness scores, their difference vectors,
-and the number of risk alleles required for each chromosome SNP for a case or complement to be classified as having the provisional risk set.
-See the package vignette for an example and the documentation for \code{chrom.fitness.score} for additional details.}
+ \item{top.chromosome.results}{A data.table of the final generation
+ chromosomes, their fitness scores, and, for GADGETS, additional information
+ pertaining to nominated risk-related genotypes. See the package vignette for
+ an example and the documentation for \code{chrom.fitness.score} for
+ additional details.}
  \item{n.generations}{The total number of generations run.}
 }
 }
@@ -140,13 +190,15 @@ data(dad)
 dad <- as.matrix(dad)
 data(mom)
 mom <- as.matrix(mom)
-pp.list <- preprocess.genetic.data(case[, 1:10], father.genetic.data = dad[ , 1:10],
-                               mother.genetic.data = mom[ , 1:10],
-                               ld.block.vec = c(10))
-run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3, results.dir = 'tmp',
-       cluster.type = 'interactive', registryargs = list(file.dir = 'tmp_reg', seed = 1500),
-       generations = 2, n.islands = 2, island.cluster.size = 1,
-       n.migrations = 0)
+pp.list <- preprocess.genetic.data(case[, 1:10],
+                                   father.genetic.data = dad[ , 1:10],
+                                   mother.genetic.data = mom[ , 1:10],
+                                   ld.block.vec = c(10))
+run.gadgets(pp.list, n.chromosomes = 4, chromosome.size = 3,
+            results.dir = 'tmp', cluster.type = 'interactive',
+            registryargs = list(file.dir = 'tmp_reg', seed = 1500),
+            generations = 2, n.islands = 2, island.cluster.size = 1,
+            n.migrations = 0)
 
 unlink('tmp_bm', recursive = TRUE)
 unlink('tmp', recursive = TRUE)
