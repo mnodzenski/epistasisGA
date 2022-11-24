@@ -8,7 +8,7 @@ author:
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
 date: "October 21, 2022"
-package: epistasisGAGE
+package: epistasisGA
 output: 
   BiocStyle::html_document:
     toc_float: true
@@ -38,7 +38,7 @@ We begin our demonstration of E-GADGETS by loading a simulated example of case-p
 In the example data, we load simulated maternal, paternal, and case genotypes, as well as the exposures. These data represent 24 SNPs from 1,000 families. Rows correspond to families, and columns represent SNP genotypes. Genotypes must be coded as 0, 1, or 2. The exposure is a binary factor with two levels (0, 1). In the input genotype data, SNPs 6, 12, and 18 are simulated to jointly interact with the exposure. 
 
 ```{r}
-library(epistasisGAGE)
+library(epistasisGA)
 data("case.gxe")
 case <- as.matrix(case.gxe)
 data("dad.gxe")

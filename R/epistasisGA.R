@@ -4,7 +4,7 @@
 #' case-parent triad or affected/unaffected sibling studies.
 #'
 #' @docType package
-#' @name epistasisGAGE
+#' @name epistasisGA
 NULL
 
 ## quiets concerns re visible bindings of global vars created via data table

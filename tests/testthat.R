@@ -1,4 +1,4 @@
 library(testthat)
-library(epistasisGAGE)
+library(epistasisGA)
 
-test_check("epistasisGAGE")
+test_check("epistasisGA")

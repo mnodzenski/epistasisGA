@@ -8,7 +8,7 @@ author:
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
 date: "July 15, 2021"
-package: epistasisGAGE
+package: epistasisGA
 output: 
   BiocStyle::html_document:
     toc_float: true
@@ -42,7 +42,7 @@ As a final note, users should be aware this method does not currently scale up t
 We begin our example usage of GADGETS by loading a simulated example of case-parent triad data. 
 
 ```{r}
-library(epistasisGAGE)
+library(epistasisGA)
 data(case)
 case <- as.matrix(case)
 data(dad)

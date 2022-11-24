@@ -193,7 +193,7 @@
 #'         gen.same.fitness = 10, max.generations = 10)
 #'
 #' @importFrom data.table as.data.table setorder setDT rbindlist transpose
-#' @useDynLib epistasisGAGE
+#' @useDynLib epistasisGA
 #' @export
 
 GADGETS <- function(cluster.number, results.dir, case.genetic.data,
