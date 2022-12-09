@@ -164,7 +164,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                         n.random.chroms = 10000, null.mean.vec = NULL,
                         null.sd.vec = NULL) {
 
-    ### make sure if island clusters exist, the migration interval is set properly ###
+    ### make sure the migration interval is set properly ###
     if (island.cluster.size > 1 &
         migration.generations >= generations & island.cluster.size != 1) {
 
@@ -218,22 +218,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
         migration.generations <- generations
     }
 
-    ### note if we want to use parents only for GxE search
-    use.parents <- data.list$use.parents
-
-    #make back-compatiable with older software versions
-    # (use.parents should always be logical going forward)
-    if (inherits(use.parents, "logical")){
-
-      use.parents.int <- ifelse(use.parents, 1, 0)
-
-    } else {
-
-      use.parents.int <- use.parents
-      use.parents <- as.logical(use.parents)
-
-    }
-
     ### decide if running E-GADGETS
     #maintaining backward compatability with old version of software
     if ("cont.GxE" %in% names(data.list)){
@@ -243,18 +227,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     } else {
 
       E_GADGETS <- data.list$E_GADGETS
-
-    }
-
-    ### decide if adjusting fitness score for maternal-fetal interactions ###
-    if ("maternal.fetal.adj" %in% names(data.list)){
-
-      if (!data.list$maternal.fetal.adj){
-
-        data.list$child.snps <- NULL
-        data.list$mother.snps <- NULL
-
-      }
 
     }
 
@@ -272,15 +244,18 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     }
     storage.mode(weight.lookup) <- "integer"
 
-    ### for continuous exposure, make sure all data is stored as numeric
+    ### for E-GADGETS make sure all data is stored as numeric
     case.genetic.data <- data.list$case.genetic.data
     complement.genetic.data <- data.list$complement.genetic.data
+    mother.genetic.data <- data.list$mother.genetic.data
+    father.genetic.data <- data.list$father.genetic.data
     exposure.mat <- data.list$exposure.mat + 0.0
+    mother.genetic.data.n <- mother.genetic.data + 0.0
+    father.genetic.data.n <- father.genetic.data + 0.0
 
     if (E_GADGETS){
 
         case.genetic.data.n <- case.genetic.data + 0.0
-        complement.genetic.data.n <- complement.genetic.data + 0.0
         case.genetic.data <- case.genetic.data[1, 1, drop = FALSE]
         complement.genetic.data <- complement.genetic.data[1, 1, drop = FALSE]
         weight.lookup.n <- weight.lookup + 0.0
@@ -290,7 +265,6 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     } else {
 
         case.genetic.data.n <- matrix(0.0, 1, 1)
-        complement.genetic.data.n <- matrix(0.0, 1, 1)
         weight.lookup.n <- 0.0
         ld.block.vec <- data.list$ld.block.vec
 
@@ -338,84 +312,81 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
     null.sd <- rep(1, 2)
     if (E_GADGETS){
 
-        if (use.parents){
+        if (is.null(null.mean.vec) & is.null(null.sd.vec)){
 
-            if (is.null(null.mean.vec) & is.null(null.sd.vec)){
+            # make sure we're not accidentally redoing this
+            out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
 
-                # make sure we're not accidentally redoing this
-                out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
+            #sample random chromosomes
+            n.snps <- ncol(case.genetic.data.n)
+            random.chroms <- lapply(seq_len(n.random.chroms), function(x){
 
-                #sample random chromosomes
-                n.snps <- ncol(case.genetic.data.n)
-                random.chroms <- lapply(seq_len(n.random.chroms), function(x){
+                sample(seq_len(n.snps), chromosome.size)
 
-                    sample(seq_len(n.snps), chromosome.size)
+            })
 
-                })
+            #get matrix of fitness score components
+            null.vec.mat <- GxE_mvlm_fitness_vec_mat(case.genetic.data.n,
+                                                mother.genetic.data.n,
+                                                father.genetic.data.n,
+                                                exposure.mat,
+                                                random.chroms,
+                                                weight.lookup.n,
+                                                rep(0, 2), rep(1, 2),
+                                                n.different.snps.weight,
+                                                n.both.one.weight)
+            null.mean <- colMeans(null.vec.mat)
+            null.sd <- sqrt(diag(cov(null.vec.mat)))
 
-                #get matrix of fitness score components
-                null.vec.mat <- GxE_mvlm_fitness_vec_mat(case.genetic.data.n,
-                                                    complement.genetic.data.n,
-                                                    exposure.mat,
-                                                    random.chroms,
-                                                    weight.lookup.n,
-                                                    rep(0, 2), rep(1, 2),
-                                                    n.different.snps.weight,
-                                                    n.both.one.weight)
-                null.mean <- colMeans(null.vec.mat)
-                null.sd <- sqrt(diag(cov(null.vec.mat)))
+            #save these if needed later
+            if (file.exists(out.file.name)){
 
-                #save these if needed later
-                if (file.exists(out.file.name)){
+                # if run previously, make sure the seed was the same
+                prev.res <- readRDS(out.file.name)
+                prev.mean <- prev.res$null.mean
+                prev.se <- prev.res$null.se
 
-                    # if run previously, make sure the seed was the same
-                    prev.res <- readRDS(out.file.name)
-                    prev.mean <- prev.res$null.mean
-                    prev.se <- prev.res$null.se
+                if (any(null.mean != prev.mean) | any(prev.se != null.sd)){
 
-                    if (any(null.mean != prev.mean) | any(prev.se != null.sd)){
-
-                        stop(paste("null mean and/or se vector  do not match the previous values in",
-                                   out.file.name))
-
-                    }
-
-                } else {
-
-                    out.res <- list(null.mean = null.mean, null.se = null.sd,
-                                    random.chroms = random.chroms)
-                    saveRDS(out.res, file = out.file.name)
-
-                }
-
-
-            } else if (!is.null(null.mean.vec) & !is.null(null.sd.vec)){
-
-                # make sure we're not accidentally redoing this
-                out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
-                if (file.exists(out.file.name)){
-
-                    prev.res <- readRDS(out.file.name)
-                    prev.mean <- prev.res$null.mean
-                    prev.se <- prev.res$null.se
-
-                    if (any(null.mean.vec != prev.mean) | any(prev.se !=
-                                                              null.sd.vec)){
-
-                        stop(paste("null mean and/or sd vector  do not match the previous values in",
-                                   out.file.name))
-
-                    }
-                    null.mean <- null.mean.vec
-                    null.sd <- null.sd.vec
+                    stop(paste("null mean and/or se vector  do not match the previous values in",
+                               out.file.name))
 
                 }
 
             } else {
 
-                stop("null.mean.vec and null.sd.vec must both be null or both not be null")
+                out.res <- list(null.mean = null.mean, null.se = null.sd,
+                                random.chroms = random.chroms)
+                saveRDS(out.res, file = out.file.name)
 
             }
+
+
+        } else if (!is.null(null.mean.vec) & !is.null(null.sd.vec)){
+
+            # make sure we're not accidentally redoing this
+            out.file.name <- file.path(results.dir, "null.mean.sd.info.rds")
+            if (file.exists(out.file.name)){
+
+                prev.res <- readRDS(out.file.name)
+                prev.mean <- prev.res$null.mean
+                prev.se <- prev.res$null.se
+
+                if (any(null.mean.vec != prev.mean) | any(prev.se !=
+                                                          null.sd.vec)){
+
+                    stop(paste("null mean and/or sd vector  do not match the previous values in",
+                               out.file.name))
+
+                }
+                null.mean <- null.mean.vec
+                null.sd <- null.sd.vec
+
+            }
+
+        } else {
+
+            stop("null.mean.vec and null.sd.vec must both be null or both not be null")
 
         }
 
@@ -476,8 +447,10 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                      complement.genetic.data =
                                          complement.genetic.data,
                                      case.genetic.data.n = case.genetic.data.n,
-                                     complement.genetic.data.n =
-                                        complement.genetic.data.n,
+                                     mother.genetic.data.n =
+                                        mother.genetic.data.n,
+                                     father.genetic.data.n = 
+                                         father.genetic.data.n,
                                      exposure.mat = exposure.mat,
                                      weight.lookup.n = weight.lookup.n,
                                      ld.block.vec = data.list$ld.block.vec,
@@ -499,10 +472,7 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                      crossover.prop = crossover.prop,
                                      recessive.ref.prop = recessive.ref.prop,
                                      recode.test.stat = recode.test.stat,
-                                     use.parents = use.parents.int,
-                                     E_GADGETS = E_GADGETS,
-                                     mother.snps = data.list$mother.snps,
-                                     child.snps = data.list$child.snps),
+                                     E_GADGETS = E_GADGETS),
                     reg = registry)
 
     # chunk the jobs

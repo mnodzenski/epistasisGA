@@ -193,9 +193,23 @@ network.plot <- function(graphical.score.list, preprocessed.list,
 
           } else {
 
-            snp1 <- preprocessed.list$complement.genetic.data[ , s1]
-            snp2 <- preprocessed.list$complement.genetic.data[ , s2]
-
+            if (preprocessed.list$E_GADGETS){
+                
+                snp1 <- preprocessed.list$mother.genetic.data[ , s1] +
+                                preprocessed.list$father.genetic.data[ , s1] -
+                                preprocessed.list$case.genetic.data[ , s1]
+                
+                snp2 <- preprocessed.list$mother.genetic.data[ , s2] +
+                                preprocessed.list$father.genetic.data[ , s2] -
+                                preprocessed.list$case.genetic.data[ , s2]
+                
+            } else {
+                
+                snp1 <- preprocessed.list$complement.genetic.data[ , s1]
+                snp2 <- preprocessed.list$complement.genetic.data[ , s2]
+                
+            }
+            
             # missing are coded as -9
             snp1[snp1 == -9] <- NA
             snp2[snp2 == -9] <- NA

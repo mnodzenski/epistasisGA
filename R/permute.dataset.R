@@ -56,7 +56,7 @@ permute.dataset <- function(preprocessed.list, permutation.data.file.path,
 
     ### permute the data ###
     n.families <- nrow(case.genetic.data)
-    if (nrow(preprocessed.list$exposure.mat) == 1){
+    if (!preprocessed.list$E_GADGETS){
 
         permuted.data.list <- bplapply(seq_len(n.permutations),
                                        function(permute, n.families,

@@ -53,8 +53,6 @@
 #' affect performance.
 #' @param weight.lookup A vector that maps a family weight to the weighted sum
 #' of the number of different SNPs and SNPs both equal to one.
-#' @param maternal.fetal.int (deprecate) A boolean which should always be set to
-#' FALSE (the default).
 #' @param n.different.snps.weight The number by which the number of different
 #' SNPs between a case and complement/unaffected sibling
 #'  is multiplied in computing the family weights. Defaults to 2.
@@ -115,15 +113,14 @@
 
 chrom.fitness.score <- function(case.genetic.data, complement.genetic.data,
                                 target.snps, ld.block.vec, weight.lookup,
-                                maternal.fetal.int = FALSE,
                                 n.different.snps.weight = 2,
                                 n.both.one.weight = 1,
                                 recessive.ref.prop = 0.75,
                                 recode.test.stat = 1.64, epi.test = FALSE) {
 
   chrom_fitness_score(case.genetic.data, complement.genetic.data, target.snps,
-                      ld.block.vec, weight.lookup, 0, 0,
-                      maternal.fetal.int, n.different.snps.weight,
+                      ld.block.vec, weight.lookup, 
+                      n.different.snps.weight,
                       n.both.one.weight, recessive.ref.prop, recode.test.stat,
                       epi.test)
 

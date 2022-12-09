@@ -10,7 +10,6 @@ chrom.fitness.score(
   target.snps,
   ld.block.vec,
   weight.lookup,
-  maternal.fetal.int = FALSE,
   n.different.snps.weight = 2,
   n.both.one.weight = 1,
   recessive.ref.prop = 0.75,
@@ -73,9 +72,6 @@ affect performance.}
 
 \item{weight.lookup}{A vector that maps a family weight to the weighted sum
 of the number of different SNPs and SNPs both equal to one.}
-
-\item{maternal.fetal.int}{(deprecate) A boolean which should always be set to
-FALSE (the default).}
 
 \item{n.different.snps.weight}{The number by which the number of different
 SNPs between a case and complement/unaffected sibling

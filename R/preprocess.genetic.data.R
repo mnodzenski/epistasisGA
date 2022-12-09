@@ -89,8 +89,6 @@
 #' interactions.
 #' \code{continuous.exposures} should not be missing any data; families with
 #' missing exposure data should be removed from the analysis prior to input.
-#' @param use.parents This argument is deprecated and should also remain at the
-#' default (TRUE).
 #' @param mother.snps If searching for maternal SNPs that are associated
 #' with disease in the child, the indices of the maternal SNP columns in object
 #' \code{case.genetic.data}. Otherwise does not need to be specified.
@@ -106,18 +104,22 @@
 #' The default, FALSE, restricts the search to GxGxExE interactions. Users
 #' should be cautious about including large numbers of input exposures, and, if
 #' they do, very cautious about setting this argument to TRUE.
-#' @param maternal.fetal.adj This argument is deprecated and should be left as
-#' the default (FALSE).
 #' @return A list containing the following:
 #' \describe{
 #'  \item{case.genetic.data}{A matrix of case/maternal genotypes.}
 #'  \item{complement.genetic.data}{A matrix of complement/sibling/paternal
-#'  genotypes.}
+#'  genotypes. If running E-GADGETS, this is set to a 1x1 matrix whose 
+#'  single entry is 0, and not used}
+#'  \item{mother.genetic.data}{If running E-GADGETS, A matrix of maternal 
+#'  genotypes, otherwise a 1x1 matrix whose 
+#'  single entry is 0.0, and not used}
+#'  \item{father.genetic.data}{If running E-GADGETS, A matrix of mpaternal 
+#'  genotypes, otherwise a 1x1 matrix whose 
+#'  single entry is 0.0, and not used}
 #'  \item{chisq.stats}{A vector of chi-square statistics corresponding to
 #'  marginal SNP-disease associations, if \code{snp.sampling.probs}
 #'  is not specified, and \code{snp.sampling.probs} otherwise.}
 #'  \item{ld.block.vec}{A vector eaul to \code{cumsum(ld.block.vec)}.}
-#'  \item{use.parents}{A boolean always set to TRUE.}
 #'  \item{exposure.mat}{A design matrix of the input categorical and continuous
 #'  exposures, if specified. Otherwise NULL.}
 #'  \item{E_GADGETS}{A boolean indicating whether a GxGxE search is desired.}
@@ -125,7 +127,6 @@
 #'  \code{case.genetic.data}, set to NULL if not applicable.}
 #'  \item{child.snps}{A vector of the column indices of child SNPs in
 #'  \code{case.genetic.data}, set to NULL if not applicable.}
-#'  \item{maternal.fetal.adj}{A boolean always set to FALSE}
 #' }
 #'
 #' @examples
@@ -157,9 +158,8 @@ preprocess.genetic.data <- function(case.genetic.data,
                                     snp.sampling.probs = NULL,
                                     categorical.exposures = NULL,
                                     continuous.exposures = NULL,
-                                    use.parents = TRUE, mother.snps = NULL,
-                                    child.snps = NULL, lower.order.gxe = FALSE,
-                                    maternal.fetal.adj = FALSE) {
+                                    mother.snps = NULL,
+                                    child.snps = NULL, lower.order.gxe = FALSE) {
 
     #make sure the ld.block.vec is correctly specified
     if (is.null(ld.block.vec)){
@@ -200,9 +200,6 @@ preprocess.genetic.data <- function(case.genetic.data,
 
         }
 
-        #name the categorical exposure vars
-        names(cat.exposure.df) <- paste0("cat.exp",
-                                         seq_len(ncol(cat.exposure.df)))
     }
 
     if (!is.null(continuous.exposures)){
@@ -216,10 +213,6 @@ preprocess.genetic.data <- function(case.genetic.data,
             stop(paste("Please remove", sum(missing.exposure), "families from analysis due to case missing continuous exposure(s)"))
 
         }
-
-        #name the categorical exposure vars
-        names(cont.exposure.df) <- paste0("cont.exp",
-                                          seq_len(ncol(cont.exposure.df)))
 
 
     }
@@ -241,6 +234,20 @@ preprocess.genetic.data <- function(case.genetic.data,
 
         exposure.df <- NULL
 
+    }
+    
+    # make sure we have trios for E-GADGETS
+    E_GADGETS <- FALSE
+    if (!is.null(exposure.df)){
+        
+        E_GADGETS <- TRUE
+        
+        if (is.null(mother.genetic.data) | is.null(father.genetic.data)){
+            
+            stop("E-GADGETS requires triads")
+            
+        }
+        
     }
 
     # check formatting of input data and, if necessary, create memory  mapped
@@ -449,7 +456,7 @@ preprocess.genetic.data <- function(case.genetic.data,
         case.status <- c(rep(1, n.fam), rep(0, n.fam))
         ids <- rep(seq_len(n.fam), 2)
 
-        if (is.null(exposure.df)){
+        if (!E_GADGETS){
 
             res.list <- bplapply(seq_len(n.candidate.snps),
                                  function(snp, bm.list) {
@@ -551,71 +558,105 @@ preprocess.genetic.data <- function(case.genetic.data,
     inf.idx <- is.infinite(chisq.stats)
     finite.idx <- is.finite(chisq.stats)
     chisq.stats[inf.idx] <- max(chisq.stats[finite.idx])
-
-    if (!"complement" %in% names(bm.list)){
-
-        comp.data <- mother.bm[] + father.bm[] - case.bm[]
-
-    } else {
-
-        comp.data <- comp.bm[]
-
-    }
-
+    
     case.data <- case.bm[]
-
-    # confirm no miscoded genotypes
-    if (any(! case.data %in% c(NA, 0, 1, 2)) |
-        any(! comp.data %in% c(NA, 0, 1, 2))){
-
-        stop("Miscoded genotypes, genotypes must be coded NA, 0, 1, or 2")
-
+    if (any(! case.data %in% c(NA, 0, 1, 2))){
+        
+        stop("Miscoded case genotypes, genotypes must be coded NA, 0, 1, or 2")
+        
     }
 
-    # set missing to -9
-    if (any(is.na(case.data)) | any(is.na(comp.data))){
-
-        case.data[is.na(case.data) | is.na(comp.data)] <- -9
-        comp.data[is.na(case.data) | is.na(comp.data)] <- -9
-
-    }
-
-    # make dummies for exposure matrix
-    if (!is.null(exposure.df)){
-
-      exposure.vars <- colnames(exposure.df)
-      if (!lower.order.gxe){
-
-        model.terms <- paste0("~", paste(exposure.vars, collapse = ":"))
-
-      } else {
-
-        model.terms <- paste0("~", paste(exposure.vars, collapse = "*"))
-
-      }
-      exposure.mat <- model.matrix(as.formula(model.terms) , data = exposure.df)
-      attributes(exposure.mat)$assign <- NULL
-      attributes(exposure.mat)$contrasts <- NULL
-      exposure.mat <- exposure.mat[ , -1, drop = FALSE]
-      exposure.mat <- exposure.mat + 0.0
-      E_GADGETS <- TRUE
-
+    if (!E_GADGETS){
+        
+        if (!"complement" %in% names(bm.list)){
+            
+            comp.data <- mother.bm[] + father.bm[] - case.bm[]
+            
+        } else {
+            
+            comp.data <- comp.bm[]
+            
+        }
+        
+        # confirm no miscoded genotypes
+        if (any(! comp.data %in% c(NA, 0, 1, 2))){
+            
+            stop("Miscoded genotypes, genotypes must be coded NA, 0, 1, or 2")
+            
+        }
+        
+        # set missing to -9
+        if (any(is.na(case.data)) | any(is.na(comp.data))){
+            
+            case.data[is.na(case.data) | is.na(comp.data)] <- -9
+            comp.data[is.na(case.data) | is.na(comp.data)] <- -9
+            
+        }
+        
+        #data not used, but required as input to run.gadgets
+        mother.data <- matrix(0.0, 1, 1)
+        father.data <- matrix(0.0, 1, 1)
+        exposure.mat <- matrix(0.0, 1, 1)
+        
     } else {
-
-      exposure.mat <- matrix(0.0, 1, 1)
-      E_GADGETS <- FALSE
-
+        
+        comp.data <- matrix(0, 1, 1)
+        storage.mode(comp.data) <- "integer"
+        mother.data <- mother.bm[] 
+        father.data <- father.bm[]
+        
+        if (any(! mother.data %in% c(NA, 0, 1, 2))){
+            
+            stop("Miscoded mother genotypes, genotypes must be coded NA, 0, 1, or 2")
+            
+        }
+        
+        if (any(! father.data %in% c(NA, 0, 1, 2))){
+            
+            stop("Miscoded father genotypes, genotypes must be coded NA, 0, 1, or 2")
+            
+        }
+        
+        #handle missing genotypes
+        missing.geno <- is.na(case.data) | is.na(mother.data) | 
+            is.na(father.data)
+        
+        if (any(missing.geno)){
+            
+            case.data[missing.geno] <- -9
+            mother.data[missing.geno] <- -9
+            father.data[missing.geno] <- -9
+            
+        }
+        
+        # format exposure matrix 
+        exposure.vars <- colnames(exposure.df)
+        if (!lower.order.gxe){
+            
+            model.terms <- paste0("~", paste(exposure.vars, collapse = ":"))
+            
+        } else {
+            
+            model.terms <- paste0("~", paste(exposure.vars, collapse = "*"))
+            
+        }
+        exposure.mat <- model.matrix(as.formula(model.terms) , data = exposure.df)
+        attributes(exposure.mat)$assign <- NULL
+        attributes(exposure.mat)$contrasts <- NULL
+        exposure.mat <- exposure.mat[ , -1, drop = FALSE]
+        exposure.mat <- exposure.mat + 0.0
+        
     }
-
+    
     return(list(case.genetic.data = case.data,
                 complement.genetic.data = comp.data,
+                mother.genetic.data = mother.data,
+                father.genetic.data = father.data,
                 chisq.stats = chisq.stats,
                 ld.block.vec = out.ld.vec,
-                use.parents = use.parents,
                 exposure.mat = exposure.mat,
                 E_GADGETS = E_GADGETS,
                 mother.snps = mother.snps,
-                child.snps = child.snps,
-                maternal.fetal.adj = maternal.fetal.adj))
+                child.snps = child.snps))
 
 }

@@ -6,7 +6,8 @@
 \usage{
 GxE.fitness.score(
   case.genetic.data,
-  complement.genetic.data,
+  mother.genetic.data,
+  father.genetic.data,
   exposure.mat,
   target.snps,
   weight.lookup,
@@ -30,21 +31,23 @@ ordering of the columns must be consistent with the LD structure specified
 in \code{ld.block.vec}. The genotypes cannot be  dosages imputed with
 uncertainty.}
 
-\item{complement.genetic.data}{A genetic dataset for the controls
-corresponding to the genotypes in \code{case.genetic.data}.For SNPs that
-correspond to the affected child in \code{case.genetic.data}, the
-corresponding column in \code{complement.genetic.data} should be set equal to
-mother allele count + father allele count - case allele count. If using
-disease-discordant siblings this argument should be the genotypes for the
-unaffected siblings. For SNPs in \code{case.genetic.data} that represent
-maternal genotypes (if any) the corresponding column in
-\code{complement.genetic.data} should be the paternal genotypes for that SNP.
-Regardless, \code{complement.genetic.data} may be an object of either class
-matrix' OR of class 'big.matrix'. If of class 'big.matrix' it must be file
-backed as type 'integer' (see the bigmemory package for more information).
-Columns are SNP allele counts, rows are families. If not specified,
-\code{father.genetic.data} and \code{mother.genetic.data} must be specified.
-The genotypes cannot be dosages imputed with uncertainty.}
+\item{mother.genetic.data}{The genetic data for the mothers of the cases in
+\code{case.genetic.data}. This should only be specified when searching for
+epistasis or GxGxE effects based only on case-parent triads, and not when
+searching for maternal SNPs that are related to the child's risk of disease.
+Columns are SNP allele counts, rows are individuals. This object may either
+be of class 'matrix' OR of class 'big.matrix'. If of class big.matrix' it
+must be file backed as type 'integer' (see the bigmemory package for more
+information). The genotypes cannot be dosages imputed with uncertainty.}
+
+\item{father.genetic.data}{The genetic data for the fathers of the cases in
+\code{case.genetic.data}. This should only be specified when searching for
+epistasis or GxGxE effects based only on case-parent triads, and not when
+searching for maternal SNPs that are related to the child's risk of disease.
+Columns are SNP allele counts, rows are individuals. This object may either
+be of class 'matrix' OR of class 'big.matrix'. If of class big.matrix' it
+must be file backed as type 'integer' (see the bigmemory package for more
+information). The genotypes cannot be dosages imputed with uncertainty.}
 
 \item{exposure.mat}{A matrix of the input categorical
 and continuous exposures to be used in the experimental
@@ -101,12 +104,12 @@ data(case.gxe)
 data(dad.gxe)
 data(mom.gxe)
 data(exposure)
-comp.gxe <- mom.gxe + dad.gxe - case.gxe
 case.gxe <- case.gxe + 0.0
-comp.gxe <- comp.gxe + 0.0
+mom.gxe <- mom.gxe + 0.0
+dad.gxe <- dad.gxe + 0.0
 exposure <- as.matrix(exposure + 0.0)
 weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1.0)
-res <- GxE.fitness.score(case.gxe, comp.gxe, exposure, c(1, 4, 7),
+res <- GxE.fitness.score(case.gxe, mom.gxe, dad.gxe, exposure, c(1, 4, 7),
                           weight.lookup)
 
 }

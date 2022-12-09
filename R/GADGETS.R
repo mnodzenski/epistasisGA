@@ -49,12 +49,16 @@
 #' point values, as opposed to integer values in \code{case.genetic.data}. If
 #' not running E-GADGETS, this should be specified as a 1x1 matrix whose only
 #' value is 0.0.
-#' @param complement.genetic.data.n (experimental) A matrix, to be used in the
-#' experimental E-GADGETS method, containing the same data as described above
-#' for \code{complement.genetic.data}, but the genotypes here are stored as
-#' floating point values, as opposed to integer values in
-#' \code{complement.genetic.data}. If not running E-GADGETS, this should be
-#' specified as a 1x1 matrix whose only value is 0.0.
+#' @param mother.genetic.data.n (experimental) A matrix, to be used in the
+#' experimental E-GADGETS method, containing the genotypes for the mothers of
+#' \code{case.genetic.data}, where the genotypes are stored as
+#' floating point values, as opposed to integer values. If not running 
+#' E-GADGETS, this should be specified as a 1x1 matrix whose only value is 0.0.
+#' @param father.genetic.data.n (experimental) A matrix, to be used in the
+#' experimental E-GADGETS method, containing the genotypes for the fathers of
+#' \code{case.genetic.data}, where the genotypes are stored as
+#' floating point values, as opposed to integer values. If not running 
+#' E-GADGETS, this should be specified as a 1x1 matrix whose only value is 0.0.
 #' @param exposure.mat (experimental) A matrix of the input categorical
 #' and continuous exposures, if specified, to be used in the experimental
 #' E-GADGETS method. If not running E-GADGETS, this should be a 1x1 matrix whose
@@ -82,7 +86,8 @@
 #' E.g., we recommend considering any maternal SNPs located on chromosome 1
 #' as being 'linked' to any child SNPs located on chromosome 1, even though,
 #' strictly speaking, the maternal and child SNPs are located on separate pieces
-#' of DNA.
+#' of DNA. If running E-GADGETS, this argument should be specified as 0, and 
+#' will not be used. 
 #' @param n.chromosomes An integer specifying the number of chromosomes to use
 #' in the GA.
 #' @param chromosome.size An integer specifying the number of SNPs on each
@@ -101,12 +106,6 @@
 #' @param null.se.vec (experimental) A vector of estimated null standard
 #' deviations for each component of the E-GADGETS (GxGxE) fitness score. For all
 #' other uses, this should be specified as rep(0, 2) and will not be used.
-#' @param mother.snps If searching for maternal SNPs that are associated
-#' with disease in the child, the indices of the maternal SNP columns in object
-#' \code{case.genetic.data}. Otherwise does not need to be specified.
-#' @param child.snps If searching for maternal SNPs that are associated
-#' with disease in the child, the indices of the child SNP columns in object
-#' \code{case.genetic.data}. Otherwise does not need to be specified.
 #' @param island.cluster.size An integer specifying the number of islands in
 #' the cluster. See code{run.gadgets} for additional details.
 #' @param n.migrations The number of chromosomes that migrate among islands.
@@ -140,7 +139,6 @@
 #' @param recode.test.stat For a given SNP, the minimum test statistic required
 #' to recode and recompute the fitness score using recessive coding. Defaults to
 #' 1.64. See the GADGETS paper for specific details.
-#' @param use.parents (deprecated) A integer whose value shoud always be 1.
 #' @param E_GADGETS (experimental) A boolean indicating whether to run the
 #' experimental 'E_GADGETS' method.
 #' @return For each island in the cluster, an rds object containing a list with
@@ -174,7 +172,8 @@
 #'
 #'  #required inputs but not actually used in function below
 #'  case.genetic.data.n <- matrix(0.0, 1, 1)
-#'  complement.genetic.data.n <- matrix(0.0, 1, 1)
+#'  mother.genetic.data.n <- matrix(0.0, 1, 1)
+#'  father.genetic.data.n <- matrix(0.0, 1, 1)
 #'  exposure.mat <- data.list$exposure.mat + 0.0
 #'
 #'  weight.lookup <- vapply(seq_len(6), function(x) 2^x, 1)
@@ -183,7 +182,8 @@
 #'         case.genetic.data = case.genetic.data,
 #'         complement.genetic.data = complement.genetic.data,
 #'         case.genetic.data.n = case.genetic.data.n,
-#'         complement.genetic.data.n = complement.genetic.data.n,
+#'         mother.genetic.data.n = mother.genetic.data.n,
+#'         father.genetic.data.n = father.genetic.data.n,
 #'         exposure.mat = exposure.mat,
 #'         weight.lookup.n = weight.lookup + 0.0,
 #'         ld.block.vec = ld.block.vec,
@@ -198,31 +198,31 @@
 
 GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                     complement.genetic.data, case.genetic.data.n,
-                    complement.genetic.data.n, exposure.mat, weight.lookup.n,
-                    ld.block.vec, n.chromosomes, chromosome.size, snp.chisq,
+                    mother.genetic.data.n, father.genetic.data.n, exposure.mat, 
+                    weight.lookup.n, ld.block.vec, n.chromosomes, 
+                    chromosome.size, snp.chisq,
                     weight.lookup, null.mean.vec = c(0, 0),
-                    null.se.vec = c(1, 1), mother.snps = NULL,
-                    child.snps = NULL, island.cluster.size = 4,
+                    null.se.vec = c(1, 1), island.cluster.size = 4,
                     n.migrations = 20, n.different.snps.weight = 2,
                     n.both.one.weight = 1, migration.interval = 50,
                     gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8,
                     recessive.ref.prop = 0.75, recode.test.stat = 1.64,
-                    use.parents = 1, E_GADGETS = FALSE) {
+                    E_GADGETS = FALSE) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec,
                             n.chromosomes, chromosome.size, weight.lookup,
                             snp.chisq, case.genetic.data,
                             complement.genetic.data, case.genetic.data.n,
-                            complement.genetic.data.n, exposure.mat,
-                            weight.lookup.n, null.mean.vec, null.se.vec,
-                            mother.snps, child.snps, n.different.snps.weight,
+                            mother.genetic.data.n, father.genetic.data.n, 
+                            exposure.mat, weight.lookup.n, null.mean.vec, 
+                            null.se.vec, n.different.snps.weight,
                             n.both.one.weight, migration.interval,
                             gen.same.fitness, max.generations,
                             initial.sample.duplicates, crossover.prop,
                             recessive.ref.prop, recode.test.stat,
-                            use.parents, E_GADGETS)
+                            E_GADGETS)
 
     ### clean up and output results
     lapply(seq_along(rcpp.res), function(island.number) {
@@ -236,13 +236,13 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
         colnames(chromosome.dt) <- paste0("snp", seq_len(chromosome.size))
         fitness.score.dt <- data.table(fitness.score =
                                     final.population.list[["fitness_scores"]])
-        dif.vec.list <- final.population.list[["sum_dif_vecs"]]
-        dif.vec.dt <- as.data.table(do.call(rbind, dif.vec.list))
-        colnames(dif.vec.dt) <- paste0("snp",
-                                       seq_len(chromosome.size), ".diff.vec")
-
+        
         if (!E_GADGETS){
 
+            dif.vec.list <- final.population.list[["sum_dif_vecs"]]
+            dif.vec.dt <- as.data.table(do.call(rbind, dif.vec.list))
+            colnames(dif.vec.dt) <- paste0("snp",
+                                          seq_len(chromosome.size), ".diff.vec")
             risk.allele.vec.list <- final.population.list[["risk_allele_vecs"]]
             risk.allele.vec.dt <- as.data.table(do.call(rbind,
                                                         risk.allele.vec.list))
@@ -256,9 +256,31 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                                   risk.allele.vec.dt, fitness.score.dt,
                                   n.case.risk.geno.dt, n.comp.risk.geno.dt)
             setorder(final.result, -fitness.score)
+            
         } else {
 
-            final.result <- cbind(chromosome.dt, dif.vec.dt, fitness.score.dt)
+            # for E-GADGETS, the dif vecs to be used for risk allele nominations
+            # is stored in the "risk_allele_vecs" part of the list
+            dif.vec.list <- final.population.list[["risk_allele_vecs"]]
+            dif.vec.dt <- as.data.table(do.call(rbind, dif.vec.list))
+            colnames(dif.vec.dt) <- paste0("snp",
+                                           seq_len(chromosome.size), 
+                                           ".diff.vec")
+            risk.allele.vec.dt <- as.data.table(matrix("1+", 
+                                                   nrow(dif.vec.dt), 
+                                                   ncol(dif.vec.dt)))
+            colnames(risk.allele.vec.dt) <- paste0("snp",
+                                                   seq_len(chromosome.size), 
+                                                   ".allele.copies")
+            
+            # also get the betas from the lm of prob disease geno 
+            # based on exposure 
+            beta.list <- final.population.list[["beta_exposure_prob_disease_vecs"]]
+            beta.dt <- as.data.table(do.call(rbind, beta.list))
+            colnames(beta.dt) <- paste0("risk.exp.beta",
+                                           seq_len(ncol(beta.dt)))
+            final.result <- cbind(chromosome.dt, dif.vec.dt, risk.allele.vec.dt,
+                                  beta.dt, fitness.score.dt)
             setorder(final.result, -fitness.score)
 
         }

@@ -165,19 +165,10 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
     }
 
     ## divide up results into list of chromosome lists
-    GxE <- nrow(preprocessed.list$exposure.mat) != 1
     chrom.list <- lapply(results.list, function(chrom.size.data){
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
-        if (GxE){
-
-          chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/3
-
-        } else {
-
-          chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
-
-        }
+        chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
         these.cols <- seq_len(chrom.size)
         chrom.mat <- as.matrix(chrom.size.data[, ..these.cols])
         chrom.list <- split(chrom.mat, seq_len(nrow(chrom.mat)))
@@ -247,16 +238,7 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
 
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
-        if (sum(grepl("risk.allele", colnames(chrom.size.res))) > 0){
-
-            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
-
-        } else {
-
-            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/3
-
-        }
-
+        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
         chrom.size.pairs <- rbindlist(lapply(seq_len(n.top.chroms),
                                              function(res.row) {
 
@@ -296,15 +278,7 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
         # chromosome specific results
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
-        if (sum(grepl("risk.allele", colnames(chrom.size.res))) > 0){
-
-            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
-
-        } else {
-
-            chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/3
-
-        }
+        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
         these.cols <- seq_len(chrom.size)
         scores <- chrom.size.res$graphical.score
 

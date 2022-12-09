@@ -14,11 +14,9 @@ preprocess.genetic.data(
   snp.sampling.probs = NULL,
   categorical.exposures = NULL,
   continuous.exposures = NULL,
-  use.parents = TRUE,
   mother.snps = NULL,
   child.snps = NULL,
-  lower.order.gxe = FALSE,
-  maternal.fetal.adj = FALSE
+  lower.order.gxe = FALSE
 )
 }
 \arguments{
@@ -117,9 +115,6 @@ interactions.
 \code{continuous.exposures} should not be missing any data; families with
 missing exposure data should be removed from the analysis prior to input.}
 
-\item{use.parents}{This argument is deprecated and should also remain at the
-default (TRUE).}
-
 \item{mother.snps}{If searching for maternal SNPs that are associated
 with disease in the child, the indices of the maternal SNP columns in object
 \code{case.genetic.data}. Otherwise does not need to be specified.}
@@ -137,21 +132,24 @@ input (i.e., GxGxE in addition to GxGxExE).
 The default, FALSE, restricts the search to GxGxExE interactions. Users
 should be cautious about including large numbers of input exposures, and, if
 they do, very cautious about setting this argument to TRUE.}
-
-\item{maternal.fetal.adj}{This argument is deprecated and should be left as
-the default (FALSE).}
 }
 \value{
 A list containing the following:
 \describe{
  \item{case.genetic.data}{A matrix of case/maternal genotypes.}
  \item{complement.genetic.data}{A matrix of complement/sibling/paternal
- genotypes.}
+ genotypes. If running E-GADGETS, this is set to a 1x1 matrix whose 
+ single entry is 0, and not used}
+ \item{mother.genetic.data}{If running E-GADGETS, A matrix of maternal 
+ genotypes, otherwise a 1x1 matrix whose 
+ single entry is 0.0, and not used}
+ \item{father.genetic.data}{If running E-GADGETS, A matrix of mpaternal 
+ genotypes, otherwise a 1x1 matrix whose 
+ single entry is 0.0, and not used}
  \item{chisq.stats}{A vector of chi-square statistics corresponding to
  marginal SNP-disease associations, if \code{snp.sampling.probs}
  is not specified, and \code{snp.sampling.probs} otherwise.}
  \item{ld.block.vec}{A vector eaul to \code{cumsum(ld.block.vec)}.}
- \item{use.parents}{A boolean always set to TRUE.}
  \item{exposure.mat}{A design matrix of the input categorical and continuous
  exposures, if specified. Otherwise NULL.}
  \item{E_GADGETS}{A boolean indicating whether a GxGxE search is desired.}
@@ -159,7 +157,6 @@ A list containing the following:
  \code{case.genetic.data}, set to NULL if not applicable.}
  \item{child.snps}{A vector of the column indices of child SNPs in
  \code{case.genetic.data}, set to NULL if not applicable.}
- \item{maternal.fetal.adj}{A boolean always set to FALSE}
 }
 }
 \description{

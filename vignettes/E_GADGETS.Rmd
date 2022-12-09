@@ -143,7 +143,7 @@ preprocessed.lists <- lapply(seq_len(4), function(permutation){
   exp.perm <- readRDS(exp.perm.file)
   preprocess.genetic.data(case, father.genetic.data = dad,
                           mother.genetic.data = mom,
-                          ld.block.vec = ld.block.vec, 
+                          ld.block.vec = ld.block.vec,
                           categorical.exposures = exp.perm)
 })
 

@@ -550,146 +550,7 @@ IntegerVector get_target_snps_ld_blocks(IntegerVector target_snps_in,
 
 // [[Rcpp::export]]
 List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_int, IntegerVector pos_risk_int,
-                    IntegerMatrix case_data, IntegerMatrix comp, IntegerVector informative_families, IntegerVector target_snps,
-                    Nullable<IntegerVector> mom_snps_in = R_NilValue, Nullable<IntegerVector> child_snps_in = R_NilValue){
-
-  if (mom_snps_in.isNotNull() & child_snps_in.isNotNull()){
-
-    IntegerVector mom_snps;
-    mom_snps = mom_snps_in;
-    IntegerVector child_snps;
-    child_snps = child_snps_in;
-
-    if (n_neg > 0 & n_pos > 0) {
-
-      // for maternal fetal interactions, define high risk as having the mom and case risk genotypes
-
-      // first negative difference vector elements
-      IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
-      LogicalVector mom_neg_cols_l = in(neg_snp_cols, mom_snps);
-      IntegerVector n1_mom(informative_families.length(), 0);
-      if (is_true(any(mom_neg_cols_l))){
-
-        IntegerVector neg_snp_cols_mom = neg_snp_cols[mom_neg_cols_l];
-        n1_mom = n_neg_high_risk(case_data, informative_families, neg_snp_cols_mom);
-
-      }
-
-      LogicalVector child_neg_cols_l = in(neg_snp_cols, child_snps);
-      IntegerVector n1_child(informative_families.length(), 0);
-      IntegerVector n2_child(informative_families.length(), 0);
-      if (is_true(any(child_neg_cols_l))){
-
-        IntegerVector neg_snp_cols_child = neg_snp_cols[child_neg_cols_l];
-        n1_child = n_neg_high_risk(case_data, informative_families, neg_snp_cols_child);
-        n2_child = n_neg_high_risk(comp, informative_families, neg_snp_cols_child);
-
-      }
-
-      // now positive elements
-      IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
-      LogicalVector mom_pos_cols_l = in(pos_snp_cols, mom_snps);
-      IntegerVector p1_mom(informative_families.length(), 0);
-      if (is_true(any(mom_pos_cols_l))){
-
-        IntegerVector pos_snp_cols_mom = pos_snp_cols[mom_pos_cols_l];
-        p1_mom = n_pos_high_risk(case_data, informative_families, pos_snp_cols_mom);
-
-      }
-
-      LogicalVector child_pos_cols_l = in(pos_snp_cols, child_snps);
-      IntegerVector p1_child(informative_families.length(), 0);
-      IntegerVector p2_child(informative_families.length(), 0);
-      if (is_true(any(child_pos_cols_l))){
-
-        IntegerVector pos_snp_cols_child = pos_snp_cols[child_pos_cols_l];
-        p1_child = n_pos_high_risk(case_data, informative_families, pos_snp_cols_child);
-        p2_child = n_pos_high_risk(comp, informative_families, pos_snp_cols_child);
-
-      }
-
-      IntegerVector n1 = n1_mom + n1_child;
-      IntegerVector n2 = n1_mom + n2_child;
-
-      IntegerVector p1 = p1_mom + p1_child;
-      IntegerVector p2 = p1_mom + p2_child;
-
-      LogicalVector case_high_risk = (p1 + n1) == n_target;
-      LogicalVector comp_high_risk = (p2 + n2) == n_target;
-
-      List res = List::create(Named("case_high_risk") = case_high_risk,
-                              Named("comp_high_risk") = comp_high_risk);
-      return(res);
-
-    } else if (n_neg > 0 & n_pos == 0) {
-
-      IntegerVector neg_snp_cols = target_snps[neg_risk_int - 1];
-      LogicalVector mom_neg_cols_l = in(neg_snp_cols, mom_snps);
-      IntegerVector n1_mom(informative_families.length(), 0);
-      if (is_true(any(mom_neg_cols_l))){
-
-        IntegerVector neg_snp_cols_mom = neg_snp_cols[mom_neg_cols_l];
-        n1_mom = n_neg_high_risk(case_data, informative_families, neg_snp_cols_mom);
-
-      }
-
-      LogicalVector child_neg_cols_l = in(neg_snp_cols, child_snps);
-      IntegerVector n1_child(informative_families.length(), 0);
-      IntegerVector n2_child(informative_families.length(), 0);
-      if (is_true(any(child_neg_cols_l))){
-
-        IntegerVector neg_snp_cols_child = neg_snp_cols[child_neg_cols_l];
-        n1_child = n_neg_high_risk(case_data, informative_families, neg_snp_cols_child);
-        n2_child = n_neg_high_risk(comp, informative_families, neg_snp_cols_child);
-
-      }
-
-      IntegerVector n1 = n1_mom + n1_child;
-      IntegerVector n2 = n1_mom + n2_child;
-
-      LogicalVector case_high_risk = n1 == n_target;
-      LogicalVector comp_high_risk = n2 == n_target;
-
-      List res = List::create(Named("case_high_risk") = case_high_risk,
-                              Named("comp_high_risk") = comp_high_risk);
-      return(res);
-
-    } else {
-
-      IntegerVector pos_snp_cols = target_snps[pos_risk_int - 1];
-      LogicalVector mom_pos_cols_l = in(pos_snp_cols, mom_snps);
-      IntegerVector p1_mom(informative_families.length(), 0);
-      if (is_true(any(mom_pos_cols_l))){
-
-        IntegerVector pos_snp_cols_mom = pos_snp_cols[mom_pos_cols_l];
-        p1_mom = n_pos_high_risk(case_data, informative_families, pos_snp_cols_mom);
-
-      }
-
-      LogicalVector child_pos_cols_l = in(pos_snp_cols, child_snps);
-      IntegerVector p1_child(informative_families.length(), 0);
-      IntegerVector p2_child(informative_families.length(), 0);
-      if (is_true(any(child_pos_cols_l))){
-
-        IntegerVector pos_snp_cols_child = pos_snp_cols[child_pos_cols_l];
-        p1_child = n_pos_high_risk(case_data, informative_families, pos_snp_cols_child);
-        p2_child = n_pos_high_risk(comp, informative_families, pos_snp_cols_child);
-
-      }
-
-      IntegerVector p1 = p1_mom + p1_child;
-      IntegerVector p2 = p1_mom + p2_child;
-
-      LogicalVector case_high_risk = p1 == n_target;
-      LogicalVector comp_high_risk = p2 == n_target;
-
-      List res = List::create(Named("case_high_risk") = case_high_risk,
-                              Named("comp_high_risk") = comp_high_risk);
-      return(res);
-
-    }
-
-  } else {
+                    IntegerMatrix case_data, IntegerMatrix comp, IntegerVector informative_families, IntegerVector target_snps){
 
     if (n_neg > 0 & n_pos > 0) {
 
@@ -735,8 +596,6 @@ List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_i
       return(res);
 
     }
-
-  }
 
 }
 
@@ -747,8 +606,7 @@ List find_high_risk(int n_target, int n_pos, int n_neg, IntegerVector neg_risk_i
 // [[Rcpp::export]]
 List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_genetic_data, IntegerVector target_snps,
                       IntegerVector both_one_snps, IntegerVector weight_lookup, int n_different_snps_weight = 2,
-                      int n_both_one_weight = 1, Nullable<IntegerVector> mom_snps_in = R_NilValue,
-                      Nullable<IntegerVector> child_snps_in = R_NilValue){
+                      int n_both_one_weight = 1){
 
   // determine whether families are informative for the set of target_snps
   IntegerVector total_different_snps = sub_rowsums_start(case_genetic_data, comp_genetic_data, target_snps);
@@ -801,22 +659,10 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
     IntegerVector neg_risk_int = idx_vec[neg_risk];
 
     //using helper function to pick out high risk families
-    List high_risk;
-    if (mom_snps_in.isNotNull() & child_snps_in.isNotNull()){
-
-      IntegerVector mom_snps;
-      mom_snps = mom_snps_in;
-      IntegerVector child_snps;
-      child_snps = child_snps_in;
-      high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_genetic_data,
-                                 comp_genetic_data, informative_families, target_snps, mom_snps, child_snps);
-
-    } else {
-
-      high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, pos_risk_int, case_genetic_data,
-                                 comp_genetic_data, informative_families, target_snps);
-
-    }
+    List high_risk = find_high_risk(n_target, n_pos, n_neg, neg_risk_int, 
+                                    pos_risk_int, case_genetic_data,
+                                    comp_genetic_data, informative_families, 
+                                    target_snps);
 
     LogicalVector case_high_risk = high_risk["case_high_risk"];
     LogicalVector comp_high_risk = high_risk["comp_high_risk"];
@@ -854,8 +700,8 @@ List compute_dif_vecs(IntegerMatrix case_genetic_data, IntegerMatrix comp_geneti
 
 // [[Rcpp::export]]
 List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in, IntegerVector target_snps_in,
-                         IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector mom_snps_in, IntegerVector child_snps_in,
-                         bool maternal_fetal_int = false, int n_different_snps_weight = 2, int n_both_one_weight = 1,
+                         IntegerVector ld_block_vec, IntegerVector weight_lookup, 
+                         int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, bool epi_test = false) {
 
   // need to deep copy inputs to avoid overwriting if we recode recessives
@@ -870,40 +716,14 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
   IntegerVector mom_snps;
   IntegerVector child_snps;
 
-  if (maternal_fetal_int){
-
-    LogicalVector mom_snps_l = in(target_snps_in, mom_snps_in);
-    LogicalVector child_snps_l = in(target_snps_in, child_snps_in);
-    if ((is_true(any(mom_snps_l))) & (is_true(any(child_snps_l)))){
-
-      mom_snps = target_snps[mom_snps_l];
-      child_snps = target_snps[child_snps_l];
-
-    } else {
-
-      maternal_fetal_int = false;
-
-    }
-
-  }
-
   // start with all SNPs needing to be checked for both one (can change if recessive)
   IntegerVector both_one_snps = target_snps;
 
   // compute weighted difference vectors, determine risk related alleles
-  List dif_vec_list;
-  if (!maternal_fetal_int){
+  List dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, 
+                                       target_snps, both_one_snps, weight_lookup, 
+                                       n_different_snps_weight, n_both_one_weight);
 
-    dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
-                                    weight_lookup, n_different_snps_weight, n_both_one_weight);
-
-  } else {
-
-    dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
-                                    weight_lookup, n_different_snps_weight, n_both_one_weight, mom_snps,
-                                    child_snps);
-
-  }
 
   // pick out the required pieces from function output
   bool no_informative_families = dif_vec_list["no_informative_families"];
@@ -1107,19 +927,12 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
       both_one_snps = target_snps[!recoded];
 
       //recompute the number of informative families
-      List dif_vec_list;
-      if (!maternal_fetal_int){
-
-        dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
-                                        weight_lookup, n_different_snps_weight, n_both_one_weight);
-
-      } else {
-
-        dif_vec_list = compute_dif_vecs(case_genetic_data, complement_genetic_data, target_snps, both_one_snps,
-                                        weight_lookup, n_different_snps_weight, n_both_one_weight, mom_snps,
-                                        child_snps);
-
-      }
+      List dif_vec_list = compute_dif_vecs(case_genetic_data, 
+                                           complement_genetic_data, 
+                                           target_snps, both_one_snps, 
+                                           weight_lookup, 
+                                           n_different_snps_weight, 
+                                           n_both_one_weight);
 
       //pick out required pieces
       // the tmp var versions are used because direct reassignment
@@ -1266,205 +1079,325 @@ List chrom_fitness_score(IntegerMatrix case_genetic_data_in, IntegerMatrix compl
 /////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_,
-                                  NumericMatrix exposure_mat_, arma::uvec target_snps, arma::vec weight_lookup,
-                                  arma::vec null_means, arma::vec null_se,
-                                  int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                  int use_parents = 1){
-
-  // get target data and take differences
-  arma::mat case_genetic_data(case_genetic_data_.begin(), case_genetic_data_.nrow(),
-                               case_genetic_data_.ncol(), false);
-  arma::mat complement_genetic_data(complement_genetic_data_.begin(), complement_genetic_data_.nrow(),
-                              complement_genetic_data_.ncol(), false);
-  arma::mat exposure_mat(exposure_mat_.begin(), exposure_mat_.nrow(), exposure_mat_.ncol(), false);
-  arma::mat case_target = case_genetic_data.cols(target_snps - 1);
-  arma::mat comp_target = complement_genetic_data.cols(target_snps - 1);
-  arma::mat geno_diff_mat = case_target - comp_target;
-  arma::umat diffs = geno_diff_mat != 0;
-  arma::mat diff_mat = conv_to<mat>::from(diffs);
-  arma::umat both_one = case_target == 1 && comp_target == 1;
-  arma::mat both_one_mat = conv_to<mat>::from(both_one);
-  arma::vec n_diffs = arma::sum(diff_mat, 1);
-  arma::vec n_both_one = arma::sum(both_one_mat, 1);
-  n_both_one.elem( find(n_diffs == 0) ).zeros();
-  arma::vec weight_start = n_different_snps_weight*n_diffs + n_both_one_weight*n_both_one;
-  arma::vec family_weights(case_target.n_rows, fill::zeros);
-
-  int chrom_size = case_target.n_cols;
-
-  // make the family weights
-  for (unsigned int i = 0; i < case_target.n_rows; i++){
-
-    int this_weight = weight_start(i);
-    if (this_weight > 0){
-
-      double fam_weight_i = weight_lookup(this_weight - 1);
-      family_weights(i) = fam_weight_i;
-
+List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, 
+                            NumericMatrix mom_genetic_data_, 
+                            NumericMatrix dad_genetic_data_, 
+                            NumericMatrix exposure_mat_, 
+                            arma::uvec target_snps, 
+                            arma::vec weight_lookup,
+                            arma::vec null_means, arma::vec null_se, 
+                            int n_different_snps_weight = 2, 
+                            int n_both_one_weight = 1){
+    
+    // get target data and take differences
+    arma::mat case_genetic_data(case_genetic_data_.begin(), 
+                                case_genetic_data_.nrow(),
+                                case_genetic_data_.ncol(), false);
+    arma::mat mom_genetic_data(mom_genetic_data_.begin(), 
+                               mom_genetic_data_.nrow(),
+                               mom_genetic_data_.ncol(), false);
+    arma::mat dad_genetic_data(dad_genetic_data_.begin(), 
+                               dad_genetic_data_.nrow(),
+                               dad_genetic_data_.ncol(), false);
+    
+    arma::mat exposure_mat(exposure_mat_.begin(), exposure_mat_.nrow(), 
+                           exposure_mat_.ncol(), false);
+    arma::mat case_target = case_genetic_data.cols(target_snps - 1);
+    arma::mat mom_target = mom_genetic_data.cols(target_snps - 1);
+    arma::mat dad_target = dad_genetic_data.cols(target_snps - 1);
+    arma::mat comp_target = mom_target + dad_target - case_target;
+    
+    arma::mat geno_diff_mat = case_target - comp_target;
+    arma::rowvec sum_diffs = arma::sum(geno_diff_mat, 0);
+    
+    arma::umat diffs = geno_diff_mat != 0;
+    arma::mat diff_mat = conv_to<mat>::from(diffs);
+    arma::umat both_one = case_target == 1 && comp_target == 1;
+    arma::mat both_one_mat = conv_to<mat>::from(both_one);
+    arma::vec n_diffs = arma::sum(diff_mat, 1);
+    arma::vec n_both_one = arma::sum(both_one_mat, 1);
+    n_both_one.elem( find(n_diffs == 0) ).zeros();
+    arma::vec weight_start = n_different_snps_weight*n_diffs + n_both_one_weight*n_both_one;
+    arma::vec family_weights(case_target.n_rows, fill::zeros);
+    
+    int chrom_size = case_target.n_cols;
+    
+    // make the family weights
+    for (unsigned int i = 0; i < case_target.n_rows; i++){
+        
+        int this_weight = weight_start(i);
+        if (this_weight > 0){
+            
+            double fam_weight_i = weight_lookup(this_weight - 1);
+            family_weights(i) = fam_weight_i;
+            
+        }
+        
     }
-
-  }
-
-  // prepare for weighted linear model
-
-  // intercept only mat
-  arma::vec x0(case_genetic_data.n_rows, fill::ones);
-
-  // full model mat
-  arma::mat x = join_rows(x0, exposure_mat);
-
-  // compute wald stat for lm of weights
-  double wald_test = 1.0;
-  if (use_parents == 1){
-
-    arma::vec beta_weights = solve(x, family_weights, solve_opts::fast);
-    arma::colvec resid_weights = family_weights - x*beta_weights;
-    double sig2 = arma::as_scalar(arma::trans(resid_weights)*resid_weights/(x.n_rows - x.n_cols));
-    arma::mat vcov_beta_weights = sig2 * arma::pinv(arma::trans(x)*x);
-
-    // make sure cov is positive definite and return small score if not
-    bool vcov_beta_weights_pd = vcov_beta_weights.is_sympd();
-
-    // return small val if not
-    if (! vcov_beta_weights_pd){
-
-      arma::vec sum_dif_vecs(chrom_size, fill::ones);
-
-      List res = List::create(Named("fitness_score") =  pow(10, -10),
-                              Named("sum_dif_vecs") = sum_dif_vecs.t(),
-                              Named("ht_trace") = pow(10, -10),
-                              Named("wald_stat") = pow(10, -10));
-
-      return(res);
-
-    } else {
-
-      beta_weights(0) = 0.0;
-      vcov_beta_weights.col(0).zeros();
-      vcov_beta_weights.row(0).zeros();
-      wald_test = arma::as_scalar(trans(beta_weights)*pinv(vcov_beta_weights)*beta_weights);
-
-    }
-
-  }
-
-  // now transform wls to ols
-  arma::vec sqrt_weights = arma::sqrt(family_weights);
-  x.each_col() %= sqrt_weights;
-  x0.each_col() %= sqrt_weights;
-  geno_diff_mat.each_col() %= sqrt_weights;
-
-  // fit full model
-  arma::mat beta_full = solve(x, geno_diff_mat, solve_opts::fast);
-  arma::mat resid_full = geno_diff_mat - x*beta_full;
-
-  // fit reduced model
-  arma::mat beta_reduced= solve(x0, geno_diff_mat, solve_opts::fast);
-  arma::mat resid_reduced = geno_diff_mat - x0*beta_reduced;
-
-  // compute hotelling-lawley trace to compare models
-  arma::mat E = trans(resid_full) * resid_full;
-  arma::mat H = trans(resid_reduced) * resid_reduced - E;
-
-  //make sure E is invertible
-  bool E_pd = E.is_sympd();
-
-  // return small value if not
-  if (!E_pd){
-
-    arma::vec sum_dif_vecs(chrom_size, fill::ones);
-
-    List res;
-    if (use_parents == 1){
-
-      res = List::create(Named("fitness_score") =  pow(10, -10),
-                         Named("sum_dif_vecs") = sum_dif_vecs.t(),
-                         Named("ht_trace") = pow(10, -10),
-                         Named("wald_stat") = pow(10, -10));
-
-    } else {
-
-      res = List::create(Named("fitness_score") =  pow(10, -10),
-                         Named("sum_dif_vecs") = sum_dif_vecs.t());
-
-    }
-
-    return(res);
-
-  } else {
-
-    arma::mat H_Einv = H * arma::inv_sympd(E);
-    double ht_trace = arma::trace(H_Einv);
-
-    // fitness score
-    arma::vec s_vec(2);
-    s_vec(0) = wald_test;
-    s_vec(1) = ht_trace;
-    arma::vec centered_vec = s_vec - null_means;
-
-    //make sure the elements are both greater than the random nulls, otherwise
-    // set to small value
-    bool neg_elem = any(centered_vec <= 0);
-    if (neg_elem){
-
-      arma::vec sum_dif_vecs(chrom_size, fill::ones);
-
-      List res;
-      if (use_parents == 1){
-
+    
+    // prepare for weighted linear model
+    
+    // intercept only mat
+    arma::vec x0(case_genetic_data.n_rows, fill::ones);
+    arma::vec x0_orig(x0);
+    
+    // full model mat
+    arma::mat x = join_rows(x0, exposure_mat);
+    arma::mat x_orig(x);
+    
+    // holder for wald stat for lm of probs
+    double wald_test = 1.0;
+    
+    // transform to wls
+    arma::vec sqrt_weights = arma::sqrt(family_weights);
+    x.each_col() %= sqrt_weights;
+    x0.each_col() %= sqrt_weights;
+    geno_diff_mat.each_col() %= sqrt_weights;
+    
+    // fit full model
+    arma::mat beta_full = solve(x, geno_diff_mat, solve_opts::fast);
+    arma::mat resid_full = geno_diff_mat - x*beta_full;
+    
+    // fit reduced model
+    arma::mat beta_reduced= solve(x0, geno_diff_mat, solve_opts::fast);
+    arma::mat resid_reduced = geno_diff_mat - x0*beta_reduced;
+    
+    // compute hotelling-lawley trace to compare models
+    arma::mat E = trans(resid_full) * resid_full;
+    arma::mat H = trans(resid_reduced) * resid_reduced - E;
+    
+    //make sure E is invertible
+    bool E_pd = E.is_sympd();
+    
+    // return small value if not
+    if (!E_pd){
+        
+        arma::vec sum_dif_vecs(chrom_size, fill::ones);
+        arma::vec beta_exposure_prob_disease(x_orig.n_cols, fill::zeros);
+        
+        List res;
         res = List::create(Named("fitness_score") =  pow(10, -10),
                            Named("sum_dif_vecs") = sum_dif_vecs.t(),
                            Named("ht_trace") = pow(10, -10),
-                           Named("wald_stat") = pow(10, -10));
-
-      } else {
-
-        res = List::create(Named("fitness_score") =  pow(10, -10),
-                           Named("sum_dif_vecs") = sum_dif_vecs.t());
-
-      }
-
-      return(res);
-
+                           Named("wald_stat") = pow(10, -10), 
+                           Named("risk_set_alleles") = sum_diffs, 
+                           Named("beta_exposure_prob_disease") = 
+                               beta_exposure_prob_disease.t());
+        return(res);
+        
     } else {
+        
+        arma::mat H_Einv = H * arma::inv_sympd(E);
+        double ht_trace = arma::trace(H_Einv);
+        
+        arma::vec prob_disease(mom_target.n_rows);
 
-      double s = arma::prod(centered_vec / null_se);
+        //nominate risk alleles
+        arma::mat pred_means = x_orig*beta_full;
+        for (unsigned int i = 0; i < mom_target.n_rows; i++){
+            
+            arma::vec risk_geno_probs(mom_target.n_cols);
+            
+            for (unsigned int j = 0; j < mom_target.n_cols; j++){
+                
+                double mom_geno = mom_target(i, j);
+                double dad_geno = dad_target(i, j);
+                double this_beta = sum_diffs(j);
+                
+                if (this_beta > 0){
+                    
+                    // zero out predicted mean difference vector for inconsistencies
+                    // with nominated risk alleles
+                    if (pred_means(i, j) <= 0){
+                        
+                        pred_means(i, j) = 0.0;
+                        
+                    }
+                    
+                    if (mom_geno == 2.0 | dad_geno == 2.0){
+                        
+                        risk_geno_probs(j) = 1.0;
+                        
+                    } else if (mom_geno == 1.0 & dad_geno == 1.0){
+                        
+                        risk_geno_probs(j) = 0.75;
+                        
+                    } else if (mom_geno == 1.0 | dad_geno == 1.0){
+                        
+                        risk_geno_probs(j) = 0.50;
+                        
+                    } else {
+                        
+                        risk_geno_probs(j) = 0.0;
+                        
+                    }
+                    
+                } else {
+                    
+                    // zero out predicted mean difference vector for inconsistencies
+                    // with nominated risk alleles
+                    if (pred_means(i, j) > 0){
+                        
+                        pred_means(i, j) = 0.0;
+                        
+                    }
+                    
+                    if (mom_geno == 0.0 | dad_geno == 0.0){
+                        
+                        risk_geno_probs(j) = 1.0;
+                        
+                    } else if (mom_geno == 1.0 & dad_geno == 1.0){
+                        
+                        risk_geno_probs(j) = 0.75;
+                        
+                    } else if (mom_geno == 1.0 | dad_geno == 1.0){
+                        
+                        risk_geno_probs(j) = 0.50;
+                        
+                    } else {
+                        
+                        risk_geno_probs(j) = 0.0;
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            double risk_child_prob = 100*arma::prod(risk_geno_probs);
+            prob_disease(i) = risk_child_prob;
+            
+        }
+        
+        // get the lengths of the predicted mean vecs
+        arma::vec mean_vec_lengths = arma::sqrt(arma::sum(arma::square(pred_means), 1));
+    
+        // make sure we have unique values (possible for all to be zero)    
+        arma::vec unique_vec_lengths = arma::unique(mean_vec_lengths);
+        
+        // return small value if only one predicted mean 
+        if (unique_vec_lengths.n_elem == 1){
+            
+            arma::vec sum_dif_vecs(chrom_size, fill::ones);
+            arma::vec beta_exposure_prob_disease(x_orig.n_cols, fill::zeros);
+            List res = List::create(Named("fitness_score") =  pow(10, -10),
+                                    Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                                    Named("ht_trace") = pow(10, -10),
+                                    Named("wald_stat") = pow(10, -10), 
+                                    Named("risk_set_alleles") = sum_diffs, 
+                                    Named("beta_exposure_prob_disease") = 
+                                        beta_exposure_prob_disease.t());
+            return(res);
+            
+            
+        }
+    
+        arma::mat x_vec_lengths = join_rows(x0_orig, mean_vec_lengths);
+        arma::vec beta_prob_disease = solve(x_vec_lengths, prob_disease, solve_opts::fast);
+        arma::vec beta_exposure_prob_disease = solve(x_orig, prob_disease, solve_opts::fast);
 
-      // use the diagonals of H to determine which elements to keep
-      arma::vec H_Einv_diag = H_Einv.diag();
-
-      // if the fitness score is zero or undefined reset to small number
-      if ( (s <= 0) | (R_isnancpp(s)) | (!arma::is_finite(s)) | any(H_Einv_diag <= 0)){
-        s = pow(10, -10);
-      }
-
-      // make sure the diagonals are positive real numbers
-      double fill_val = pow(10, -10);
-      arma::uvec zero_vals = arma::find(H_Einv_diag <= 0);
-      H_Einv_diag.elem(zero_vals).fill(fill_val);
-
-      List res;
-      if (use_parents == 1){
-
-        res = List::create(Named("fitness_score") = s,
-                           Named("sum_dif_vecs") = H_Einv_diag.t(),
-                           Named("ht_trace") = ht_trace,
-                           Named("wald_stat") = wald_test);
-
-      } else {
-
-        res = List::create(Named("fitness_score") = s,
-                           Named("sum_dif_vecs") = H_Einv_diag.t());
-
-      }
-
-      return(res);
-
+        // make sure association is positive 
+        bool pos_assoc = beta_prob_disease(1) > 0;
+        if (! pos_assoc){
+            
+            arma::vec sum_dif_vecs(chrom_size, fill::ones);
+            List res = List::create(Named("fitness_score") =  pow(10, -10),
+                                    Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                                    Named("ht_trace") = pow(10, -10),
+                                    Named("wald_stat") = pow(10, -10), 
+                                    Named("risk_set_alleles") = sum_diffs, 
+                                    Named("beta_exposure_prob_disease") = 
+                                        beta_exposure_prob_disease.t());
+            
+            return(res);
+            
+        }
+        
+        arma::colvec resid_prob_disease = prob_disease - x_vec_lengths*beta_prob_disease;
+        double sig2 = arma::as_scalar(arma::trans(resid_prob_disease)*resid_prob_disease/
+                                      (x_vec_lengths.n_rows - x_vec_lengths.n_cols));
+        arma::mat vcov_beta_prob_disease = sig2 * arma::pinv(arma::trans(x_vec_lengths)*x_vec_lengths);
+        
+        // make sure cov is positive definite and return small score if not
+        bool vcov_beta_prob_disease_pd = vcov_beta_prob_disease.is_sympd();
+        
+        // return small val if not
+        if (! vcov_beta_prob_disease_pd){
+            
+            arma::vec sum_dif_vecs(chrom_size, fill::ones);
+            List res = List::create(Named("fitness_score") =  pow(10, -10),
+                                    Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                                    Named("ht_trace") = pow(10, -10),
+                                    Named("wald_stat") = pow(10, -10), 
+                                    Named("risk_set_alleles") = sum_diffs, 
+                                    Named("beta_exposure_prob_disease") = 
+                                        beta_exposure_prob_disease.t());
+            
+            return(res);
+            
+        } else {
+            
+            beta_prob_disease(0) = 0.0;
+            vcov_beta_prob_disease.col(0).zeros();
+            vcov_beta_prob_disease.row(0).zeros();
+            wald_test = arma::as_scalar(trans(beta_prob_disease)*pinv(vcov_beta_prob_disease)*beta_prob_disease);
+            
+        }
+            
+        
+        // fitness score
+        arma::vec s_vec(2);
+        s_vec(0) = wald_test;
+        s_vec(1) = ht_trace;
+        arma::vec centered_vec = s_vec - null_means;
+        
+        //make sure the elements are both greater than the random nulls, otherwise
+        // set to small value
+        bool neg_elem = any(centered_vec <= 0);
+        if (neg_elem){
+            
+            arma::vec sum_dif_vecs(chrom_size, fill::ones);
+            List res;
+            res = List::create(Named("fitness_score") =  pow(10, -10),
+                               Named("sum_dif_vecs") = sum_dif_vecs.t(),
+                               Named("ht_trace") = pow(10, -10),
+                               Named("wald_stat") = wald_test, 
+                               Named("risk_set_alleles") = sum_diffs, 
+                               Named("beta_exposure_prob_disease") = 
+                                   beta_exposure_prob_disease.t());
+            return(res);
+            
+        } else {
+            
+            double s = arma::prod(centered_vec / null_se);
+            
+            // use the diagonals of H to determine which elements to keep
+            arma::vec H_Einv_diag = H_Einv.diag();
+            
+            // if the fitness score is zero or undefined reset to small number
+            if ( (s <= 0) | (R_isnancpp(s)) | (!arma::is_finite(s)) | any(H_Einv_diag <= 0)){
+                s = pow(10, -10);
+            }
+            
+            // make sure the diagonals are positive real numbers
+            double fill_val = pow(10, -10);
+            arma::uvec zero_vals = arma::find(H_Einv_diag <= 0);
+            H_Einv_diag.elem(zero_vals).fill(fill_val);
+            
+            List res;
+            res = List::create(Named("fitness_score") = s,
+                               Named("sum_dif_vecs") = H_Einv_diag.t(),
+                               Named("ht_trace") = ht_trace,
+                               Named("wald_stat") = wald_test, 
+                               Named("risk_set_alleles") = sum_diffs, 
+                               Named("beta_exposure_prob_disease") = 
+                                   beta_exposure_prob_disease.t());
+            return(res);
+            
+        }
+        
     }
-
-  }
-
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1473,8 +1406,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_, NumericMatrix comp
 
 // [[Rcpp::export]]
 List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data, List chromosome_list,
-                        IntegerVector ld_block_vec, IntegerVector weight_lookup, IntegerVector mom_snps_in,
-                        IntegerVector child_snps_in, bool maternal_fetal_int = false, int n_different_snps_weight = 2,
+                        IntegerVector ld_block_vec, IntegerVector weight_lookup, int n_different_snps_weight = 2,
                         int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                         bool epi_test = false){
 
@@ -1483,7 +1415,7 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 
     IntegerVector target_snps = chromosome_list[i];
     scores[i] = chrom_fitness_score(case_genetic_data, complement_genetic_data, target_snps, ld_block_vec,
-                                    weight_lookup, mom_snps_in, child_snps_in, maternal_fetal_int,
+                                    weight_lookup, 
                                     n_different_snps_weight, n_both_one_weight, recessive_ref_prop,
                                     recode_test_stat, epi_test);
 
@@ -1497,22 +1429,23 @@ List chrom_fitness_list(IntegerMatrix case_genetic_data, IntegerMatrix complemen
 ///////////////////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_,
-                       NumericMatrix exposure_mat_, List chromosome_list,
-                       arma::vec weight_lookup,
-                       arma::vec null_means, arma::vec null_se,
-                       int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                       int use_parents = 1){
+List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_, 
+                                 NumericMatrix mom_genetic_data_, 
+                                 NumericMatrix dad_genetic_data_, 
+                                 NumericMatrix exposure_mat_, List chromosome_list,
+                                 arma::vec weight_lookup, 
+                                 arma::vec null_means, arma::vec null_se, 
+                                 int n_different_snps_weight = 2, int n_both_one_weight = 1){
 
   List scores = chromosome_list.length();
   for (int i = 0; i < chromosome_list.length(); i++){
 
     arma::uvec target_snps = chromosome_list[i];
-    scores[i] = GxE_fitness_score_mvlm(case_genetic_data_, complement_genetic_data_,
+    scores[i] = GxE_fitness_score_mvlm(case_genetic_data_, mom_genetic_data_,
+                                       dad_genetic_data_,
                                        exposure_mat_, target_snps, weight_lookup,
                                        null_means, null_se,
-                                       n_different_snps_weight, n_both_one_weight,
-                                       use_parents);
+                                       n_different_snps_weight, n_both_one_weight);
 
   }
   return(scores);
@@ -1520,7 +1453,9 @@ List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_, NumericMatrix
 }
 
 // [[Rcpp::export]]
-NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_, NumericMatrix complement_genetic_data_,
+NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_, 
+                                       NumericMatrix mom_genetic_data_, 
+                                       NumericMatrix dad_genetic_data_,
                                        NumericMatrix exposure_mat_, List chromosome_list,
                                        arma::vec weight_lookup,
                                        arma::vec null_means, arma::vec null_se,
@@ -1531,10 +1466,12 @@ NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_, Numeric
   for (int i = 0; i < chromosome_list.length(); i++){
 
     arma::uvec target_snps = chromosome_list[i];
-    List score_i = GxE_fitness_score_mvlm(case_genetic_data_, complement_genetic_data_,
+    List score_i = GxE_fitness_score_mvlm(case_genetic_data_, 
+                                          mom_genetic_data_,
+                                          dad_genetic_data_,
                                           exposure_mat_, target_snps, weight_lookup,
                                           null_means, null_se, n_different_snps_weight,
-                                          n_both_one_weight, 1);
+                                          n_both_one_weight);
     double ht_trace = score_i["ht_trace"];
     double wald_stat = score_i["wald_stat"];
     NumericVector res_vec(2);
@@ -1556,14 +1493,14 @@ NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_, Numeric
 List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
                                 IntegerVector ld_block_vec, List chromosome_list,
                                 IntegerVector weight_lookup,
-                                NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                                NumericMatrix case_genetic_data_n, 
+                                NumericMatrix mom_genetic_data, 
+                                NumericMatrix dad_genetic_data,
                                 NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                                 arma::vec null_mean_vec, arma::vec null_se_vec,
-                                IntegerVector mom_snps_in, IntegerVector child_snps_in,
-                                bool maternal_fetal_int = false,
                                 int n_different_snps_weight = 2,
                                 int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                int use_parents = 1, bool E_GADGETS = false){
+                                bool E_GADGETS = false){
 
   // initiate storage object for fitness scores
   List chrom_fitness_score_list;
@@ -1572,17 +1509,20 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
   if (E_GADGETS){
 
     // compute fitness scores
-    List chrom_fitness_score_list = GxE_fitness_score_mvlm_list(case_genetic_data_n, complement_genetic_data_n,
+    List chrom_fitness_score_list = GxE_fitness_score_mvlm_list(case_genetic_data_n, 
+                                                                mom_genetic_data,
+                                                                dad_genetic_data,
                                                                 exposure_mat_n, chromosome_list,
                                                                 weight_lookup_n, null_mean_vec, null_se_vec,
-                                                                n_different_snps_weight, n_both_one_weight,
-                                                                use_parents);
+                                                                n_different_snps_weight, n_both_one_weight);
 
     // initiate obejcts for overall fitness score information
     int n_chromosomes = chromosome_list.length();
     NumericVector fitness_scores(n_chromosomes);
     List sum_dif_vecs(n_chromosomes);
     List gen_original_cols(n_chromosomes);
+    List risk_allele_vecs(n_chromosomes);
+    List beta_exposure_prob_disease(n_chromosomes);
 
     // loop over chromosomes and pick out the information
     for (int i = 0; i < n_chromosomes; i++){
@@ -1591,25 +1531,32 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
       List chrom_fitness_score_list_i = chrom_fitness_score_list[i];
       double fs = chrom_fitness_score_list_i["fitness_score"];
       NumericVector sdv = chrom_fitness_score_list_i["sum_dif_vecs"];
+      NumericVector rav = chrom_fitness_score_list_i["risk_set_alleles"];
+      NumericVector bepd = chrom_fitness_score_list_i["beta_exposure_prob_disease"];
       IntegerVector chrom_col_idx = chromosome_list[i];
 
       fitness_scores[i] = fs;
       sum_dif_vecs[i] = sdv;
       gen_original_cols[i] = chrom_col_idx;
+      risk_allele_vecs[i] = rav;
+      beta_exposure_prob_disease[i] = bepd;
 
     }
 
     List res = List::create(Named("chromosome_list") = chromosome_list,
                             Named("fitness_scores") = fitness_scores,
                             Named("sum_dif_vecs") = sum_dif_vecs,
-                            Named("gen_original_cols") = gen_original_cols);
+                            Named("gen_original_cols") = gen_original_cols, 
+                            Named("risk_allele_vecs") = risk_allele_vecs, 
+                            Named("beta_exposure_prob_disease_vecs") = 
+                                beta_exposure_prob_disease);
     return(res);
 
 
   } else {
 
     chrom_fitness_score_list = chrom_fitness_list(case_genetic_data, complement_genetic_data, chromosome_list, ld_block_vec, weight_lookup,
-                                                  mom_snps_in, child_snps_in, maternal_fetal_int, n_different_snps_weight, n_both_one_weight,
+                                                  n_different_snps_weight, n_both_one_weight,
                                                   recessive_ref_prop, recode_test_stat, false);
 
     // for storing generation information
@@ -1714,15 +1661,15 @@ List find_top_chrom(NumericVector fitness_scores, List chromosome_list, int chro
 List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
                          IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size,
                          IntegerVector weight_lookup,
-                         NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                         NumericMatrix case_genetic_data_n, 
+                         NumericMatrix mom_genetic_data_n,
+                         NumericMatrix dad_genetic_data_n,
                          NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                          arma::vec null_mean_vec, arma::vec null_se_vec,
-                         IntegerVector mom_snps_in, IntegerVector child_snps_in,
-                         bool maternal_fetal_int = false,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
-                         int use_parents = 1, bool E_GADGETS= false){
+                         bool E_GADGETS= false){
 
   int n_possible_unique_combn = n_chromosomes * chromosome_size;
   if ((n_candidate_snps < n_possible_unique_combn) & !initial_sample_duplicates) {
@@ -1757,11 +1704,11 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
 
   // compute fitness scores for the chromosome list
   List  current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
-                                                      weight_lookup, case_genetic_data_n, complement_genetic_data_n, exposure_mat_n,
-                                                      weight_lookup_n, null_mean_vec, null_se_vec, mom_snps_in, child_snps_in,
-                                                      maternal_fetal_int, n_different_snps_weight,
+                                                      weight_lookup, case_genetic_data_n, mom_genetic_data_n, dad_genetic_data_n, exposure_mat_n,
+                                                      weight_lookup_n, null_mean_vec, null_se_vec, 
+                                                      n_different_snps_weight,
                                                       n_both_one_weight, recessive_ref_prop, recode_test_stat,
-                                                      use_parents, E_GADGETS);
+                                                      E_GADGETS);
 
   // pick out the top and bottom scores
   chromosome_list = current_fitness_list["chromosome_list"];
@@ -1791,17 +1738,17 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
 List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMatrix complement_genetic_data,
                    IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
                    NumericVector snp_chisq, List population,
-                   NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                   NumericMatrix case_genetic_data_n, 
+                   NumericMatrix mom_genetic_data_n,
+                   NumericMatrix dad_genetic_data_n,
                    NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                    arma::vec null_mean_vec, arma::vec null_se_vec,
-                   IntegerVector mom_snps_in, IntegerVector child_snps_in,
-                   bool maternal_fetal_int = false,
                    int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500,
                    bool initial_sample_duplicates = false,
                    double crossover_prop = 0.8, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                   int use_parents = 1, bool E_GADGETS = false){
+                   bool E_GADGETS = false){
 
   // initialize groups of candidate solutions if generation 1
   int generation = population["generation"];
@@ -2045,11 +1992,10 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
 
     // 6. Compute new population fitness
     current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
-                                                      weight_lookup, case_genetic_data_n, complement_genetic_data_n,
+                                                      weight_lookup, case_genetic_data_n, mom_genetic_data_n, dad_genetic_data_n,
                                                       exposure_data_n, weight_lookup_n, null_mean_vec, null_se_vec,
-                                                      mom_snps_in, child_snps_in, maternal_fetal_int,
                                                       n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat,
-                                                      use_parents, E_GADGETS);
+                                                      E_GADGETS);
 
     //7. Increment iterators
     generation += 1;
@@ -2117,102 +2063,82 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     fitness_scores = fitness_scores_tmp;
     sum_dif_vecs = sum_dif_vecs[chrom_list_order - 1];
     gen_original_cols = gen_original_cols[chrom_list_order - 1];
+    
+    List risk_allele_vecs = current_fitness_list["risk_allele_vecs"];
+    risk_allele_vecs = risk_allele_vecs[chrom_list_order - 1]; 
+    
+    List pop_current_fitness_list = population["current_fitness"];
+    pop_current_fitness_list["chromosome_list"] = chromosome_list;
+    pop_current_fitness_list["fitness_scores"] = fitness_scores;
+    pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
+    pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
+    pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
 
     // store in population
-    if (E_GADGETS){
+    if (!E_GADGETS){
+        
+        IntegerVector n_case_risk_geno_vec_tmp = current_fitness_list["n_case_risk_geno_vec"];
+        IntegerVector n_case_risk_geno_vec = n_case_risk_geno_vec_tmp[chrom_list_order - 1];
 
-      List pop_current_fitness_list = population["current_fitness"];
-      pop_current_fitness_list["chromosome_list"] = chromosome_list;
-      pop_current_fitness_list["fitness_scores"] = fitness_scores;
-      pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
-      pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      population["last_gens_equal"] = same_last_gens;
-      population["current_top_generation_chromosome"] = top_chromosome;
-      population["current_lower_chromosomes"] = lower_chromosomes;
-      population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
-      population["generation"] = generation;
-      population["top_chrom_migrated"] = top_chrom_migrated;
+        IntegerVector n_comp_risk_geno_vec_tmp = current_fitness_list["n_comp_risk_geno_vec"];
+        IntegerVector n_comp_risk_geno_vec = n_comp_risk_geno_vec_tmp[chrom_list_order - 1];
 
-      // return the population
-      return(population);
+        pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
+        pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
 
     } else {
-
-      List risk_allele_vecs = current_fitness_list["risk_allele_vecs"];
-      risk_allele_vecs = risk_allele_vecs[chrom_list_order - 1];
-
-      IntegerVector n_case_risk_geno_vec_tmp = current_fitness_list["n_case_risk_geno_vec"];
-      IntegerVector n_case_risk_geno_vec = n_case_risk_geno_vec_tmp[chrom_list_order - 1];
-
-      IntegerVector n_comp_risk_geno_vec_tmp = current_fitness_list["n_comp_risk_geno_vec"];
-      IntegerVector n_comp_risk_geno_vec = n_comp_risk_geno_vec_tmp[chrom_list_order - 1];
-
-      List pop_current_fitness_list = population["current_fitness"];
-      pop_current_fitness_list["chromosome_list"] = chromosome_list;
-      pop_current_fitness_list["fitness_scores"] = fitness_scores;
-      pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
-      pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
-      pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
-      pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
-
-      population["last_gens_equal"] = same_last_gens;
-      population["current_top_generation_chromosome"] = top_chromosome;
-      population["current_lower_chromosomes"] = lower_chromosomes;
-      population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
-      population["generation"] = generation;
-      population["top_chrom_migrated"] = top_chrom_migrated;
-
-      // return the population
-      return(population);
-
+        
+        List beta_exposure_prob_disease_vecs = current_fitness_list["beta_exposure_prob_disease_vecs"];
+        beta_exposure_prob_disease_vecs = beta_exposure_prob_disease_vecs[chrom_list_order - 1]; 
+        pop_current_fitness_list["beta_exposure_prob_disease_vecs"] = beta_exposure_prob_disease_vecs;
+        
     }
+    
+    
+    population["last_gens_equal"] = same_last_gens;
+    population["current_top_generation_chromosome"] = top_chromosome;
+    population["current_lower_chromosomes"] = lower_chromosomes;
+    population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
+    population["generation"] = generation;
+    population["top_chrom_migrated"] = top_chrom_migrated;
+    
+    // return the population
+    return(population);
 
   // otherwise just store the current generation and return the population
   } else {
+      
+    List risk_allele_vecs = current_fitness_list["risk_allele_vecs"];  
+    List pop_current_fitness_list = population["current_fitness"]; 
+    pop_current_fitness_list["chromosome_list"] = chromosome_list;
+    pop_current_fitness_list["fitness_scores"] = fitness_scores;
+    pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
+    pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
+    pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
 
-    if (E_GADGETS){
+    if (!E_GADGETS){
 
-      List pop_current_fitness_list = population["current_fitness"];
-      pop_current_fitness_list["chromosome_list"] = chromosome_list;
-      pop_current_fitness_list["fitness_scores"] = fitness_scores;
-      pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
-      pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      population["last_gens_equal"] = same_last_gens;
-      population["current_top_generation_chromosome"] = top_chromosome;
-      population["current_lower_chromosomes"] = lower_chromosomes;
-      population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
-      population["generation"] = generation;
-      population["top_chrom_migrated"] = top_chrom_migrated;
-
-      // return the population
-      return(population);
-
-    } else {
-
-      List risk_allele_vecs = current_fitness_list["risk_allele_vecs"];
       IntegerVector n_case_risk_geno_vec = current_fitness_list["n_case_risk_geno_vec"];
       IntegerVector n_comp_risk_geno_vec = current_fitness_list["n_comp_risk_geno_vec"];
-
-      List pop_current_fitness_list = population["current_fitness"];
-      pop_current_fitness_list["chromosome_list"] = chromosome_list;
-      pop_current_fitness_list["fitness_scores"] = fitness_scores;
-      pop_current_fitness_list["sum_dif_vecs"] = sum_dif_vecs;
-      pop_current_fitness_list["gen_original_cols"] = gen_original_cols;
-      pop_current_fitness_list["risk_allele_vecs"] = risk_allele_vecs;
       pop_current_fitness_list["n_case_risk_geno_vec"] = n_case_risk_geno_vec;
       pop_current_fitness_list["n_comp_risk_geno_vec"] = n_comp_risk_geno_vec;
 
-      population["last_gens_equal"] = same_last_gens;
-      population["current_top_generation_chromosome"] = top_chromosome;
-      population["current_lower_chromosomes"] = lower_chromosomes;
-      population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
-      population["generation"] = generation;
-      population["top_chrom_migrated"] = top_chrom_migrated;
-
-      return(population);
-
+    } else {
+        
+        List beta_exposure_prob_disease_vecs = current_fitness_list["beta_exposure_prob_disease_vecs"];
+        pop_current_fitness_list["beta_exposure_prob_disease_vecs"] = beta_exposure_prob_disease_vecs;
+        
     }
+    
+    population["last_gens_equal"] = same_last_gens;
+    population["current_top_generation_chromosome"] = top_chromosome;
+    population["current_lower_chromosomes"] = lower_chromosomes;
+    population["n_gens_same_top_chrom"] = n_gens_same_top_chrom;
+    population["generation"] = generation;
+    population["top_chrom_migrated"] = top_chrom_migrated;
+    
+    // return the population
+    return(population);
 
   }
 }
@@ -2276,14 +2202,13 @@ bool check_max_gens(List island_populations, int max_generations){
 List run_GADGETS(int island_cluster_size, int n_migrations,
                  IntegerVector ld_block_vec, int n_chromosomes, int chromosome_size, IntegerVector weight_lookup,
                  NumericVector snp_chisq, IntegerMatrix case_genetic_data_in, IntegerMatrix complement_genetic_data_in,
-                 NumericMatrix case_genetic_data_n, NumericMatrix complement_genetic_data_n,
+                 NumericMatrix case_genetic_data_n, NumericMatrix mom_genetic_data_n, NumericMatrix dad_genetic_data_n,
                  NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                  arma::vec null_mean_vec, arma::vec null_se_vec,
-                 Nullable<IntegerVector> mom_snps_in_ = R_NilValue, Nullable<IntegerVector> child_snps_in_ = R_NilValue,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
-                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, int use_parents = 1,
+                 double recessive_ref_prop = 0.75, double recode_test_stat = 1.64, 
                  bool E_GADGETS = false){
 
   // instantiate input objects
@@ -2303,17 +2228,6 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 
   }
 
-  // for maternal fetal interactions
-  IntegerVector mom_snps_in;
-  IntegerVector child_snps_in;
-  bool maternal_fetal_int = false;
-  if ((mom_snps_in_.isNotNull()) & (child_snps_in_.isNotNull())){
-
-    mom_snps_in = mom_snps_in_;
-    child_snps_in = child_snps_in_;
-    maternal_fetal_int = true;
-
-  }
 
   // go through first round of island evolution
   List island_populations(island_cluster_size);
@@ -2323,22 +2237,21 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
     List island_population_i = initiate_population(n_candidate_snps, case_genetic_data, complement_genetic_data,
                                                    ld_block_vec, n_chromosomes, chromosome_size,
                                                    weight_lookup, case_genetic_data_n,
-                                                   complement_genetic_data_n, exposure_data_n,
+                                                   mom_genetic_data_n, dad_genetic_data_n, exposure_data_n,
                                                    weight_lookup_n, null_mean_vec, null_se_vec,
-                                                   mom_snps_in, child_snps_in, maternal_fetal_int,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
                                                    max_generations, initial_sample_duplicates,
-                                                   use_parents, E_GADGETS);
+                                                   E_GADGETS);
 
     island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                           ld_block_vec, n_chromosomes, chromosome_size, weight_lookup,
                                           snp_chisq, island_population_i, case_genetic_data_n,
-                                          complement_genetic_data_n, exposure_data_n, weight_lookup_n,
-                                          null_mean_vec, null_se_vec, mom_snps_in, child_snps_in, maternal_fetal_int,
+                                          mom_genetic_data_n, dad_genetic_data_n, exposure_data_n, weight_lookup_n,
+                                          null_mean_vec, null_se_vec, 
                                           n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness,
                                           max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop,
-                                          recode_test_stat, use_parents, E_GADGETS);
+                                          recode_test_stat, E_GADGETS);
 
   }
 
@@ -2397,27 +2310,35 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
       List first_island_orig_chroms = first_island_current["gen_original_cols"];
       List original_chrom_migrations = second_island_orig_chroms[donor_idx];
       first_island_orig_chroms[receiver_idx] = original_chrom_migrations;
+      
+      // migrate risk allele vecs
+      List second_island_risk_alleles = second_island_current["risk_allele_vecs"];
+      List first_island_risk_alleles = first_island_current["risk_allele_vecs"];
+      List risk_allele_migrations = second_island_risk_alleles[donor_idx];
+      first_island_risk_alleles[receiver_idx] = risk_allele_migrations;
 
       if (!E_GADGETS) {
-
-        // migrate risk allele vecs
-        List second_island_risk_alleles = second_island_current["risk_allele_vecs"];
-        List first_island_risk_alleles = first_island_current["risk_allele_vecs"];
-        List risk_allele_migrations = second_island_risk_alleles[donor_idx];
-        first_island_risk_alleles[receiver_idx] = risk_allele_migrations;
 
         // migrate n case high risk geno
         IntegerVector first_island_case_geno = first_island_current["n_case_risk_geno_vec"];
         IntegerVector second_island_case_geno = second_island_current["n_case_risk_geno_vec"];
         IntegerVector case_geno_migrations = second_island_case_geno[donor_idx];
         first_island_case_geno[receiver_idx] = case_geno_migrations;
-
+        
         // migrate n comp high risk geno
         IntegerVector first_island_comp_geno = first_island_current["n_comp_risk_geno_vec"];
         IntegerVector second_island_comp_geno = second_island_current["n_comp_risk_geno_vec"];
         IntegerVector comp_geno_migrations = second_island_comp_geno[donor_idx];
         first_island_comp_geno[receiver_idx] = comp_geno_migrations;
 
+      } else {
+        
+        // migrate exposure/disease prob betas for E-GADGETS
+        List second_island_beta_exposure_prob_disease_vecs = second_island_current["beta_exposure_prob_disease_vecs"];
+        List first_island_beta_exposure_prob_disease_vecs = first_island_current["beta_exposure_prob_disease_vecs"];
+        List beta_exposure_prob_disease_vecs_migrations = second_island_beta_exposure_prob_disease_vecs[donor_idx];
+        first_island_beta_exposure_prob_disease_vecs[receiver_idx] = beta_exposure_prob_disease_vecs_migrations;
+          
       }
 
       // update the top/lower chromosomes, and the n_same_last_gens
@@ -2446,12 +2367,12 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
       island_populations[i] = evolve_island(n_migrations, case_genetic_data, complement_genetic_data,
                                             ld_block_vec, n_chromosomes, chromosome_size, weight_lookup,
                                             snp_chisq, island_population_i,
-                                            case_genetic_data_n, complement_genetic_data_n, exposure_data_n, weight_lookup_n,
-                                            null_mean_vec, null_se_vec, mom_snps_in, child_snps_in, maternal_fetal_int,
+                                            case_genetic_data_n, mom_genetic_data_n, dad_genetic_data_n, exposure_data_n, weight_lookup_n,
+                                            null_mean_vec, null_se_vec,  
                                             n_different_snps_weight, n_both_one_weight,
                                             migration_interval, gen_same_fitness, max_generations,
                                             initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
-                                            use_parents, E_GADGETS);
+                                            E_GADGETS);
 
     }
 
@@ -2475,10 +2396,9 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
 // [[Rcpp::export]]
 double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, IntegerVector target_snps_ld_blocks,
                               IntegerVector uni_ld_blocks, int n_families,
-                              IntegerVector weight_lookup, IntegerVector mom_snps_in, IntegerVector child_snps_in,
+                              IntegerVector weight_lookup, 
                               int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                              double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                              bool maternal_fetal_adj = false){
+                              double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
 
   // make copies of the input data
   int nrows = case_inf.n_rows;
@@ -2523,7 +2443,6 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, IntegerVec
   IntegerVector target_snps = seq_len(case_rcpp.ncol());
   List fitness_list = chrom_fitness_score(case_rcpp, comp_rcpp, target_snps,
                                           target_snps_ld_blocks, weight_lookup,
-                                          mom_snps_in, child_snps_in, maternal_fetal_adj,
                                           n_different_snps_weight, n_both_one_weight,
                                           recessive_ref_prop, recode_test_stat, false);
 
@@ -2541,19 +2460,16 @@ double epistasis_test_permute(arma::mat case_inf, arma::mat comp_inf, IntegerVec
 NumericVector epistasis_test_null_scores(int n_permutes, arma::mat case_inf, arma::mat comp_inf,
                                          IntegerVector target_snps_ld_blocks, IntegerVector uni_ld_blocks,
                                          int n_families, IntegerVector weight_lookup,
-                                         IntegerVector mom_snps_in, IntegerVector child_snps_in,
                                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
-                                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
-                                         bool maternal_fetal_adj = false){
+                                         double recessive_ref_prop = 0.75, double recode_test_stat = 1.64){
 
   // loop over number of permutes and output vector of null fitness scores
   NumericVector res(n_permutes);
   for (int i = 0; i < n_permutes; i++){
 
     double permute_score_i = epistasis_test_permute(case_inf, comp_inf, target_snps_ld_blocks, uni_ld_blocks, n_families,
-                                                    weight_lookup, mom_snps_in, child_snps_in, n_different_snps_weight,
-                                                    n_both_one_weight, recessive_ref_prop, recode_test_stat,
-                                                    maternal_fetal_adj);
+                                                    weight_lookup, n_different_snps_weight,
+                                                    n_both_one_weight, recessive_ref_prop, recode_test_stat);
     res[i] = permute_score_i;
 
   }
@@ -2577,9 +2493,6 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   // grab LD info
   IntegerVector ld_block_vec = preprocessed_list["ld.block.vec"];
   IntegerVector target_snps_ld_blocks = get_target_snps_ld_blocks(snp_cols, ld_block_vec);
-
-  // note maternal-fetal adjustment
-  bool maternal_fetal_adj = preprocessed_list["maternal.fetal.adj"];
 
   // if maternal-fetal test, need all the maternal SNPs to be on separate
   // ld blocks than all fetal SNPs
@@ -2669,23 +2582,10 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
 
   // compute fitness score for observed data
   IntegerVector chrom_snps = seq_len(case_genetic_data.ncol());
-  IntegerVector mom_snps_in;
-  IntegerVector child_snps_in;
 
-  if (maternal_fetal_adj){
-
-    IntegerVector mom_snps_in_ = preprocessed_list["mother.snps"];
-    IntegerVector child_snps_in_ = preprocessed_list["child.snps"];
-
-    LogicalVector mom_snps_l = in(target_snps, mom_snps_in_);
-    LogicalVector child_snps_l = in(target_snps, child_snps_in_);
-    mom_snps_in = chrom_snps[mom_snps_l];
-    child_snps_in = chrom_snps[child_snps_l];
-
-  }
   List obs_fitness_list = chrom_fitness_score(case_genetic_data, complement_genetic_data, chrom_snps,
-                                              target_snps_ld_blocks, weight_lookup, mom_snps_in,
-                                              child_snps_in, maternal_fetal_adj, n_different_snps_weight,
+                                              target_snps_ld_blocks, weight_lookup, 
+                                              n_different_snps_weight,
                                               n_both_one_weight, recessive_ref_prop, recode_test_stat, true);
   double obs_fitness_score = obs_fitness_list["fitness_score"];
 
@@ -2700,9 +2600,8 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
   // loop over permuted datasets and compute fitness scores
   NumericVector perm_fitness_scores = epistasis_test_null_scores(n_permutes, case_inf_arma, comp_inf_arma, target_snps_ld_blocks,
                                                                  uni_ld_blocks, n_families, weight_lookup,
-                                                                 mom_snps_in, child_snps_in,
                                                                  n_different_snps_weight, n_both_one_weight,
-                                                                 recessive_ref_prop, recode_test_stat, maternal_fetal_adj);
+                                                                 recessive_ref_prop, recode_test_stat);
 
   // compute p-value
   double N = n_permutes + 1;
@@ -2748,27 +2647,20 @@ List GxE_test(arma::uvec target_snps, List preprocessed_list, arma::vec null_mea
   // convert to arma
   arma::vec weight_lookup_n = as<arma::vec>(weight_lookup);
 
-  // deprecated parental part
-  bool use_parents = preprocessed_list["use.parents"];
-  int use_parents_int = 0;
-  if (use_parents){
-
-    use_parents_int = 1;
-
-  }
-
   // get input genetic data
   NumericMatrix case_genetic_data = preprocessed_list["case.genetic.data"];
-  NumericMatrix complement_genetic_data = preprocessed_list["complement.genetic.data"];
+  NumericMatrix mom_genetic_data = preprocessed_list["mother.genetic.data"];
+  NumericMatrix dad_genetic_data = preprocessed_list["father.genetic.data"];
   NumericMatrix exposure_mat = preprocessed_list["exposure.mat"];
   int n_fams = exposure_mat.nrow();
   int n_exp = exposure_mat.ncol();
   IntegerVector fam_idx = seq_len(n_fams);
 
   // compute fitness score for observed data
-  List obs_fitness_list = GxE_fitness_score_mvlm(case_genetic_data, complement_genetic_data, exposure_mat,
+  List obs_fitness_list = GxE_fitness_score_mvlm(case_genetic_data, mom_genetic_data, 
+                                                 dad_genetic_data, exposure_mat,
                                                  target_snps, weight_lookup_n, null_mean_vec, null_se_vec,
-                                                 n_different_snps_weight, n_both_one_weight, use_parents_int);
+                                                 n_different_snps_weight, n_both_one_weight);
 
   double obs_fitness_score = obs_fitness_list["fitness_score"];
 
@@ -2789,9 +2681,9 @@ List GxE_test(arma::uvec target_snps, List preprocessed_list, arma::vec null_mea
     }
 
     // compute fitness
-    List perm_fitness_list = GxE_fitness_score_mvlm(case_genetic_data, complement_genetic_data, shuffled_exposures,
-                                                    target_snps, weight_lookup_n, null_mean_vec, null_se_vec,
-                                                    n_different_snps_weight, n_both_one_weight, use_parents_int);
+    List perm_fitness_list = GxE_fitness_score_mvlm(case_genetic_data, mom_genetic_data, dad_genetic_data, 
+                                                    shuffled_exposures, target_snps, weight_lookup_n, null_mean_vec, 
+                                                    null_se_vec, n_different_snps_weight, n_both_one_weight);
     double perm_fitness = perm_fitness_list["fitness_score"];
     perm_fitness_scores[i] = perm_fitness;
 
