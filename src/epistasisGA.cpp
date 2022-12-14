@@ -1173,7 +1173,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
     if (!E_pd){
         
         arma::vec sum_dif_vecs(chrom_size, fill::ones);
-        arma::vec beta_exposure_prob_disease(x_orig.n_cols, fill::zeros);
+        arma::vec beta_prob_disease(x_orig.n_cols, fill::zeros);
         
         List res;
         res = List::create(Named("fitness_score") =  pow(10, -10),
@@ -1182,7 +1182,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                            Named("wald_stat") = pow(10, -10), 
                            Named("risk_set_alleles") = sum_diffs, 
                            Named("beta_exposure_prob_disease") = 
-                               beta_exposure_prob_disease.t());
+                               beta_prob_disease.t());
         return(res);
         
     } else {
@@ -1193,7 +1193,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
         arma::vec prob_disease(mom_target.n_rows);
 
         //nominate risk alleles
-        arma::mat pred_means = x_orig*beta_full;
+        //arma::mat pred_means = x_orig*beta_full;
         for (unsigned int i = 0; i < mom_target.n_rows; i++){
             
             arma::vec risk_geno_probs(mom_target.n_cols);
@@ -1208,11 +1208,11 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                     
                     // zero out predicted mean difference vector for inconsistencies
                     // with nominated risk alleles
-                    if (pred_means(i, j) <= 0){
-                        
-                        pred_means(i, j) = 0.0;
-                        
-                    }
+                    // if (pred_means(i, j) <= 0){
+                    //     
+                    //     pred_means(i, j) = 0.0;
+                    //     
+                    // }
                     
                     if (mom_geno == 2.0 | dad_geno == 2.0){
                         
@@ -1236,11 +1236,11 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                     
                     // zero out predicted mean difference vector for inconsistencies
                     // with nominated risk alleles
-                    if (pred_means(i, j) > 0){
-                        
-                        pred_means(i, j) = 0.0;
-                        
-                    }
+                    // if (pred_means(i, j) > 0){
+                    //     
+                    //     pred_means(i, j) = 0.0;
+                    //     
+                    // }
                     
                     if (mom_geno == 0.0 | dad_geno == 0.0){
                         
@@ -1270,53 +1270,53 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
         }
         
         // get the lengths of the predicted mean vecs
-        arma::vec mean_vec_lengths = arma::sqrt(arma::sum(arma::square(pred_means), 1));
+        // arma::vec mean_vec_lengths = arma::sqrt(arma::sum(arma::square(pred_means), 1));
     
         // make sure we have unique values (possible for all to be zero)    
-        arma::vec unique_vec_lengths = arma::unique(mean_vec_lengths);
-        
-        // return small value if only one predicted mean 
-        if (unique_vec_lengths.n_elem == 1){
-            
-            arma::vec sum_dif_vecs(chrom_size, fill::ones);
-            arma::vec beta_exposure_prob_disease(x_orig.n_cols, fill::zeros);
-            List res = List::create(Named("fitness_score") =  pow(10, -10),
-                                    Named("sum_dif_vecs") = sum_dif_vecs.t(),
-                                    Named("ht_trace") = pow(10, -10),
-                                    Named("wald_stat") = pow(10, -10), 
-                                    Named("risk_set_alleles") = sum_diffs, 
-                                    Named("beta_exposure_prob_disease") = 
-                                        beta_exposure_prob_disease.t());
-            return(res);
-            
-            
-        }
+        // arma::vec unique_vec_lengths = arma::unique(mean_vec_lengths);
+        // 
+        // // return small value if only one predicted mean 
+        // if (unique_vec_lengths.n_elem == 1){
+        //     
+        //     arma::vec sum_dif_vecs(chrom_size, fill::ones);
+        //     arma::vec beta_exposure_prob_disease(x_orig.n_cols, fill::zeros);
+        //     List res = List::create(Named("fitness_score") =  pow(10, -10),
+        //                             Named("sum_dif_vecs") = sum_dif_vecs.t(),
+        //                             Named("ht_trace") = pow(10, -10),
+        //                             Named("wald_stat") = pow(10, -10), 
+        //                             Named("risk_set_alleles") = sum_diffs, 
+        //                             Named("beta_exposure_prob_disease") = 
+        //                                 beta_exposure_prob_disease.t());
+        //     return(res);
+        //     
+        //     
+        // }
     
-        arma::mat x_vec_lengths = join_rows(x0_orig, mean_vec_lengths);
-        arma::vec beta_prob_disease = solve(x_vec_lengths, prob_disease, solve_opts::fast);
-        arma::vec beta_exposure_prob_disease = solve(x_orig, prob_disease, solve_opts::fast);
+        // arma::mat x_vec_lengths = join_rows(x0_orig, mean_vec_lengths);
+        // arma::vec beta_prob_disease = solve(x_vec_lengths, prob_disease, solve_opts::fast);
+        arma::vec beta_prob_disease = solve(x_orig, prob_disease, solve_opts::fast);
 
         // make sure association is positive 
-        bool pos_assoc = beta_prob_disease(1) > 0;
-        if (! pos_assoc){
-            
-            arma::vec sum_dif_vecs(chrom_size, fill::ones);
-            List res = List::create(Named("fitness_score") =  pow(10, -10),
-                                    Named("sum_dif_vecs") = sum_dif_vecs.t(),
-                                    Named("ht_trace") = pow(10, -10),
-                                    Named("wald_stat") = pow(10, -10), 
-                                    Named("risk_set_alleles") = sum_diffs, 
-                                    Named("beta_exposure_prob_disease") = 
-                                        beta_exposure_prob_disease.t());
-            
-            return(res);
-            
-        }
+        // bool pos_assoc = beta_prob_disease(1) > 0;
+        // if (! pos_assoc){
+        //     
+        //     arma::vec sum_dif_vecs(chrom_size, fill::ones);
+        //     List res = List::create(Named("fitness_score") =  pow(10, -10),
+        //                             Named("sum_dif_vecs") = sum_dif_vecs.t(),
+        //                             Named("ht_trace") = pow(10, -10),
+        //                             Named("wald_stat") = pow(10, -10), 
+        //                             Named("risk_set_alleles") = sum_diffs, 
+        //                             Named("beta_exposure_prob_disease") = 
+        //                                 beta_exposure_prob_disease.t());
+        //     
+        //     return(res);
+        //     
+        // }
         
-        arma::colvec resid_prob_disease = prob_disease - x_vec_lengths*beta_prob_disease;
+        arma::colvec resid_prob_disease = prob_disease - x_orig*beta_prob_disease;
         double sig2 = arma::as_scalar(arma::trans(resid_prob_disease)*resid_prob_disease/
-                                      (x_vec_lengths.n_rows - x_vec_lengths.n_cols));
-        arma::mat vcov_beta_prob_disease = sig2 * arma::pinv(arma::trans(x_vec_lengths)*x_vec_lengths);
+                                      (x_orig.n_rows - x_orig.n_cols));
+        arma::mat vcov_beta_prob_disease = sig2 * arma::pinv(arma::trans(x_orig)*x_orig);
         
         // make sure cov is positive definite and return small score if not
         bool vcov_beta_prob_disease_pd = vcov_beta_prob_disease.is_sympd();
@@ -1331,7 +1331,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                                     Named("wald_stat") = pow(10, -10), 
                                     Named("risk_set_alleles") = sum_diffs, 
                                     Named("beta_exposure_prob_disease") = 
-                                        beta_exposure_prob_disease.t());
+                                        beta_prob_disease.t());
             
             return(res);
             
@@ -1364,7 +1364,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                                Named("wald_stat") = wald_test, 
                                Named("risk_set_alleles") = sum_diffs, 
                                Named("beta_exposure_prob_disease") = 
-                                   beta_exposure_prob_disease.t());
+                                   beta_prob_disease.t());
             return(res);
             
         } else {
@@ -1391,7 +1391,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                                Named("wald_stat") = wald_test, 
                                Named("risk_set_alleles") = sum_diffs, 
                                Named("beta_exposure_prob_disease") = 
-                                   beta_exposure_prob_disease.t());
+                                   beta_prob_disease.t());
             return(res);
             
         }
