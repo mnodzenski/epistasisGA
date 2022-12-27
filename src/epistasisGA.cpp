@@ -1295,6 +1295,7 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
         // arma::mat x_vec_lengths = join_rows(x0_orig, mean_vec_lengths);
         // arma::vec beta_prob_disease = solve(x_vec_lengths, prob_disease, solve_opts::fast);
         arma::vec beta_prob_disease = solve(x_orig, prob_disease, solve_opts::fast);
+        double beta_prob_disease_int = beta_prob_disease(0);
 
         // make sure association is positive 
         // bool pos_assoc = beta_prob_disease(1) > 0;
@@ -1350,6 +1351,9 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
         s_vec(0) = wald_test;
         s_vec(1) = ht_trace;
         arma::vec centered_vec = s_vec - null_means;
+        
+        //reset the correct intercept
+        beta_prob_disease(0) = beta_prob_disease_int;
         
         //make sure the elements are both greater than the random nulls, otherwise
         // set to small value
