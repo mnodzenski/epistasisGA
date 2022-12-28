@@ -7,7 +7,7 @@ author:
   - Graduate Partnerships Program, National Institutes of Health, Bethesda, MD
   - Biostatistics and Computational Biology Branch, National Institute of Environmental Health Sciences, Research Triangle Park, NC
   email: michael.nodzenski@gmail.com
-date: "October 21, 2022"
+date: "December 28, 2022"
 package: epistasisGA
 output: 
   BiocStyle::html_document:
@@ -27,15 +27,13 @@ knitr::opts_chunk$set(tidy = FALSE, cache = FALSE, dev = "png", message = FALSE,
 
 # Introduction 
 
-This vignette describes how to implement the E-GADGETS (Environment-dependent Genetic Algorithm for Detecting Genetic Epistasis using Triads or Siblings) method using the epistasisGA package. The E-GADGETS method is used to mine genetic data from case-parent triads or disease-discordant siblings for higher-order gene-by-environment interactions, in which the joint effect of a set of single nucleotide polymorphisms (SNPs) depends on candidate non-genetic factors. We here refer to non-genetic factors as 'exposures' regardless of whether those factors are actually agents encountered in the environment (for example, disease severity could be considered an 'exposure'). We describe gene-by-environment interactions that involve multiple SNPs as 'GxGxE' interactions, and those that also involve multiple exposures as 'GxGxExE' interactions. E-GADGETS is an extension of the previously described GADGETS method [@GADGET2020], and we advise users to consult the 'GADGETS usage' vignette prior to this one for a more detailed explanation of how GADGETS, and by extension, E-GADGETS, works. 
+This vignette describes how to implement the E-GADGETS method using the epistasisGA package. The E-GADGETS method is used to mine genetic data from case-parent triads for higher-order gene-by-environment interactions, in which the joint effect of a set of single nucleotide polymorphisms (SNPs) depends on candidate non-genetic factors. We here refer to non-genetic factors as 'environmental exposures', or just 'exposures', regardless of whether those factors are actually agents encountered in the environment. For example, disease severity (i.e., high, medium, low) could be considered an 'exposure'. Additionally, we here refer to gene-by-environment interactions that involve multiple SNPs as 'GxGxE' interactions, and those that also involve multiple exposures as 'GxGxExE' interactions. E-GADGETS is an extension of the previously described GADGETS method [@GADGET2020], and we advise users to consult the 'GADGETS usage' vignette prior to this one for a more detailed explanation of how GADGETS, and by extension, E-GADGETS, works. 
 
 # Implementing E-GADGETS
 
 ## Load Data
 
-We begin our demonstration of E-GADGETS by loading a simulated example of case-parent triad data. Note that E-GADGETS is designed to accommodate case-parent triads, disease-discordant siblings, or a mix. For pairs of disease-discordant siblings, there will typically be a 'control' exposure from the unaffected sibling. However, for case-parent triads, the genetic control for the affected child is the set of untransmitted parental alleles, so there will typically be no 'control' exposure. Consequently, we only make use of exposure data from the disease-affected case in E-GADGETS. That is, E-GADGETS searches for SNP-sets whose joint effects appear to vary based on affected child's exposure. 
-
-In the example data, we load simulated maternal, paternal, and case genotypes, as well as the exposures. These data represent 24 SNPs from 1,000 families. Rows correspond to families, and columns represent SNP genotypes. Genotypes must be coded as 0, 1, or 2. The exposure is a binary factor with two levels (0, 1). In the input genotype data, SNPs 6, 12, and 18 are simulated to jointly interact with the exposure. 
+We begin our demonstration of E-GADGETS by loading a simulated example of case-parent triad data. Note that E-GADGETS requires case-parent triads and, unlike GADGETS, does not accommodate disease-discordant siblings. In the example data, we load simulated maternal, paternal, and case genotypes, as well as the exposures. These data represent 24 SNPs from 1,000 families. Rows correspond to families, and columns represent SNP genotypes. Genotypes must be coded as 0, 1, or 2. The exposure is a binary factor with two levels (0, 1). In the input genotype data, SNPs 6, 12, and 18 are simulated to jointly interact with the exposure. 
 
 ```{r}
 library(epistasisGA)
@@ -67,15 +65,16 @@ pp.list <- preprocess.genetic.data(case, father.genetic.data = dad,
                                    categorical.exposures = exposure)
 ```
 
-Note that, above, the exposure data were input for the argument `categorical.exposures`. In doing so, the software will treat each input column as a factor variable and, ultimately, create dummy variables for each level. On the other hand, if the exposure of interest were continuous, users would need to specify the argument `continuous.exposures`, which will not dummy code the input. Strictly speaking, since the example exposure is binary, dummy coding would not change the coding, so we could have specified either argument.
+Note that, above, the exposure data were input for the argument `categorical.exposures`. In doing so, the software will treat each input column as a factor variable and, ultimately, create dummy variables for each level. On the other hand, if the exposure of interest were continuous, users would need to specify the argument `continuous.exposures`, which will not dummy code the input. Strictly speaking, since the example exposure is binary, dummy coding would not be different from the existing coding, so we could have specified either argument.
 
-If users are interested in simultaneous effects of both continuous and categorical exposures, the continuous data should be included for `continuous.exposures` and the categorical data should be specified for `categorical.exposures`. If multiple exposures of any kind (continuous only, categorical only, or a mix) are specified, users need to pay attention to the `lower.order.gxe` argument. That argument defaults to FALSE, indicating that E-GADGETS will search for genetic interactions that jointly involve *all* of the input exposures (*i.e.*, GxGxExE interactions). Setting that argument to TRUE will search simultaneously for GxGxE and GxGxExE interactions (*i.e.*, interactions with any combinations of the exposure variables), enlarging the implicit search space. Also note that E-GADGETS is not designed to be used with a large number of input exposures. Users are advised to do so with caution, even more so when specifying `lower.order.gxe = TRUE`.
+Note that E-GADGETS can, in principle, accept multiple exposures, but we have not fully tested that idea, specifically, if there are multiple exposures and at least one is continuous. If users nevertheless wish to input multiple exposures in which one or more exposures are continuous, they should be mindful that we have not tested the software in that context and interpret results with caution. With that said, if users are interested in simultaneous effects of both continuous and categorical exposures, the continuous data should be included for `continuous.exposures` and the categorical data should be specified for `categorical.exposures`. 
 
 ## Run E-GADGETS 
 
-We now run E-GADGETS to nominate SNP-sets whose joint effects appear to depend on the exposure using the `run.gadgets` function. A more detailed discussion of `run.gadgets` function and its arguments is available in the "GADGETS" vignette. Like GADGETS, E-GADGETS requires the user to pre-specify the number of SNPs that may jointly interact with the exposure, controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes, but for this small example, we will only consider 3-4. 
+We now run E-GADGETS to nominate SNP-sets whose joint effects appear to depend on the exposure using the `run.gadgets` function. A more detailed discussion of the `run.gadgets` function and its arguments is available in the "GADGETS" vignette. Like GADGETS, E-GADGETS requires the user to pre-specify the number of SNPs that may jointly interact with the exposure, controlled by the `chromosome.size` argument. We recommend running the algorithm for a range of sizes (2-5 or 2-6), but for this small example, we will only consider 3-4. 
 
 ```{r, message = FALSE}
+set.seed(100)
 run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 3, 
        results.dir = "size3_res", cluster.type = "interactive",
        registryargs = list(file.dir = "size3_reg", seed = 1300),
@@ -90,7 +89,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 4,
 ```
 
 
-Next, we condense the sets of results using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the RSIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`. 
+Next, we condense the sets of results using the function `combine.islands`. Note that in addition to the results directory path, the function requires as input a data.frame indicating the rsIDs (or a placeholder name), reference, and alternate alleles for each SNP in the data passed to `preprocess.genetic.data` as well as the list output by `preprocess.genetic.data`. 
 
 ```{r}
 data(snp.annotations.mci)
@@ -115,13 +114,15 @@ kable(head(size3.combined.res)) %>%
 
 ```
 
-We see that we have identified the SNPs with the simulated GxGxE effect. In this example with very few input SNPs, E-GADGETS was able to identify that specific SNP-set as risk-associated and no others. In real applications, we anticipate E-GADGETS will nominate multiple distinct SNP-sets for further follow-up study.  
+We see that we have identified the correct SNPs with the simulated GxGxE effect. In this example, with just few input SNPs, E-GADGETS was able to identify only the correct SNP-set as risk-associated and no others. In real applications, we anticipate E-GADGETS will nominate multiple distinct SNP-sets for further follow-up study.  
 
-The elements of the output are somewhat different than GADGETS. The most useful part is simply the identity of the nominated set(s). Unlike GADGETS, E-GADGETS does not nominate apparent risk-associated genotypes, and, therefore, does not count cases and controls that carry a risk-associated genotype for each SNP in the set. In that sense, E-GADGETS is a lower-resolution method than GADGETS. Although E-GADGETS nominates sets in which the joint genetic effect appears to depend on exposure, it does not describe the nature of the dependency. Follow-up investigation with other methods would be required to more fully characterize any GxGxE effects in the nominated sets. The `fitness.score` column does not have a straightforward interpretation, except that SNP-sets with higher fitness presumably are more likely to have GxGxE effects. The `diff.vec` columns give a rough indication as to which SNPs contributed the most to the fitness score, with larger magnitude `diff.vec` values suggesting a larger contribution. 
+The elements of the output are similar to those from GADGETS. The most useful components are simply the identities of the SNPs in the nominated set(s). Similar to GADGETS, E-GADGETS suggests a risk associated allele for each SNP in the set (the allele that is over-transmitted to cases). However, unlike GADGETS, E-GADGETS does not try to determine whether risk associated alleles follow a recessive pattern of inheritance, and instead automatically assumes that carrying one or more copies of the nominated allele is risk associated. (That is why the "allele.copies" columns are always "1+" for E-GADGETS, while they may be "1+" or "2" for GADGETS.) The `fitness.score` column does not have a straightforward interpretation except that SNP-sets with higher fitness presumably are more likely to have GxGxE effects.
+
+A difference from GADGETS output is that E-GADGETS also outputs columns that end in "p_disease_coef". Those columns indicate levels of the exposure that, in combination with the nominated risk alleles, appear to be more strongly risk-associated. Namely, the values in the "p_disease_coef" columns correspond to the coefficients from the 'parental' fitness score component described in the E-GADGETS paper, in which the probability of parents having a 'genetically high risk' child are modeled based on the exposure. We expect the exposure levels that are strongly associated with higher probabilities to be more strongly disease-associated. In this example, our exposure has two levels, so we have two coefficients: "intercept_p_disease_coef" and "exposure1_p_disease_coef". The "intercept" column represents the model coefficient corresponding to exposure level '0', i.e., the reference level. The "exposure1_p_disease_coef" is the model coefficient corresponding to exposure level '1'. That coefficient is positive here, suggesting (correctly) that exposure level '1' is more strongly disease associated (in combination with the nominated risk alleles) than exposure level '0'.
 
 ## Run Permutation-based Tests 
 
-Like GADGETS, E-GADGETS has an associated global test of association. The test assesses the null hypothesis that, among top-scoring SNP-sets returned by E-GADGETS, none contain any GxE or GxGxE effects. The test is similar to that for GADGETS, except here, we shuffle the exposure, rather than randomizing case/control labels, and then re-run E-GADGETS to generate a null distribution of fitness scores. Note that this test assumes the input SNPs are independent of the candidate exposure under the null. 
+Like GADGETS, E-GADGETS has an associated global test of association. The test assesses the null hypothesis that, among top-scoring SNP-sets returned by E-GADGETS, none contain any GxE or GxGxE effects. The test is similar to that for GADGETS, except here, we shuffle the exposure, rather than randomizing case/complement-sibling labels, and then re-run E-GADGETS to generate a null distribution of fitness scores. Note that this test assumes the input SNPs are independent of the candidate exposure under the null. 
 We begin by creating 4 data sets with the observed exposure randomly re-assigned:
 
 ```{r}
@@ -196,7 +197,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
 
 ```
 
-After the null distribution of fitness scores has been generated, the global test of association can be run with exactly the same commands as for GADGETS. The only difference is that, for E-GADGETS, the null hypothesis being tested is that none of the input SNPs interact with the exposure (either via GxE or GxGxE interactions). Note here that we base the test on the top chromosome of each size (`n.top.scores = 1`), but we recommend the default (`n.top.scores = 10`) for real applications.
+After the null distribution of fitness scores has been generated, the global test of association can be run with exactly the same commands as GADGETS. The only difference is that, for E-GADGETS, the null hypothesis being tested is that none of the input SNPs interact with the exposure (either via GxE or GxGxE interactions). Note here that we base the test on the top chromosome of each size (`n.top.scores = 1`), but we recommend the default (`n.top.scores = 10`) for real applications.
 
 ```{r}
 # chromosome size 3 results
