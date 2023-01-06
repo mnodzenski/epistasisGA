@@ -272,7 +272,9 @@ preprocess.genetic.data <- function(case.genetic.data,
         # convert to big.matrix
         dimnames(case.genetic.data) <- NULL
         case.bm <- as.big.matrix(case.genetic.data, type = "integer",
-                                 shared = FALSE)
+                                 backingfile = "case_bm", 
+                                 backingpath = tempdir(), 
+                                 descriptorfile = "case_bm.desc")
         rm(case.genetic.data)
         gc(verbose = FALSE)
 
@@ -318,7 +320,9 @@ preprocess.genetic.data <- function(case.genetic.data,
         # convert to big.matrix
         dimnames(complement.genetic.data) <- NULL
         comp.bm <- as.big.matrix(complement.genetic.data, type = "integer",
-                                 shared = FALSE)
+                                 backingfile = "comp_bm", 
+                                 backingpath = tempdir(), 
+                                 descriptorfile = "comp_bm.desc")
         rm(complement.genetic.data)
         gc(verbose = FALSE)
 
@@ -366,7 +370,10 @@ preprocess.genetic.data <- function(case.genetic.data,
         # convert to big.matrix
         dimnames(mother.genetic.data) <- NULL
         mother.bm <- as.big.matrix(mother.genetic.data,
-                                   type = "integer", shared = FALSE)
+                                   type = "integer", 
+                                   backingfile = "mom_bm", 
+                                   backingpath = tempdir(), 
+                                   descriptorfile = "mom_bm.desc")
         rm(mother.genetic.data)
         gc(verbose = FALSE)
 
@@ -412,7 +419,10 @@ preprocess.genetic.data <- function(case.genetic.data,
         # convert to big.matrix
         dimnames(father.genetic.data) <- NULL
         father.bm <- as.big.matrix(father.genetic.data,
-                                   type = "integer", shared = FALSE)
+                                   type = "integer", 
+                                   backingfile = "dad_bm", 
+                                   backingpath = tempdir(), 
+                                   descriptorfile = "dad_bm.desc")
         rm(father.genetic.data)
         gc(verbose = FALSE)
 
@@ -647,6 +657,13 @@ preprocess.genetic.data <- function(case.genetic.data,
         exposure.mat <- exposure.mat + 0.0
         
     }
+    
+    # get rid of temporary files 
+    tmp.files <- file.path(tempdir(), paste(rep(c("mom", "dad", "case", "comp"), 
+                                                2), 
+                                            c(rep("bm", 4), 
+                                              rep("bm.desc", 4)), sep = "_"))
+    unlink(tmp.files)
     
     return(list(case.genetic.data = case.data,
                 complement.genetic.data = comp.data,
