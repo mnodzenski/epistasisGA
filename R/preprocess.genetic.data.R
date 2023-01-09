@@ -449,11 +449,14 @@ preprocess.genetic.data <- function(case.genetic.data,
     # make a list of big matrix objects
     if (exists("comp.bm")){
 
-        bm.list <- list(case = case.bm, complement = comp.bm)
+        bm.list <- list(case = describe(case.bm), 
+                        complement = describe(comp.bm))
 
     } else {
 
-        bm.list <- list(case = case.bm, mother = mother.bm, father = father.bm)
+        bm.list <- list(case = describe(case.bm), 
+                        mother = describe(mother.bm), father = 
+                            describe(father.bm))
 
     }
 
@@ -471,16 +474,22 @@ preprocess.genetic.data <- function(case.genetic.data,
             res.list <- bplapply(seq_len(n.candidate.snps),
                                  function(snp, bm.list) {
 
-                case.snp <- bm.list$case[ , snp]
+                case.bm <- attach.big.matrix(bm.list$case)                     
+                case.snp <- case.bm[ , snp]
                 if (length(bm.list) == 3){
 
-                    mom.snp <- bm.list$mother[ , snp]
-                    dad.snp <- bm.list$father[ , snp]
+                    mom.bm <- attach.big.matrix(bm.list$mother)
+                    mom.snp <- mom.bm[ , snp]
+                    
+                    dad.bm <- attach.big.matrix(bm.list$father)
+                    dad.snp <- dad.bm[ , snp]
+                    
                     comp.snp <- mom.snp + dad.snp - case.snp
 
                 } else {
 
-                    comp.snp <- bm.list$complement[ , snp]
+                    comp.bm <-  attach.big.matrix(bm.list$complement)
+                    comp.snp <- comp.bm[ , snp]
 
                 }
 
@@ -503,17 +512,23 @@ preprocess.genetic.data <- function(case.genetic.data,
             res.list <- bplapply(seq_len(n.candidate.snps),
                                  function(snp, bm.list, exposures) {
 
-                case.snp <- bm.list$case[ , snp]
+                case.bm <- attach.big.matrix(bm.list$case)                     
+                case.snp <- case.bm[ , snp]
                 if (length(bm.list) == 3){
-
-                    mom.snp <- bm.list$mother[ , snp]
-                    dad.snp <- bm.list$father[ , snp]
+                     
+                    mom.bm <- attach.big.matrix(bm.list$mother)
+                    mom.snp <- mom.bm[ , snp]
+                     
+                    dad.bm <- attach.big.matrix(bm.list$father)
+                    dad.snp <- dad.bm[ , snp]
+                     
                     comp.snp <- mom.snp + dad.snp - case.snp
-
+                     
                 } else {
-
-                    comp.snp <- bm.list$complement[ , snp]
-
+                     
+                    comp.bm <-  attach.big.matrix(bm.list$complement)
+                    comp.snp <- comp.bm[ , snp]
+                     
                 }
 
                 # get test stat from conditional logistic regression
