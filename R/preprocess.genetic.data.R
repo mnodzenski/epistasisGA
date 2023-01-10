@@ -499,11 +499,11 @@ preprocess.genetic.data <- function(case.genetic.data,
                                      method = "approximate")
                 clogit.chisq <- summary(clogit.res)$logtest[1]
 
-                return(list(case.snp = case.snp, comp.snp = comp.snp,
-                            chisq = clogit.chisq))
+                return(clogit.chisq)
 
             }, bm.list = bm.list, BPPARAM = bp.param)
-            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+            chisq.stats <- unlist(res.list)
+            names(chisq.stats) <- NULL
 
         } else {
 
@@ -564,11 +564,11 @@ preprocess.genetic.data <- function(case.genetic.data,
                 reduced.model.ll <- reduced.model$loglik[2]
                 clogit.chisq <- 2*(full.model.ll - reduced.model.ll)
 
-                return(list(case.snp = case.snp, comp.snp = comp.snp,
-                            chisq = clogit.chisq))
+                return(clogit.chisq)
 
             }, bm.list = bm.list, exposures = exposures, BPPARAM = bp.param)
-            chisq.stats <- do.call("c", lapply(res.list, function(x) x$chisq))
+            chisq.stats <- unlist(res.list)
+            names(chisq.stats) <- NULL
 
         }
 
@@ -678,6 +678,21 @@ preprocess.genetic.data <- function(case.genetic.data,
                                                 2), 
                                             c(rep("bm", 4), 
                                               rep("bm.desc", 4)), sep = "_"))
+    rm(bm.list)
+    rm(case.bm)
+    current.objects <- ls()
+    if ("comp.bm" %in% current.objects){
+        
+        rm(comp.bm)
+        
+    }
+    if ("mother.bm" %in% current.objects){
+        
+        rm(mother.bm)
+        rm(father.bm)
+        
+    }
+    gc(verbose = FALSE)
     unlink(tmp.files)
     
     return(list(case.genetic.data = case.data,
