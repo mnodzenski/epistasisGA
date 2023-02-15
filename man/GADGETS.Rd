@@ -32,7 +32,9 @@ GADGETS(
   crossover.prop = 0.8,
   recessive.ref.prop = 0.75,
   recode.test.stat = 1.64,
-  E_GADGETS = FALSE
+  E_GADGETS = FALSE,
+  continuous.exposure = FALSE,
+  exposure.min.max = c(0, 0)
 )
 }
 \arguments{
@@ -200,17 +202,24 @@ to recode and recompute the fitness score using recessive coding. Defaults to
 
 \item{E_GADGETS}{(experimental) A boolean indicating whether to run the
 experimental 'E_GADGETS' method.}
-}
-\value{
-For each island in the cluster, an rds object containing a list with
-the following elements will be written to \code{results.dir}.
+
+\item{continuous.exposure}{A boolean indicating whether, for E-GADGETS, the 
+exposure is continuous.}
+
+\item{exposure.min.max}{A vector, to be used in E-GADGETS when the exposure 
+is continuous, whose first element is the minimum observed exposure value and 
+second element is the maximum observed exposure value.  
 \describe{
  \item{top.chromosome.results}{A data.table of the final generation
  chromosomes, their fitness scores, and, for GADGETS, additional information
  pertaining to nominated risk-related genotypes. See the package vignette for
  an example and for additional details.}
  \item{n.generations}{The total number of generations run.}
+}}
 }
+\value{
+For each island in the cluster, an rds object containing a list with
+the following elements will be written to \code{results.dir}.
 }
 \description{
 This function runs the GADGETS method on a given cluster of islands.

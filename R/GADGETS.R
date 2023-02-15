@@ -143,6 +143,11 @@
 #' experimental 'E_GADGETS' method.
 #' @return For each island in the cluster, an rds object containing a list with
 #' the following elements will be written to \code{results.dir}.
+#' @param continuous.exposure A boolean indicating whether, for E-GADGETS, the 
+#' exposure is continuous. 
+#' @param exposure.min.max A vector, to be used in E-GADGETS when the exposure 
+#' is continuous, whose first element is the minimum observed exposure value and 
+#' second element is the maximum observed exposure value.  
 #' \describe{
 #'  \item{top.chromosome.results}{A data.table of the final generation
 #'  chromosomes, their fitness scores, and, for GADGETS, additional information
@@ -208,7 +213,8 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                     gen.same.fitness = 50, max.generations = 500,
                     initial.sample.duplicates = FALSE, crossover.prop = 0.8,
                     recessive.ref.prop = 0.75, recode.test.stat = 1.64,
-                    E_GADGETS = FALSE) {
+                    E_GADGETS = FALSE, continuous.exposure = FALSE, 
+                    exposure.min.max = c(0.0, 0.0)) {
 
     ### run rcpp version of GADGETS ##
     rcpp.res <- run_GADGETS(island.cluster.size, n.migrations, ld.block.vec,
@@ -217,7 +223,8 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                             complement.genetic.data, case.genetic.data.n,
                             mother.genetic.data.n, father.genetic.data.n, 
                             exposure.mat, weight.lookup.n, null.mean.vec, 
-                            null.se.vec, n.different.snps.weight,
+                            null.se.vec, continuous.exposure, exposure.min.max,
+                            n.different.snps.weight,
                             n.both.one.weight, migration.interval,
                             gen.same.fitness, max.generations,
                             initial.sample.duplicates, crossover.prop,
@@ -273,14 +280,29 @@ GADGETS <- function(cluster.number, results.dir, case.genetic.data,
                                                    seq_len(chromosome.size), 
                                                    ".allele.copies")
             
-            # also get the betas from the lm of prob disease geno 
+            # get the betas from the lm of prob disease geno 
             # based on exposure 
             beta.list <- final.population.list[["beta_exposure_prob_disease_vecs"]]
             beta.dt <- as.data.table(do.call(rbind, beta.list))
-            colnames(beta.dt) <- paste0("risk.exp.beta",
-                                           seq_len(ncol(beta.dt)))
+            colnames(beta.dt) <- paste0("parent_comp.exp",
+                                           seq_len(ncol(beta.dt)), 
+                                        ".beta")
+            
+            beta.transmission.list <- 
+                final.population.list[["beta_transmissions"]]
+            beta.transmission.dt <- as.data.table(
+                do.call(rbind, beta.transmission.list))
+            colnames(beta.transmission.dt) <- paste0("transmission_comp.exp",
+                                        rep(seq_len(ncol(beta.dt)), 
+                                            each = chromosome.size),
+                                        ".snp",
+                                        rep(seq_len(chromosome.size), 
+                                            ncol(beta.dt)), 
+                                        ".beta")
+            
             final.result <- cbind(chromosome.dt, dif.vec.dt, risk.allele.vec.dt,
-                                  beta.dt, fitness.score.dt)
+                                  beta.dt, beta.transmission.dt,
+                                  fitness.score.dt)
             setorder(final.result, -fitness.score)
 
         }

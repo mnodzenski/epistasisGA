@@ -1086,8 +1086,11 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                             arma::uvec target_snps, 
                             arma::vec weight_lookup,
                             arma::vec null_means, arma::vec null_se, 
+                            bool continuous_exp, 
+                            NumericVector exposure_quantile_vec,
                             int n_different_snps_weight = 2, 
-                            int n_both_one_weight = 1){
+                            int n_both_one_weight = 1, 
+                            bool permute_exposure = false){
     
     // get target data and take differences
     arma::mat case_genetic_data(case_genetic_data_.begin(), 
@@ -1102,14 +1105,31 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
     
     arma::mat exposure_mat(exposure_mat_.begin(), exposure_mat_.nrow(), 
                            exposure_mat_.ncol(), false);
+    
+    arma::mat exposure_mat_perm;
+    
+    if (permute_exposure){
+        
+        arma::mat exposure_mat_tmp(exposure_mat);
+        arma::uvec perm_row_order = randperm(exposure_mat.n_rows);
+        for (int i = 0; i < exposure_mat.n_rows; i++){
+            
+            int this_row = perm_row_order(i);
+            arma::rowvec these_vals = exposure_mat.row(this_row);
+            exposure_mat_tmp.row(i) = these_vals;
+            
+        }
+        
+        exposure_mat_perm = exposure_mat_tmp;
+        
+    }
+    
     arma::mat case_target = case_genetic_data.cols(target_snps - 1);
     arma::mat mom_target = mom_genetic_data.cols(target_snps - 1);
     arma::mat dad_target = dad_genetic_data.cols(target_snps - 1);
     arma::mat comp_target = mom_target + dad_target - case_target;
     
     arma::mat geno_diff_mat = case_target - comp_target;
-    arma::rowvec sum_diffs = arma::sum(geno_diff_mat, 0);
-    
     arma::umat diffs = geno_diff_mat != 0;
     arma::mat diff_mat = conv_to<mat>::from(diffs);
     arma::umat both_one = case_target == 1 && comp_target == 1;
@@ -1142,7 +1162,16 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
     arma::vec x0_orig(x0);
     
     // full model mat
-    arma::mat x = join_rows(x0, exposure_mat);
+    arma::mat x; 
+    if (permute_exposure){
+        
+        x = join_rows(x0, exposure_mat_perm);
+        
+    } else {
+        
+        x = join_rows(x0, exposure_mat);
+        
+    }
     arma::mat x_orig(x);
     
     // holder for wald stat for lm of probs
@@ -1158,6 +1187,9 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
     arma::mat beta_full = solve(x, geno_diff_mat, solve_opts::fast);
     arma::mat resid_full = geno_diff_mat - x*beta_full;
     
+    // grab full model coefficients as row vector for reporting 
+    arma::rowvec beta_full_vec = beta_full.as_row();
+    
     // fit reduced model
     arma::mat beta_reduced= solve(x0, geno_diff_mat, solve_opts::fast);
     arma::mat resid_reduced = geno_diff_mat - x0*beta_reduced;
@@ -1165,6 +1197,46 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
     // compute hotelling-lawley trace to compare models
     arma::mat E = trans(resid_full) * resid_full;
     arma::mat H = trans(resid_reduced) * resid_reduced - E;
+    
+    // nominate risk alleles 
+    arma::rowvec sum_diffs;
+    
+    // approaches slightly different for continuous vs. categorical exposure
+    arma::rowvec int_vec = beta_full.row(0);
+    arma::mat fitted_mean_vecs;
+    
+    if (!continuous_exp){
+        
+        // get fitted mean diff vecs 
+        arma::mat fitted_mean_vecs_cat(beta_full);
+        for (int i = 1; i < beta_full.n_rows; i++){
+            
+            fitted_mean_vecs_cat.row(i) = fitted_mean_vecs_cat.row(i) + int_vec;
+            
+        }
+        
+        fitted_mean_vecs = fitted_mean_vecs_cat;
+        
+    } else {
+        
+        double max_exp = exposure_quantile_vec[1];
+        double min_exp = exposure_quantile_vec[0];
+        
+        arma::mat fitted_mean_vecs_cont(2, chrom_size);
+        fitted_mean_vecs_cont.row(0) = int_vec + min_exp*beta_full.row(1);
+        fitted_mean_vecs_cont.row(1) = int_vec + max_exp*beta_full.row(1);
+        
+        fitted_mean_vecs = fitted_mean_vecs_cont;
+        
+    }
+    
+    //using euclidean norm to determine highest epistasis level 
+    arma::mat fitted_mean_vecs_sq = arma::square(fitted_mean_vecs);
+    arma::vec fitted_mean_vecs_row_norms = arma::sqrt(arma::sum(fitted_mean_vecs_sq, 1));
+    arma::uvec fitted_mean_vecs_row_norms_order = arma::sort_index(fitted_mean_vecs_row_norms, 
+                                                                   "descend");
+    int highest_epistasis = fitted_mean_vecs_row_norms_order(0);
+    sum_diffs = fitted_mean_vecs.row(highest_epistasis);
     
     //make sure E is invertible
     bool E_pd = E.is_sympd();
@@ -1182,7 +1254,8 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                            Named("wald_stat") = pow(10, -10), 
                            Named("risk_set_alleles") = sum_diffs, 
                            Named("beta_exposure_prob_disease") = 
-                               beta_prob_disease.t());
+                               beta_prob_disease.t(), 
+                           Named("beta_transmissions") = beta_full_vec);
         return(res);
         
     } else {
@@ -1192,8 +1265,6 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
         
         arma::vec prob_disease(mom_target.n_rows);
 
-        //nominate risk alleles
-        //arma::mat pred_means = x_orig*beta_full;
         for (unsigned int i = 0; i < mom_target.n_rows; i++){
             
             arma::vec risk_geno_probs(mom_target.n_cols);
@@ -1205,14 +1276,6 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                 double this_beta = sum_diffs(j);
                 
                 if (this_beta > 0){
-                    
-                    // zero out predicted mean difference vector for inconsistencies
-                    // with nominated risk alleles
-                    // if (pred_means(i, j) <= 0){
-                    //     
-                    //     pred_means(i, j) = 0.0;
-                    //     
-                    // }
                     
                     if ((mom_geno == 2.0) | (dad_geno == 2.0)){
                         
@@ -1233,14 +1296,6 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                     }
                     
                 } else {
-                    
-                    // zero out predicted mean difference vector for inconsistencies
-                    // with nominated risk alleles
-                    // if (pred_means(i, j) > 0){
-                    //     
-                    //     pred_means(i, j) = 0.0;
-                    //     
-                    // }
                     
                     if ((mom_geno == 0.0) | (dad_geno == 0.0)){
                         
@@ -1269,51 +1324,12 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
             
         }
         
-        // get the lengths of the predicted mean vecs
-        // arma::vec mean_vec_lengths = arma::sqrt(arma::sum(arma::square(pred_means), 1));
-    
-        // make sure we have unique values (possible for all to be zero)    
-        // arma::vec unique_vec_lengths = arma::unique(mean_vec_lengths);
-        // 
-        // // return small value if only one predicted mean 
-        // if (unique_vec_lengths.n_elem == 1){
-        //     
-        //     arma::vec sum_dif_vecs(chrom_size, fill::ones);
-        //     arma::vec beta_exposure_prob_disease(x_orig.n_cols, fill::zeros);
-        //     List res = List::create(Named("fitness_score") =  pow(10, -10),
-        //                             Named("sum_dif_vecs") = sum_dif_vecs.t(),
-        //                             Named("ht_trace") = pow(10, -10),
-        //                             Named("wald_stat") = pow(10, -10), 
-        //                             Named("risk_set_alleles") = sum_diffs, 
-        //                             Named("beta_exposure_prob_disease") = 
-        //                                 beta_exposure_prob_disease.t());
-        //     return(res);
-        //     
-        //     
-        // }
-    
-        // arma::mat x_vec_lengths = join_rows(x0_orig, mean_vec_lengths);
-        // arma::vec beta_prob_disease = solve(x_vec_lengths, prob_disease, solve_opts::fast);
         arma::vec beta_prob_disease = solve(x_orig, prob_disease, solve_opts::fast);
-        double beta_prob_disease_int = beta_prob_disease(0);
-
-        // make sure association is positive 
-        // bool pos_assoc = beta_prob_disease(1) > 0;
-        // if (! pos_assoc){
-        //     
-        //     arma::vec sum_dif_vecs(chrom_size, fill::ones);
-        //     List res = List::create(Named("fitness_score") =  pow(10, -10),
-        //                             Named("sum_dif_vecs") = sum_dif_vecs.t(),
-        //                             Named("ht_trace") = pow(10, -10),
-        //                             Named("wald_stat") = pow(10, -10), 
-        //                             Named("risk_set_alleles") = sum_diffs, 
-        //                             Named("beta_exposure_prob_disease") = 
-        //                                 beta_exposure_prob_disease.t());
-        //     
-        //     return(res);
-        //     
-        // }
         
+        // grab intercept for later reporting 
+        double beta_prob_disease_int = beta_prob_disease(0);
+        
+        // compute vcov matrix 
         arma::colvec resid_prob_disease = prob_disease - x_orig*beta_prob_disease;
         double sig2 = arma::as_scalar(arma::trans(resid_prob_disease)*resid_prob_disease/
                                       (x_orig.n_rows - x_orig.n_cols));
@@ -1332,7 +1348,8 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                                     Named("wald_stat") = pow(10, -10), 
                                     Named("risk_set_alleles") = sum_diffs, 
                                     Named("beta_exposure_prob_disease") = 
-                                        beta_prob_disease.t());
+                                        beta_prob_disease.t(), 
+                                    Named("beta_transmissions") = beta_full_vec);
             
             return(res);
             
@@ -1344,7 +1361,6 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
             wald_test = arma::as_scalar(trans(beta_prob_disease)*pinv(vcov_beta_prob_disease)*beta_prob_disease);
             
         }
-            
         
         // fitness score
         arma::vec s_vec(2);
@@ -1368,7 +1384,8 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                                Named("wald_stat") = wald_test, 
                                Named("risk_set_alleles") = sum_diffs, 
                                Named("beta_exposure_prob_disease") = 
-                                   beta_prob_disease.t());
+                                   beta_prob_disease.t(), 
+                               Named("beta_transmissions") = beta_full_vec);
             return(res);
             
         } else {
@@ -1395,12 +1412,13 @@ List GxE_fitness_score_mvlm(NumericMatrix case_genetic_data_,
                                Named("wald_stat") = wald_test, 
                                Named("risk_set_alleles") = sum_diffs, 
                                Named("beta_exposure_prob_disease") = 
-                                   beta_prob_disease.t());
+                                   beta_prob_disease.t(), 
+                               Named("beta_transmissions") = beta_full_vec);
             return(res);
+                
+            }
             
         }
-        
-    }
     
 }
 
@@ -1439,6 +1457,8 @@ List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_,
                                  NumericMatrix exposure_mat_, List chromosome_list,
                                  arma::vec weight_lookup, 
                                  arma::vec null_means, arma::vec null_se, 
+                                 bool continuous_exp, 
+                                 NumericVector exposure_quantile_vec,
                                  int n_different_snps_weight = 2, int n_both_one_weight = 1){
 
   List scores = chromosome_list.length();
@@ -1447,10 +1467,13 @@ List GxE_fitness_score_mvlm_list(NumericMatrix case_genetic_data_,
     arma::uvec target_snps = chromosome_list[i];
     scores[i] = GxE_fitness_score_mvlm(case_genetic_data_, mom_genetic_data_,
                                        dad_genetic_data_,
-                                       exposure_mat_, target_snps, weight_lookup,
+                                       exposure_mat_, target_snps, 
+                                       weight_lookup,
                                        null_means, null_se,
-                                       n_different_snps_weight, n_both_one_weight);
-
+                                       continuous_exp, 
+                                       exposure_quantile_vec,
+                                       n_different_snps_weight, 
+                                       n_both_one_weight);
   }
   return(scores);
 
@@ -1463,6 +1486,8 @@ NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_,
                                        NumericMatrix exposure_mat_, List chromosome_list,
                                        arma::vec weight_lookup,
                                        arma::vec null_means, arma::vec null_se,
+                                       bool continuous_exp, 
+                                       NumericVector exposure_quantile_vec,
                                        int n_different_snps_weight = 2, int n_both_one_weight = 1){
 
   int n_chroms = chromosome_list.length();
@@ -1470,12 +1495,16 @@ NumericMatrix GxE_mvlm_fitness_vec_mat(NumericMatrix case_genetic_data_,
   for (int i = 0; i < chromosome_list.length(); i++){
 
     arma::uvec target_snps = chromosome_list[i];
+    // permuting exposure for this function
     List score_i = GxE_fitness_score_mvlm(case_genetic_data_, 
                                           mom_genetic_data_,
                                           dad_genetic_data_,
                                           exposure_mat_, target_snps, weight_lookup,
-                                          null_means, null_se, n_different_snps_weight,
-                                          n_both_one_weight);
+                                          null_means, null_se, 
+                                          continuous_exp, 
+                                          exposure_quantile_vec,
+                                          n_different_snps_weight,
+                                          n_both_one_weight, true);
     double ht_trace = score_i["ht_trace"];
     double wald_stat = score_i["wald_stat"];
     NumericVector res_vec(2);
@@ -1502,6 +1531,8 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                 NumericMatrix dad_genetic_data,
                                 NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                                 arma::vec null_mean_vec, arma::vec null_se_vec,
+                                bool continuous_exp, 
+                                NumericVector exposure_quantile_vec,
                                 int n_different_snps_weight = 2,
                                 int n_both_one_weight = 1, double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                                 bool E_GADGETS = false){
@@ -1518,6 +1549,8 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                                                                 dad_genetic_data,
                                                                 exposure_mat_n, chromosome_list,
                                                                 weight_lookup_n, null_mean_vec, null_se_vec,
+                                                                continuous_exp, 
+                                                                exposure_quantile_vec,
                                                                 n_different_snps_weight, n_both_one_weight);
 
     // initiate obejcts for overall fitness score information
@@ -1527,6 +1560,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
     List gen_original_cols(n_chromosomes);
     List risk_allele_vecs(n_chromosomes);
     List beta_exposure_prob_disease(n_chromosomes);
+    List beta_transmissions(n_chromosomes);
 
     // loop over chromosomes and pick out the information
     for (int i = 0; i < n_chromosomes; i++){
@@ -1537,6 +1571,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
       NumericVector sdv = chrom_fitness_score_list_i["sum_dif_vecs"];
       NumericVector rav = chrom_fitness_score_list_i["risk_set_alleles"];
       NumericVector bepd = chrom_fitness_score_list_i["beta_exposure_prob_disease"];
+      NumericVector bt = chrom_fitness_score_list_i["beta_transmissions"];
       IntegerVector chrom_col_idx = chromosome_list[i];
 
       fitness_scores[i] = fs;
@@ -1544,6 +1579,7 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
       gen_original_cols[i] = chrom_col_idx;
       risk_allele_vecs[i] = rav;
       beta_exposure_prob_disease[i] = bepd;
+      beta_transmissions[i] = bt;
 
     }
 
@@ -1553,7 +1589,8 @@ List compute_population_fitness(IntegerMatrix case_genetic_data, IntegerMatrix c
                             Named("gen_original_cols") = gen_original_cols, 
                             Named("risk_allele_vecs") = risk_allele_vecs, 
                             Named("beta_exposure_prob_disease_vecs") = 
-                                beta_exposure_prob_disease);
+                                beta_exposure_prob_disease, 
+                            Named("beta_transmissions") = beta_transmissions);
     return(res);
 
 
@@ -1670,6 +1707,8 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
                          NumericMatrix dad_genetic_data_n,
                          NumericMatrix exposure_mat_n, arma::vec weight_lookup_n,
                          arma::vec null_mean_vec, arma::vec null_se_vec,
+                         bool continuous_exp, 
+                         NumericVector exposure_quantile_vec,
                          int n_different_snps_weight = 2, int n_both_one_weight = 1,
                          double recessive_ref_prop = 0.75, double recode_test_stat = 1.64,
                          int max_generations = 500, bool initial_sample_duplicates = false,
@@ -1709,8 +1748,8 @@ List initiate_population(int n_candidate_snps, IntegerMatrix case_genetic_data, 
   // compute fitness scores for the chromosome list
   List  current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
                                                       weight_lookup, case_genetic_data_n, mom_genetic_data_n, dad_genetic_data_n, exposure_mat_n,
-                                                      weight_lookup_n, null_mean_vec, null_se_vec, 
-                                                      n_different_snps_weight,
+                                                      weight_lookup_n, null_mean_vec, null_se_vec, continuous_exp, 
+                                                      exposure_quantile_vec, n_different_snps_weight,
                                                       n_both_one_weight, recessive_ref_prop, recode_test_stat,
                                                       E_GADGETS);
 
@@ -1747,6 +1786,8 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
                    NumericMatrix dad_genetic_data_n,
                    NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                    arma::vec null_mean_vec, arma::vec null_se_vec,
+                   bool continuous_exp, 
+                   NumericVector exposure_quantile_vec,
                    int n_different_snps_weight = 2, int n_both_one_weight = 1,
                    int migration_interval = 50, int gen_same_fitness = 50,
                    int max_generations = 500,
@@ -1998,6 +2039,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
     current_fitness_list = compute_population_fitness(case_genetic_data, complement_genetic_data, ld_block_vec, chromosome_list,
                                                       weight_lookup, case_genetic_data_n, mom_genetic_data_n, dad_genetic_data_n,
                                                       exposure_data_n, weight_lookup_n, null_mean_vec, null_se_vec,
+                                                      continuous_exp, exposure_quantile_vec,
                                                       n_different_snps_weight, n_both_one_weight, recessive_ref_prop, recode_test_stat,
                                                       E_GADGETS);
 
@@ -2096,6 +2138,10 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
         beta_exposure_prob_disease_vecs = beta_exposure_prob_disease_vecs[chrom_list_order - 1]; 
         pop_current_fitness_list["beta_exposure_prob_disease_vecs"] = beta_exposure_prob_disease_vecs;
         
+        List beta_transmissions = current_fitness_list["beta_transmissions"];
+        beta_transmissions = beta_transmissions[chrom_list_order - 1]; 
+        pop_current_fitness_list["beta_transmissions"] = beta_transmissions;
+        
     }
     
     
@@ -2131,6 +2177,9 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
         
         List beta_exposure_prob_disease_vecs = current_fitness_list["beta_exposure_prob_disease_vecs"];
         pop_current_fitness_list["beta_exposure_prob_disease_vecs"] = beta_exposure_prob_disease_vecs;
+        
+        List beta_transmissions = current_fitness_list["beta_transmissions"];
+        pop_current_fitness_list["beta_transmissions"] = beta_transmissions;
         
     }
     
@@ -2209,6 +2258,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                  NumericMatrix case_genetic_data_n, NumericMatrix mom_genetic_data_n, NumericMatrix dad_genetic_data_n,
                  NumericMatrix exposure_data_n, arma::vec weight_lookup_n,
                  arma::vec null_mean_vec, arma::vec null_se_vec,
+                 bool continuous_exp, NumericVector exposure_quantile_vec,
                  int n_different_snps_weight = 2, int n_both_one_weight = 1, int migration_interval = 50,
                  int gen_same_fitness = 50, int max_generations = 500,
                  bool initial_sample_duplicates = false, double crossover_prop = 0.8,
@@ -2243,6 +2293,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                                    weight_lookup, case_genetic_data_n,
                                                    mom_genetic_data_n, dad_genetic_data_n, exposure_data_n,
                                                    weight_lookup_n, null_mean_vec, null_se_vec,
+                                                   continuous_exp, exposure_quantile_vec,
                                                    n_different_snps_weight, n_both_one_weight,
                                                    recessive_ref_prop, recode_test_stat,
                                                    max_generations, initial_sample_duplicates,
@@ -2253,6 +2304,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                           snp_chisq, island_population_i, case_genetic_data_n,
                                           mom_genetic_data_n, dad_genetic_data_n, exposure_data_n, weight_lookup_n,
                                           null_mean_vec, null_se_vec, 
+                                          continuous_exp, exposure_quantile_vec,
                                           n_different_snps_weight, n_both_one_weight, migration_interval, gen_same_fitness,
                                           max_generations, initial_sample_duplicates, crossover_prop, recessive_ref_prop,
                                           recode_test_stat, E_GADGETS);
@@ -2342,6 +2394,11 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
         List first_island_beta_exposure_prob_disease_vecs = first_island_current["beta_exposure_prob_disease_vecs"];
         List beta_exposure_prob_disease_vecs_migrations = second_island_beta_exposure_prob_disease_vecs[donor_idx];
         first_island_beta_exposure_prob_disease_vecs[receiver_idx] = beta_exposure_prob_disease_vecs_migrations;
+        
+        List second_island_beta_transmissions = second_island_current["beta_transmissions"];
+        List first_island_beta_transmissions = first_island_current["beta_transmissions"];
+        List beta_transmissions_migrations = second_island_beta_transmissions[donor_idx];
+        first_island_beta_transmissions[receiver_idx] = beta_transmissions_migrations;
           
       }
 
@@ -2373,6 +2430,7 @@ List run_GADGETS(int island_cluster_size, int n_migrations,
                                             snp_chisq, island_population_i,
                                             case_genetic_data_n, mom_genetic_data_n, dad_genetic_data_n, exposure_data_n, weight_lookup_n,
                                             null_mean_vec, null_se_vec,  
+                                            continuous_exp, exposure_quantile_vec,
                                             n_different_snps_weight, n_both_one_weight,
                                             migration_interval, gen_same_fitness, max_generations,
                                             initial_sample_duplicates, crossover_prop, recessive_ref_prop, recode_test_stat,
@@ -2656,6 +2714,8 @@ List GxE_test(arma::uvec target_snps, List preprocessed_list, arma::vec null_mea
   NumericMatrix mom_genetic_data = preprocessed_list["mother.genetic.data"];
   NumericMatrix dad_genetic_data = preprocessed_list["father.genetic.data"];
   NumericMatrix exposure_mat = preprocessed_list["exposure.mat"];
+  NumericVector exposure_quantile_vec = preprocessed_list["exposure.min.max"];
+  bool continuous_exp = preprocessed_list["continuous.exposure"];
   int n_fams = exposure_mat.nrow();
   int n_exp = exposure_mat.ncol();
   IntegerVector fam_idx = seq_len(n_fams);
@@ -2664,6 +2724,8 @@ List GxE_test(arma::uvec target_snps, List preprocessed_list, arma::vec null_mea
   List obs_fitness_list = GxE_fitness_score_mvlm(case_genetic_data, mom_genetic_data, 
                                                  dad_genetic_data, exposure_mat,
                                                  target_snps, weight_lookup_n, null_mean_vec, null_se_vec,
+                                                 continuous_exp, 
+                                                 exposure_quantile_vec,
                                                  n_different_snps_weight, n_both_one_weight);
 
   double obs_fitness_score = obs_fitness_list["fitness_score"];
@@ -2687,7 +2749,8 @@ List GxE_test(arma::uvec target_snps, List preprocessed_list, arma::vec null_mea
     // compute fitness
     List perm_fitness_list = GxE_fitness_score_mvlm(case_genetic_data, mom_genetic_data, dad_genetic_data, 
                                                     shuffled_exposures, target_snps, weight_lookup_n, null_mean_vec, 
-                                                    null_se_vec, n_different_snps_weight, n_both_one_weight);
+                                                    null_se_vec, continuous_exp, exposure_quantile_vec, 
+                                                    n_different_snps_weight, n_both_one_weight);
     double perm_fitness = perm_fitness_list["fitness_score"];
     perm_fitness_scores[i] = perm_fitness;
 

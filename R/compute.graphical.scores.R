@@ -168,7 +168,7 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
     chrom.list <- lapply(results.list, function(chrom.size.data){
 
         n.obs.chroms <- sum(!is.na(chrom.size.data$fitness.score))
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.data)))/5
+        chrom.size <- which(colnames(chrom.size.data) == "snp1.rsid") - 1
         these.cols <- seq_len(chrom.size)
         chrom.mat <- as.matrix(chrom.size.data[, ..these.cols])
         chrom.list <- split(chrom.mat, seq_len(nrow(chrom.mat)))
@@ -238,7 +238,7 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
 
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        chrom.size <- which(colnames(chrom.size.res) == "snp1.rsid") - 1
         chrom.size.pairs <- rbindlist(lapply(seq_len(n.top.chroms),
                                              function(res.row) {
 
@@ -278,7 +278,7 @@ compute.graphical.scores <- function(results.list, preprocessed.list,
         # chromosome specific results
         chrom.size.res <- results.list[[d]]
         n.top.chroms <- nrow(chrom.size.res)
-        chrom.size <- sum(grepl("snp", colnames(chrom.size.res)))/5
+        chrom.size <- which(colnames(chrom.size.res) == "snp1.rsid") - 1
         these.cols <- seq_len(chrom.size)
         scores <- chrom.size.res$graphical.score
 

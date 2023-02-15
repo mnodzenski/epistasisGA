@@ -157,6 +157,12 @@ A list containing the following:
  \code{case.genetic.data}, set to NULL if not applicable.}
  \item{child.snps}{A vector of the column indices of child SNPs in
  \code{case.genetic.data}, set to NULL if not applicable.}
+ \item{continuous.exposure}{A boolean indicating whether, for E-GADGETS, the 
+exposure is continuous. Set to FALSE and not used in GADGETS.}
+\item{exposure.min.max}{A vector,to be used in E-GADGETS when the exposure is 
+continuous, whose first element is the minimum observed exposure value and 
+second element is the maximum observed exposure value. Otherwise set to a 
+vector of zeroes and not used.}
 }
 }
 \description{

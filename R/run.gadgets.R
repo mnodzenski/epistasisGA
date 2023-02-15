@@ -472,7 +472,11 @@ run.gadgets <- function(data.list, n.chromosomes, chromosome.size, results.dir,
                                      crossover.prop = crossover.prop,
                                      recessive.ref.prop = recessive.ref.prop,
                                      recode.test.stat = recode.test.stat,
-                                     E_GADGETS = E_GADGETS),
+                                     E_GADGETS = E_GADGETS, 
+                                     continuous.exposure = 
+                                         data.list$continuous.exposure, 
+                                     exposure.min.max = 
+                                         data.list$exposure.min.max),
                     reg = registry)
 
     # chunk the jobs

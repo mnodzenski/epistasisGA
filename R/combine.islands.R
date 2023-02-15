@@ -107,17 +107,17 @@ combine.islands <- function(results.dir, annotation.data, preprocessed.list,
     all.island.res <- rbindlist(lapply(island.list, function(x) x[[2]]))
     
     # rename the exposure level betas based on the input data 
-    if (preprocessed.list$E_GADGETS){
-        
-        in.exp.cols <- paste0(colnames(preprocessed.list$exposure.mat), 
-                              "_p_disease_coef")
-        these.cols <- grepl("risk.exp.beta", colnames(combined.result), 
-                            fixed = TRUE)
-        new.names <- c("intercept_p_disease_coef", in.exp.cols)
-        colnames(combined.result)[these.cols] <- new.names        
-        colnames(all.island.res)[these.cols] <- new.names
-        
-    }
+    # if (preprocessed.list$E_GADGETS){
+    #     
+    #     in.exp.cols <- paste0(colnames(preprocessed.list$exposure.mat), 
+    #                           "_p_disease_coef")
+    #     these.cols <- grepl("risk.exp.beta", colnames(combined.result), 
+    #                         fixed = TRUE)
+    #     new.names <- c("intercept_p_disease_coef", in.exp.cols)
+    #     colnames(combined.result)[these.cols] <- new.names        
+    #     colnames(all.island.res)[these.cols] <- new.names
+    #     
+    # }
 
     #remove all the individual island files
     lapply(island.names, unlink)

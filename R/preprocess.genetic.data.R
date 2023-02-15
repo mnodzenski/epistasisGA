@@ -127,6 +127,12 @@
 #'  \code{case.genetic.data}, set to NULL if not applicable.}
 #'  \item{child.snps}{A vector of the column indices of child SNPs in
 #'  \code{case.genetic.data}, set to NULL if not applicable.}
+#'  \item{continuous.exposure}{A boolean indicating whether, for E-GADGETS, the 
+#' exposure is continuous. Set to FALSE and not used in GADGETS.}
+#' \item{exposure.min.max}{A vector,to be used in E-GADGETS when the exposure is 
+#' continuous, whose first element is the minimum observed exposure value and 
+#' second element is the maximum observed exposure value. Otherwise set to a 
+#' vector of zeroes and not used.}
 #' }
 #'
 #' @examples
@@ -622,6 +628,9 @@ preprocess.genetic.data <- function(case.genetic.data,
         mother.data <- matrix(0.0, 1, 1)
         father.data <- matrix(0.0, 1, 1)
         exposure.mat <- matrix(0.0, 1, 1)
+        cont.e <- FALSE
+        exposure.min.max <- c(0.0, 0.0)
+
         
     } else {
         
@@ -671,6 +680,19 @@ preprocess.genetic.data <- function(case.genetic.data,
         exposure.mat <- exposure.mat[ , -1, drop = FALSE]
         exposure.mat <- exposure.mat + 0.0
         
+        cont.e <- !is.null(continuous.exposures)
+        if (cont.e){
+            
+            e.min <- min(exposure.mat)
+            e.max <- max(exposure.mat)
+            exposure.min.max <- c(e.min, e.max)
+            
+        } else {
+            
+            exposure.min.max <- c(0.0, 0.0)  
+            
+        }
+        
     }
     
     # get rid of temporary files 
@@ -704,6 +726,8 @@ preprocess.genetic.data <- function(case.genetic.data,
                 exposure.mat = exposure.mat,
                 E_GADGETS = E_GADGETS,
                 mother.snps = mother.snps,
-                child.snps = child.snps))
+                child.snps = child.snps, 
+                continuous.exposure = cont.e, 
+                exposure.min.max = exposure.min.max))
 
 }
