@@ -373,7 +373,7 @@ As a final step in the analytic pipeline, we recommend users examine network plo
 
 Briefly, we use our epistasis test 'p-values' to assign graphical scores to pairs of SNPs identified in top-scoring chromosomes, with higher scores corresponding to lower epistasis p-values (more substantial evidence for epistasis). We then aggregate those pair-scores across chromosome sizes to generate a final collection of SNP-pairs, which we display in a single network plot.
 
-We start by computing the SNP-pair scores using `compute.graphical.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from function `preprocess.genetic.data`.
+We start by computing the SNP-pair scores using `compute.graphical.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from the function `preprocess.genetic.data`. The `compute.graphical.scores` function uses the `epistasis.test` function under the hood, so, as mentioned above, if all SNPs are in the same linkage block then a warning will print. Due to the way the permutation algorithm works, if a set of SNPs are on the same linkage block, they will not get a good h-value. This is because LD blocks are permuted together, so there will be no variation in the permutations. Thus, they cannot be detected as epistatic, regardless of the underlying truth. This phenomenon may also occur if the majority of an epistatic set lies within the same LD block. The user may see fit to enforce a different criterion, perhaps based on LD, or perhaps no criterion at all and let all the SNPs permute individually.
 
 **For analysts who have run the permutation-based global test:** we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores exceeding the corresponding null threshold for each chromosome size: 
 
@@ -393,14 +393,14 @@ obs.res.list <- list(size3.combined.res[size3.combined.res$fitness.score >= d3.t
 
 ```
 
-**For analysts who have _not_ run the permutation-based global test:** we recommend restricting attention to a subset of the top scoring chromosomes for each chromosome size. We've observed good results using the top 10, but we use the top 5 in the illustrative command below:
+**For analysts who have _not_ run the permutation-based global test:** we recommend restricting attention to a subset of the top scoring chromosomes for each chromosome size. We have observed good results using the top 10, but we use the top 5 in the illustrative command below:
 
 ```{r}
 obs.res.list.no.permutes <- list(size3.combined.res[1:5, ], size4.combined.res[1:5, ])
 
 ```
 
-Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.    
+Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we have run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.    
 
 ```{r}
 set.seed(10)
