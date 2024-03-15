@@ -57,9 +57,7 @@ At present, GADGETS does not support the use of genotypes imputed with uncertain
 
 ## Pre-process Data
 
-The second step in the analysis pipeline is to pre-process the data. Below, we default to the assumption that SNPs located on the same biological chromosome are in linkage, but users need not make this assumption and are encouraged to more carefully tailor this argument based on individual circumstances. We recommend using external data for determining LD blocks. 
-
-[comment]: A determination of LD based on mothers would be distorted by maternal epistasis, and a determination of LD based on fathers could be distorted by being the father of a case, hence more likely to be a co-donor of risk-related offspring SNPs.
+The second step in the analysis pipeline is to pre-process the data. Below, we default to the assumption that SNPs located on the same biological chromosome are in linkage, but users need not make this assumption and are encouraged to more carefully tailor this argument based on individual circumstances by using instead a measure of genetic distance or, perhaps, of LD. If choosing LD, we recommend using external data for determining LD.
 
 For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the vector as follows:
 
