@@ -57,7 +57,9 @@ At present, GADGETS does not support the use of genotypes imputed with uncertain
 
 ## Pre-process Data
 
-The second step in the analysis pipeline is to pre-process the data. Below, we default to the assumption that SNPs located on the same biological chromosome are in linkage, but users need not make this assumption and are encouraged to more carefully tailor this argument based on individual circumstances. For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the vector as follows:
+The second step in the analysis pipeline is to pre-process the data. Below, we default to the assumption that SNPs located on the same biological chromosome are in linkage, but users need not make this assumption and are encouraged to more carefully tailor this argument based on individual circumstances by using instead a measure of genetic distance or, perhaps, of LD. If choosing LD, we recommend using external data for determining LD.
+
+For the example data, the SNPs are drawn from chromosomes 10-13, with the columns sorted by chromosome and 25 SNPs per chromosome. We therefore construct the vector as follows:
 
 ```{r}
 ld.block.vec <- rep(25, 4)
@@ -127,7 +129,7 @@ run.gadgets(pp.list, n.chromosomes = 5, chromosome.size = 4,
 
 The population size argument, `n.chromosomes`, does not have a default, so users need to carefully consider how to specify this parameter. In general, run-times are faster with smaller populations, but decreasing the population size may increase the chance of failing to identify true risk pathways. However, this behavior is also depends on parameters `n.islands` and `island.cluster.size`. Broadly, our goal is to maximize the number of distinct subsets of SNPs we examine for evidence of association with disease while maintaining acceptable run-times. Because the package allows island clusters to evolve in parallel, we generally pay less of a run-time price for large island numbers compared to large population sizes. We therefore typically choose to run many islands in small clusters with relatively small population sizes. More concretely, in simulations involving 10,000 input SNPs, we have observed good performance using 1,000 islands in clusters of 4 with populations of 200 chromosomes per island.   
 
-The `cluster.type` and `registry.args` parameters are also important. For the above example, the "interactive" cluster type indicates that all islands run sequentially in the R session. However this is not how we anticipate `run.gadgets` will be used in most cases. Rather, we strongly recommend this function be used with high performance computing clusters to avoid prohibitively long run-times. An example (not run) of this type of command is given below: 
+The `cluster.type` and `registry.args` parameters are also important. For the above example, the "interactive" cluster type indicates that all islands run sequentially in the R session. However this is not how we anticipate `run.gadgets` will be used in most cases. Rather, we strongly recommend this function be used with high-performance computing clusters to avoid prohibitively long run-times. An example (not run) of this type of command is given below: 
 
 ```{r, eval=F}
 ### FOR ILLUSTRATION ONLY, DO NOT TRY TO RUN THIS CHUNK ###
@@ -177,7 +179,11 @@ Perhaps the most important elements of the output are the `n.cases.risk.geno`and
 
 A few important but subtle components of the results users should note are the `risk.allele`, `allele.copies`, `diff.vec`, `fitness.score`, and `n.islands.found` columns. For a given SNP within a chromosome, the corresponding `risk.allele` column reports the proposed risk-related nucleobase and the `allele.copies` column indicates the required number of copies for the proposed risk pathway. A '1+' indicates at least one copy of the risk allele is needed, while '2' indicates two copies are required. The `n.islands.found` column reports the number of distinct islands on which a specific chromosome was found. The `diff.vec` columns also may be descriptively interesting to some users. A positive value for a given SNP indicates the minor allele is positively associated with disease status, while a negative value implies the reference (‘wild type’) allele is positively associated with the disease. More generally, these values should be large in magnitude when a SNP is transmitted to cases much more often than complements. For true multi-SNP risk pathways, we expect pathway SNPs to be jointly transmitted to cases more often than compliments, therefore the magnitude of the `diff.vec` values should be large across the pathway. As such, high scoring chromosomes containing a subset of SNPs with small magnitude `diff.vec` values offer descriptive evidence that some of the chromosome's SNPs are not jointly transmitted to the cases and suggest a smaller chromosome size may be warranted. In the case of the true risk pathway SNPs, all `diff.vec` values are positive and reasonably large,  and all `allele.copies` columns are '1+' indicating the risk pathway requires having at least one copy of the minor allele for all 4 SNPs.
 
-## Permute Datasets
+## Global Permutation Test
+
+This section outlines how to run a global permutation test. This is very computationally intensive for most use cases and is best performed on a high-performance computing cluster. For the purpose of creating network plots, results can be obtained without this global test. If not running the global test, skip to the section on visualizing results.
+
+### Permute Datasets
 
 Of course, in real studies we do not know the identity of true risk pathways. We would therefore like a way to determine whether the results from the observed data are consistent with what we expect under the global null hypothesis of no association between any input SNPs and disease status. We do so via permutation testing. Maintaining the case/complement (or case/unaffected sibling) nomenclature from above, in permuting the data, we randomly flip or do not flip the the disease status labels. We create these permuted datasets using the `permute.dataset` command. Here we generate 4 different permuted datasets. In real applications, users are advised to generate at least 100, more if computationally feasible. 
 
@@ -189,7 +195,7 @@ permute.dataset(pp.list,
 
 ```
 
-## Re-Run GADGETS 
+### Re-Run GADGETS 
 
 Once we have created the permuted datasets, for each permutation, we perform exactly the same sequence of analyses shown above. Users should note this step is by far the most time consuming of the workflow and almost certainly requires access to a computing cluster. However, since this vignette provides only a very small example, we are able to run the analyses locally. We begin by pre-processing the permuted datasets:
 
@@ -252,7 +258,7 @@ perm.res.list <- lapply(chrom.sizes, function(chrom.size){
 
 ```
 
-## Run Global Test 
+### Run Global Test 
 
 Now we are ready to more formally examine whether our results are consistent with what would be expected under the null hypothesis of no association between the input variants and disease status. Our first step is to run a global test across all chromosome sizes examining whether the fitness scores from the observed data are drawn from the distribution expected under the null. Briefly, for each chromosome size separately, we sum the fitness scores of the top $k$ chromosomes for the observed data and each permuted dataset. We then rank the observed sum compared to the corresponding chromosome size specific sums for each permuted dataset. Letting $R_d$ denote the rank for chromosome size $d$, with 1 denoting the rank of the smallest sum of fitness scores, and with $N$ denoting the the number of permutes plus 1, we compute $T_d = -2ln((N - R_d + 0.5)/N)$. The test is based on summing $T_d$ over chromosome sizes, $T = \sum_d{T_d}$. We also compute this statistic for each permuted dataset and compute a permutation-based p-value using the $N$ values for $T$. Intuitively, this test assesses whether the top-scoring chromosomes are consistently higher than null data across chromosome sizes. 
 
@@ -316,7 +322,7 @@ ggplot(plot.data, aes(x = factor(""), y = distance, color = data)) + geom_boxplo
 
 ```
 
-## Post-hoc Analyses 
+### Post-hoc Analyses 
 
 Regardless of result, it is crucial that users are clear about what the test implies. The null hypothesis is that the observed test statistic is drawn from the null distribution, i.e., that the global patterns of transmissions to cases are not systematically different from those to the corresponding complements or unaffected siblings. In situations where we reject the null hypothesis, of course the conclusion is the observed test statistic is very different from from the null distribution. However, to best characterize results, it is incumbent on users to closely examine results beyond the global test. In particular, we would like to be able to identify the specific subsets of SNPs that are collectively related to risk.
 
@@ -359,17 +365,19 @@ epi.test.res <- epistasis.test(top.snps, pp.list)
 epi.test.res$pval
 ```
 
-The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. If the test were applied to data indepdent of that used by GADGETS, the p-values could be used for valid hypothesis tests. Otherwise, @GADGET2020 referred to these 'p-values' instead as 'h-values' to emphasize the limitation. We make use of these 'h-values' primarily in constructing network plots of potentially interesting SNP-sets. 
+The test indicates the observed fitness score is unusual under the assumption of no epistasis among loci and given the observed marginal transmissions to the disease affected children. However, caution is warranted in interpreting this 'p-value'. The GADGETS stochastic search method identifies SNP-sets that appear to be interacting even under an independent-effects null, so the epistasis test p-value should be interpreted in an exploratory, hypothesis-generating context. If the test were applied to data independent of that used by GADGETS, the p-values could be used for valid hypothesis tests. Otherwise, @GADGET2020 referred to these 'p-values' instead as 'h-values' to emphasize the limitation. We make use of these 'h-values' primarily in constructing network plots of potentially interesting SNP-sets. 
 
 Users may also receive a warning when executing `epistasis.test` that says "All chromosome SNPs in linkage, returning NA for p-value". This is generated because the procedure can only run if at least two SNPs are not in linkage, as specified in `ld.block.vec`, otherwise other methods (not provided in this package) are required. 
 
-## Visualize Results 
+## Visualize Results
 
 As a final step in the analytic pipeline, we recommend users examine network plots of the results using function `network.plot`. This may be particularly useful when trying to determine the true number of SNPs involved in multi-SNP risk pathways and to identify those SNPs. For instance, in the example above, the true risk pathway involves 4 SNPS, but we ran GADGETS for chromosome sizes of 3 and 4. For chromosome size 3, we saw that many of the top identified collections of SNPs were subsets of the true 4 SNP pathway. If we didn't know the true pathway size was 4, a network plot might help make this clearer. 
 
 Briefly, we use our epistasis test 'p-values' to assign graphical scores to pairs of SNPs identified in top-scoring chromosomes, with higher scores corresponding to lower epistasis p-values (more substantial evidence for epistasis). We then aggregate those pair-scores across chromosome sizes to generate a final collection of SNP-pairs, which we display in a single network plot.
 
-We start by computing the SNP-pair scores using `compute.graphical.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from function `preprocess.genetic.data`. For analysts who have run the permutation-based global test, we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores exceeding the corresponding null threshold for each chromosome size: 
+We start by computing the SNP-pair scores using `compute.graphical.scores`. This function takes as required arguments a list of data.tables containing the results from GADGETS run for different chromosome sizes and the list of pre-processed data from the function `preprocess.genetic.data`. The `compute.graphical.scores` function uses the `epistasis.test` function under the hood, so, as mentioned above, if all SNPs are in the same designated linkage block then a warning will print. Due to the way the permutation algorithm works, if a set of SNPs are on the same linkage block, they will not get a good h-value. This is because LD blocks are permuted together, so there will be no variation in the permutations. Thus, they cannot be detected as epistatic, regardless of the underlying truth. This phenomenon may also occur if many SNPs of an epistatic set lie within the same designated LD block. The user may see fit to enforce a different criterion, perhaps based on LD, or perhaps no criterion at all and let all the SNPs permute individually.
+
+**For analysts who have run the permutation-based global test:** we recommend restricting attention to chromosomes with fitness scores higher than what we would expect for null data. Specifically, the `global.test` function output contains a vector, `max.perm.95th.pctl`, that reports the $95^{th}$ percentile of the maximum observed fitness score across the null permutes for each chromosome size. We restrict our network plots to the chromosomes with fitness scores exceeding the corresponding null threshold for each chromosome size: 
 
 ```{r}
 # vector of 95th percentile of null fitness scores max
@@ -387,14 +395,14 @@ obs.res.list <- list(size3.combined.res[size3.combined.res$fitness.score >= d3.t
 
 ```
 
-Alternatively, for analysts who have not run the global-test permutes, we recommend restricting attention to a subset of the top scoring chromosomes for each chromosome size. We've observed good results using the top 10, but we use the top 5 in the illustrative command below:
+**For analysts who have _not_ run the permutation-based global test:** we recommend restricting attention to a subset of the top scoring chromosomes for each chromosome size. We have observed good results using the top 10, but we use the top 5 in the illustrative command below:
 
 ```{r}
 obs.res.list.no.permutes <- list(size3.combined.res[1:5, ], size4.combined.res[1:5, ])
 
 ```
 
-Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we've run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.    
+Once the results list has been prepared, we generate graphical scores for each SNP-pair. Since we have run the global test, we use the `obs.res.list` results below, but the steps would be exactly the same if we instead used the `obs.res.list.no.permutes` list. Note that for large numbers of top scoring chromosomes, this function may take at least 10-20 minutes to complete.    
 
 ```{r}
 set.seed(10)
