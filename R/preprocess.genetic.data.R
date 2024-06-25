@@ -612,9 +612,9 @@ preprocess.genetic.data <- function(case.genetic.data,
         
         # set missing to -9
         if (any(is.na(case.data)) | any(is.na(comp.data))){
-            
-            case.data[is.na(case.data) | is.na(comp.data)] <- -9
-            comp.data[is.na(case.data) | is.na(comp.data)] <- -9
+            changeindices <- is.na(case.data) | is.na(comp.data)
+            case.data[changeindices] <- -9
+            comp.data[changeindices] <- -9
             
         }
         
