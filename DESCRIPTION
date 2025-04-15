@@ -2,7 +2,7 @@ Package: epistasisGA
 Type: Package
 Title: An R package to identify multi-snp effects in nuclear family studies 
     using the GADGETS method
-Version: 1.10.0
+Version: 1.11.0
 Authors@R: c(person("Michael", "Nodzenski", 
     email = "michael.nodzenski@gmail.com",role = c("aut", "cre")), 
     person("Juno", "Krahn", role = "ctb"))
