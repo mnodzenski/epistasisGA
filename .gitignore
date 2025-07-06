@@ -28,3 +28,5 @@ Meta
 /doc/
 /Meta/
 epistasisGA_GxE.Rproj
+vignettes/**/
+vignettes/*.html
