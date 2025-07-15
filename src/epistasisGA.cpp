@@ -388,7 +388,7 @@ IntegerVector sub_rowsums_both_one(IntegerMatrix x, IntegerMatrix y, IntegerVect
     for (int j = 0; j < n_cols; j ++){
 
       int this_col = target_cols[j] - 1;
-      if ((x(this_row , this_col) == 1) & (y(this_row, this_col) == 1)){
+      if ((x(this_row , this_col) == 1) && (y(this_row, this_col) == 1)){
 
         out_vec[i] += 1;
 
@@ -1990,7 +1990,7 @@ List evolve_island(int n_migrations, IntegerMatrix case_genetic_data, IntegerMat
         IntegerVector mutated_snps = sample(snps_for_mutation, total_mutations, false);
 
         // check for duplicates and, if so, resample with exclusion checks
-        if ( (mutated_snps.length() != unique(mutated_snps).length()) | (sum(in(mutated_snps, target_chrom)) > 0) ){
+        if ( (mutated_snps.length() != unique(mutated_snps).length()) || (sum(in(mutated_snps, target_chrom)) > 0) ){
 
           IntegerVector possible_snps_for_mutation = snps_for_mutation[!in(snps_for_mutation, target_chrom)];
           int ulen_psm = unique(possible_snps_for_mutation).length();
@@ -2566,7 +2566,7 @@ List epistasis_test(IntegerVector snp_cols, List preprocessed_list, int n_permut
     IntegerVector child_snps = preprocessed_list["child.snps"];
     mom_snps_l = in(target_snps, mom_snps);
     child_snps_l = in(target_snps, child_snps);
-    if ((is_true(any(mom_snps_l))) & (is_true(any(child_snps_l)))){
+    if ((is_true(any(mom_snps_l))) && (is_true(any(child_snps_l)))){
 
       IntegerVector mom_snps_ld_blocks = target_snps_ld_blocks[mom_snps_l];
       IntegerVector child_snps_ld_blocks = target_snps_ld_blocks[child_snps_l];
@@ -2796,7 +2796,7 @@ NumericVector n2log_epistasis_pvals(ListOf<IntegerVector> chromosome_list, List 
       arma::vec null_mean_vec;
       arma::vec null_sd_vec;
 
-      if (null_mean_vec_.isNotNull() & null_se_vec_.isNotNull()){
+      if (null_mean_vec_.isNotNull() && null_se_vec_.isNotNull()){
 
         NumericVector null_means;
         null_means = null_mean_vec_;

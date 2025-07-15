@@ -157,7 +157,7 @@ deviations for each component of the E-GADGETS (GxGxE) fitness score. For all
 other uses, this should be specified as rep(0, 2) and will not be used.}
 
 \item{island.cluster.size}{An integer specifying the number of islands in
-the cluster. See code{run.gadgets} for additional details.}
+the cluster. See \code{run.gadgets} for additional details.}
 
 \item{n.migrations}{The number of chromosomes that migrate among islands.
 This value must be less than \code{n.chromosomes} and greater than 0,
